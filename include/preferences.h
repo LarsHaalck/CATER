@@ -3,7 +3,6 @@
 
 #include "misc/geometricType.h"
 
-
 namespace at
 {
 struct Preferences
