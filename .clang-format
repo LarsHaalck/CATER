@@ -1,0 +1,9 @@
+---
+BasedOnStyle: WebKit
+BreakBeforeBraces: Allman
+Cpp11BracedListStyle: 'true'
+ColumnLimit: 90
+UseTab: Never
+AlwaysBreakTemplateDeclarations: 'true'
+
+...
