@@ -104,3 +104,5 @@ _deps
 # Misc
 build*/
 install*/
+.clangd/
+tags
