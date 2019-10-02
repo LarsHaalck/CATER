@@ -10,9 +10,7 @@ struct GuiPreferences
     int overlayTrajectory = 50;
 
     bool enableExpertView = true; // enables more buttons in the processing group
-
-    int startFrame = 0;
-    int endFrame = -1; // -1 means last possible frame and is set dynamically
 };
 } // namespace gui
+
 #endif // GUI_PREFERENCES
