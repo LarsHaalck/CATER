@@ -1,0 +1,28 @@
+#ifndef HABITRACK_CACHE_H
+#define HABITRACK_CACHE_H
+
+#include <cstddef>
+
+namespace ht
+{
+class Cache
+{
+public:
+    Cache(std::size_t numElems, std::size_t maxChunkSize);
+
+    std::size_t getNumElems() const;
+    std::size_t getMaxChunkSize() const;
+    std::size_t getNumChunks() const;
+    std::size_t getChunkSize(std::size_t chunkIdx) const;
+
+    virtual ~Cache() = default;
+private:
+    std::size_t mNumElems;
+    std::size_t mMaxChunkSize;
+    std::size_t mNumChunks;
+    std::size_t mRemainder;
+};
+} // namespace ht
+
+#endif // HABITRACK_CACHE_H
+
