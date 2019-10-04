@@ -7,6 +7,9 @@ set(SOURCES
     src/cache.cpp
     src/imageCache.cpp
     src/imageContainer.cpp
+    src/baseDecorator.cpp
+    src/resizeDecorator.cpp
+    src/grayDecorator.cpp
 )
 
 

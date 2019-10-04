@@ -1,14 +1,17 @@
 #include "habitrack/imageContainer.h"
 
 #include <fstream>
-
 #include <iostream>
+
+#include "habitrack/resizeDecorator.h"
+#include "habitrack/grayDecorator.h"
 
 namespace fs = std::filesystem;
 
 namespace ht
 {
 ImageContainer::ImageContainer(const fs::path& path)
+    : mData(std::make_shared<detail::ImageData>())
 {
     if (!fs::exists(path))
     {
@@ -27,7 +30,7 @@ ImageContainer::ImageContainer(const fs::path& path)
     else
         fillImageFilesFromFile(path);
 
-    std::sort(std::begin(mImageFiles), std::end(mImageFiles));
+    std::sort(std::begin(mData->mImageFiles), std::end(mData->mImageFiles));
 }
 
 void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
@@ -42,7 +45,7 @@ void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
                 || extension == ".TIF" || extension == ".TIFF"
                 || extension == ".JPG" || extension == ".PNG" || extension == ".JPEG")
             {
-                mImageFiles.push_back(p.path().string());
+                mData->mImageFiles.push_back(p.path().string());
             }
         }
     }
@@ -63,25 +66,26 @@ void ImageContainer::fillImageFilesFromFile(const fs::path& path)
                 throw fs::filesystem_error("Image file from file list does not exist",
                     imgPath, std::make_error_code(std::errc::no_such_file_or_directory));
             }
-            mImageFiles.push_back(imgPath.string());
+            mData->mImageFiles.push_back(imgPath.string());
         }
     }
 }
 
-cv::Mat ImageContainer::operator[](std::size_t idx) const
+ImageContainer::~ImageContainer()
 {
-    return cv::Mat();
 }
 
 cv::Mat ImageContainer::at(std::size_t idx) const
 {
-    assert(idx > 0 && idx < mImageFiles.size()
+    assert(idx <= mData->mImageFiles.size()
         && "idx out of range in ImageContainer::at()");
-    return operator[](idx);
+    return cv::imread(mData->mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
 }
 
-std::size_t ImageContainer::getNumImages() const { return mImageFiles.size(); }
-std::size_t ImageContainer::getNumKeyFrames() const { return mKeyFrameMapping.size(); }
+std::size_t ImageContainer::getNumImages() const { return mData->mImageFiles.size(); }
+std::size_t ImageContainer::getNumKeyFrames() const { return mData->mKeyFrames.size(); }
+std::vector<std::size_t> ImageContainer::getKeyFrames() const { return mData->mKeyFrames; }
+std::shared_ptr<detail::ImageData> ImageContainer::getData() const { return mData; }
 
 std::unique_ptr<ImageCache> ImageContainer::getCache(
     std::size_t maxChunkSize, bool useOnlyKeyFrames)
@@ -89,5 +93,24 @@ std::unique_ptr<ImageCache> ImageContainer::getCache(
     return std::make_unique<ImageCache>(
         shared_from_this(), maxChunkSize, useOnlyKeyFrames);
 }
+
+std::shared_ptr<ImageContainer> ImageContainer::resize(double scale)
+{
+    return resize(scale, scale);
+}
+std::shared_ptr<ImageContainer> ImageContainer::resize(double scaleX, double scaleY)
+{
+    return std::make_shared<ResizeDecorator>(scaleX, scaleY, shared_from_this());
+}
+std::shared_ptr<ImageContainer> ImageContainer::gray()
+{
+    return std::make_shared<GrayDecorator>(shared_from_this());
+}
+
+ImageContainer::ImageContainer(std::shared_ptr<detail::ImageData> data)
+    : mData(std::move(data))
+{
+}
+
 
 } // namespace ht
