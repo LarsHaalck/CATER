@@ -18,10 +18,8 @@ namespace ht
 class ImageCache : public Cache
 {
 public:
-    ImageCache(
-        std::shared_ptr<ImageContainer> container,
-        std::size_t maxChunkSize,
-        bool useOnlyKeyFrames);
+    ImageCache(std::shared_ptr<ImageContainer> container,
+        std::size_t maxChunkSize, bool useOnlyKeyFrames);
     std::vector<cv::Mat> getChunk(std::size_t idx);
 private:
     std::shared_ptr<ImageContainer> mContainer;

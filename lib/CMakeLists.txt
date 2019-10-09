@@ -1,7 +1,11 @@
 ###########################################################################
+#                           DEPENDENCIES                                  #
+###########################################################################
+add_subdirectory(external/cereal)
+
+###########################################################################
 #                                FILES                                    #
 ###########################################################################
-# src/imageContainer.cpp
 set(SOURCES
     main.cpp
     src/cache.cpp
@@ -10,6 +14,9 @@ set(SOURCES
     src/baseDecorator.cpp
     src/resizeDecorator.cpp
     src/grayDecorator.cpp
+    src/specialGrayDecorator.cpp
+    src/featureContainer.cpp
+    src/unknownFeatureType.cpp
 )
 
 
@@ -36,7 +43,7 @@ target_link_libraries(${LIB_NAME}
     opencv_flann
     opencv_stitching
     opencv_imgcodecs
-    OpenMP::OpenMP_CXX
+    cereal
 )
 
 if(${OpenMP_CXX_FOUND})
@@ -44,3 +51,8 @@ if(${OpenMP_CXX_FOUND})
         OpenMP::OpenMP_CXX
     )
 endif()
+
+# only for profiling
+target_link_libraries(${LIB_NAME}
+    ${CMAKE_DL_LIBS}
+)

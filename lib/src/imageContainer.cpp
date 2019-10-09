@@ -1,10 +1,12 @@
 #include "habitrack/imageContainer.h"
+#include "habitrack/resizeDecorator.h"
+#include "habitrack/grayDecorator.h"
 
 #include <fstream>
 #include <iostream>
 
-#include "habitrack/resizeDecorator.h"
-#include "habitrack/grayDecorator.h"
+#include <opencv2/imgproc.hpp>
+
 
 namespace fs = std::filesystem;
 
@@ -77,15 +79,28 @@ ImageContainer::~ImageContainer()
 
 cv::Mat ImageContainer::at(std::size_t idx) const
 {
+    // TODO: imread type?
     assert(idx <= mData->mImageFiles.size()
         && "idx out of range in ImageContainer::at()");
-    return cv::imread(mData->mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
+    cv::Mat mat = cv::imread(mData->mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
+
+    cv::Mat resMat;
+    mat.convertTo(resMat, CV_8UC3);
+    return resMat;
+
 }
 
 std::size_t ImageContainer::getNumImages() const { return mData->mImageFiles.size(); }
 std::size_t ImageContainer::getNumKeyFrames() const { return mData->mKeyFrames.size(); }
 std::vector<std::size_t> ImageContainer::getKeyFrames() const { return mData->mKeyFrames; }
 std::shared_ptr<detail::ImageData> ImageContainer::getData() const { return mData; }
+
+std::filesystem::path ImageContainer::getFileName(std::size_t idx) const
+{
+    auto file = mData->mImageFiles[idx];
+    auto path = fs::path(file);
+    return path.filename();
+}
 
 std::unique_ptr<ImageCache> ImageContainer::getCache(
     std::size_t maxChunkSize, bool useOnlyKeyFrames)

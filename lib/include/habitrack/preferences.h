@@ -1,51 +1,73 @@
-#ifndef PREFERENCESSTRUCT
-#define PREFERENCESSTRUCT
+#ifndef HABITRACK_PREFERENCES_H
+#define HABITRACK_PREFERENCES_H
 
-#include "misc/geometricType.h"
+/* #include "misc/geometricType.h" */
 
-namespace at
+#include <cstddef>
+
+namespace ht
 {
+/* struct FeaturePreferences */
+/* { */
+/*     enum class Type */
+/*     { */
+/*         ORB, */
+/*         SIFT */
+/*     }; */
+/*     Type type = Type::ORB; */
+/*     int numFeatures = 10000; */
+/* }; */
+
+/* struct CachePreferences */
+/* { */
+/*     bool parallelReadWrite = true; // should only be used for ssds */
+/*     std::size_t cacheSize = 400; */
+/* }; */
+
 struct Preferences
 {
-    // warping
-    bool removeCameraMotion;
-    double warpingNNRatio;
-    double warpingRANSACReprojError;
-    int warpingNumFeatures;
+    // cache related
+    /* bool imageMemOnly = false; */
 
-    // unaries
-    double unariesSubsample;
-    float unariesSigma;
-    bool unariesRemoveRedLasers;
-    double unariesSupression;
-    double manualTrackingUnaryMultiplier;
+    /* // warping */
+    /* bool removeCameraMotion; */
+    /* double warpingNNRatio; */
+    /* double warpingRANSACReprojError; */
+    /* int warpingNumFeatures; */
 
-    // pairwise
-    double pairwiseSigma;
-    int pairwiseSize;
+    /* // unaries */
+    /* double unariesSubsample; */
+    /* float unariesSigma; */
+    /* bool unariesRemoveRedLasers; */
+    /* double unariesSupression; */
+    /* double manualTrackingUnaryMultiplier; */
 
-    // color adjusting
-    double blueFactor;
-    double greenFactor;
-    double redFactor;
+    /* // pairwise */
+    /* double pairwiseSigma; */
+    /* int pairwiseSize; */
 
-    // bearings
-    bool smoothBearing;
-    int smoothBearingWindowSize;
-    int smoothBearingOutlierTolerance;
+    /* // color adjusting */
+    /* double blueFactor; */
+    /* double greenFactor; */
+    /* double redFactor; */
 
-    // tracklets
-    int trackletsLength;
+    /* // bearings */
+    /* bool smoothBearing; */
+    /* int smoothBearingWindowSize; */
+    /* int smoothBearingOutlierTolerance; */
 
-    // panoramos
-    bool generatePano;
-    int panoWindowSize;
-    GeometricType panoTransformation;
-    double panoMinOffset;
-    double panoMaxOffset;
-    int panoTargetRows;
-    int panoTargetCols;
-    bool panoEnableBlending;
+    /* // tracklets */
+    /* int trackletsLength; */
+
+    /* // panoramos */
+    /* bool generatePano; */
+    /* int panoWindowSize; */
+    /* GeometricType panoTransformation; */
+    /* double panoMinOffset; */
+    /* double panoMaxOffset; */
+    /* int panoTargetRows; */
+    /* int panoTargetCols; */
+    /* bool panoEnableBlending; */
 };
-} // namespace at
-#endif // PREFERENCESSTRUCT
+} // namespace ht
+#endif // HABITRACK_PREFERENCES_H

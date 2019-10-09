@@ -29,6 +29,8 @@ public:
     virtual cv::Mat at(std::size_t idx) const;
     std::size_t getNumImages() const;
 
+    std::filesystem::path getFileName(std::size_t idx) const;
+
     template <typename T>
     void markAsKeyFrame(T&& keyIds)
     {
@@ -39,8 +41,8 @@ public:
     std::vector<std::size_t> getKeyFrames() const;
     std::size_t getNumKeyFrames() const;
 
-    std::unique_ptr<ImageCache> getCache(
-        std::size_t maxChunkSize, bool useOnlyKeyFrames = false);
+    std::unique_ptr<ImageCache> getCache(std::size_t maxChunkSize,
+        bool useOnlyKeyFrames = false);
 
     // decorator related methods
     std::shared_ptr<detail::ImageData> getData() const;

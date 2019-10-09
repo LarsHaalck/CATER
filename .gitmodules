@@ -1,0 +1,3 @@
+[submodule "lib/external/cereal"]
+	path = lib/external/cereal
+	url = https://github.com/LarsHaalck/cereal

@@ -1,6 +1,7 @@
 #include "habitrack/grayDecorator.h"
 
 #include <opencv2/imgproc.hpp>
+#include <iostream>
 
 namespace ht
 {

@@ -2,6 +2,7 @@
 #define HABITRACK_CACHE_H
 
 #include <cstddef>
+#include <tuple>
 
 namespace ht
 {
@@ -14,6 +15,7 @@ public:
     std::size_t getMaxChunkSize() const;
     std::size_t getNumChunks() const;
     std::size_t getChunkSize(std::size_t chunkIdx) const;
+    std::pair<std::size_t, std::size_t> getChunkBounds(std::size_t chunkIdx) const;
 
     virtual ~Cache() = default;
 private:
