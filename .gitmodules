@@ -1,3 +1,6 @@
 [submodule "lib/external/cereal"]
 	path = lib/external/cereal
 	url = https://github.com/LarsHaalck/cereal
+[submodule "lib/external/mild"]
+	path = lib/external/mild
+	url = https://github.com/LarsHaalck/mild

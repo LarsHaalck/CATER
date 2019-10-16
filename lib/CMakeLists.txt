@@ -2,6 +2,7 @@
 #                           DEPENDENCIES                                  #
 ###########################################################################
 add_subdirectory(external/cereal)
+add_subdirectory(external/mild)
 
 ###########################################################################
 #                                FILES                                    #
@@ -30,7 +31,7 @@ target_include_directories(${LIB_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_link_libraries(${LIB_NAME}
@@ -44,6 +45,7 @@ target_link_libraries(${LIB_NAME}
     opencv_stitching
     opencv_imgcodecs
     cereal
+    mild
 )
 
 if(${OpenMP_CXX_FOUND})
