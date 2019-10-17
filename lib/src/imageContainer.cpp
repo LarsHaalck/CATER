@@ -77,12 +77,15 @@ ImageContainer::~ImageContainer()
 {
 }
 
-cv::Mat ImageContainer::at(std::size_t idx) const
+// TODO: imread type?
+cv::Mat ImageContainer::at(std::size_t idx, bool isKeyFrame) const
 {
-    // TODO: imread type?
-    assert(idx <= mData->mImageFiles.size()
+    assert(idx < mData->mImageFiles.size()
         && "idx out of range in ImageContainer::at()");
-    cv::Mat mat = cv::imread(mData->mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
+
+    auto realIdx = isKeyFrame ? getKeyFrameIdx(idx) : idx;
+    cv::Mat mat = cv::imread(
+        mData->mImageFiles[realIdx], cv::ImreadModes::IMREAD_UNCHANGED);
 
     cv::Mat resMat;
     mat.convertTo(resMat, CV_8UC3);
@@ -95,6 +98,13 @@ std::size_t ImageContainer::getNumKeyFrames() const { return mData->mKeyFrames.s
 std::vector<std::size_t> ImageContainer::getKeyFrames() const { return mData->mKeyFrames; }
 std::shared_ptr<detail::ImageData> ImageContainer::getData() const { return mData; }
 
+std::size_t ImageContainer::getKeyFrameIdx(std::size_t idx) const
+{
+    assert(idx < mData->mKeyFrames.size()
+        && "idx out of range in ImageContainer::getKeyFrameIdx()");
+    return mData->mKeyFrames[idx];
+}
+
 std::filesystem::path ImageContainer::getFileName(std::size_t idx) const
 {
     auto file = mData->mImageFiles[idx];
@@ -105,8 +115,10 @@ std::filesystem::path ImageContainer::getFileName(std::size_t idx) const
 std::unique_ptr<ImageCache> ImageContainer::getCache(
     std::size_t maxChunkSize, bool useOnlyKeyFrames)
 {
+    auto numElems
+        = useOnlyKeyFrames ? mData->mKeyFrames.size() : mData->mImageFiles.size();
     return std::make_unique<ImageCache>(
-        shared_from_this(), maxChunkSize, useOnlyKeyFrames);
+        shared_from_this(), numElems, maxChunkSize, useOnlyKeyFrames);
 }
 
 std::shared_ptr<ImageContainer> ImageContainer::resize(double scale)

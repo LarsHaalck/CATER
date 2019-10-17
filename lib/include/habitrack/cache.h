@@ -9,7 +9,7 @@ namespace ht
 class Cache
 {
 public:
-    Cache(std::size_t numElems, std::size_t maxChunkSize);
+    Cache(std::size_t numElems, std::size_t maxChunkSize, bool keyFramesOnly = false);
 
     std::size_t getNumElems() const;
     std::size_t getMaxChunkSize() const;
@@ -23,6 +23,8 @@ private:
     std::size_t mMaxChunkSize;
     std::size_t mNumChunks;
     std::size_t mRemainder;
+protected:
+    bool mKeyFramesOnly;
 };
 } // namespace ht
 

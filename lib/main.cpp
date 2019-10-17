@@ -22,9 +22,27 @@ int main()
         container, "/home/lars/data/ontogenyTest/vid3/fts", FeatureType::ORB, 5000);
     ftContainer->compute(cacheSize, false);
 
+    std::cout << ftContainer->featureAt(0, false).size() << std::endl;
+    std::cout << ftContainer->descriptorAt(0, false).size() << std::endl;
 
-    MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0);
-    lcd.displayParameters();
+    /* ftContainer->getDescCache(); */
+
+    /* enum class MatchType */
+    /* { */
+    /*     Exhaustive, */
+    /*     MILD, */
+    /*     NN, */
+    /*     Windowed */
+    /* }; */
+    /* auto matchContainer = std::make_shared<MatchesContainer>( */
+    /*     ftContainer, "/home/lars/data/ontogenyTest/vid3/matches", MatchType::Exhaustive */
+    /*     50); */
+
+    /* matchContainer->compute(cacheSize, false); */
+
+
+    /* MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0); */
+    /* lcd.displayParameters(); */
 
     return 0;
 }

@@ -3,11 +3,11 @@
 #include "habitrack/unknownFeatureType.h"
 #include "progressBar.h"
 
-#include <opencv2/xfeatures2d.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/xfeatures2d.hpp>
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 namespace fs = std::filesystem;
 
@@ -35,13 +35,11 @@ FeatureContainer::FeatureContainer(std::shared_ptr<ImageContainer> imgContainer,
 
     if (!fs::exists(ftDir) || !fs::is_directory(ftDir))
         fs::create_directories(ftDir);
-
 }
 
 FeatureType FeatureContainer::getTypeFromFile(const fs::path& file)
 {
     auto type = file.stem().extension();
-
     if (type == ".orb")
         return FeatureType::ORB;
     if (type == ".sift")
@@ -50,8 +48,8 @@ FeatureType FeatureContainer::getTypeFromFile(const fs::path& file)
     throw UnknownFeatureType(type);
 }
 
-std::filesystem::path FeatureContainer::getFileName(std::size_t idx,
-    detail::FtDesc ftDesc)
+std::filesystem::path FeatureContainer::getFileName(
+    std::size_t idx, detail::FtDesc ftDesc)
 {
     auto stem = mImgContainer->getFileName(idx).stem();
     auto fullFile = mFtDir / stem;
@@ -100,44 +98,92 @@ void FeatureContainer::writeChunk(std::pair<std::size_t, std::size_t> bounds,
     }
 }
 
-void FeatureContainer::writeFts(const fs::path& file, const std::vector<cv::KeyPoint>& fts)
+void FeatureContainer::writeFts(
+    const fs::path& file, const std::vector<cv::KeyPoint>& fts)
 {
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
-    if (!stream.is_open())
-    {
-        throw std::filesystem::filesystem_error("Error opening feature file",
-                file, std::make_error_code(std::errc::io_error));
-    }
+    checkStream(stream, file);
 
-    cereal::PortableBinaryOutputArchive archive(stream);
-    archive(fts);
-    stream.close();
+    {
+        cereal::PortableBinaryOutputArchive archive(stream);
+        archive(fts);
+    }
 }
 
 void FeatureContainer::writeDescs(const fs::path& file, const cv::Mat& descs)
 {
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
-    if (!stream.is_open())
-    {
-        throw std::filesystem::filesystem_error("Error opening descriptor file",
-                file, std::make_error_code(std::errc::io_error));
-    }
+    checkStream(stream, file);
 
-    cereal::PortableBinaryOutputArchive archive(stream);
-    archive(descs);
-    stream.close();
+    {
+        cereal::PortableBinaryOutputArchive archive(stream);
+        archive(descs);
+    }
 }
 
 cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr()
 {
     switch (mType)
     {
-        case FeatureType::ORB:
-            return cv::ORB::create(mNumFeatures);
-        case FeatureType::SIFT:
-            return cv::xfeatures2d::SIFT::create(mNumFeatures);
-        default:
-            throw UnknownFeatureType();
+    case FeatureType::ORB:
+        return cv::ORB::create(mNumFeatures);
+    case FeatureType::SIFT:
+        return cv::xfeatures2d::SIFT::create(mNumFeatures);
+    default:
+        throw UnknownFeatureType();
     }
+}
+std::vector<cv::KeyPoint> FeatureContainer::featureAt(
+    std::size_t idx, bool useOnlyKeyFrames)
+{
+    assert(idx <= mImgContainer->getNumImages()
+        && "idx out of range in FeatureContainer::featureAt()");
+
+    auto realIdx = useOnlyKeyFrames ? mImgContainer->getKeyFrameIdx(idx) : idx;
+    auto file = getFileName(realIdx, detail::FtDesc::Feature);
+    std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
+    checkStream(stream, file);
+
+    std::vector<cv::KeyPoint> fts;
+    {
+        cereal::PortableBinaryInputArchive archive(stream);
+        archive(fts);
+    }
+    return fts;
+}
+
+cv::Mat FeatureContainer::descriptorAt(std::size_t idx, bool useOnlyKeyFrames)
+{
+    assert(idx <= mImgContainer->getNumImages()
+        && "idx out of range in FeatureContainer::featureAt()");
+
+    auto realIdx = useOnlyKeyFrames ? mImgContainer->getKeyFrameIdx(idx) : idx;
+    auto file = getFileName(realIdx, detail::FtDesc::Descriptor);
+    std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
+    checkStream(stream, file);
+
+    cv::Mat descs;
+    {
+        cereal::PortableBinaryInputArchive archive(stream);
+        archive(descs);
+    }
+    return descs;
+}
+
+std::unique_ptr<FeatureCache> FeatureContainer::getFeatureCache(
+    std::size_t maxChunkSize, bool useOnlyKeyFrames)
+{
+    auto numElems = useOnlyKeyFrames ? mImgContainer->getNumKeyFrames()
+                                     : mImgContainer->getNumImages();
+    return std::make_unique<FeatureCache>(
+        shared_from_this(), numElems, maxChunkSize, useOnlyKeyFrames);
+}
+std::unique_ptr<DescriptorCache> FeatureContainer::getDescriptorCache(
+    std::size_t maxChunkSize, bool useOnlyKeyFrames)
+{
+    auto numElems = useOnlyKeyFrames ? mImgContainer->getNumKeyFrames()
+                                     : mImgContainer->getNumImages();
+    return std::make_unique<DescriptorCache>(
+        shared_from_this(), numElems, maxChunkSize, useOnlyKeyFrames);
 }
 }

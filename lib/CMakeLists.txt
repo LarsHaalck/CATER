@@ -10,13 +10,15 @@ add_subdirectory(external/mild)
 set(SOURCES
     main.cpp
     src/cache.cpp
-    src/imageCache.cpp
     src/imageContainer.cpp
     src/baseDecorator.cpp
     src/resizeDecorator.cpp
     src/grayDecorator.cpp
     src/specialGrayDecorator.cpp
+    src/imageCache.cpp
     src/featureContainer.cpp
+    src/featureCache.cpp
+    src/descriptorCache.cpp
     src/unknownFeatureType.cpp
 )
 

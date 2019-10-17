@@ -4,6 +4,8 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <opencv2/core.hpp>
 
+#include "io.h"
+
 namespace cereal
 {
 template<class Archive>

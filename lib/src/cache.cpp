@@ -7,11 +7,12 @@ constexpr std::size_t ceil(std::size_t n, std::size_t k)
      return 1 + ((n - 1) / k);
 }
 
-Cache::Cache(std::size_t numElems, std::size_t maxChunkSize)
+Cache::Cache(std::size_t numElems, std::size_t maxChunkSize, bool keyFramesOnly)
     : mNumElems(numElems)
     , mMaxChunkSize(maxChunkSize ? maxChunkSize : numElems)
     , mNumChunks(ceil(mNumElems, mMaxChunkSize))
     , mRemainder(mNumElems % mMaxChunkSize)
+    , mKeyFramesOnly(keyFramesOnly)
 {
 }
 
@@ -35,5 +36,4 @@ std::pair<std::size_t, std::size_t> Cache::getChunkBounds(std::size_t chunkIdx) 
     auto start = chunkIdx * getChunkSize(chunkIdx - 1);
     return {start, start + getChunkSize(chunkIdx)};
 }
-
 } // namespace ht

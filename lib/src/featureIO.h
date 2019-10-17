@@ -5,6 +5,8 @@
 #include <cereal/types/vector.hpp>
 #include <opencv2/features2d.hpp>
 
+#include "io.h"
+
 namespace cereal
 {
 template<class Archive>

@@ -12,9 +12,9 @@ ResizeDecorator::ResizeDecorator(double scaleX, double scaleY,
 {
 }
 
-cv::Mat ResizeDecorator::at(std::size_t idx) const
+cv::Mat ResizeDecorator::at(std::size_t idx, bool isKeyFrame) const
 {
-    cv::Mat mat = BaseDecorator::at(idx);
+    cv::Mat mat = BaseDecorator::at(idx, isKeyFrame);
 
     cv::Mat resizedMat;
     cv::resize(mat, resizedMat, cv::Size(), mScaleX, mScaleY,

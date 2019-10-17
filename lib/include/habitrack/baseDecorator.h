@@ -11,7 +11,7 @@ public:
     BaseDecorator(std::shared_ptr<ImageContainer> baseContainer);
     virtual ~BaseDecorator();
 
-    virtual cv::Mat at(std::size_t idx) const override;
+    virtual cv::Mat at(std::size_t idx, bool isKeyFrame) const override;
 private:
     std::shared_ptr<ImageContainer> mBaseContainer;
 };

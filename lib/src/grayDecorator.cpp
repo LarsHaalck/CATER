@@ -10,9 +10,9 @@ GrayDecorator::GrayDecorator(std::shared_ptr<ImageContainer> baseContainer)
 {
 }
 
-cv::Mat GrayDecorator::at(std::size_t idx) const
+cv::Mat GrayDecorator::at(std::size_t idx, bool isKeyFrame) const
 {
-    cv::Mat mat = BaseDecorator::at(idx);
+    cv::Mat mat = BaseDecorator::at(idx, isKeyFrame);
     if (mat.channels() != 3)
         return mat;
 

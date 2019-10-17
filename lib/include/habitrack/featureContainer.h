@@ -5,6 +5,8 @@
 #include <vector>
 
 #include "habitrack/preferences.h"
+#include "habitrack/featureCache.h"
+#include "habitrack/descriptorCache.h"
 
 #include "featureIO.h"
 #include "descriptorIO.h"
@@ -31,14 +33,21 @@ enum class FtDesc : bool
 };
 }
 
-class FeatureContainer
+class FeatureContainer : public std::enable_shared_from_this<FeatureContainer>
 {
 public:
     FeatureContainer(std::shared_ptr<ImageContainer> imgContainer,
         const std::filesystem::path& ftDir, FeatureType type, std::size_t numFeatures);
 
     void compute(std::size_t cacheSize, bool overwrite = false);
-    std::vector<cv::KeyPoint> at(std::size_t idx);
+
+    std::vector<cv::KeyPoint> featureAt(std::size_t idx, bool useOnlyKeyFrames);
+    cv::Mat descriptorAt(std::size_t idx, bool useOnlyKeyFrames);
+
+    std::unique_ptr<FeatureCache> getFeatureCache(std::size_t maxChunkSize,
+        bool useOnlyKeyFrames = false);
+    std::unique_ptr<DescriptorCache> getDescriptorCache(std::size_t maxChunkSize,
+        bool useOnlyKeyFrames = false);
 private:
     FeatureType getTypeFromFile(const std::filesystem::path& file);
     std::filesystem::path getFileName(std::size_t idx, detail::FtDesc ftDesc);
@@ -54,9 +63,7 @@ private:
     std::filesystem::path mFtDir;
     FeatureType mType;
     std::size_t mNumFeatures;
-
     bool mIsComputed;
-
 };
 } // namespace ht
 

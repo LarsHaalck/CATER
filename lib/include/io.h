@@ -6,22 +6,15 @@
 
 namespace ht
 {
-/* template<typename T> */
-/* void write(const std::filesystem::path& file, const T& data) */
-/* { */
-/*     std::ofstream stream (file.string(), std::ios::out | std::ios::binary); */
-/*     if (!stream.is_open()) */
-/*     { */
-/*         throw std::filesystem::filesystem_error("Error opening file", */
-/*                 file, std::make_error_code(std::errc::io_error)); */
-/*     } */
-
-/*     { */
-/*         cereal::PortableBinaryOutputArchive archive(stream); */
-/*         archive(fts); */
-/*         stream.close(); */
-/*     } */
-/* } */
+template <typename T>
+inline void checkStream(const T& stream, const std::filesystem::path& file)
+{
+    if (!stream.is_open())
+    {
+        throw std::filesystem::filesystem_error("Error opening file",
+                file, std::make_error_code(std::errc::io_error));
+    }
+}
 } // namespace ht
 
 #endif // HABITRACK_IO_H

@@ -26,7 +26,7 @@ public:
     ImageContainer(const std::filesystem::path& path);
     virtual ~ImageContainer();
 
-    virtual cv::Mat at(std::size_t idx) const;
+    virtual cv::Mat at(std::size_t idx, bool isKeyFrame) const;
     std::size_t getNumImages() const;
 
     std::filesystem::path getFileName(std::size_t idx) const;
@@ -37,9 +37,14 @@ public:
         mData->mKeyFrames = std::forward<std::vector<std::size_t>>(keyIds);
         std::sort(
             std::begin(mData->mKeyFrames), std::end(mData->mKeyFrames));
+
+        assert(mData->mKeyFrames.front() >= 0
+            && mData->mKeyFrames.back() < mData->mImageFiles.size()
+            && "Key frames ids are out of range in markAsKeyFrame()");
     }
     std::vector<std::size_t> getKeyFrames() const;
     std::size_t getNumKeyFrames() const;
+    std::size_t getKeyFrameIdx(std::size_t idx) const;
 
     std::unique_ptr<ImageCache> getCache(std::size_t maxChunkSize,
         bool useOnlyKeyFrames = false);
