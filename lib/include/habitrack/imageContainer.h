@@ -6,6 +6,7 @@
 #include <opencv2/imgcodecs.hpp>
 
 #include "habitrack/imageCache.h"
+#include "habitrack/imageType.h"
 
 
 namespace ht
@@ -26,8 +27,7 @@ public:
     ImageContainer(const std::filesystem::path& path);
     virtual ~ImageContainer();
 
-    virtual cv::Mat at(std::size_t idx, bool isKeyFrame) const;
-    std::size_t getNumImages() const;
+    virtual cv::Mat at(std::size_t idx, ImageType imageType) const;
 
     std::filesystem::path getFileName(std::size_t idx) const;
 
@@ -43,11 +43,15 @@ public:
             && "Key frames ids are out of range in markAsKeyFrame()");
     }
     std::vector<std::size_t> getKeyFrames() const;
+
+    std::size_t getNumImages(ImageType imageType) const;
+    std::size_t getNumRegularImages() const;
     std::size_t getNumKeyFrames() const;
+    std::size_t getImageIdx(std::size_t idx, ImageType imageType) const;
     std::size_t getKeyFrameIdx(std::size_t idx) const;
 
     std::unique_ptr<ImageCache> getCache(std::size_t maxChunkSize,
-        bool useOnlyKeyFrames = false);
+        ImageType imageType);
 
     // decorator related methods
     std::shared_ptr<detail::ImageData> getData() const;

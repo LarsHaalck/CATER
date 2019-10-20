@@ -78,12 +78,11 @@ ImageContainer::~ImageContainer()
 }
 
 // TODO: imread type?
-cv::Mat ImageContainer::at(std::size_t idx, bool isKeyFrame) const
+cv::Mat ImageContainer::at(std::size_t idx, ImageType imageType) const
 {
-    assert(idx < mData->mImageFiles.size()
-        && "idx out of range in ImageContainer::at()");
+    assert(idx < getNumImages(imageType) && "idx out of range in ImageContainer::at()");
 
-    auto realIdx = isKeyFrame ? getKeyFrameIdx(idx) : idx;
+    auto realIdx = getImageIdx(idx, imageType);
     cv::Mat mat = cv::imread(
         mData->mImageFiles[realIdx], cv::ImreadModes::IMREAD_UNCHANGED);
 
@@ -93,10 +92,28 @@ cv::Mat ImageContainer::at(std::size_t idx, bool isKeyFrame) const
 
 }
 
-std::size_t ImageContainer::getNumImages() const { return mData->mImageFiles.size(); }
+std::size_t ImageContainer::getNumRegularImages() const
+{
+    return mData->mImageFiles.size();
+}
+
 std::size_t ImageContainer::getNumKeyFrames() const { return mData->mKeyFrames.size(); }
+std::size_t ImageContainer::getNumImages(ImageType imageType) const
+{
+    if (imageType == ImageType::KeyFrame)
+        return mData->mKeyFrames.size();
+    return mData->mImageFiles.size();
+}
+
 std::vector<std::size_t> ImageContainer::getKeyFrames() const { return mData->mKeyFrames; }
 std::shared_ptr<detail::ImageData> ImageContainer::getData() const { return mData; }
+
+std::size_t ImageContainer::getImageIdx(std::size_t idx, ImageType imageType) const
+{
+    if (imageType == ImageType::KeyFrame)
+        return getKeyFrameIdx(idx);
+    return idx;
+}
 
 std::size_t ImageContainer::getKeyFrameIdx(std::size_t idx) const
 {
@@ -113,12 +130,11 @@ std::filesystem::path ImageContainer::getFileName(std::size_t idx) const
 }
 
 std::unique_ptr<ImageCache> ImageContainer::getCache(
-    std::size_t maxChunkSize, bool useOnlyKeyFrames)
+    std::size_t maxChunkSize, ImageType imageType)
 {
-    auto numElems
-        = useOnlyKeyFrames ? mData->mKeyFrames.size() : mData->mImageFiles.size();
+    auto numElems = getNumImages(imageType);
     return std::make_unique<ImageCache>(
-        shared_from_this(), numElems, maxChunkSize, useOnlyKeyFrames);
+        shared_from_this(), numElems, maxChunkSize, imageType);
 }
 
 std::shared_ptr<ImageContainer> ImageContainer::resize(double scale)

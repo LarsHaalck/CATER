@@ -19,7 +19,7 @@ class DescriptorCache : public Cache
 {
 public:
     DescriptorCache(std::shared_ptr<FeatureContainer> container,
-        std::size_t numElems, std::size_t maxChunkSize, bool useOnlyKeyFrames);
+        std::size_t numElems, std::size_t maxChunkSize, ImageType imageType);
     std::vector<cv::Mat> getChunk(std::size_t idx);
 private:
     std::shared_ptr<FeatureContainer> mContainer;

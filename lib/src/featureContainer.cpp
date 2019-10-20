@@ -22,7 +22,8 @@ FeatureContainer::FeatureContainer(std::shared_ptr<ImageContainer> imgContainer,
     , mIsComputed(true)
 {
     // check if some file is missing or other type expected
-    for (std::size_t i = 0; i < mImgContainer->getNumImages(); i++)
+    // TODO: should I be able to instantiate the container on key frames only?
+    for (std::size_t i = 0; i < mImgContainer->getNumImages(ImageType::Regular); i++)
     {
         // only check for feature or descriptor because they are calculated together
         auto ftFile = getFileName(i, detail::FtDesc::Feature);
@@ -59,13 +60,13 @@ std::filesystem::path FeatureContainer::getFileName(
     return fullFile;
 }
 
-void FeatureContainer::compute(std::size_t cacheSize, bool overwrite)
+void FeatureContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
 {
-    if (mIsComputed && !overwrite)
+    if (mIsComputed && behavior == ComputeBehavior::Keep)
         return;
 
     auto ftPtr = getFtPtr();
-    auto imgCache = mImgContainer->gray()->getCache(cacheSize);
+    auto imgCache = mImgContainer->gray()->getCache(cacheSize, ImageType::Regular);
 
     ProgressBar bar(imgCache->getNumChunks());
     for (std::size_t i = 0; i < imgCache->getNumChunks(); i++)
@@ -82,6 +83,7 @@ void FeatureContainer::compute(std::size_t cacheSize, bool overwrite)
         bar.display();
         writeChunk(imgCache->getChunkBounds(i), fts, descs);
     }
+    mIsComputed = true;
 }
 
 void FeatureContainer::writeChunk(std::pair<std::size_t, std::size_t> bounds,
@@ -134,12 +136,12 @@ cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr()
     }
 }
 std::vector<cv::KeyPoint> FeatureContainer::featureAt(
-    std::size_t idx, bool useOnlyKeyFrames)
+    std::size_t idx, ImageType imageType)
 {
-    assert(idx <= mImgContainer->getNumImages()
-        && "idx out of range in FeatureContainer::featureAt()");
+    assert(idx < mImgContainer->getNumImages(imageType) && mIsComputed
+        && "idx out of range in FeatureContainer::featureAt() or not computed");
 
-    auto realIdx = useOnlyKeyFrames ? mImgContainer->getKeyFrameIdx(idx) : idx;
+    auto realIdx = mImgContainer->getImageIdx(idx, imageType);
     auto file = getFileName(realIdx, detail::FtDesc::Feature);
     std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
     checkStream(stream, file);
@@ -152,12 +154,12 @@ std::vector<cv::KeyPoint> FeatureContainer::featureAt(
     return fts;
 }
 
-cv::Mat FeatureContainer::descriptorAt(std::size_t idx, bool useOnlyKeyFrames)
+cv::Mat FeatureContainer::descriptorAt(std::size_t idx, ImageType imageType)
 {
-    assert(idx <= mImgContainer->getNumImages()
-        && "idx out of range in FeatureContainer::featureAt()");
+    assert(idx < mImgContainer->getNumImages(imageType) && mIsComputed
+        && "idx out of range in FeatureContainer::descriptorAt() or not computed");
 
-    auto realIdx = useOnlyKeyFrames ? mImgContainer->getKeyFrameIdx(idx) : idx;
+    auto realIdx = mImgContainer->getImageIdx(idx, imageType);
     auto file = getFileName(realIdx, detail::FtDesc::Descriptor);
     std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
     checkStream(stream, file);
@@ -171,19 +173,17 @@ cv::Mat FeatureContainer::descriptorAt(std::size_t idx, bool useOnlyKeyFrames)
 }
 
 std::unique_ptr<FeatureCache> FeatureContainer::getFeatureCache(
-    std::size_t maxChunkSize, bool useOnlyKeyFrames)
+    std::size_t maxChunkSize, ImageType imageType)
 {
-    auto numElems = useOnlyKeyFrames ? mImgContainer->getNumKeyFrames()
-                                     : mImgContainer->getNumImages();
+    auto numElems = mImgContainer->getNumImages(imageType);
     return std::make_unique<FeatureCache>(
-        shared_from_this(), numElems, maxChunkSize, useOnlyKeyFrames);
+        shared_from_this(), numElems, maxChunkSize, imageType);
 }
 std::unique_ptr<DescriptorCache> FeatureContainer::getDescriptorCache(
-    std::size_t maxChunkSize, bool useOnlyKeyFrames)
+    std::size_t maxChunkSize, ImageType imageType)
 {
-    auto numElems = useOnlyKeyFrames ? mImgContainer->getNumKeyFrames()
-                                     : mImgContainer->getNumImages();
+    auto numElems = mImgContainer->getNumImages(imageType);
     return std::make_unique<DescriptorCache>(
-        shared_from_this(), numElems, maxChunkSize, useOnlyKeyFrames);
+        shared_from_this(), numElems, maxChunkSize, imageType);
 }
 }

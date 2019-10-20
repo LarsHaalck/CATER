@@ -11,7 +11,7 @@ public:
     ResizeDecorator(double scaleX, double scaleY,
         std::shared_ptr<ImageContainer> baseContainer);
 
-    cv::Mat at(std::size_t idx, bool isKeyFrame) const override;
+    cv::Mat at(std::size_t idx, ImageType imageType) const override;
 private:
     double mScaleX;
     double mScaleY;

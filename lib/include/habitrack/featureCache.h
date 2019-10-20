@@ -19,7 +19,7 @@ class FeatureCache : public Cache
 {
 public:
     FeatureCache(std::shared_ptr<FeatureContainer> container,
-        std::size_t numElems, std::size_t maxChunkSize, bool useOnlyKeyFrames);
+        std::size_t numElems, std::size_t maxChunkSize, ImageType imageType);
     std::vector<std::vector<cv::KeyPoint>> getChunk(std::size_t idx);
 private:
     std::shared_ptr<FeatureContainer> mContainer;

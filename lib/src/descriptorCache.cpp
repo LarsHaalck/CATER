@@ -6,8 +6,8 @@
 namespace ht
 {
 DescriptorCache::DescriptorCache(std::shared_ptr<FeatureContainer> container,
-    std::size_t numElems, std::size_t maxChunkSize, bool keyFramesOnly)
-    : Cache(numElems, maxChunkSize, keyFramesOnly)
+    std::size_t numElems, std::size_t maxChunkSize, ImageType imageType)
+    : Cache(numElems, maxChunkSize, imageType)
     , mContainer(std::move(container))
 {
 }
@@ -20,7 +20,7 @@ std::vector<cv::Mat> DescriptorCache::getChunk(std::size_t idx)
 
     auto [lower, upper] = getChunkBounds(idx);
     for (std::size_t i = lower; i < upper; i++)
-        cacheBlock.push_back(mContainer->descriptorAt(i, mKeyFramesOnly));
+        cacheBlock.push_back(mContainer->descriptorAt(i, mImageType));
     return cacheBlock;
 }
 

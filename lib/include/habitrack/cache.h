@@ -4,12 +4,14 @@
 #include <cstddef>
 #include <tuple>
 
+#include "habitrack/imageType.h"
+
 namespace ht
 {
 class Cache
 {
 public:
-    Cache(std::size_t numElems, std::size_t maxChunkSize, bool keyFramesOnly = false);
+    Cache(std::size_t numElems, std::size_t maxChunkSize, ImageType imageType);
 
     std::size_t getNumElems() const;
     std::size_t getMaxChunkSize() const;
@@ -24,7 +26,7 @@ private:
     std::size_t mNumChunks;
     std::size_t mRemainder;
 protected:
-    bool mKeyFramesOnly;
+    ImageType mImageType;
 };
 } // namespace ht
 

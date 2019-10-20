@@ -4,9 +4,10 @@
 #include <filesystem>
 #include <vector>
 
-#include "habitrack/preferences.h"
 #include "habitrack/featureCache.h"
 #include "habitrack/descriptorCache.h"
+#include "habitrack/computeBehavior.h"
+#include "habitrack/imageType.h"
 
 #include "featureIO.h"
 #include "descriptorIO.h"
@@ -39,15 +40,15 @@ public:
     FeatureContainer(std::shared_ptr<ImageContainer> imgContainer,
         const std::filesystem::path& ftDir, FeatureType type, std::size_t numFeatures);
 
-    void compute(std::size_t cacheSize, bool overwrite = false);
+    void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep);
 
-    std::vector<cv::KeyPoint> featureAt(std::size_t idx, bool useOnlyKeyFrames);
-    cv::Mat descriptorAt(std::size_t idx, bool useOnlyKeyFrames);
+    std::vector<cv::KeyPoint> featureAt(std::size_t idx, ImageType imageType);
+    cv::Mat descriptorAt(std::size_t idx, ImageType imageType);
 
     std::unique_ptr<FeatureCache> getFeatureCache(std::size_t maxChunkSize,
-        bool useOnlyKeyFrames = false);
+        ImageType imageType);
     std::unique_ptr<DescriptorCache> getDescriptorCache(std::size_t maxChunkSize,
-        bool useOnlyKeyFrames = false);
+        ImageType imageType);
 private:
     FeatureType getTypeFromFile(const std::filesystem::path& file);
     std::filesystem::path getFileName(std::size_t idx, detail::FtDesc ftDesc);

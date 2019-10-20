@@ -7,12 +7,12 @@ constexpr std::size_t ceil(std::size_t n, std::size_t k)
      return 1 + ((n - 1) / k);
 }
 
-Cache::Cache(std::size_t numElems, std::size_t maxChunkSize, bool keyFramesOnly)
+Cache::Cache(std::size_t numElems, std::size_t maxChunkSize, ImageType imageType)
     : mNumElems(numElems)
     , mMaxChunkSize(maxChunkSize ? maxChunkSize : numElems)
     , mNumChunks(ceil(mNumElems, mMaxChunkSize))
     , mRemainder(mNumElems % mMaxChunkSize)
-    , mKeyFramesOnly(keyFramesOnly)
+    , mImageType(imageType)
 {
 }
 
