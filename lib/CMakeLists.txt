@@ -20,6 +20,7 @@ set(SOURCES
     src/featureCache.cpp
     src/descriptorCache.cpp
     src/unknownFeatureType.cpp
+    src/matchesContainer.cpp
 )
 
 

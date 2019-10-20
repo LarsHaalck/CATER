@@ -3,7 +3,7 @@
 
 #include "habitrack/imageContainer.h"
 #include "habitrack/featureContainer.h"
-#include "habitrack/resizeDecorator.h"
+#include "habitrack/matchesContainer.h"
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -16,27 +16,18 @@ int main()
     std::size_t cacheSize = 200;
 
     auto container = std::make_shared<ImageContainer>(
-        "/home/lars/data/ontogenyTest/vid3/imgs");
+        "/home/lars/data/ontogenyTest/vid1/imgs");
 
     auto ftContainer = std::make_shared<FeatureContainer>(
-        container, "/home/lars/data/ontogenyTest/vid3/fts", FeatureType::ORB, 5000);
-    ftContainer->compute(cacheSize, false);
+        container, "/home/lars/data/ontogenyTest/vid1/fts", FeatureType::ORB, 5000);
+    ftContainer->compute(cacheSize, ComputeBehavior::Keep);
 
-    std::cout << ftContainer->featureAt(0, false).size() << std::endl;
-    std::cout << ftContainer->descriptorAt(0, false).size() << std::endl;
+    /* std::cout << ftContainer->featureAt(0, ImageType::Regular).size() << std::endl; */
+    /* std::cout << ftContainer->descriptorAt(0, ImageType::Regular).size() << std::endl; */
 
-    /* ftContainer->getDescCache(); */
-
-    /* enum class MatchType */
-    /* { */
-    /*     Exhaustive, */
-    /*     MILD, */
-    /*     NN, */
-    /*     Windowed */
-    /* }; */
-    /* auto matchContainer = std::make_shared<MatchesContainer>( */
-    /*     ftContainer, "/home/lars/data/ontogenyTest/vid3/matches", MatchType::Exhaustive */
-    /*     50); */
+    auto matchContainer = std::make_shared<MatchesContainer>(
+        ftContainer, "/home/lars/data/ontogenyTest/vid3/matches", MatchType::Exhaustive,
+        50);
 
     /* matchContainer->compute(cacheSize, false); */
 
