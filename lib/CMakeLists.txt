@@ -21,6 +21,7 @@ set(SOURCES
     src/descriptorCache.cpp
     src/unknownFeatureType.cpp
     src/matchesContainer.cpp
+    src/unknownGeometricType.cpp
 )
 
 

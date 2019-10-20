@@ -1,6 +1,6 @@
 #include "habitrack/featureContainer.h"
 #include "habitrack/imageContainer.h"
-#include "habitrack/unknownFeatureType.h"
+#include "unknownFeatureType.h"
 #include "progressBar.h"
 
 #include <opencv2/highgui.hpp>

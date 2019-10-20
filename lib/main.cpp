@@ -27,7 +27,7 @@ int main()
 
     auto matchContainer = std::make_shared<MatchesContainer>(
         ftContainer, "/home/lars/data/ontogenyTest/vid3/matches", MatchType::Exhaustive,
-        50);
+        50, GeometricType::Putative);
 
     /* matchContainer->compute(cacheSize, false); */
 

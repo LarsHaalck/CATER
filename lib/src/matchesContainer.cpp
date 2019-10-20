@@ -1,86 +1,194 @@
 #include "habitrack/matchesContainer.h"
 #include "habitrack/featureContainer.h"
+#include "unknownGeometricType.h"
 #include "progressBar.h"
+
+#include "MILD/loop_closure_detector.h"
 
 #include <fstream>
 #include <iostream>
 
 namespace fs = std::filesystem;
 
+using g = ht::GeometricType;
+
 namespace ht
 {
 MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureContainer,
-    const fs::path& matchDir, MatchType type, std::size_t window)
+    const fs::path& matchDir, MatchType matchType, std::size_t window,
+    GeometricType geomType)
     : mFtContainer(std::move(featureContainer))
     , mMatchDir(matchDir)
-    , mType(type)
+    , mMatchType(matchType)
     , mWindow(window)
+    , mGeomType(geomType)
     , mIsComputed(true)
 {
-    /* // check if some file is missing or other type expected */
-    /* // TODO: should I be able to instantiate the container on key frames only? */
-    /* for (std::size_t i = 0; i < mImgContainer->getNumImages(ImageType::Regular); i++) */
-    /* { */
-    /*     // only check for feature or descriptor because they are calculated together */
-    /*     auto ftFile = getFileName(i, detail::FtDesc::Feature); */
-    /*     if (!fs::is_regular_file(ftFile) || getTypeFromFile(ftFile) != mType) */
-    /*     { */
-    /*         mIsComputed = false; */
-    /*         break; */
-    /*     } */
-    /* } */
+    if (static_cast<unsigned int>(mGeomType & g::Homography))
+    {
+        if (!checkIfExists(g::Homography))
+            mIsComputed = false;
+    }
+    if (static_cast<unsigned int>(mGeomType & g::Affinity))
+    {
+        if (!checkIfExists(g::Affinity))
+            mIsComputed = false;
+    }
+    if (static_cast<unsigned int>(mGeomType & g::Similarity))
+    {
+        if (!checkIfExists(g::Similarity))
+            mIsComputed = false;
+    }
+    if (static_cast<unsigned int>(mGeomType & g::Isometry))
+    {
+        if (!checkIfExists(g::Isometry))
+            mIsComputed = false;
+    }
 
-    /* if (!fs::exists(ftDir) || !fs::is_directory(ftDir)) */
-    /*     fs::create_directories(ftDir); */
+    if (!fs::exists(matchDir) || !fs::is_directory(matchDir))
+        fs::create_directories(matchDir);
 }
 
-/* FeatureType FeatureContainer::getTypeFromFile(const fs::path& file) */
-/* { */
-/*     auto type = file.stem().extension(); */
-/*     if (type == ".orb") */
-/*         return FeatureType::ORB; */
-/*     if (type == ".sift") */
-/*         return FeatureType::SIFT; */
+bool MatchesContainer::checkIfExists(GeometricType geomType)
+{
+    auto trafoFile = getFileName(detail::MatchTrafo::Trafo, geomType);
+    auto matchFile = getFileName(detail::MatchTrafo::Match, geomType);
+    if (!fs::is_regular_file(trafoFile) || !fs::is_regular_file(matchFile))
+        return false;
 
-/*     throw UnknownFeatureType(type); */
-/* } */
+    return true;
+}
 
-/* std::filesystem::path FeatureContainer::getFileName( */
-/*     std::size_t idx, detail::FtDesc ftDesc) */
-/* { */
-/*     auto stem = mImgContainer->getFileName(idx).stem(); */
-/*     auto fullFile = mFtDir / stem; */
-/*     fullFile += (ftDesc == detail::FtDesc::Feature) ? "-ft" : "-desc"; */
-/*     fullFile += (mType == FeatureType::ORB) ? ".orb" : ".sift"; */
-/*     fullFile += ".bin"; */
-/*     return fullFile; */
-/* } */
+GeometricType MatchesContainer::getTypeFromFile(const fs::path& file)
+{
+    auto type = file.stem().extension();
+    if (type == ".put")
+        return GeometricType::Putative;
+    if (type == ".h")
+        return GeometricType::Homography;
+    if (type == ".a")
+        return GeometricType::Affinity;
+    if (type == ".s")
+        return GeometricType::Similarity;
+    if (type == ".i")
+        return GeometricType::Isometry;
 
-/* void FeatureContainer::compute(std::size_t cacheSize, ComputeBehavior behavior) */
-/* { */
-/*     if (mIsComputed && behavior == ComputeBehavior::Keep) */
-/*         return; */
+    throw UnknownGeometricType(type);
+}
 
-/*     auto ftPtr = getFtPtr(); */
-/*     auto imgCache = mImgContainer->gray()->getCache(cacheSize, ImageType::Regular); */
+std::filesystem::path MatchesContainer::getFileName(detail::MatchTrafo matchTrafo,
+    GeometricType geomType)
+{
+    auto fullFile = mMatchDir;
+    if (matchTrafo == detail::MatchTrafo::Match)
+        fullFile /= "matches";
+    else
+        fullFile /= "trafos";
 
-/*     ProgressBar bar(imgCache->getNumChunks()); */
-/*     for (std::size_t i = 0; i < imgCache->getNumChunks(); i++) */
-/*     { */
-/*         auto chunk = imgCache->getChunk(i); */
+    using g = GeometricType;
+    switch (geomType)
+    {
+        case g::Putative:
+            fullFile += ".put";
+            break;
+        case g::Homography:
+            fullFile += ".h";
+            break;
+        case g::Affinity:
+            fullFile += ".a";
+            break;
+        case g::Similarity:
+            fullFile += ".s";
+            break;
+        case g::Isometry:
+            fullFile += ".i";
+            break;
+        default:
+            throw UnknownGeometricType();
+    }
+    fullFile += ".bin";
+    return fullFile;
+}
 
-/*         std::vector<std::vector<cv::KeyPoint>> fts(imgCache->getChunkSize(i)); */
-/*         std::vector<cv::Mat> descs(imgCache->getChunkSize(i)); */
-/*         #pragma omp parallel for */
-/*         for (std::size_t j = 0; j < chunk.size(); j++) */
-/*             ftPtr->detectAndCompute(chunk[j], cv::Mat(), fts[j], descs[j]); */
+void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
+{
+    if (mIsComputed && behavior == ComputeBehavior::Keep)
+        return;
 
-/*         ++bar; */
-/*         bar.display(); */
-/*         writeChunk(imgCache->getChunkBounds(i), fts, descs); */
-/*     } */
-/*     mIsComputed = true; */
-/* } */
+    /* auto ftPtr = getFtPtr(); */
+    /* auto imgCache = mImgContainer->gray()->getCache(cacheSize, ImageType::Regular); */
+
+    /* ProgressBar bar(imgCache->getNumChunks()); */
+    /* for (std::size_t i = 0; i < imgCache->getNumChunks(); i++) */
+    /* { */
+    /*     auto chunk = imgCache->getChunk(i); */
+
+    /*     std::vector<std::vector<cv::KeyPoint>> fts(imgCache->getChunkSize(i)); */
+    /*     std::vector<cv::Mat> descs(imgCache->getChunkSize(i)); */
+    /*     #pragma omp parallel for */
+    /*     for (std::size_t j = 0; j < chunk.size(); j++) */
+    /*         ftPtr->detectAndCompute(chunk[j], cv::Mat(), fts[j], descs[j]); */
+
+    /*     ++bar; */
+    /*     bar.display(); */
+    /*     writeChunk(imgCache->getChunkBounds(i), fts, descs); */
+    /* } */
+    mIsComputed = true;
+}
+
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
+    std::size_t size)
+{
+    switch (mMatchType)
+    {
+        case MatchType::Exhaustive:
+            return getExhaustivePairList(size);
+        case MatchType::MILD:
+            return getMILDPairList(size);
+        case MatchType::Windowed:
+            return getWindowPairList(size);
+        default:
+            return {};
+
+    }
+}
+
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPairList(
+    std::size_t size)
+{
+    std::vector<std::pair<std::size_t, std::size_t>> pairList;
+    for (std::size_t i = 0; i < size; i++)
+    {
+        for (std::size_t j = i + 1; (j < i + mWindow) && (j < size); j++)
+        {
+            pairList.push_back(std::make_pair(i, j));
+        }
+    }
+    return pairList;
+}
+
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairList(
+    std::size_t size)
+{
+    // make orb feature container (sift does not work)
+    /* auto ftContainer = std::make_shared<FeatureContainer>(...); */
+
+    // insert descriptors into lcd
+}
+
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustivePairList(
+    std::size_t size)
+{
+    std::vector<std::pair<size_t, size_t>> pairList;
+    for (size_t i = 0; i < size; i++)
+    {
+        for (size_t j = i + 1; j < size; j++)
+        {
+            pairList.push_back(std::make_pair(i, j));
+        }
+    }
+    return pairList;
+}
 
 /* void FeatureContainer::writeChunk(std::pair<std::size_t, std::size_t> bounds, */
 /*     const std::vector<std::vector<cv::KeyPoint>>& fts, const std::vector<cv::Mat>& descs) */

@@ -6,6 +6,7 @@
 
 #include "habitrack/computeBehavior.h"
 #include "habitrack/imageType.h"
+#include "habitrack/geometricType.h"
 
 
 namespace ht
@@ -19,15 +20,25 @@ enum class MatchType
 {
     Exhaustive,
     MILD,
-    NN,
+    /* NN, */
     Windowed
 };
+
+namespace detail
+{
+enum class MatchTrafo
+{
+    Match,
+    Trafo
+};
+} // namespace detail
 
 class MatchesContainer : public std::enable_shared_from_this<MatchesContainer>
 {
 public:
     MatchesContainer(std::shared_ptr<FeatureContainer> featureContainer,
-        const std::filesystem::path& matchDir, MatchType type, std::size_t window = 0);
+        const std::filesystem::path& matchDir, MatchType matchType, std::size_t window,
+        GeometricType geomType);
 
     void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep);
 
@@ -39,8 +50,16 @@ public:
     /* std::unique_ptr<DescriptorCache> getDescriptorCache(std::size_t maxChunkSize, */
     /*     ImageType imageType); */
 private:
-    /* FeatureType getTypeFromFile(const std::filesystem::path& file); */
-    /* std::filesystem::path getFileName(std::size_t idx, detail::FtDesc ftDesc); */
+    GeometricType getTypeFromFile(const std::filesystem::path& file);
+    std::filesystem::path getFileName(detail::MatchTrafo matchTrafo,
+        GeometricType geomType);
+    bool checkIfExists(GeometricType geomType);
+
+    std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size);
+    std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(std::size_t size);
+    std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList(std::size_t size);
+    std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(
+        std::size_t size);
     /* cv::Ptr<cv::Feature2D> getFtPtr(); */
     /* void writeChunk(std::pair<std::size_t, std::size_t> bounds, */
     /*     const std::vector<std::vector<cv::KeyPoint>>& fts, */
@@ -51,8 +70,9 @@ private:
 private:
     std::shared_ptr<FeatureContainer> mFtContainer;
     std::filesystem::path mMatchDir;
-    MatchType mType;
+    MatchType mMatchType;
     std::size_t mWindow;
+    GeometricType mGeomType;
     bool mIsComputed;
 };
 } // namespace ht
