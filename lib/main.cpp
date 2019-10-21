@@ -15,19 +15,25 @@ int main()
 {
     std::size_t cacheSize = 200;
 
-    auto container = std::make_shared<ImageContainer>(
-        "/home/lars/data/ontogenyTest/vid1/imgs");
+    auto imgContainer = std::make_shared<ImageContainer>(
+        "/home/lars/data/ontogenyTest/vid2/imgs");
 
     auto ftContainer = std::make_shared<FeatureContainer>(
-        container, "/home/lars/data/ontogenyTest/vid1/fts", FeatureType::ORB, 5000);
+        imgContainer, "/home/lars/data/ontogenyTest/vid2/fts", FeatureType::ORB, 5000);
     ftContainer->compute(cacheSize, ComputeBehavior::Keep);
+
+    /* auto keyFrameSelector = std::make_unique<KeyFrameSelector>( */
+    /*     imgContainer, ftContainer); */
+    /* keyFrameSelector->select( */
 
     /* std::cout << ftContainer->featureAt(0, ImageType::Regular).size() << std::endl; */
     /* std::cout << ftContainer->descriptorAt(0, ImageType::Regular).size() << std::endl; */
 
     auto matchContainer = std::make_shared<MatchesContainer>(
-        ftContainer, "/home/lars/data/ontogenyTest/vid3/matches", MatchType::Exhaustive,
-        50, GeometricType::Putative);
+        ftContainer, "/home/lars/data/ontogenyTest/vid3/matches", MatchType::MILD,
+        50, GeometricType::Homography | GeometricType::Similarity);
+
+    matchContainer->compute(cacheSize);
 
     /* matchContainer->compute(cacheSize, false); */
 

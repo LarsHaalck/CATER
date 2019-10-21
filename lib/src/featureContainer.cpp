@@ -186,4 +186,16 @@ std::unique_ptr<DescriptorCache> FeatureContainer::getDescriptorCache(
     return std::make_unique<DescriptorCache>(
         shared_from_this(), numElems, maxChunkSize, imageType);
 }
+
+std::shared_ptr<ImageContainer> FeatureContainer::getImageContainer() const
+{
+    return mImgContainer;
+}
+
+fs::path FeatureContainer::getFtDir() const
+{
+    return mFtDir;
+}
+
+
 }

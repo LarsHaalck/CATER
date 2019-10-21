@@ -49,6 +49,9 @@ public:
         ImageType imageType);
     std::unique_ptr<DescriptorCache> getDescriptorCache(std::size_t maxChunkSize,
         ImageType imageType);
+
+    std::shared_ptr<ImageContainer> getImageContainer() const;
+    std::filesystem::path getFtDir() const;
 private:
     FeatureType getTypeFromFile(const std::filesystem::path& file);
     std::filesystem::path getFileName(std::size_t idx, detail::FtDesc ftDesc);

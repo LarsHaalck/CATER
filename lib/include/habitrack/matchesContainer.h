@@ -55,11 +55,13 @@ private:
         GeometricType geomType);
     bool checkIfExists(GeometricType geomType);
 
+    void getPutativeMatches(std::size_t cacheSize, ComputeBehavior behavior);
     std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size);
     std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(std::size_t size);
     std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList(std::size_t size);
     std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(
         std::size_t size);
+
     /* cv::Ptr<cv::Feature2D> getFtPtr(); */
     /* void writeChunk(std::pair<std::size_t, std::size_t> bounds, */
     /*     const std::vector<std::vector<cv::KeyPoint>>& fts, */

@@ -1,14 +1,16 @@
 #include "habitrack/matchesContainer.h"
 #include "habitrack/featureContainer.h"
+#include "habitrack/imageContainer.h"
+
 #include "unknownGeometricType.h"
 #include "progressBar.h"
 
 #include "MILD/loop_closure_detector.h"
+#include "MILD/BayesianFilter.hpp"
 
 #include <fstream>
 #include <iostream>
 
-#include <Eigen/Dense>
 
 namespace fs = std::filesystem;
 
@@ -117,6 +119,8 @@ void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
     if (mIsComputed && behavior == ComputeBehavior::Keep)
         return;
 
+    getPutativeMatches(cacheSize, behavior);
+
     /* auto ftPtr = getFtPtr(); */
     /* auto imgCache = mImgContainer->gray()->getCache(cacheSize, ImageType::Regular); */
 
@@ -136,6 +140,72 @@ void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
     /*     writeChunk(imgCache->getChunkBounds(i), fts, descs); */
     /* } */
     mIsComputed = true;
+}
+
+void MatchesContainer::getPutativeMatches(std::size_t cacheSize, ComputeBehavior behavior)
+{
+    auto descCache = mFtContainer->getDescriptorCache(cacheSize, ImageType::KeyFrame);
+    auto pairList = getPairList(cacheSize);
+
+    /* DescriptorReader descReader(mImgFolder, mTxtFile, mFtDir); */
+    /* MatchesWriter matchesWriter(mFtDir, GeometricType::Putative); */
+
+    /* auto pairList = getPairList(descReader.numImages()); */
+    /* std::sort(std::begin(pairList), std::end(pairList)); */
+    /* auto descMatcher = getMatcher(); */
+
+    /* std::cout << "Putative matching..." << std::endl; */
+    /* tqdm bar; */
+    /* size_t count = 0; */
+
+    /* size_t cacheSize = (mCacheSize) ? mCacheSize : pairList.size(); */
+    /* for (size_t i = 0; i < (pairList.size() + cacheSize - 1) / cacheSize; i++) */
+    /* { */
+    /*     size_t start = i * cacheSize; */
+    /*     size_t end = std::min((i + 1) * cacheSize, pairList.size()); */
+
+    /*     std::vector<cv::Mat> descs; */
+    /*     descs.reserve(2 * cacheSize); */
+
+    /*     for (size_t k = start; k < end; k++) */
+    /*     { */
+    /*         auto pair = pairList[k]; */
+    /*         descs.push_back(descReader.getDescriptors(pair.first)); */
+    /*         descs.push_back(descReader.getDescriptors(pair.second)); */
+    /*     } */
+
+    /*     // opencv uses parallelization internally */
+    /*     // openmp for loop is not necessary and in this case even performance hindering */
+    /*     #pragma omp parallel for schedule(static) */
+    /*     for (size_t k = start; k < end; k++) */
+    /*     { */
+    /*         auto pair = pairList[k]; */
+    /*         size_t idI = pair.first; */
+    /*         size_t idJ = pair.second; */
+
+    /*         const auto& descI = descs[2 * (k - start)]; */
+    /*         const auto& descJ = descs[2 * (k - start) + 1]; */
+
+    /*         /1* std::cout << descI.size() << descJ.size() << descI.type() << std::endl; *1/ */
+    /*         auto currMatches = match(descMatcher, descI, descJ); */
+    /*         if (mCheckSymmetry) */
+    /*         { */
+    /*             auto currMatches1 = match(descMatcher, descJ, descI); */
+    /*             currMatches = keepSymmetricMatches(currMatches, currMatches1); */
+    /*         } */
+
+    /*         #pragma omp critical */
+    /*         { */
+    /*             /1* blabla += currMatches.size(); *1/ */
+    /*             matchesWriter.writeMatches(idI, idJ, std::move(currMatches)); */
+    /*             /1* std::cout << blabla << std::endl; *1/ */
+    /*             /1* count ++; *1/ */
+    /*             /1* if (count % 1000 == 0) *1/ */
+    /*             /1*     std::cout << count << " / " << pairList.size() << std::endl; *1/ */
+    /*             bar.progress(count++, pairList.size()); */
+    /*         } */
+    /*     } */
+    /* } */
 }
 
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
@@ -172,11 +242,34 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPair
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairList(
     std::size_t size)
 {
+    std::cout << "Using MILD to get possible image pairs" << std::endl;
     // make orb feature container (sift does not work)
-    /* auto ftContainer = std::make_shared<FeatureContainer>(...); */
+    auto ftContainer = std::make_shared<FeatureContainer>(
+        mFtContainer->getImageContainer(), mFtContainer->getFtDir(), FeatureType::ORB,
+        5000);
+
+    MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0);
+    MILD::BayesianFilter filter(0.6, 4, 4, 60);
+    ProgressBar bar(ftContainer->getImageContainer()->getNumRegularImages());
+
+    Eigen::VectorXf prevVisitProb(1);
+    prevVisitProb << 0.1;
+    std::vector<Eigen::VectorXf> prevVisitFlag;
+
+    for (std::size_t i = 0; i < ftContainer->getImageContainer()->getNumRegularImages(); i++)
+    {
+        auto desc = ftContainer->descriptorAt(i, ImageType::Regular);
+        std::vector<float> simScore;
+        lcd.insert_and_query_database(desc, simScore);
+
+        filter.filter(simScore, prevVisitProb, prevVisitFlag);
+
+        ++bar;
+        bar.display();
+    }
 
     // insert descriptors into lcd
-    
+
 
     return {};
 }

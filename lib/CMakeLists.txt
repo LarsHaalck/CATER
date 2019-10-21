@@ -3,7 +3,7 @@
 ###########################################################################
 add_subdirectory(external/cereal)
 add_subdirectory(external/mild)
-add_subdirectory(external/eigen-git-mirror)
+# add_subdirectory(external/eigen-git-mirror)
 
 ###########################################################################
 #                                FILES                                    #
@@ -38,7 +38,10 @@ target_include_directories(${LIB_NAME}
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_include_directories(${LIB_NAME} SYSTEM PRIVATE ${EIGEN_INCLUDE_DIR})
+
+# TODO: link agains eigen::eigen later
+# this is only for prototyping because of Eigen warnings
+target_include_directories(${LIB_NAME} SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIRS})
 
 target_link_libraries(${LIB_NAME}
     opencv_core
