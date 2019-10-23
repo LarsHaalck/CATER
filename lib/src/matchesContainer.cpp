@@ -153,7 +153,7 @@ Matches MatchesContainer::putMatch(cv::Ptr<cv::DescriptorMatcher> descMatcher,
     std::vector<std::vector<cv::DMatch>> knnMatches;
     descMatcher->knnMatch(descI, descJ, knnMatches, 2);
 
-    for (size_t i = 0; i < knnMatches.size(); ++i)
+    for (std::size_t i = 0; i < knnMatches.size(); ++i)
     {
         if (knnMatches[i].size() < 2)
             continue;

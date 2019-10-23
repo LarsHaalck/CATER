@@ -21,6 +21,7 @@ public:
     }
 
     void operator++() { mTicks++; }
+    ProgressBar& operator+=(int inc) { mTicks += inc; return *this; }
 
     void display() const
     {
@@ -57,6 +58,7 @@ public:
     {
         if (!mIsFinished)
         {
+            mTicks += mTotalTicks - mTicks;
             display();
             std::cout << std::endl;
             mIsFinished = true;

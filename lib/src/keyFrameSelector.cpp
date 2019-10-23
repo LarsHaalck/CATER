@@ -2,6 +2,8 @@
 #include "habitrack/featureContainer.h"
 #include "habitrack/matchesContainer.h"
 
+#include "progressBar.h"
+
 #ifdef _OPENMP
    #include <omp.h>
 #else
@@ -23,23 +25,17 @@ KeyFrameSelector::KeyFrameSelector(std::shared_ptr<FeatureContainer> ftContainer
 std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
 {
     const auto [low, high] = getRealLowHigh(relLow, relHigh);
-    std::cout << "low: " << low << ", high: " << high << std::endl;
-
     std::vector<std::size_t> keyFrames{};
 
     std::size_t currView = 0;
     keyFrames.push_back(currView);
 
-    // TODO replace with progress
-    /* std::cout << 0 << "/" << mFtContainer->getNumImgs() - 1 << std::endl; */
-
-
+    std::cout << "Selecting key frames..." << std::endl;
+    ProgressBar bar(mFtContainer->getNumImgs());
     // find next keyframe until all framges have been processed
-    while (currView < mFtContainer->getNumImgs()) // -1??? TODO
+    while (currView < mFtContainer->getNumImgs()) 
     {
-        std::cout << "Current key frame: " << currView << std::endl;
-
-        std::size_t remainImgs = mFtContainer->getNumImgs() - currView;
+        std::size_t remainImgs = mFtContainer->getNumImgs() - currView - 1;
         std::vector<std::pair<float, std::size_t>> distOverlapVec;
         distOverlapVec.reserve(remainImgs);
 
@@ -69,8 +65,6 @@ std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
             for (const auto& pair : currDistOverlapVec)
             {
                 auto [shift, numFts] = pair;
-                /* std::cout << shift << ", " << numFts << std::endl; */
-                std::cout << shift << "\n" << numFts << std::endl;
                 if (numFts == 0)
                 {
                     if (warning)
@@ -91,14 +85,19 @@ std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
                 break;
         }
 
+        // only happens at the end of all frames
+        if (distOverlapVec.empty())
+            break;
 
         std::size_t offset = filterViews(distOverlapVec, low, high);
+
         // + 1 because ids in overlap vec are relative to first neighbor
         currView += offset + 1;
         keyFrames.push_back(currView);
-
-        /* std::cout << currView << "/" << mFtContainer->getNumImgs() - 1 << std::endl; */
+        bar += offset + 1; 
+        bar.display();
     }
+    bar.done();
 
     std::cout << "Keeping: " << keyFrames.size() << " of " << mFtContainer->getNumImgs()
         << " files. " << std::endl;
@@ -122,43 +121,33 @@ std::pair<float, float> KeyFrameSelector::getRealLowHigh(float low, float high) 
 std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
     std::size_t idI, std::size_t idJ) const
 {
-    // find putative matches between features
-    /* auto descI = mDescReader->getDescriptors(idI); */
-    /* auto descJ = mDescReader->getDescriptors(idJ); */
-
     auto matcher = std::make_unique<MatchesContainer>(mFtContainer,
         "/home/lars/data/ontogenyTest/vid2/kfs", MatchType::Manual, 0,
-        GeometricType::Similarity);
+        GeometricType::Homography);
 
     auto ftsI = mFtContainer->featureAt(idI);
     auto ftsJ = mFtContainer->featureAt(idJ);
     auto [trafos, matches] = matcher->compute(idI, idJ);
 
-    auto trafo = trafos[1];
+    // skip putative matches and empty trafo
+    auto trafo = trafos[1]; 
     auto geomMatches = matches[1];
-
 
     std::vector<float> distances;
     std::vector<cv::Point2f> srcFiltered, dstFiltered;
     for (std::size_t i = 0; i < geomMatches.size(); i++)
     {
         auto ptI = ftsI[geomMatches[i].queryIdx].pt;
-        auto ptJ = ftsI[geomMatches[i].trainIdx].pt;
+        auto ptJ = ftsJ[geomMatches[i].trainIdx].pt;
 
         distances.push_back(l2Dist(ptI, ptJ));
         srcFiltered.push_back(ptI);
         dstFiltered.push_back(ptJ);
     }
 
-    /* std::cout << "-------------------------------------------------" << std::endl; */
-    /* std::cout << "Trafo: " << trafo << std::endl; */
-    /* std::cout << srcFiltered.size() << ", " << dstFiltered.size() << std::endl; */
-    double reprojError = calcReprojError(srcFiltered, dstFiltered, trafo);
-    std::cout << reprojError << std::endl;
-    /* std::cout << "-------------------------------------------------" << std::endl; */
-
-    /* if (srcFiltered.size() < 10) */
-    /*     return std::make_pair(0.0f, 0); */
+    /* double reprojError = calcReprojError(srcFiltered, dstFiltered, trafo); */
+    if (srcFiltered.size() < 10)
+        return std::make_pair(0.0f, 0);
 
     return std::make_pair(getMedian(distances), distances.size());
 
@@ -176,7 +165,6 @@ double KeyFrameSelector::calcReprojError(const std::vector<cv::Point2f>& ptsSrc,
     else
         transTrafo = trafo;
 
-    /* std::cout << transTrafo << std::endl; */
     std::vector<cv::Point2f> transSrc;
     cv::perspectiveTransform(ptsSrc, transSrc, transTrafo);
 
@@ -191,17 +179,13 @@ std::size_t KeyFrameSelector::filterViews(
     const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low,
     float high)
 {
-
-    /* for (auto elem: distOverlapVec) */
-    /*     std::cout << elem.first << ", " << elem.second << std::endl; */
-
     auto maxView = std::max_element(std::begin(distOverlapVec), std::end(distOverlapVec),
         [&](const auto& lhs, const auto& rhs) {
             return compareMaxOverlap(lhs, rhs, low, high);
         });
 
-    if (maxView == std::end(distOverlapVec))
-        std::cout << "should not happen" << std::endl;
+    /* if (maxView == std::end(distOverlapVec)) */
+    /*     std::cout << "should not happen" << std::endl; */
 
     return static_cast<std::size_t>(
         std::distance(std::begin(distOverlapVec), maxView));
@@ -210,7 +194,6 @@ std::size_t KeyFrameSelector::filterViews(
 bool KeyFrameSelector::compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
     const std::pair<float, std::size_t>& rhs, float low, float high) const
 {
-    /* return (lhs.first * lhs.second) < (rhs.first * rhs.second); */
     auto isInRange = [low, high](const auto& pair) -> bool {
         return ((pair.first >= low) && (pair.first <= high));
     };

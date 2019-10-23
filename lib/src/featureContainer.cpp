@@ -61,11 +61,15 @@ std::filesystem::path FeatureContainer::getFileName(
 void FeatureContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
 {
     if (mIsComputed && behavior == ComputeBehavior::Keep)
+    {
+        std::cout << "Skipping Feature Computation..." << std::endl;
         return;
+    }
 
     auto ftPtr = getFtPtr();
     auto imgCache = mImgContainer->gray()->getCache(cacheSize);
 
+    std::cout << "Computing Features..." << std::endl;
     ProgressBar bar(imgCache->getNumChunks());
     for (std::size_t i = 0; i < imgCache->getNumChunks(); i++)
     {
