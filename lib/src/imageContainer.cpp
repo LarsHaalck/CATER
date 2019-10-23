@@ -36,8 +36,7 @@ ImageContainer::ImageContainer(const fs::path& path)
     std::sort(std::begin(mData->mImageFiles), std::end(mData->mImageFiles));
 
     auto testImg = at(0);
-    mData->mHeight = testImg.rows;
-    mData->mWidth = testImg.cols;
+    mData->mImgSize = testImg.size();
 }
 
 void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
@@ -112,7 +111,7 @@ std::unique_ptr<ImageCache> ImageContainer::getCache(
 
 cv::Size ImageContainer::getImgSize() const
 {
-    return cv::Size(mData->mWidth, mData->mHeight);
+    return mData->mImgSize;
 }
 
 std::shared_ptr<detail::ImageData> ImageContainer::getData() const { return mData; }

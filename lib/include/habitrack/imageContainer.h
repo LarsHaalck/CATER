@@ -17,8 +17,7 @@ namespace detail
     struct ImageData
     {
         std::vector<std::string> mImageFiles; // holds filenames for all images
-        std::size_t mHeight;
-        std::size_t mWidth;
+        cv::Size mImgSize;
     };
 
 } // namespace detail

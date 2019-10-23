@@ -11,7 +11,7 @@
 
 #include <fstream>
 #include <iostream>
-
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
@@ -117,12 +117,12 @@ std::filesystem::path MatchesContainer::getFileName(detail::MatchTrafo matchTraf
     return fullFile;
 }
 
-/* void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior) */
-/* { */
-    /* if (mIsComputed && behavior == ComputeBehavior::Keep) */
-    /*     return; */
+void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
+{
+    if (mIsComputed && behavior == ComputeBehavior::Keep)
+        return;
 
-    /* getPutativeMatches(cacheSize, behavior); */
+    matches = getPutativeMatches(cacheSize, behavior);
 
     /* auto ftPtr = getFtPtr(); */
     /* auto imgCache = mImgContainer->gray()->getCache(cacheSize, ImageType::Regular); */
@@ -143,7 +143,7 @@ std::filesystem::path MatchesContainer::getFileName(detail::MatchTrafo matchTraf
     /*     writeChunk(imgCache->getChunkBounds(i), fts, descs); */
     /* } */
     /* mIsComputed = true; */
-/* } */
+}
 
 
 Matches MatchesContainer::putMatch(cv::Ptr<cv::DescriptorMatcher> descMatcher,
@@ -364,105 +364,96 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskHomography
     return std::make_pair(mask, mat);
 }
 
-/* void MatchesContainer::getPutativeMatches(std::size_t cacheSize, ComputeBehavior behavior) */
-/* { */
-    /* if (mMatchType == MatchType::Manual) */
-    /*     return; */
+PairWiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize,
+    ComputeBehavior behavior)
+{
+    if (mMatchType == MatchType::Manual)
+        return;
 
-    /* auto descCache = mFtContainer->getDescriptorCache(cacheSize); */
-    /* auto pairList = getPairList(cacheSize); */
+    auto pairList = getPairList(cacheSize);
+    std::sort(std::begin(pairList), std::end(pairList));
+    auto descCache = mFtContainer->getPairwiseDescriptorCache(cacheSize, pairList);
+    auto descMatcher = getMatcher();
 
-    /* DescriptorReader descReader(mImgFolder, mTxtFile, mFtDir); */
-    /* MatchesWriter matchesWriter(mFtDir, GeometricType::Putative); */
+    PairWiseMatches matches;
+    for (std::size_t i = 0; i < descCache->getNumChunks(); i++)
+    {
+        auto chunk = descCache->getChunk(i);
+        auto [lower, _] = descCache->getChunkBounds(i);
 
-    /* auto pairList = getPairList(descReader.numImages()); */
-    /* std::sort(std::begin(pairList), std::end(pairList)); */
-    /* auto descMatcher = getMatcher(); */
+        #pragma omp parallel for
+        for (std::size_t k = 0; k < descCache->getChunkSize(i); k++)
+        {
+            auto currPair = pairList[lower + k];
+            auto descI = chunk[currPair.first];
+            auto descJ = chunk[currPair.second];
 
-    /* std::cout << "Putative matching..." << std::endl; */
-    /* tqdm bar; */
-    /* size_t count = 0; */
+            auto currMatches = putMatch(descMatcher, descI, descJ);
+            if (!currMatches.empty())
+            {
+                #pragma omp critical
+                matches.insert(std::make_pair(currPair, std::move(currMatches)));
+            }
+        }
+    }
+    writeMatches(matches, GeometricType::Putative);
+}
 
-    /* size_t cacheSize = (mCacheSize) ? mCacheSize : pairList.size(); */
-    /* for (size_t i = 0; i < (pairList.size() + cacheSize - 1) / cacheSize; i++) */
-    /* { */
-    /*     size_t start = i * cacheSize; */
-    /*     size_t end = std::min((i + 1) * cacheSize, pairList.size()); */
 
-    /*     std::vector<cv::Mat> descs; */
-    /*     descs.reserve(2 * cacheSize); */
+void MatchesContainer::writeMatches(const PairWiseMatches& matches, 
+    GeometricType type) const
+{
+    std::ofstream stream("matches.put.bin", std::ios::out | std::ios::binary);
+    checkStream(stream);
+    {
+        cereal::PortableBinaryOutputArchive archive(stream);
+        archive(matches);
+    }
+}
 
-    /*     for (size_t k = start; k < end; k++) */
-    /*     { */
-    /*         auto pair = pairList[k]; */
-    /*         descs.push_back(descReader.getDescriptors(pair.first)); */
-    /*         descs.push_back(descReader.getDescriptors(pair.second)); */
-    /*     } */
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
+    std::size_t size)
+{
+    switch (mMatchType)
+    {
+        case MatchType::Exhaustive:
+            return getExhaustivePairList(size);
+        case MatchType::MILD:
+            return {};
+            /* return getMILDPairList(size); */
+        case MatchType::Windowed:
+            return getWindowPairList(size);
+        default:
+            return {};
 
-    /*     // opencv uses parallelization internally */
-    /*     // openmp for loop is not necessary and in this case even performance hindering */
-    /*     #pragma omp parallel for schedule(static) */
-    /*     for (size_t k = start; k < end; k++) */
-    /*     { */
-    /*         auto pair = pairList[k]; */
-    /*         size_t idI = pair.first; */
-    /*         size_t idJ = pair.second; */
+    }
+}
 
-    /*         const auto& descI = descs[2 * (k - start)]; */
-    /*         const auto& descJ = descs[2 * (k - start) + 1]; */
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPairList(
+    std::size_t size)
+{
+    std::vector<std::pair<std::size_t, std::size_t>> pairList;
+    for (std::size_t i = 0; i < size; i++)
+    {
+        for (std::size_t j = i + 1; (j < i + mWindow) && (j < size); j++)
+        {
+            pairList.push_back(std::make_pair(i, j));
+        }
+    }
+    return pairList;
+}
 
-    /*         /1* std::cout << descI.size() << descJ.size() << descI.type() << std::endl; *1/ */
-    /*         auto currMatches = match(descMatcher, descI, descJ); */
-    /*         if (mCheckSymmetry) */
-    /*         { */
-    /*             auto currMatches1 = match(descMatcher, descJ, descI); */
-    /*             currMatches = keepSymmetricMatches(currMatches, currMatches1); */
-    /*         } */
-
-    /*         #pragma omp critical */
-    /*         { */
-    /*             /1* blabla += currMatches.size(); *1/ */
-    /*             matchesWriter.writeMatches(idI, idJ, std::move(currMatches)); */
-    /*             /1* std::cout << blabla << std::endl; *1/ */
-    /*             /1* count ++; *1/ */
-    /*             /1* if (count % 1000 == 0) *1/ */
-    /*             /1*     std::cout << count << " / " << pairList.size() << std::endl; *1/ */
-    /*             bar.progress(count++, pairList.size()); */
-    /*         } */
-    /*     } */
-    /* } */
-/* } */
-
-/* std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList( */
-/*     std::size_t size) */
-/* { */
-/*     switch (mMatchType) */
-/*     { */
-/*         case MatchType::Exhaustive: */
-/*             return getExhaustivePairList(size); */
-/*         case MatchType::MILD: */
-/*             return getMILDPairList(size); */
-/*         case MatchType::Windowed: */
-/*             return getWindowPairList(size); */
-/*         default: */
-/*             return {}; */
-
-/*     } */
-/* } */
-
-/* std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPairList( */
-/*     std::size_t size) */
-/* { */
-/*     std::vector<std::pair<std::size_t, std::size_t>> pairList; */
-/*     for (std::size_t i = 0; i < size; i++) */
-/*     { */
-/*         for (std::size_t j = i + 1; (j < i + mWindow) && (j < size); j++) */
-/*         { */
-/*             pairList.push_back(std::make_pair(i, j)); */
-/*         } */
-/*     } */
-/*     return pairList; */
-/* } */
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustivePairList(
+    std::size_t size)
+{
+    std::vector<std::pair<size_t, size_t>> pairList;
+    for (size_t i = 0; i < size; i++)
+    {
+        for (size_t j = i + 1; j < size; j++)
+            pairList.push_back(std::make_pair(i, j));
+    }
+    return pairList;
+}
 
 /* std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairList( */
 /*     std::size_t size) */
@@ -498,20 +489,6 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskHomography
 
 /*     return {}; */
 /* } */
-
-/* std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustivePairList( */
-/*     std::size_t size) */
-/* { */
-/*     std::vector<std::pair<size_t, size_t>> pairList; */
-/*     for (size_t i = 0; i < size; i++) */
-/*     { */
-/*         for (size_t j = i + 1; j < size; j++) */
-/*             pairList.push_back(std::make_pair(i, j)); */
-/*     } */
-/*     return pairList; */
-/* } */
-
-
 /* GeometricType MatchesContainer::findNextBestModel(GeometricType currType) */
 /* { */
 /*     using g = GeometricType; */

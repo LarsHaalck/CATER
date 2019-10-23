@@ -17,9 +17,7 @@ namespace ht
 class KeyFrameSelector
 {
 public:
-    KeyFrameSelector(std::shared_ptr<FeatureContainer> ftContainer, std::size_t width,
-        std::size_t height);
-
+    KeyFrameSelector(std::shared_ptr<FeatureContainer> ftContainer);
     std::vector<std::size_t> compute(float low, float high);
 private:
     std::pair<float, float> getRealLowHigh(float low, float high) const;
@@ -65,10 +63,8 @@ private:
     }
 private:
     std::shared_ptr<FeatureContainer> mFtContainer;
-    int mWidth;
-    int mHeight;
+    cv::Size mImgSize;
     int mArea;
-
 };
 } // namespace ht
 #endif // HABITACK_KEY_FRAME_SELECTOR_H

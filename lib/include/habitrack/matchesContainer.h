@@ -2,13 +2,21 @@
 #define HABITRACK_MATCHES_CONTAINER_H
 
 #include <filesystem>
+#include <vector>
 #include <opencv2/core.hpp>
 #include <opencv2/features2d.hpp>
-#include "habitrack/isometry.h"
-#include <vector>
 
+#include "habitrack/isometry.h"
 #include "habitrack/computeBehavior.h"
 #include "habitrack/geometricType.h"
+#include "habitrack/imageContainer.h"
+
+#include "matchesIO.h"
+#include "pairHash.h"
+
+/* #include "habitrack/matchesCache.h" */
+/* #include "habitrack/trafoCache.h" */
+
 
 
 namespace ht
@@ -22,6 +30,7 @@ using Trafo = cv::Mat;
 using Trafos = std::vector<cv::Mat>;
 using Match = cv::DMatch;
 using Matches = std::vector<cv::DMatch>;
+using PairWiseMatches = std::unordered_map<std::pair<std::size_t, std::size_t>, Matches>;
 
 enum class MatchType
 {
@@ -48,29 +57,31 @@ public:
         const std::filesystem::path& matchDir, MatchType matchType, std::size_t window,
         GeometricType geomType);
 
-    /* void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep); */
+    void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep);
 
+
+    // for manual matching
     std::pair<Trafos, std::vector<Matches>> compute(std::size_t idxI, std::size_t idxJ);
 
-    /* std::vector<cv::KeyPoint> featureAt(std::size_t idx, ImageType imageType); */
-    /* cv::Mat descriptorAt(std::size_t idx, ImageType imageType); */
+    /* std::vector<cv::DMatch> matchesAt(ImgId idI, ImgId idj); */
+    /* cv::Mat trafoAt(ImgId idI, ImgId idj, GeometricType geomType); */
 
-    /* std::unique_ptr<FeatureCache> getFeatureCache(std::size_t maxChunkSize, */
-    /*     ImageType imageType); */
-    /* std::unique_ptr<DescriptorCache> getDescriptorCache(std::size_t maxChunkSize, */
-    /*     ImageType imageType); */
+    /* std::unique_ptr<MatchesCache> getMatchesCache(std::size_t maxChunkSize, */
+    /*     const ImgIds& ids = ImgIds()); */
+    /* std::unique_ptr<TrafoCache> getTrafoCache(std::size_t maxChunkSize, */
+    /*     const ImgIds& ids = ImgIds(); */
 private:
     GeometricType getTypeFromFile(const std::filesystem::path& file);
     std::filesystem::path getFileName(detail::MatchTrafo matchTrafo,
         GeometricType geomType);
     bool checkIfExists(GeometricType geomType);
 
-    /* void getPutativeMatches(std::size_t cacheSize, ComputeBehavior behavior); */
-    /* std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size); */
-    /* std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(std::size_t size); */
+    void getPutativeMatches(std::size_t cacheSize, ComputeBehavior behavior);
+    std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size);
+    std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(std::size_t size);
+    std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(
+        std::size_t size);
     /* std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList(std::size_t size); */
-    /* std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList( */
-    /*     std::size_t size); */
 
     cv::Ptr<cv::DescriptorMatcher> getMatcher();
     Matches putMatch(cv::Ptr<cv::DescriptorMatcher> descMatcher,

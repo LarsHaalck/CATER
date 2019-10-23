@@ -1,7 +1,7 @@
 #ifndef HABITRACK_RESIZE_DECORATOR_H
 #define HABITRACK_RESIZE_DECORATOR_H
 
-#include "habitrack/baseDecorator.h"
+#include "baseDecorator.h"
 
 namespace ht
 {

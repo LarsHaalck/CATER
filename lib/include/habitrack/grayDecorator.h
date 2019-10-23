@@ -1,7 +1,7 @@
 #ifndef HABITRACK_GRAY_DECORATOR_H
 #define HABITRACK_GRAY_DECORATOR_H
 
-#include "habitrack/baseDecorator.h"
+#include "baseDecorator.h"
 
 namespace ht
 {

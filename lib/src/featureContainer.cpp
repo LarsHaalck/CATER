@@ -17,6 +17,7 @@ FeatureContainer::FeatureContainer(std::shared_ptr<ImageContainer> imgContainer,
     , mType(type)
     , mNumFeatures(numFeatures)
     , mNumImgs(mImgContainer->getNumImgs())
+    , mImgSize(mImgContainer->getImgSize())
     , mIsComputed(true)
 {
     // check if some file is missing or other type expected
@@ -184,6 +185,13 @@ std::unique_ptr<DescriptorCache> FeatureContainer::getDescriptorCache(
     return std::make_unique<DescriptorCache>(
         shared_from_this(), mNumImgs, maxChunkSize, ids);
 }
+std::unique_ptr<PairwiseDescriptorCache> FeatureContainer::getPairwiseDescriptorCache(
+    std::size_t maxChunkSize,
+    const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
+{
+    return std::make_unique<PairwiseDescriptorCache>(
+        shared_from_this(), maxChunkSize, pairs);
+}
 
 std::shared_ptr<ImageContainer> FeatureContainer::getImageContainer() const
 {
@@ -192,6 +200,7 @@ std::shared_ptr<ImageContainer> FeatureContainer::getImageContainer() const
 
 fs::path FeatureContainer::getFtDir() const { return mFtDir; }
 std::size_t FeatureContainer::getNumImgs() const { return mNumImgs; }
+cv::Size FeatureContainer::getImgSize() const { return mImgSize; }
 FeatureType FeatureContainer::getFtType() const { return mType; }
 
 

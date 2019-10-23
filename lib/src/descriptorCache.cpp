@@ -1,8 +1,6 @@
 #include "habitrack/descriptorCache.h"
 #include "habitrack/featureContainer.h"
 
-#include <iostream>
-
 namespace ht
 {
 DescriptorCache::DescriptorCache(std::shared_ptr<FeatureContainer> container,

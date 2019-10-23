@@ -6,6 +6,7 @@
 #include "habitrack/imageContainer.h"
 #include "habitrack/featureCache.h"
 #include "habitrack/descriptorCache.h"
+#include "habitrack/pairwiseDescriptorCache.h"
 #include "habitrack/computeBehavior.h"
 #include "featureIO.h"
 #include "descriptorIO.h"
@@ -42,11 +43,14 @@ public:
         const ImgIds& ids = ImgIds());
     std::unique_ptr<DescriptorCache> getDescriptorCache(std::size_t maxChunkSize,
         const ImgIds& ids = ImgIds());
+    std::unique_ptr<PairwiseDescriptorCache> getPairwiseDescriptorCache(
+        std::size_t maxChunkSize,
+        const std::vector<std::pair<std::size_t, std::size_t>>& pairs);
 
     std::shared_ptr<ImageContainer> getImageContainer() const;
     std::filesystem::path getFtDir() const;
     std::size_t getNumImgs() const;
-
+    cv::Size getImgSize() const;
     FeatureType getFtType() const;
 private:
     FeatureType getTypeFromFile(const std::filesystem::path& file);
@@ -64,6 +68,7 @@ private:
     FeatureType mType;
     std::size_t mNumFeatures;
     std::size_t mNumImgs;
+    cv::Size mImgSize;
     bool mIsComputed;
 };
 } // namespace ht
