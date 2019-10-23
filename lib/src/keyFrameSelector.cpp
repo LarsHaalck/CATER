@@ -13,12 +13,10 @@
 
 namespace ht
 {
-KeyFrameSelector::KeyFrameSelector(std::shared_ptr<FeatureContainer> ftContainer,
-    std::size_t width, std::size_t height)
+KeyFrameSelector::KeyFrameSelector(std::shared_ptr<FeatureContainer> ftContainer)
     : mFtContainer(std::move(ftContainer))
-    , mWidth(width)
-    , mHeight(height)
-    , mArea(mWidth * mHeight)
+    , mImgSize(mFtContainer->getImgSize())
+    , mArea(mImgSize.area())
 {
 }
 
@@ -33,7 +31,7 @@ std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
     std::cout << "Selecting key frames..." << std::endl;
     ProgressBar bar(mFtContainer->getNumImgs());
     // find next keyframe until all framges have been processed
-    while (currView < mFtContainer->getNumImgs()) 
+    while (currView < mFtContainer->getNumImgs())
     {
         std::size_t remainImgs = mFtContainer->getNumImgs() - currView - 1;
         std::vector<std::pair<float, std::size_t>> distOverlapVec;
@@ -94,7 +92,7 @@ std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
         // + 1 because ids in overlap vec are relative to first neighbor
         currView += offset + 1;
         keyFrames.push_back(currView);
-        bar += offset + 1; 
+        bar += offset + 1;
         bar.display();
     }
     bar.done();
@@ -107,13 +105,15 @@ std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
 std::pair<float, float> KeyFrameSelector::getRealLowHigh(float low, float high) const
 {
     // get image sizes (in this setup all images have the same width and height
-    std::size_t minWH = std::min(mWidth, mHeight);
+    auto width = mImgSize.width;
+    auto height = mImgSize.height;
+    std::size_t minWH = std::min(width, height);
     float realLow = (low * minWH) * (low * minWH);
     float realHigh;
     if (high > 0)
         realHigh = (high * minWH) * (high * minWH);
     else // choose greatest possible value
-        realHigh = (mWidth * mWidth) + (mHeight * mHeight);
+        realHigh = (width * width) + (height * height);
 
     return std::make_pair(realLow, realHigh);
 }
@@ -121,16 +121,16 @@ std::pair<float, float> KeyFrameSelector::getRealLowHigh(float low, float high) 
 std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
     std::size_t idI, std::size_t idJ) const
 {
+    // TODO: store?????????
     auto matcher = std::make_unique<MatchesContainer>(mFtContainer,
-        "/home/lars/data/ontogenyTest/vid2/kfs", MatchType::Manual, 0,
-        GeometricType::Homography);
+        "", MatchType::Manual, 0, GeometricType::Homography);
 
     auto ftsI = mFtContainer->featureAt(idI);
     auto ftsJ = mFtContainer->featureAt(idJ);
     auto [trafos, matches] = matcher->compute(idI, idJ);
 
     // skip putative matches and empty trafo
-    auto trafo = trafos[1]; 
+    auto trafo = trafos[1];
     auto geomMatches = matches[1];
 
     std::vector<float> distances;

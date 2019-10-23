@@ -26,6 +26,8 @@ set(SOURCES
 
     src/matchesContainer.cpp
     src/unknownGeometricType.cpp
+    src/basePairwiseCache.cpp
+    src/pairwiseDescriptorCache.cpp
 
     src/keyFrameSelector.cpp
 
