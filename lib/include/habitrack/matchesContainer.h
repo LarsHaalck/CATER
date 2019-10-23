@@ -2,10 +2,12 @@
 #define HABITRACK_MATCHES_CONTAINER_H
 
 #include <filesystem>
+#include <opencv2/core.hpp>
+#include <opencv2/features2d.hpp>
+#include "habitrack/isometry.h"
 #include <vector>
 
 #include "habitrack/computeBehavior.h"
-#include "habitrack/imageType.h"
 #include "habitrack/geometricType.h"
 
 
@@ -16,12 +18,18 @@ namespace ht
 
 namespace ht
 {
+using Trafo = cv::Mat;
+using Trafos = std::vector<cv::Mat>;
+using Match = cv::DMatch;
+using Matches = std::vector<cv::DMatch>;
+
 enum class MatchType
 {
     Exhaustive,
     MILD,
     /* NN, */
-    Windowed
+    Windowed,
+    Manual
 };
 
 namespace detail
@@ -40,7 +48,9 @@ public:
         const std::filesystem::path& matchDir, MatchType matchType, std::size_t window,
         GeometricType geomType);
 
-    void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep);
+    /* void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep); */
+
+    std::pair<Trafos, std::vector<Matches>> compute(std::size_t idxI, std::size_t idxJ);
 
     /* std::vector<cv::KeyPoint> featureAt(std::size_t idx, ImageType imageType); */
     /* cv::Mat descriptorAt(std::size_t idx, ImageType imageType); */
@@ -55,12 +65,44 @@ private:
         GeometricType geomType);
     bool checkIfExists(GeometricType geomType);
 
-    void getPutativeMatches(std::size_t cacheSize, ComputeBehavior behavior);
-    std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size);
-    std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(std::size_t size);
-    std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList(std::size_t size);
-    std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(
-        std::size_t size);
+    /* void getPutativeMatches(std::size_t cacheSize, ComputeBehavior behavior); */
+    /* std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size); */
+    /* std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(std::size_t size); */
+    /* std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList(std::size_t size); */
+    /* std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList( */
+    /*     std::size_t size); */
+
+    cv::Ptr<cv::DescriptorMatcher> getMatcher();
+    Matches putMatch(cv::Ptr<cv::DescriptorMatcher> descMatcher,
+        const cv::Mat& descI, const cv::Mat& descJ);
+    std::pair<Trafo, Matches> geomMatch(const std::vector<cv::KeyPoint>& featI,
+        const std::vector<cv::KeyPoint>& featJ, GeometricType filterType,
+        const Matches& matches);
+    GeometricType findNextBestModel(GeometricType currType);
+
+    std::pair<std::vector<uchar>, cv::Mat> getInlierMask(
+        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst,
+        GeometricType type);
+    std::pair<std::vector<uchar>, cv::Mat> getInlierMaskIsometry(
+        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
+    std::pair<std::vector<uchar>, cv::Mat> getInlierMaskSimilarity(
+        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
+    std::pair<std::vector<uchar>, cv::Mat> getInlierMaskAffinity(
+        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
+    std::pair<std::vector<uchar>, cv::Mat> getInlierMaskHomography(
+        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
+
+    inline size_t getInlierCount(const std::vector<uchar>& mask)
+    {
+        size_t count = 0;
+        for (const auto id : mask)
+        {
+            if (id)
+                count++;
+        }
+        return count;
+
+    }
 
     /* cv::Ptr<cv::Feature2D> getFtPtr(); */
     /* void writeChunk(std::pair<std::size_t, std::size_t> bounds, */

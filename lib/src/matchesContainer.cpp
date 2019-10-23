@@ -1,6 +1,7 @@
 #include "habitrack/matchesContainer.h"
 #include "habitrack/featureContainer.h"
 #include "habitrack/imageContainer.h"
+#include "unknownFeatureType.h"
 
 #include "unknownGeometricType.h"
 #include "progressBar.h"
@@ -18,6 +19,8 @@ using g = ht::GeometricType;
 
 namespace ht
 {
+/* constexpr std::pair<Trafo, std::vector<uchar>> zeroMaskTrafoTuple */
+
 MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureContainer,
     const fs::path& matchDir, MatchType matchType, std::size_t window,
     GeometricType geomType)
@@ -114,12 +117,12 @@ std::filesystem::path MatchesContainer::getFileName(detail::MatchTrafo matchTraf
     return fullFile;
 }
 
-void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
-{
-    if (mIsComputed && behavior == ComputeBehavior::Keep)
-        return;
+/* void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior) */
+/* { */
+    /* if (mIsComputed && behavior == ComputeBehavior::Keep) */
+    /*     return; */
 
-    getPutativeMatches(cacheSize, behavior);
+    /* getPutativeMatches(cacheSize, behavior); */
 
     /* auto ftPtr = getFtPtr(); */
     /* auto imgCache = mImgContainer->gray()->getCache(cacheSize, ImageType::Regular); */
@@ -139,13 +142,235 @@ void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
     /*     bar.display(); */
     /*     writeChunk(imgCache->getChunkBounds(i), fts, descs); */
     /* } */
-    mIsComputed = true;
+    /* mIsComputed = true; */
+/* } */
+
+
+Matches MatchesContainer::putMatch(cv::Ptr<cv::DescriptorMatcher> descMatcher,
+    const cv::Mat& descI, const cv::Mat& descJ)
+{
+    std::vector<cv::DMatch> currMatches;
+    std::vector<std::vector<cv::DMatch>> knnMatches;
+    descMatcher->knnMatch(descI, descJ, knnMatches, 2);
+
+    for (size_t i = 0; i < knnMatches.size(); ++i)
+    {
+        if (knnMatches[i].size() < 2)
+            continue;
+
+        if (knnMatches[i][0].distance < 0.8 * knnMatches[i][1].distance)
+            currMatches.push_back(knnMatches[i][0]);
+    }
+
+    return currMatches;
 }
 
-void MatchesContainer::getPutativeMatches(std::size_t cacheSize, ComputeBehavior behavior)
+cv::Ptr<cv::DescriptorMatcher> MatchesContainer::getMatcher()
 {
-    auto descCache = mFtContainer->getDescriptorCache(cacheSize, ImageType::KeyFrame);
-    auto pairList = getPairList(cacheSize);
+    switch (mFtContainer->getFtType())
+    {
+        case FeatureType::ORB:
+            return cv::makePtr<cv::FlannBasedMatcher>(
+                cv::makePtr<cv::flann::LshIndexParams>(20, 10, 2));
+        case FeatureType::SIFT:
+            return cv::DescriptorMatcher::create(
+                cv::DescriptorMatcher::MatcherType::FLANNBASED);
+        default:
+            throw UnknownFeatureType("not orb or sift");
+    }
+}
+
+std::pair<Trafos, std::vector<Matches>> MatchesContainer::compute(
+    std::size_t idxI, std::size_t idxJ)
+{
+    auto descI = mFtContainer->descriptorAt(idxI);
+    auto descJ = mFtContainer->descriptorAt(idxJ);
+    auto descMatcher = getMatcher();
+
+    Trafos trafos;
+    std::vector<Matches> matches;
+    auto currMatches = putMatch(descMatcher, descI, descJ);
+    trafos.push_back(cv::Mat());
+    matches.push_back(currMatches);
+
+    auto hom = g::Homography;
+    auto aff = g::Affinity;
+    auto sim = g::Similarity;
+    auto iso = g::Isometry;
+    auto featI = mFtContainer->featureAt(idxI);
+    auto featJ = mFtContainer->featureAt(idxJ);
+    if (static_cast<unsigned int>(mGeomType & hom))
+    {
+        auto [trafo, geomMatches] = geomMatch(featI, featJ, hom, currMatches);
+        trafos.push_back(trafo);
+        matches.push_back(geomMatches);
+
+        currMatches.clear();
+        currMatches = std::move(geomMatches);
+    }
+    if (static_cast<unsigned int>(mGeomType & aff))
+    {
+        auto [trafo, geomMatches] = geomMatch(featI, featJ, aff, currMatches);
+        matches.push_back(geomMatches);
+        trafos.push_back(trafo);
+
+        currMatches.clear();
+        currMatches = std::move(geomMatches);
+    }
+    if (static_cast<unsigned int>(mGeomType & sim))
+    {
+        auto [trafo, geomMatches] = geomMatch(featI, featJ, sim, currMatches);
+        matches.push_back(geomMatches);
+        trafos.push_back(trafo);
+
+        currMatches.clear();
+        currMatches = std::move(geomMatches);
+    }
+    if (static_cast<unsigned int>(mGeomType & iso))
+    {
+        auto [trafo, geomMatches] = geomMatch(featI, featJ, iso, currMatches);
+        matches.push_back(geomMatches);
+        trafos.push_back(trafo);
+
+        currMatches.clear();
+        currMatches = std::move(geomMatches);
+    }
+
+    return std::make_pair(trafos, matches);
+}
+
+std::pair<Trafo, Matches> MatchesContainer::geomMatch(
+    const std::vector<cv::KeyPoint>& featI,
+    const std::vector<cv::KeyPoint>& featJ,
+    GeometricType filterType,
+    const Matches& matches)
+{
+    std::vector<cv::Point2f> src, dst;
+    for (size_t i = 0; i < matches.size(); i++)
+    {
+        src.push_back(featI[matches[i].queryIdx].pt);
+        dst.push_back(featJ[matches[i].trainIdx].pt);
+    }
+
+    auto [mask, trafo] = getInlierMask(src, dst, filterType);
+
+    std::vector<cv::DMatch> filteredMatches;
+    /* std::vector<cv::Point2f> srcFiltered, dstFiltered; */
+    for (size_t r = 0; r < mask.size(); r++)
+    {
+        if (mask[r])
+        {
+           filteredMatches.push_back(matches[r]);
+           /* srcFiltered.push_back(src[r]); */
+           /* dstFiltered.push_back(dst[r]); */
+        }
+    }
+
+    /* if (mMinCoverage) */
+    /* { */
+    /*     int rectI = cv::boundingRect(srcFiltered).area(); */
+    /*     int rectJ = cv::boundingRect(dstFiltered).area(); */
+    /*     int areaI = imgReader.getImage(idI).rows * imgReader.getImage(idI).cols; */
+    /*     int areaJ = imgReader.getImage(idJ).rows * imgReader.getImage(idJ).cols; */
+    /*     if (rectI < mMinCoverage * areaI || rectJ < mMinCoverage * areaJ) */
+    /*         filteredMatches.clear(); */
+
+    /* } */
+
+    return std::make_pair(trafo, filteredMatches);
+}
+
+std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMask(
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst, g type)
+{
+    switch (type)
+    {
+        case g::Isometry:
+            return getInlierMaskIsometry(src, dst);
+        case g::Similarity:
+            return getInlierMaskSimilarity(src, dst);
+        case g::Affinity:
+            return getInlierMaskAffinity(src, dst);
+        case g::Homography:
+            return getInlierMaskHomography(src, dst);
+        default:
+            return std::make_pair(std::vector<uchar>(), cv::Mat());
+    }
+    return std::make_pair(std::vector<uchar>(), cv::Mat());
+}
+
+std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskIsometry(
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst)
+{
+    cv::Mat mat;
+    std::vector<uchar> mask;
+    if (src.size() >= 2)
+        mat = cv::estimateIsometry2D(src, dst, mask, cv::RANSAC);
+    else
+        return std::make_pair(std::vector<uchar>(), cv::Mat());
+
+    if (getInlierCount(mask) < 2 * 2.5)
+        return std::make_pair(std::vector<uchar>(), cv::Mat());
+
+    return std::make_pair(mask, mat);
+}
+
+std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskSimilarity(
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst)
+{
+    cv::Mat mat;
+    std::vector<uchar> mask;
+    if (src.size() >= 2)
+        mat = cv::estimateAffinePartial2D(src, dst, mask, cv::RANSAC);
+    else
+        return std::make_pair(std::vector<uchar>(), cv::Mat());
+
+    if (getInlierCount(mask) < 2 * 2.5)
+        return std::make_pair(std::vector<uchar>(), cv::Mat());
+
+    return std::make_pair(mask, mat);
+}
+
+std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskAffinity(
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst)
+{
+    cv::Mat mat;
+    std::vector<uchar> mask;
+    if (src.size() >= 3)
+        mat = cv::estimateAffine2D(src, dst, mask, cv::RANSAC);
+    else
+        return std::make_pair(std::vector<uchar>(), cv::Mat());
+
+    if (getInlierCount(mask) < 3 * 2.5)
+        return std::make_pair(std::vector<uchar>(), cv::Mat());
+
+    return std::make_pair(mask, mat);
+}
+
+
+std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskHomography(
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst)
+{
+    std::vector<uchar> mask;
+    cv::Mat mat;
+    if (src.size() >= 4)
+        mat = cv::findHomography(src, dst, mask, cv::RANSAC);
+    else
+        return std::make_pair(std::vector<uchar>(), cv::Mat());
+
+    if (getInlierCount(mask) < 4 * 2.5)
+        return std::make_pair(std::vector<uchar>(), cv::Mat());
+
+    return std::make_pair(mask, mat);
+}
+
+/* void MatchesContainer::getPutativeMatches(std::size_t cacheSize, ComputeBehavior behavior) */
+/* { */
+    /* if (mMatchType == MatchType::Manual) */
+    /*     return; */
+
+    /* auto descCache = mFtContainer->getDescriptorCache(cacheSize); */
+    /* auto pairList = getPairList(cacheSize); */
 
     /* DescriptorReader descReader(mImgFolder, mTxtFile, mFtDir); */
     /* MatchesWriter matchesWriter(mFtDir, GeometricType::Putative); */
@@ -206,87 +431,110 @@ void MatchesContainer::getPutativeMatches(std::size_t cacheSize, ComputeBehavior
     /*         } */
     /*     } */
     /* } */
-}
+/* } */
 
-std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
-    std::size_t size)
-{
-    switch (mMatchType)
-    {
-        case MatchType::Exhaustive:
-            return getExhaustivePairList(size);
-        case MatchType::MILD:
-            return getMILDPairList(size);
-        case MatchType::Windowed:
-            return getWindowPairList(size);
-        default:
-            return {};
+/* std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList( */
+/*     std::size_t size) */
+/* { */
+/*     switch (mMatchType) */
+/*     { */
+/*         case MatchType::Exhaustive: */
+/*             return getExhaustivePairList(size); */
+/*         case MatchType::MILD: */
+/*             return getMILDPairList(size); */
+/*         case MatchType::Windowed: */
+/*             return getWindowPairList(size); */
+/*         default: */
+/*             return {}; */
 
-    }
-}
+/*     } */
+/* } */
 
-std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPairList(
-    std::size_t size)
-{
-    std::vector<std::pair<std::size_t, std::size_t>> pairList;
-    for (std::size_t i = 0; i < size; i++)
-    {
-        for (std::size_t j = i + 1; (j < i + mWindow) && (j < size); j++)
-        {
-            pairList.push_back(std::make_pair(i, j));
-        }
-    }
-    return pairList;
-}
+/* std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPairList( */
+/*     std::size_t size) */
+/* { */
+/*     std::vector<std::pair<std::size_t, std::size_t>> pairList; */
+/*     for (std::size_t i = 0; i < size; i++) */
+/*     { */
+/*         for (std::size_t j = i + 1; (j < i + mWindow) && (j < size); j++) */
+/*         { */
+/*             pairList.push_back(std::make_pair(i, j)); */
+/*         } */
+/*     } */
+/*     return pairList; */
+/* } */
 
-std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairList(
-    std::size_t size)
-{
-    std::cout << "Using MILD to get possible image pairs" << std::endl;
-    // make orb feature container (sift does not work)
-    auto ftContainer = std::make_shared<FeatureContainer>(
-        mFtContainer->getImageContainer(), mFtContainer->getFtDir(), FeatureType::ORB,
-        5000);
+/* std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairList( */
+/*     std::size_t size) */
+/* { */
+/*     std::cout << "Using MILD to get possible image pairs" << std::endl; */
+/*     // make orb feature container (sift does not work) */
+/*     auto ftContainer = std::make_shared<FeatureContainer>( */
+/*         mFtContainer->getImageContainer(), mFtContainer->getFtDir(), FeatureType::ORB, */
+/*         5000); */
 
-    MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0);
-    MILD::BayesianFilter filter(0.6, 4, 4, 60);
-    ProgressBar bar(ftContainer->getImageContainer()->getNumRegularImages());
+/*     MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0); */
+/*     MILD::BayesianFilter filter(0.6, 4, 4, 60); */
+/*     ProgressBar bar(ftContainer->getNumImgs()); */
 
-    Eigen::VectorXf prevVisitProb(1);
-    prevVisitProb << 0.1;
-    std::vector<Eigen::VectorXf> prevVisitFlag;
+/*     Eigen::VectorXf prevVisitProb(1); */
+/*     prevVisitProb << 0.1; */
+/*     std::vector<Eigen::VectorXf> prevVisitFlag; */
 
-    for (std::size_t i = 0; i < ftContainer->getImageContainer()->getNumRegularImages(); i++)
-    {
-        auto desc = ftContainer->descriptorAt(i, ImageType::Regular);
-        std::vector<float> simScore;
-        lcd.insert_and_query_database(desc, simScore);
+/*     for (std::size_t i = 0; i < ftContainer->getNumImgs(); i++) */
+/*     { */
+/*         auto desc = ftContainer->descriptorAt(i); */
+/*         std::vector<float> simScore; */
+/*         lcd.insert_and_query_database(desc, simScore); */
 
-        filter.filter(simScore, prevVisitProb, prevVisitFlag);
+/*         filter.filter(simScore, prevVisitProb, prevVisitFlag); */
 
-        ++bar;
-        bar.display();
-    }
+/*         ++bar; */
+/*         bar.display(); */
+/*     } */
 
-    // insert descriptors into lcd
+/*     // insert descriptors into lcd */
 
 
-    return {};
-}
+/*     return {}; */
+/* } */
 
-std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustivePairList(
-    std::size_t size)
-{
-    std::vector<std::pair<size_t, size_t>> pairList;
-    for (size_t i = 0; i < size; i++)
-    {
-        for (size_t j = i + 1; j < size; j++)
-        {
-            pairList.push_back(std::make_pair(i, j));
-        }
-    }
-    return pairList;
-}
+/* std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustivePairList( */
+/*     std::size_t size) */
+/* { */
+/*     std::vector<std::pair<size_t, size_t>> pairList; */
+/*     for (size_t i = 0; i < size; i++) */
+/*     { */
+/*         for (size_t j = i + 1; j < size; j++) */
+/*             pairList.push_back(std::make_pair(i, j)); */
+/*     } */
+/*     return pairList; */
+/* } */
+
+
+/* GeometricType MatchesContainer::findNextBestModel(GeometricType currType) */
+/* { */
+/*     using g = GeometricType; */
+/*     switch (currType) */
+/*     { */
+/*         case g::Isometry: */
+/*             if (static_cast<unsigned int>(mGeomType & g::Similarity)) */
+/*                 return g::Similarity; */
+/*             [[fallthrough]]; */
+/*         case g::Similarity: */
+/*             if (static_cast<unsigned int>(mGeomType & g::Affinity)) */
+/*                 return g::Affinity; */
+/*             [[fallthrough]]; */
+/*         case g::Affinity: */
+/*             if (static_cast<unsigned int>(mGeomType & g::Homography)) */
+/*                 return g::Homography; */
+/*             [[fallthrough]]; */
+/*         case g::Homography: */
+/*             return g::Putative; */
+/*         default: */
+/*             return g::Undefined; */
+/*     } */
+/* } */
 
 /* void FeatureContainer::writeChunk(std::pair<std::size_t, std::size_t> bounds, */
 /*     const std::vector<std::vector<cv::KeyPoint>>& fts, const std::vector<cv::Mat>& descs) */
