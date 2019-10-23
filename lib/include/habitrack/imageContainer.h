@@ -2,21 +2,21 @@
 #define HABITRACK_IMAGE_CONTAINER_H
 
 #include <filesystem>
+#include <memory>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
-
 #include "habitrack/imageCache.h"
-#include "habitrack/imageType.h"
-
 
 namespace ht
 {
+using ImgId = std::size_t;
+using ImgIds = std::vector<ImgId>;
+
 namespace detail
 {
     struct ImageData
     {
-        std::vector<std::string> mImageFiles; // holds filenames for all used images
-        std::vector<std::size_t> mKeyFrames; // maps keyframes to original frames
+        std::vector<std::string> mImageFiles; // holds filenames for all images
     };
 
 } // namespace detail
@@ -27,31 +27,12 @@ public:
     ImageContainer(const std::filesystem::path& path);
     virtual ~ImageContainer();
 
-    virtual cv::Mat at(std::size_t idx, ImageType imageType) const;
-
-    std::filesystem::path getFileName(std::size_t idx) const;
-
-    template <typename T>
-    void markAsKeyFrame(T&& keyIds)
-    {
-        mData->mKeyFrames = std::forward<std::vector<std::size_t>>(keyIds);
-        std::sort(
-            std::begin(mData->mKeyFrames), std::end(mData->mKeyFrames));
-
-        assert(mData->mKeyFrames.front() >= 0
-            && mData->mKeyFrames.back() < mData->mImageFiles.size()
-            && "Key frames ids are out of range in markAsKeyFrame()");
-    }
-    std::vector<std::size_t> getKeyFrames() const;
-
-    std::size_t getNumImages(ImageType imageType) const;
-    std::size_t getNumRegularImages() const;
-    std::size_t getNumKeyFrames() const;
-    std::size_t getImageIdx(std::size_t idx, ImageType imageType) const;
-    std::size_t getKeyFrameIdx(std::size_t idx) const;
+    virtual cv::Mat at(ImgId idx) const;
+    std::filesystem::path getFileName(ImgId idx) const;
+    std::size_t getNumImgs() const;
 
     std::unique_ptr<ImageCache> getCache(std::size_t maxChunkSize,
-        ImageType imageType);
+        const ImgIds& ids = ImgIds());
 
     // decorator related methods
     std::shared_ptr<detail::ImageData> getData() const;

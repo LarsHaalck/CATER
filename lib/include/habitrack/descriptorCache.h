@@ -6,7 +6,7 @@
 
 #include <opencv2/core.hpp>
 
-#include "habitrack/cache.h"
+#include "habitrack/baseCache.h"
 
 namespace ht
 {
@@ -15,11 +15,11 @@ namespace ht
 
 namespace ht
 {
-class DescriptorCache : public Cache
+class DescriptorCache : public BaseCache
 {
 public:
-    DescriptorCache(std::shared_ptr<FeatureContainer> container,
-        std::size_t numElems, std::size_t maxChunkSize, ImageType imageType);
+    DescriptorCache(std::shared_ptr<FeatureContainer> container, std::size_t numElems,
+        std::size_t maxChunkSize, const std::vector<std::size_t>& ids);
     std::vector<cv::Mat> getChunk(std::size_t idx);
 private:
     std::shared_ptr<FeatureContainer> mContainer;

@@ -3,19 +3,12 @@
 
 #include <filesystem>
 #include <vector>
-
+#include "habitrack/imageContainer.h"
 #include "habitrack/featureCache.h"
 #include "habitrack/descriptorCache.h"
 #include "habitrack/computeBehavior.h"
-#include "habitrack/imageType.h"
-
 #include "featureIO.h"
 #include "descriptorIO.h"
-
-namespace ht
-{
-    class ImageContainer;
-}
 
 namespace ht
 {
@@ -42,16 +35,19 @@ public:
 
     void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep);
 
-    std::vector<cv::KeyPoint> featureAt(std::size_t idx, ImageType imageType);
-    cv::Mat descriptorAt(std::size_t idx, ImageType imageType);
+    std::vector<cv::KeyPoint> featureAt(std::size_t idx);
+    cv::Mat descriptorAt(std::size_t idx);
 
     std::unique_ptr<FeatureCache> getFeatureCache(std::size_t maxChunkSize,
-        ImageType imageType);
+        const ImgIds& ids = ImgIds());
     std::unique_ptr<DescriptorCache> getDescriptorCache(std::size_t maxChunkSize,
-        ImageType imageType);
+        const ImgIds& ids = ImgIds());
 
     std::shared_ptr<ImageContainer> getImageContainer() const;
     std::filesystem::path getFtDir() const;
+    std::size_t getNumImgs() const;
+
+    FeatureType getFtType() const;
 private:
     FeatureType getTypeFromFile(const std::filesystem::path& file);
     std::filesystem::path getFileName(std::size_t idx, detail::FtDesc ftDesc);
@@ -67,6 +63,7 @@ private:
     std::filesystem::path mFtDir;
     FeatureType mType;
     std::size_t mNumFeatures;
+    std::size_t mNumImgs;
     bool mIsComputed;
 };
 } // namespace ht

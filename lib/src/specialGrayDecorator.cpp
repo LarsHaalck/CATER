@@ -13,9 +13,9 @@ SpecialGrayDecorator::SpecialGrayDecorator(double red, double green, double blue
 {
 }
 
-cv::Mat SpecialGrayDecorator::at(std::size_t idx, ImageType imageType) const
+cv::Mat SpecialGrayDecorator::at(std::size_t idx) const
 {
-    cv::Mat mat = BaseDecorator::at(idx, imageType);
+    cv::Mat mat = BaseDecorator::at(idx);
     if (mat.channels() != 3)
         return mat;
 

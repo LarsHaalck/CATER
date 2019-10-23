@@ -1,13 +1,11 @@
 #include "habitrack/imageCache.h"
 #include "habitrack/imageContainer.h"
 
-#include <iostream>
-
 namespace ht
 {
 ImageCache::ImageCache(std::shared_ptr<ImageContainer> container,
-    std::size_t numElems, std::size_t maxChunkSize, ImageType imageType)
-    : Cache(numElems, maxChunkSize, imageType)
+    std::size_t numElems, std::size_t maxChunkSize, const ImgIds& ids)
+    : BaseCache(numElems, maxChunkSize, ids)
     , mContainer(std::move(container))
 {
 }
@@ -20,7 +18,7 @@ std::vector<cv::Mat> ImageCache::getChunk(std::size_t idx)
 
     auto [lower, upper] = getChunkBounds(idx);
     for (std::size_t i = lower; i < upper; i++)
-        cacheBlock.push_back(mContainer->at(i, mImageType));
+        cacheBlock.push_back(mContainer->at(transformId(i)));
     return cacheBlock;
 }
 

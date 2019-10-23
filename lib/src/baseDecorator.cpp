@@ -11,8 +11,8 @@ BaseDecorator::~BaseDecorator()
 {
 }
 
-cv::Mat BaseDecorator::at(std::size_t idx, ImageType imageType) const
+cv::Mat BaseDecorator::at(std::size_t idx) const
 {
-    return mBaseContainer->at(idx, imageType);
+    return mBaseContainer->at(idx);
 }
 } // namespace ht

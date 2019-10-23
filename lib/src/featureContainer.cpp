@@ -1,11 +1,8 @@
 #include "habitrack/featureContainer.h"
-#include "habitrack/imageContainer.h"
 #include "unknownFeatureType.h"
 #include "progressBar.h"
-
 #include <opencv2/highgui.hpp>
 #include <opencv2/xfeatures2d.hpp>
-
 #include <fstream>
 #include <iostream>
 
@@ -19,11 +16,12 @@ FeatureContainer::FeatureContainer(std::shared_ptr<ImageContainer> imgContainer,
     , mFtDir(ftDir)
     , mType(type)
     , mNumFeatures(numFeatures)
+    , mNumImgs(mImgContainer->getNumImgs())
     , mIsComputed(true)
 {
     // check if some file is missing or other type expected
     // TODO: should I be able to instantiate the container on key frames only?
-    for (std::size_t i = 0; i < mImgContainer->getNumImages(ImageType::Regular); i++)
+    for (std::size_t i = 0; i < mNumImgs; i++)
     {
         // only check for feature or descriptor because they are calculated together
         auto ftFile = getFileName(i, detail::FtDesc::Feature);
@@ -66,7 +64,7 @@ void FeatureContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
         return;
 
     auto ftPtr = getFtPtr();
-    auto imgCache = mImgContainer->gray()->getCache(cacheSize, ImageType::Regular);
+    auto imgCache = mImgContainer->gray()->getCache(cacheSize);
 
     ProgressBar bar(imgCache->getNumChunks());
     for (std::size_t i = 0; i < imgCache->getNumChunks(); i++)
@@ -89,8 +87,7 @@ void FeatureContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
 void FeatureContainer::writeChunk(std::pair<std::size_t, std::size_t> bounds,
     const std::vector<std::vector<cv::KeyPoint>>& fts, const std::vector<cv::Mat>& descs)
 {
-    auto [lower, upper] = bounds;
-
+    const auto [lower, upper] = bounds;
     for (std::size_t i = lower; i < upper; i++)
     {
         auto ftFileName = getFileName(i, detail::FtDesc::Feature);
@@ -136,13 +133,12 @@ cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr()
     }
 }
 std::vector<cv::KeyPoint> FeatureContainer::featureAt(
-    std::size_t idx, ImageType imageType)
+    std::size_t idx)
 {
-    assert(idx < mImgContainer->getNumImages(imageType) && mIsComputed
+    assert(idx < mNumImgs && mIsComputed
         && "idx out of range in FeatureContainer::featureAt() or not computed");
 
-    auto realIdx = mImgContainer->getImageIdx(idx, imageType);
-    auto file = getFileName(realIdx, detail::FtDesc::Feature);
+    auto file = getFileName(idx, detail::FtDesc::Feature);
     std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
     checkStream(stream, file);
 
@@ -154,13 +150,12 @@ std::vector<cv::KeyPoint> FeatureContainer::featureAt(
     return fts;
 }
 
-cv::Mat FeatureContainer::descriptorAt(std::size_t idx, ImageType imageType)
+cv::Mat FeatureContainer::descriptorAt(std::size_t idx)
 {
-    assert(idx < mImgContainer->getNumImages(imageType) && mIsComputed
+    assert(idx < mNumImgs && mIsComputed
         && "idx out of range in FeatureContainer::descriptorAt() or not computed");
 
-    auto realIdx = mImgContainer->getImageIdx(idx, imageType);
-    auto file = getFileName(realIdx, detail::FtDesc::Descriptor);
+    auto file = getFileName(idx, detail::FtDesc::Descriptor);
     std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
     checkStream(stream, file);
 
@@ -173,18 +168,17 @@ cv::Mat FeatureContainer::descriptorAt(std::size_t idx, ImageType imageType)
 }
 
 std::unique_ptr<FeatureCache> FeatureContainer::getFeatureCache(
-    std::size_t maxChunkSize, ImageType imageType)
+    std::size_t maxChunkSize, const ImgIds& ids)
 {
-    auto numElems = mImgContainer->getNumImages(imageType);
     return std::make_unique<FeatureCache>(
-        shared_from_this(), numElems, maxChunkSize, imageType);
+        shared_from_this(), mNumImgs, maxChunkSize, ids);
 }
+
 std::unique_ptr<DescriptorCache> FeatureContainer::getDescriptorCache(
-    std::size_t maxChunkSize, ImageType imageType)
+    std::size_t maxChunkSize, const ImgIds& ids)
 {
-    auto numElems = mImgContainer->getNumImages(imageType);
     return std::make_unique<DescriptorCache>(
-        shared_from_this(), numElems, maxChunkSize, imageType);
+        shared_from_this(), mNumImgs, maxChunkSize, ids);
 }
 
 std::shared_ptr<ImageContainer> FeatureContainer::getImageContainer() const
@@ -192,10 +186,9 @@ std::shared_ptr<ImageContainer> FeatureContainer::getImageContainer() const
     return mImgContainer;
 }
 
-fs::path FeatureContainer::getFtDir() const
-{
-    return mFtDir;
-}
+fs::path FeatureContainer::getFtDir() const { return mFtDir; }
+std::size_t FeatureContainer::getNumImgs() const { return mNumImgs; }
+FeatureType FeatureContainer::getFtType() const { return mType; }
 
 
 }

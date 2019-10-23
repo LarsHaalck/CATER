@@ -9,7 +9,7 @@ class GrayDecorator : public BaseDecorator
 {
 public:
     GrayDecorator(std::shared_ptr<ImageContainer> baseContainer);
-    cv::Mat at(std::size_t idx, ImageType imageType) const override;
+    cv::Mat at(std::size_t idx) const override;
 };
 } // namespace ht
 #endif // HABITRACK_GRAY_DECORATOR_H

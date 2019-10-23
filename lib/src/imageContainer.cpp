@@ -32,6 +32,7 @@ ImageContainer::ImageContainer(const fs::path& path)
     else
         fillImageFilesFromFile(path);
 
+    // sort files to cope with different operating system conventions
     std::sort(std::begin(mData->mImageFiles), std::end(mData->mImageFiles));
 }
 
@@ -51,7 +52,6 @@ void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
             }
         }
     }
-
 }
 
 void ImageContainer::fillImageFilesFromFile(const fs::path& path)
@@ -78,51 +78,20 @@ ImageContainer::~ImageContainer()
 }
 
 // TODO: imread type?
-cv::Mat ImageContainer::at(std::size_t idx, ImageType imageType) const
+cv::Mat ImageContainer::at(ImgId idx) const
 {
-    assert(idx < getNumImages(imageType) && "idx out of range in ImageContainer::at()");
+    assert(idx < getNumImgs() && "idx out of range in ImageContainer::at()");
 
-    auto realIdx = getImageIdx(idx, imageType);
-    cv::Mat mat = cv::imread(
-        mData->mImageFiles[realIdx], cv::ImreadModes::IMREAD_UNCHANGED);
+    cv::Mat mat = cv::imread(mData->mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
 
     cv::Mat resMat;
     mat.convertTo(resMat, CV_8UC3);
     return resMat;
-
 }
 
-std::size_t ImageContainer::getNumRegularImages() const
-{
-    return mData->mImageFiles.size();
-}
+std::size_t ImageContainer::getNumImgs() const { return mData->mImageFiles.size(); }
 
-std::size_t ImageContainer::getNumKeyFrames() const { return mData->mKeyFrames.size(); }
-std::size_t ImageContainer::getNumImages(ImageType imageType) const
-{
-    if (imageType == ImageType::KeyFrame)
-        return mData->mKeyFrames.size();
-    return mData->mImageFiles.size();
-}
-
-std::vector<std::size_t> ImageContainer::getKeyFrames() const { return mData->mKeyFrames; }
-std::shared_ptr<detail::ImageData> ImageContainer::getData() const { return mData; }
-
-std::size_t ImageContainer::getImageIdx(std::size_t idx, ImageType imageType) const
-{
-    if (imageType == ImageType::KeyFrame)
-        return getKeyFrameIdx(idx);
-    return idx;
-}
-
-std::size_t ImageContainer::getKeyFrameIdx(std::size_t idx) const
-{
-    assert(idx < mData->mKeyFrames.size()
-        && "idx out of range in ImageContainer::getKeyFrameIdx()");
-    return mData->mKeyFrames[idx];
-}
-
-std::filesystem::path ImageContainer::getFileName(std::size_t idx) const
+std::filesystem::path ImageContainer::getFileName(ImgId idx) const
 {
     auto file = mData->mImageFiles[idx];
     auto path = fs::path(file);
@@ -130,21 +99,24 @@ std::filesystem::path ImageContainer::getFileName(std::size_t idx) const
 }
 
 std::unique_ptr<ImageCache> ImageContainer::getCache(
-    std::size_t maxChunkSize, ImageType imageType)
+    std::size_t maxChunkSize, const ImgIds& ids)
 {
-    auto numElems = getNumImages(imageType);
+    auto numElems = getNumImgs();
     return std::make_unique<ImageCache>(
-        shared_from_this(), numElems, maxChunkSize, imageType);
+        shared_from_this(), numElems, maxChunkSize, ids);
 }
 
+std::shared_ptr<detail::ImageData> ImageContainer::getData() const { return mData; }
 std::shared_ptr<ImageContainer> ImageContainer::resize(double scale)
 {
     return resize(scale, scale);
 }
+
 std::shared_ptr<ImageContainer> ImageContainer::resize(double scaleX, double scaleY)
 {
     return std::make_shared<ResizeDecorator>(scaleX, scaleY, shared_from_this());
 }
+
 std::shared_ptr<ImageContainer> ImageContainer::gray()
 {
     return std::make_shared<GrayDecorator>(shared_from_this());
