@@ -11,6 +11,14 @@ ResizeDecorator::ResizeDecorator(double scaleX, double scaleY,
     , mScaleY(scaleY)
 {
 }
+cv::Size ResizeDecorator::getImgSize() const
+{
+    auto originalSize = BaseDecorator::getImgSize();
+    return cv::Size(
+        std::round(mScaleX * originalSize.width),
+        std::round(mScaleY * originalSize.height)
+    );
+}
 
 cv::Mat ResizeDecorator::at(std::size_t idx) const
 {

@@ -19,17 +19,21 @@ int main()
     auto imgContainer = std::make_shared<ImageContainer>(
         path + "/imgs");
 
-    auto ftContainer = std::make_shared<FeatureContainer>(
-        imgContainer, path + "/fts", FeatureType::SIFT, 5000);
-    ftContainer->compute(cacheSize, ComputeBehavior::Keep);
+    /* std::cout << imgContainer->getImageSize() << std::endl; */
+    /* std::cout << imgContainer->resize(0.1, 0.5)->getImageSize() << std::endl; */
+    /* std::cout << imgContainer->resize(0.5)->getImageSize() << std::endl; */
+    std::cout << imgContainer->resize(0.5)->resize(0.3)->getImgSize() << std::endl;
+    /* auto ftContainer = std::make_shared<FeatureContainer>( */
+    /*     imgContainer, path + "/fts", FeatureType::SIFT, 5000); */
+    /* ftContainer->compute(cacheSize, ComputeBehavior::Keep); */
 
 
-    auto keyFrameSelector = std::make_unique<KeyFrameSelector>(ftContainer, 1920, 1080);
-    auto keyFrames = keyFrameSelector->compute(0.5, 0.75);
+    /* auto keyFrameSelector = std::make_unique<KeyFrameSelector>(ftContainer, 1920, 1080); */
+    /* auto keyFrames = keyFrameSelector->compute(0.5, 0.75); */
 
-    for (auto kf : keyFrames)
-        std::cout << kf << ", ";
-    std::cout << std::endl;
+    /* for (auto kf : keyFrames) */
+    /*     std::cout << kf << ", "; */
+    /* std::cout << std::endl; */
 
     /* auto matchContainer = std::make_shared<MatchesContainer>( */
     /*     ftContainer, "/home/lars/data/ontogenyTest/vid3/matches", MatchType::Windowed, */

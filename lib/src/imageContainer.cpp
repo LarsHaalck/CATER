@@ -34,6 +34,10 @@ ImageContainer::ImageContainer(const fs::path& path)
 
     // sort files to cope with different operating system conventions
     std::sort(std::begin(mData->mImageFiles), std::end(mData->mImageFiles));
+
+    auto testImg = at(0);
+    mData->mHeight = testImg.rows;
+    mData->mWidth = testImg.cols;
 }
 
 void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
@@ -104,6 +108,11 @@ std::unique_ptr<ImageCache> ImageContainer::getCache(
     auto numElems = getNumImgs();
     return std::make_unique<ImageCache>(
         shared_from_this(), numElems, maxChunkSize, ids);
+}
+
+cv::Size ImageContainer::getImgSize() const
+{
+    return cv::Size(mData->mWidth, mData->mHeight);
 }
 
 std::shared_ptr<detail::ImageData> ImageContainer::getData() const { return mData; }

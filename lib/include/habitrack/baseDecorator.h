@@ -11,6 +11,7 @@ public:
     BaseDecorator(std::shared_ptr<ImageContainer> baseContainer);
     virtual ~BaseDecorator();
 
+    virtual cv::Size getImgSize() const override;
     virtual cv::Mat at(std::size_t idx) const override;
 private:
     std::shared_ptr<ImageContainer> mBaseContainer;

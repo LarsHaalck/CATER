@@ -12,6 +12,7 @@ public:
         std::shared_ptr<ImageContainer> baseContainer);
 
     cv::Mat at(std::size_t idx) const override;
+    cv::Size getImgSize() const override;
 private:
     double mScaleX;
     double mScaleY;

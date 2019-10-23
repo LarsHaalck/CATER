@@ -17,6 +17,8 @@ namespace detail
     struct ImageData
     {
         std::vector<std::string> mImageFiles; // holds filenames for all images
+        std::size_t mHeight;
+        std::size_t mWidth;
     };
 
 } // namespace detail
@@ -27,12 +29,15 @@ public:
     ImageContainer(const std::filesystem::path& path);
     virtual ~ImageContainer();
 
-    virtual cv::Mat at(ImgId idx) const;
     std::filesystem::path getFileName(ImgId idx) const;
     std::size_t getNumImgs() const;
 
     std::unique_ptr<ImageCache> getCache(std::size_t maxChunkSize,
         const ImgIds& ids = ImgIds());
+
+    // maybe overriden by decorator (e.g. resize)
+    virtual cv::Mat at(ImgId idx) const;
+    virtual cv::Size getImgSize() const;
 
     // decorator related methods
     std::shared_ptr<detail::ImageData> getData() const;
