@@ -180,10 +180,17 @@ std::unique_ptr<DescriptorCache> FeatureContainer::getDescriptorCache(
 {
     return std::make_unique<DescriptorCache>(shared_from_this(), mNumImgs, maxChunkSize, ids);
 }
+
 std::unique_ptr<PairwiseDescriptorCache> FeatureContainer::getPairwiseDescriptorCache(
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
 {
     return std::make_unique<PairwiseDescriptorCache>(shared_from_this(), maxChunkSize, pairs);
+}
+
+std::unique_ptr<PairwiseFeatureCache> FeatureContainer::getPairwiseFeatureCache(
+    std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
+{
+    return std::make_unique<PairwiseFeatureCache>(shared_from_this(), maxChunkSize, pairs);
 }
 
 std::shared_ptr<ImageContainer> FeatureContainer::getImageContainer() const

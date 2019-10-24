@@ -28,6 +28,7 @@ set(SOURCES
     src/unknownGeometricType.cpp
     src/basePairwiseCache.cpp
     src/pairwiseDescriptorCache.cpp
+    src/pairwiseFeatureCache.cpp
 
     src/keyFrameSelector.cpp
 

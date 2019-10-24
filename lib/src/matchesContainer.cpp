@@ -15,10 +15,9 @@
 
 namespace fs = std::filesystem;
 
-using g = ht::GeometricType;
-
 namespace ht
 {
+using g = GeometricType;
 /* constexpr std::pair<Trafo, std::vector<uchar>> zeroMaskTrafoTuple */
 
 MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureContainer,
@@ -55,7 +54,7 @@ MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureCont
         fs::create_directories(matchDir);
 }
 
-bool MatchesContainer::checkIfExists(GeometricType geomType)
+bool MatchesContainer::checkIfExists(GeometricType geomType) const
 {
     auto trafoFile = getFileName(detail::MatchTrafo::Trafo, geomType);
     auto matchFile = getFileName(detail::MatchTrafo::Match, geomType);
@@ -65,25 +64,25 @@ bool MatchesContainer::checkIfExists(GeometricType geomType)
     return true;
 }
 
-GeometricType MatchesContainer::getTypeFromFile(const fs::path& file)
+GeometricType MatchesContainer::getTypeFromFile(const fs::path& file) const
 {
     auto type = file.stem().extension();
     if (type == ".put")
-        return GeometricType::Putative;
+        return g::Putative;
     if (type == ".h")
-        return GeometricType::Homography;
+        return g::Homography;
     if (type == ".a")
-        return GeometricType::Affinity;
+        return g::Affinity;
     if (type == ".s")
-        return GeometricType::Similarity;
+        return g::Similarity;
     if (type == ".i")
-        return GeometricType::Isometry;
+        return g::Isometry;
 
     throw UnknownGeometricType(type);
 }
 
 std::filesystem::path MatchesContainer::getFileName(
-    detail::MatchTrafo matchTrafo, GeometricType geomType)
+    detail::MatchTrafo matchTrafo, GeometricType geomType) const
 {
     auto fullFile = mMatchDir;
     if (matchTrafo == detail::MatchTrafo::Match)
@@ -91,7 +90,6 @@ std::filesystem::path MatchesContainer::getFileName(
     else
         fullFile /= "trafos";
 
-    using g = GeometricType;
     switch (geomType)
     {
     case g::Putative:
@@ -118,34 +116,93 @@ std::filesystem::path MatchesContainer::getFileName(
 
 void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
 {
-    if (mIsComputed && behavior == ComputeBehavior::Keep)
+    if ((mIsComputed && behavior == ComputeBehavior::Keep) || mMatchType == MatchType::Manual)
         return;
 
     // maps pairs to their matches vector
-    matches = getPutativeMatches(cacheSize, behavior);
+    auto matches = getPutativeMatches(cacheSize);
+
+    auto hom = g::Homography;
+    auto aff = g::Affinity;
+    auto sim = g::Similarity;
+    auto iso = g::Isometry;
+
+    if (static_cast<unsigned int>(mGeomType & hom))
+        matches = getGeomMatches(cacheSize, hom, std::move(matches));
+
+    if (static_cast<unsigned int>(mGeomType & aff))
+        matches = getGeomMatches(cacheSize, aff, std::move(matches));
+
+    if (static_cast<unsigned int>(mGeomType & sim))
+        matches = getGeomMatches(cacheSize, sim, std::move(matches));
+
+    if (static_cast<unsigned int>(mGeomType & iso))
+        matches = getGeomMatches(cacheSize, iso, std::move(matches));
+}
+
+std::string MatchesContainer::typeToString(GeometricType type)
+{
+    switch (type)
+    {
+    case g::Homography:
+        return "homography";
+    case g::Affinity:
+        return "affinity";
+    case g::Similarity:
+        return "similarity";
+    case g::Isometry:
+        return "isometry";
+    default:
+        return "";
+    }
+}
+PairWiseMatches MatchesContainer::getGeomMatches(
+    size_t cacheSize, GeometricType type, PairWiseMatches&& matches)
+{
+    std::cout << "Computing geometric matches for " << typeToString(type) << "..." << std::endl;
+
+    auto filteredMatches = std::move(matches);
+    auto pairList = getPairList(filteredMatches);
+    auto featCache = mFtContainer->getPairwiseFeatureCache(cacheSize, pairList);
 
     // TODO: is inplace modify via at() thread-safe?
-    // chunk over it, modify in place
+    ProgressBar bar(featCache->getNumChunks());
+    for (std::size_t i = 0; i < featCache->getNumChunks(); i++)
+    {
+        auto chunk = featCache->getChunk(i);
+        auto [lower, _] = featCache->getChunkBounds(i);
 
-    /* auto ftPtr = getFtPtr(); */
-    /* auto imgCache = mImgContainer->gray()->getCache(cacheSize, ImageType::Regular); */
+#pragma omp parallel for
+        for (std::size_t k = 0; k < featCache->getChunkSize(i); k++)
+        {
+            auto currPair = pairList[lower + k];
+            auto featI = chunk[currPair.first];
+            auto featJ = chunk[currPair.second];
 
-    /* ProgressBar bar(imgCache->getNumChunks()); */
-    /* for (std::size_t i = 0; i < imgCache->getNumChunks(); i++) */
-    /* { */
-    /*     auto chunk = imgCache->getChunk(i); */
+            auto& currMatches = filteredMatches.at(currPair);
 
-    /*     std::vector<std::vector<cv::KeyPoint>> fts(imgCache->getChunkSize(i)); */
-    /*     std::vector<cv::Mat> descs(imgCache->getChunkSize(i)); */
-    /*     #pragma omp parallel for */
-    /*     for (std::size_t j = 0; j < chunk.size(); j++) */
-    /*         ftPtr->detectAndCompute(chunk[j], cv::Mat(), fts[j], descs[j]); */
+            auto currFilteredMatches = geomMatch(featI, featJ, type, currMatches);
+            currMatches = currFilteredMatches.second;
+        }
+        ++bar;
+        bar.display();
+    }
 
-    /*     ++bar; */
-    /*     bar.display(); */
-    /*     writeChunk(imgCache->getChunkBounds(i), fts, descs); */
-    /* } */
-    /* mIsComputed = true; */
+    filterEmptyMatches(filteredMatches);
+
+    writeMatches(filteredMatches, type);
+    return filteredMatches;
+}
+
+void MatchesContainer::filterEmptyMatches(PairWiseMatches& matches)
+{
+    for (auto it = std::begin(matches); it != std::end(matches);)
+    {
+        if (it->second.empty())
+            it = matches.erase(it);
+        else
+            ++it;
+    }
 }
 
 Matches MatchesContainer::putMatch(
@@ -167,7 +224,7 @@ Matches MatchesContainer::putMatch(
     return currMatches;
 }
 
-cv::Ptr<cv::DescriptorMatcher> MatchesContainer::getMatcher()
+cv::Ptr<cv::DescriptorMatcher> MatchesContainer::getMatcher() const
 {
     switch (mFtContainer->getFtType())
     {
@@ -361,17 +418,14 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskHomography
     return std::make_pair(mask, mat);
 }
 
-PairWiseMatches MatchesContainer::getPutativeMatches(
-    std::size_t cacheSize, ComputeBehavior behavior)
+PairWiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize)
 {
-    if (mMatchType == MatchType::Manual)
-        return;
-
-    auto pairList = getPairList(cacheSize);
-    std::sort(std::begin(pairList), std::end(pairList));
+    std::cout << "Computing putative matches..." << std::endl;
+    auto pairList = getPairList(mFtContainer->getNumImgs());
     auto descCache = mFtContainer->getPairwiseDescriptorCache(cacheSize, pairList);
     auto descMatcher = getMatcher();
 
+    ProgressBar bar(descCache->getNumChunks());
     PairWiseMatches matches;
     for (std::size_t i = 0; i < descCache->getNumChunks(); i++)
     {
@@ -392,38 +446,63 @@ PairWiseMatches MatchesContainer::getPutativeMatches(
                 matches.insert(std::make_pair(currPair, std::move(currMatches)));
             }
         }
+        ++bar;
+        bar.display();
     }
-    writeMatches(matches, GeometricType::Putative);
+    writeMatches(matches, g::Putative);
+    return matches;
 }
 
 void MatchesContainer::writeMatches(const PairWiseMatches& matches, GeometricType type) const
 {
-    std::ofstream stream("matches.put.bin", std::ios::out | std::ios::binary);
-    checkStream(stream);
+    auto file = getFileName(detail::MatchTrafo::Match, type);
+    std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
+    checkStream(stream, file);
     {
         cereal::PortableBinaryOutputArchive archive(stream);
         archive(matches);
     }
 }
 
-std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(std::size_t size)
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
+    const PairWiseMatches& matches) const
 {
+    auto keys = std::vector<std::pair<std::size_t, std::size_t>>();
+    keys.reserve(matches.size());
+    for (const auto& match : matches)
+        keys.push_back(match.first);
+
+    std::sort(std::begin(keys), std::end(keys));
+    return keys;
+}
+
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
+    std::size_t size) const
+{
+    std::vector<std::pair<std::size_t, std::size_t>> pairs;
     switch (mMatchType)
     {
     case MatchType::Exhaustive:
-        return getExhaustivePairList(size);
+        pairs = getExhaustivePairList(size);
+        break;
     case MatchType::MILD:
-        return {};
-        /* return getMILDPairList(size); */
+        pairs = {};
+        /* pairs =  getMILDPairList(size); */
+        break;
     case MatchType::Windowed:
-        return getWindowPairList(size);
+        pairs = getWindowPairList(size);
+        break;
     default:
-        return {};
+        pairs = {};
+        break;
     }
+
+    std::sort(std::begin(pairs), std::end(pairs));
+    return pairs;
 }
 
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPairList(
-    std::size_t size)
+    std::size_t size) const
 {
     std::vector<std::pair<std::size_t, std::size_t>> pairList;
     for (std::size_t i = 0; i < size; i++)
@@ -437,7 +516,7 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPair
 }
 
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustivePairList(
-    std::size_t size)
+    std::size_t size) const
 {
     std::vector<std::pair<size_t, size_t>> pairList;
     for (size_t i = 0; i < size; i++)

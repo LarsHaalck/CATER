@@ -8,6 +8,7 @@
 #include "habitrack/featureCache.h"
 #include "habitrack/imageContainer.h"
 #include "habitrack/pairwiseDescriptorCache.h"
+#include "habitrack/pairwiseFeatureCache.h"
 #include <filesystem>
 #include <vector>
 
@@ -44,6 +45,8 @@ public:
     std::unique_ptr<DescriptorCache> getDescriptorCache(
         std::size_t maxChunkSize, const ImgIds& ids = ImgIds());
     std::unique_ptr<PairwiseDescriptorCache> getPairwiseDescriptorCache(
+        std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs);
+    std::unique_ptr<PairwiseFeatureCache> getPairwiseFeatureCache(
         std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs);
 
     std::shared_ptr<ImageContainer> getImageContainer() const;

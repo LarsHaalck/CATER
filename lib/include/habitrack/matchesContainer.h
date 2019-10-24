@@ -68,17 +68,21 @@ public:
     /* std::unique_ptr<TrafoCache> getTrafoCache(std::size_t maxChunkSize, */
     /*     const ImgIds& ids = ImgIds(); */
 private:
-    GeometricType getTypeFromFile(const std::filesystem::path& file);
-    std::filesystem::path getFileName(detail::MatchTrafo matchTrafo, GeometricType geomType);
-    bool checkIfExists(GeometricType geomType);
+    GeometricType getTypeFromFile(const std::filesystem::path& file) const;
+    std::filesystem::path getFileName(detail::MatchTrafo matchTrafo, GeometricType geomType) const;
+    bool checkIfExists(GeometricType geomType) const;
 
-    PairWiseMatches getPutativeMatches(std::size_t cacheSize, ComputeBehavior behavior);
-    std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size);
-    std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(std::size_t size);
-    std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(std::size_t size);
-    /* std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList(std::size_t size); */
+    PairWiseMatches getPutativeMatches(std::size_t cacheSize);
+    PairWiseMatches getGeomMatches(
+        std::size_t cacheSize, GeometricType type, PairWiseMatches&& matches);
+    std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size) const;
+    std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(std::size_t size) const;
+    std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(std::size_t size) const;
 
-    cv::Ptr<cv::DescriptorMatcher> getMatcher();
+    std::vector<std::pair<std::size_t, std::size_t>> getPairList(
+        const PairWiseMatches& matches) const;
+
+    cv::Ptr<cv::DescriptorMatcher> getMatcher() const;
     Matches putMatch(
         cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ);
     std::pair<Trafo, Matches> geomMatch(const std::vector<cv::KeyPoint>& featI,
@@ -96,6 +100,9 @@ private:
     std::pair<std::vector<uchar>, cv::Mat> getInlierMaskHomography(
         const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
 
+    std::string typeToString(GeometricType type);
+    void filterEmptyMatches(PairWiseMatches& matches);
+
     inline size_t getInlierCount(const std::vector<uchar>& mask)
     {
         size_t count = 0;
@@ -107,6 +114,7 @@ private:
         return count;
     }
 
+    void writeMatches(const PairWiseMatches& matches, GeometricType type) const;
     /* cv::Ptr<cv::Feature2D> getFtPtr(); */
     /* void writeChunk(std::pair<std::size_t, std::size_t> bounds, */
     /*     const std::vector<std::vector<cv::KeyPoint>>& fts, */
