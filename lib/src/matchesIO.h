@@ -10,13 +10,13 @@
 
 namespace cereal
 {
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, cv::DMatch& match)
 {
     archive(match.queryIdx, match.trainIdx, match.distance);
 }
 
-template<class Archive, typename T, typename S>
+template <class Archive, typename T, typename S>
 void serialize(Archive& archive, std::pair<T, S>& pair)
 {
     archive(pair.first, pair.second);

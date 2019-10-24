@@ -2,13 +2,10 @@
 
 namespace ht
 {
-constexpr std::size_t ceil(std::size_t n, std::size_t k)
-{
-     return 1 + ((n - 1) / k);
-}
+constexpr std::size_t ceil(std::size_t n, std::size_t k) { return 1 + ((n - 1) / k); }
 
-BaseCache::BaseCache(std::size_t numElems, std::size_t maxChunkSize,
-    const std::vector<std::size_t>& ids)
+BaseCache::BaseCache(
+    std::size_t numElems, std::size_t maxChunkSize, const std::vector<std::size_t>& ids)
     : mNumElems(ids.empty() ? numElems : ids.size())
     , mMaxChunkSize(maxChunkSize ? maxChunkSize : mNumElems)
     , mNumChunks(ceil(mNumElems, mMaxChunkSize))

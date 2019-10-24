@@ -4,8 +4,8 @@
 
 namespace ht
 {
-SpecialGrayDecorator::SpecialGrayDecorator(double red, double green, double blue,
-    std::shared_ptr<ImageContainer> baseContainer)
+SpecialGrayDecorator::SpecialGrayDecorator(
+    double red, double green, double blue, std::shared_ptr<ImageContainer> baseContainer)
     : BaseDecorator(baseContainer)
     , mRed(red)
     , mGreen(green)

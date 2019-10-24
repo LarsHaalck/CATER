@@ -1,12 +1,11 @@
 #include "habitrack/imageContainer.h"
-#include "habitrack/resizeDecorator.h"
 #include "habitrack/grayDecorator.h"
+#include "habitrack/resizeDecorator.h"
 
 #include <fstream>
 #include <iostream>
 
 #include <opencv2/imgproc.hpp>
-
 
 namespace fs = std::filesystem;
 
@@ -17,14 +16,14 @@ ImageContainer::ImageContainer(const fs::path& path)
 {
     if (!fs::exists(path))
     {
-        throw fs::filesystem_error("Image folder/file does not exist",
-            path, std::make_error_code(std::errc::no_such_file_or_directory));
+        throw fs::filesystem_error("Image folder/file does not exist", path,
+            std::make_error_code(std::errc::no_such_file_or_directory));
     }
 
     if (!fs::is_directory(path) && !fs::is_regular_file(path))
     {
-        throw fs::filesystem_error("Image path is not a folder nor a file",
-            path, std::make_error_code(std::errc::no_such_file_or_directory));
+        throw fs::filesystem_error("Image path is not a folder nor a file", path,
+            std::make_error_code(std::errc::no_such_file_or_directory));
     }
 
     if (fs::is_directory(path))
@@ -41,15 +40,15 @@ ImageContainer::ImageContainer(const fs::path& path)
 
 void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
 {
-    for(const auto& p : fs::recursive_directory_iterator(path))
+    for (const auto& p : fs::recursive_directory_iterator(path))
     {
         if (p.is_regular_file())
         {
             auto extension = p.path().extension();
             if (extension == ".jpg" || extension == ".png" || extension == ".jpeg"
-                || extension == ".tif" || extension == ".tiff"
-                || extension == ".TIF" || extension == ".TIFF"
-                || extension == ".JPG" || extension == ".PNG" || extension == ".JPEG")
+                || extension == ".tif" || extension == ".tiff" || extension == ".TIF"
+                || extension == ".TIFF" || extension == ".JPG" || extension == ".PNG"
+                || extension == ".JPEG")
             {
                 mData->mImageFiles.push_back(p.path().string());
             }
@@ -59,26 +58,24 @@ void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
 
 void ImageContainer::fillImageFilesFromFile(const fs::path& path)
 {
-    std::ifstream stream{path};
+    std::ifstream stream {path};
     std::string currLine;
-    while(std::getline(stream, currLine))
+    while (std::getline(stream, currLine))
     {
         if (!currLine.empty())
         {
             fs::path imgPath(currLine);
             if (!fs::is_regular_file(imgPath))
             {
-                throw fs::filesystem_error("Image file from file list does not exist",
-                    imgPath, std::make_error_code(std::errc::no_such_file_or_directory));
+                throw fs::filesystem_error("Image file from file list does not exist", imgPath,
+                    std::make_error_code(std::errc::no_such_file_or_directory));
             }
             mData->mImageFiles.push_back(imgPath.string());
         }
     }
 }
 
-ImageContainer::~ImageContainer()
-{
-}
+ImageContainer::~ImageContainer() {}
 
 // TODO: imread type?
 cv::Mat ImageContainer::at(ImgId idx) const
@@ -101,18 +98,13 @@ std::filesystem::path ImageContainer::getFileName(ImgId idx) const
     return path.filename();
 }
 
-std::unique_ptr<ImageCache> ImageContainer::getCache(
-    std::size_t maxChunkSize, const ImgIds& ids)
+std::unique_ptr<ImageCache> ImageContainer::getCache(std::size_t maxChunkSize, const ImgIds& ids)
 {
     auto numElems = getNumImgs();
-    return std::make_unique<ImageCache>(
-        shared_from_this(), numElems, maxChunkSize, ids);
+    return std::make_unique<ImageCache>(shared_from_this(), numElems, maxChunkSize, ids);
 }
 
-cv::Size ImageContainer::getImgSize() const
-{
-    return mData->mImgSize;
-}
+cv::Size ImageContainer::getImgSize() const { return mData->mImgSize; }
 
 std::shared_ptr<detail::ImageData> ImageContainer::getData() const { return mData; }
 std::shared_ptr<ImageContainer> ImageContainer::resize(double scale)
@@ -134,6 +126,5 @@ ImageContainer::ImageContainer(std::shared_ptr<detail::ImageData> data)
     : mData(std::move(data))
 {
 }
-
 
 } // namespace ht

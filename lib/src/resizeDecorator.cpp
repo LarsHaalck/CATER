@@ -4,8 +4,8 @@
 
 namespace ht
 {
-ResizeDecorator::ResizeDecorator(double scaleX, double scaleY,
-    std::shared_ptr<ImageContainer> baseContainer)
+ResizeDecorator::ResizeDecorator(
+    double scaleX, double scaleY, std::shared_ptr<ImageContainer> baseContainer)
     : BaseDecorator(baseContainer)
     , mScaleX(scaleX)
     , mScaleY(scaleY)
@@ -15,9 +15,7 @@ cv::Size ResizeDecorator::getImgSize() const
 {
     auto originalSize = BaseDecorator::getImgSize();
     return cv::Size(
-        std::round(mScaleX * originalSize.width),
-        std::round(mScaleY * originalSize.height)
-    );
+        std::round(mScaleX * originalSize.width), std::round(mScaleY * originalSize.height));
 }
 
 cv::Mat ResizeDecorator::at(std::size_t idx) const
@@ -25,8 +23,7 @@ cv::Mat ResizeDecorator::at(std::size_t idx) const
     cv::Mat mat = BaseDecorator::at(idx);
 
     cv::Mat resizedMat;
-    cv::resize(mat, resizedMat, cv::Size(), mScaleX, mScaleY,
-        cv::InterpolationFlags::INTER_CUBIC);
+    cv::resize(mat, resizedMat, cv::Size(), mScaleX, mScaleY, cv::InterpolationFlags::INTER_CUBIC);
     return resizedMat;
 }
 } // namespace ht

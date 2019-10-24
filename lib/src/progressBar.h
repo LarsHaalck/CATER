@@ -21,7 +21,11 @@ public:
     }
 
     void operator++() { mTicks++; }
-    ProgressBar& operator+=(int inc) { mTicks += inc; return *this; }
+    ProgressBar& operator+=(int inc)
+    {
+        mTicks += inc;
+        return *this;
+    }
 
     void display() const
     {
@@ -30,8 +34,7 @@ public:
 
         std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
         auto time_elapsed
-            = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time)
-                  .count();
+            = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
 
         std::cout << "[";
 
@@ -45,14 +48,11 @@ public:
                 std::cout << mInCompleteChar;
         }
         std::cout << "] " << static_cast<int>(progress * 100.0) << "% "
-            << static_cast<float>(time_elapsed) / 1000.0 << "s\r";
+                  << static_cast<float>(time_elapsed) / 1000.0 << "s\r";
         std::cout.flush();
     }
 
-    ~ProgressBar()
-    {
-        done();
-    }
+    ~ProgressBar() { done(); }
 
     void done()
     {
@@ -72,11 +72,9 @@ private:
     const unsigned int mBarWidth = 60;
     const char mCompleteChar = '=';
     const char mInCompleteChar = ' ';
-    const std::chrono::steady_clock::time_point start_time
-        = std::chrono::steady_clock::now();
+    const std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 
     bool mIsFinished = false;
-
 };
 } // namespace ht
 #endif // PROGRESS_BAR_H

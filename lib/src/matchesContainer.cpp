@@ -3,11 +3,11 @@
 #include "habitrack/imageContainer.h"
 #include "unknownFeatureType.h"
 
-#include "unknownGeometricType.h"
 #include "progressBar.h"
+#include "unknownGeometricType.h"
 
-#include "MILD/loop_closure_detector.h"
 #include "MILD/BayesianFilter.hpp"
+#include "MILD/loop_closure_detector.h"
 
 #include <fstream>
 #include <iostream>
@@ -22,8 +22,7 @@ namespace ht
 /* constexpr std::pair<Trafo, std::vector<uchar>> zeroMaskTrafoTuple */
 
 MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureContainer,
-    const fs::path& matchDir, MatchType matchType, std::size_t window,
-    GeometricType geomType)
+    const fs::path& matchDir, MatchType matchType, std::size_t window, GeometricType geomType)
     : mFtContainer(std::move(featureContainer))
     , mMatchDir(matchDir)
     , mMatchType(matchType)
@@ -83,8 +82,8 @@ GeometricType MatchesContainer::getTypeFromFile(const fs::path& file)
     throw UnknownGeometricType(type);
 }
 
-std::filesystem::path MatchesContainer::getFileName(detail::MatchTrafo matchTrafo,
-    GeometricType geomType)
+std::filesystem::path MatchesContainer::getFileName(
+    detail::MatchTrafo matchTrafo, GeometricType geomType)
 {
     auto fullFile = mMatchDir;
     if (matchTrafo == detail::MatchTrafo::Match)
@@ -95,23 +94,23 @@ std::filesystem::path MatchesContainer::getFileName(detail::MatchTrafo matchTraf
     using g = GeometricType;
     switch (geomType)
     {
-        case g::Putative:
-            fullFile += ".put";
-            break;
-        case g::Homography:
-            fullFile += ".h";
-            break;
-        case g::Affinity:
-            fullFile += ".a";
-            break;
-        case g::Similarity:
-            fullFile += ".s";
-            break;
-        case g::Isometry:
-            fullFile += ".i";
-            break;
-        default:
-            throw UnknownGeometricType();
+    case g::Putative:
+        fullFile += ".put";
+        break;
+    case g::Homography:
+        fullFile += ".h";
+        break;
+    case g::Affinity:
+        fullFile += ".a";
+        break;
+    case g::Similarity:
+        fullFile += ".s";
+        break;
+    case g::Isometry:
+        fullFile += ".i";
+        break;
+    default:
+        throw UnknownGeometricType();
     }
     fullFile += ".bin";
     return fullFile;
@@ -122,7 +121,11 @@ void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
     if (mIsComputed && behavior == ComputeBehavior::Keep)
         return;
 
+    // maps pairs to their matches vector
     matches = getPutativeMatches(cacheSize, behavior);
+
+    // TODO: is inplace modify via at() thread-safe?
+    // chunk over it, modify in place
 
     /* auto ftPtr = getFtPtr(); */
     /* auto imgCache = mImgContainer->gray()->getCache(cacheSize, ImageType::Regular); */
@@ -145,9 +148,8 @@ void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
     /* mIsComputed = true; */
 }
 
-
-Matches MatchesContainer::putMatch(cv::Ptr<cv::DescriptorMatcher> descMatcher,
-    const cv::Mat& descI, const cv::Mat& descJ)
+Matches MatchesContainer::putMatch(
+    cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ)
 {
     std::vector<cv::DMatch> currMatches;
     std::vector<std::vector<cv::DMatch>> knnMatches;
@@ -169,14 +171,13 @@ cv::Ptr<cv::DescriptorMatcher> MatchesContainer::getMatcher()
 {
     switch (mFtContainer->getFtType())
     {
-        case FeatureType::ORB:
-            return cv::makePtr<cv::FlannBasedMatcher>(
-                cv::makePtr<cv::flann::LshIndexParams>(20, 10, 2));
-        case FeatureType::SIFT:
-            return cv::DescriptorMatcher::create(
-                cv::DescriptorMatcher::MatcherType::FLANNBASED);
-        default:
-            throw UnknownFeatureType("not orb or sift");
+    case FeatureType::ORB:
+        return cv::makePtr<cv::FlannBasedMatcher>(
+            cv::makePtr<cv::flann::LshIndexParams>(20, 10, 2));
+    case FeatureType::SIFT:
+        return cv::DescriptorMatcher::create(cv::DescriptorMatcher::MatcherType::FLANNBASED);
+    default:
+        throw UnknownFeatureType("not orb or sift");
     }
 }
 
@@ -239,11 +240,8 @@ std::pair<Trafos, std::vector<Matches>> MatchesContainer::compute(
     return std::make_pair(trafos, matches);
 }
 
-std::pair<Trafo, Matches> MatchesContainer::geomMatch(
-    const std::vector<cv::KeyPoint>& featI,
-    const std::vector<cv::KeyPoint>& featJ,
-    GeometricType filterType,
-    const Matches& matches)
+std::pair<Trafo, Matches> MatchesContainer::geomMatch(const std::vector<cv::KeyPoint>& featI,
+    const std::vector<cv::KeyPoint>& featJ, GeometricType filterType, const Matches& matches)
 {
     std::vector<cv::Point2f> src, dst;
     for (size_t i = 0; i < matches.size(); i++)
@@ -260,9 +258,9 @@ std::pair<Trafo, Matches> MatchesContainer::geomMatch(
     {
         if (mask[r])
         {
-           filteredMatches.push_back(matches[r]);
-           /* srcFiltered.push_back(src[r]); */
-           /* dstFiltered.push_back(dst[r]); */
+            filteredMatches.push_back(matches[r]);
+            /* srcFiltered.push_back(src[r]); */
+            /* dstFiltered.push_back(dst[r]); */
         }
     }
 
@@ -285,16 +283,16 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMask(
 {
     switch (type)
     {
-        case g::Isometry:
-            return getInlierMaskIsometry(src, dst);
-        case g::Similarity:
-            return getInlierMaskSimilarity(src, dst);
-        case g::Affinity:
-            return getInlierMaskAffinity(src, dst);
-        case g::Homography:
-            return getInlierMaskHomography(src, dst);
-        default:
-            return std::make_pair(std::vector<uchar>(), cv::Mat());
+    case g::Isometry:
+        return getInlierMaskIsometry(src, dst);
+    case g::Similarity:
+        return getInlierMaskSimilarity(src, dst);
+    case g::Affinity:
+        return getInlierMaskAffinity(src, dst);
+    case g::Homography:
+        return getInlierMaskHomography(src, dst);
+    default:
+        return std::make_pair(std::vector<uchar>(), cv::Mat());
     }
     return std::make_pair(std::vector<uchar>(), cv::Mat());
 }
@@ -347,7 +345,6 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskAffinity(
     return std::make_pair(mask, mat);
 }
 
-
 std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskHomography(
     const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst)
 {
@@ -364,8 +361,8 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskHomography
     return std::make_pair(mask, mat);
 }
 
-PairWiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize,
-    ComputeBehavior behavior)
+PairWiseMatches MatchesContainer::getPutativeMatches(
+    std::size_t cacheSize, ComputeBehavior behavior)
 {
     if (mMatchType == MatchType::Manual)
         return;
@@ -381,7 +378,7 @@ PairWiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize,
         auto chunk = descCache->getChunk(i);
         auto [lower, _] = descCache->getChunkBounds(i);
 
-        #pragma omp parallel for
+#pragma omp parallel for
         for (std::size_t k = 0; k < descCache->getChunkSize(i); k++)
         {
             auto currPair = pairList[lower + k];
@@ -391,7 +388,7 @@ PairWiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize,
             auto currMatches = putMatch(descMatcher, descI, descJ);
             if (!currMatches.empty())
             {
-                #pragma omp critical
+#pragma omp critical
                 matches.insert(std::make_pair(currPair, std::move(currMatches)));
             }
         }
@@ -399,9 +396,7 @@ PairWiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize,
     writeMatches(matches, GeometricType::Putative);
 }
 
-
-void MatchesContainer::writeMatches(const PairWiseMatches& matches, 
-    GeometricType type) const
+void MatchesContainer::writeMatches(const PairWiseMatches& matches, GeometricType type) const
 {
     std::ofstream stream("matches.put.bin", std::ios::out | std::ios::binary);
     checkStream(stream);
@@ -411,21 +406,19 @@ void MatchesContainer::writeMatches(const PairWiseMatches& matches,
     }
 }
 
-std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
-    std::size_t size)
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(std::size_t size)
 {
     switch (mMatchType)
     {
-        case MatchType::Exhaustive:
-            return getExhaustivePairList(size);
-        case MatchType::MILD:
-            return {};
-            /* return getMILDPairList(size); */
-        case MatchType::Windowed:
-            return getWindowPairList(size);
-        default:
-            return {};
-
+    case MatchType::Exhaustive:
+        return getExhaustivePairList(size);
+    case MatchType::MILD:
+        return {};
+        /* return getMILDPairList(size); */
+    case MatchType::Windowed:
+        return getWindowPairList(size);
+    default:
+        return {};
     }
 }
 
@@ -485,7 +478,6 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustive
 /*     } */
 
 /*     // insert descriptors into lcd */
-
 
 /*     return {}; */
 /* } */

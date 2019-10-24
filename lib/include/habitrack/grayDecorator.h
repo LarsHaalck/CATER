@@ -13,4 +13,3 @@ public:
 };
 } // namespace ht
 #endif // HABITRACK_GRAY_DECORATOR_H
-

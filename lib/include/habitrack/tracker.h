@@ -10,9 +10,6 @@ public:
 
     getFeatures()
 
-    void computeFeatures()
-private:
-    Preferences mPrefs;
-
+        void computeFeatures() private : Preferences mPrefs;
 };
 } // namespace habitrack

@@ -8,7 +8,7 @@
 
 namespace cereal
 {
-template<class Archive>
+template <class Archive>
 void save(Archive& archive, const cv::Mat& mat)
 {
     int rows = mat.rows;
@@ -33,10 +33,10 @@ void save(Archive& archive, const cv::Mat& mat)
     }
 }
 
-template<class Archive>
+template <class Archive>
 void load(Archive& archive, cv::Mat& mat)
 {
-    /* std::cout << "load" << std::endl; */ 
+    /* std::cout << "load" << std::endl; */
     int rows, cols, type;
     bool continuous;
     archive(rows, cols, type, continuous);

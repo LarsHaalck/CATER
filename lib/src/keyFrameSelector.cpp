@@ -5,10 +5,10 @@
 #include "progressBar.h"
 
 #ifdef _OPENMP
-   #include <omp.h>
+#include <omp.h>
 #else
-   #define omp_get_max_threads() 0
-   #define omp_get_thread_num() 0
+#define omp_get_max_threads() 0
+#define omp_get_thread_num() 0
 #endif // _OPENMP
 
 namespace ht
@@ -23,7 +23,7 @@ KeyFrameSelector::KeyFrameSelector(std::shared_ptr<FeatureContainer> ftContainer
 std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
 {
     const auto [low, high] = getRealLowHigh(relLow, relHigh);
-    std::vector<std::size_t> keyFrames{};
+    std::vector<std::size_t> keyFrames {};
 
     std::size_t currView = 0;
     keyFrames.push_back(currView);
@@ -41,19 +41,16 @@ std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
         // thread 0 handles direct neighbor, thread 1 direct neighbor + 1, etc
         for (std::size_t k = 0; k < remainImgs; k += omp_get_max_threads())
         {
-            std::vector<std::pair<float, std::size_t>> currDistOverlapVec(
-                omp_get_max_threads());
+            std::vector<std::pair<float, std::size_t>> currDistOverlapVec(omp_get_max_threads());
 
-            #pragma omp parallel
+#pragma omp parallel
             {
                 std::size_t currThread = omp_get_thread_num();
                 std::size_t nextView = currView + 1 + (k + currThread);
 
-
                 if (nextView < mFtContainer->getNumImgs())
                 {
-                    currDistOverlapVec[currThread] =
-                        getMedianDistanceShift(currView, nextView);
+                    currDistOverlapVec[currThread] = getMedianDistanceShift(currView, nextView);
                 }
             }
 
@@ -98,7 +95,7 @@ std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
     bar.done();
 
     std::cout << "Keeping: " << keyFrames.size() << " of " << mFtContainer->getNumImgs()
-        << " files. " << std::endl;
+              << " files. " << std::endl;
     return keyFrames;
 }
 
@@ -122,8 +119,8 @@ std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
     std::size_t idI, std::size_t idJ) const
 {
     // TODO: store?????????
-    auto matcher = std::make_unique<MatchesContainer>(mFtContainer,
-        "", MatchType::Manual, 0, GeometricType::Homography);
+    auto matcher = std::make_unique<MatchesContainer>(
+        mFtContainer, "", MatchType::Manual, 0, GeometricType::Homography);
 
     auto ftsI = mFtContainer->featureAt(idI);
     auto ftsJ = mFtContainer->featureAt(idJ);
@@ -150,7 +147,6 @@ std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
         return std::make_pair(0.0f, 0);
 
     return std::make_pair(getMedian(distances), distances.size());
-
 }
 
 double KeyFrameSelector::calcReprojError(const std::vector<cv::Point2f>& ptsSrc,
@@ -176,19 +172,15 @@ double KeyFrameSelector::calcReprojError(const std::vector<cv::Point2f>& ptsSrc,
 }
 
 std::size_t KeyFrameSelector::filterViews(
-    const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low,
-    float high)
+    const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low, float high)
 {
     auto maxView = std::max_element(std::begin(distOverlapVec), std::end(distOverlapVec),
-        [&](const auto& lhs, const auto& rhs) {
-            return compareMaxOverlap(lhs, rhs, low, high);
-        });
+        [&](const auto& lhs, const auto& rhs) { return compareMaxOverlap(lhs, rhs, low, high); });
 
     /* if (maxView == std::end(distOverlapVec)) */
     /*     std::cout << "should not happen" << std::endl; */
 
-    return static_cast<std::size_t>(
-        std::distance(std::begin(distOverlapVec), maxView));
+    return static_cast<std::size_t>(std::distance(std::begin(distOverlapVec), maxView));
 }
 
 bool KeyFrameSelector::compareMaxOverlap(const std::pair<float, std::size_t>& lhs,

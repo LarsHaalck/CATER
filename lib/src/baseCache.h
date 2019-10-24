@@ -10,8 +10,7 @@ namespace ht
 class BaseCache
 {
 public:
-    BaseCache(std::size_t numElems, std::size_t maxChunkSize,
-        const std::vector<std::size_t>& ids);
+    BaseCache(std::size_t numElems, std::size_t maxChunkSize, const std::vector<std::size_t>& ids);
 
     std::size_t getNumElems() const;
     std::size_t getMaxChunkSize() const;
@@ -20,8 +19,10 @@ public:
     std::pair<std::size_t, std::size_t> getChunkBounds(std::size_t chunkIdx) const;
 
     virtual ~BaseCache() = default;
+
 protected:
     std::size_t transformId(std::size_t idx) const;
+
 private:
     std::size_t mNumElems;
     std::size_t mMaxChunkSize;
@@ -33,4 +34,3 @@ private:
 } // namespace ht
 
 #endif // HABITRACK_BASE_CACHE_H
-

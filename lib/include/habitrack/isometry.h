@@ -46,8 +46,8 @@
 
 #include "ransac.h"
 
-#include <opencv2/core.hpp>
 #include <opencv2/calib3d.hpp>
+#include <opencv2/core.hpp>
 
 namespace cv
 {
@@ -59,8 +59,8 @@ class Isometry2DEstimatorCallback : public PointSetRegistrator::Callback
 {
 public:
     int runKernel(InputArray _m1, InputArray _m2, OutputArray _model) const override;
-    void computeError(InputArray _m1, InputArray _m2, InputArray _model,
-        OutputArray _err) const override;
+    void computeError(
+        InputArray _m1, InputArray _m2, InputArray _model, OutputArray _err) const override;
     bool checkSubset(InputArray _ms1, InputArray _ms2, int count) const override;
 };
 
@@ -69,10 +69,10 @@ class Isometry2DRefineCallback : public LMSolver::Callback
 private:
     Mat src;
     Mat dst;
+
 public:
     Isometry2DRefineCallback(InputArray _src, InputArray _dst);
     bool compute(InputArray _param, OutputArray _err, OutputArray _Jac) const override;
-
 };
 } // namespace cv
 

@@ -2,10 +2,9 @@
 #define HABITACK_KEY_FRAME_SELECTOR_H
 
 #include <algorithm>
-#include <vector>
 #include <memory>
 #include <opencv2/features2d.hpp>
-
+#include <vector>
 
 namespace ht
 {
@@ -19,20 +18,19 @@ class KeyFrameSelector
 public:
     KeyFrameSelector(std::shared_ptr<FeatureContainer> ftContainer);
     std::vector<std::size_t> compute(float low, float high);
+
 private:
     std::pair<float, float> getRealLowHigh(float low, float high) const;
-    std::pair<float, std::size_t> getMedianDistanceShift(
-        std::size_t idI, std::size_t idJ) const;
+    std::pair<float, std::size_t> getMedianDistanceShift(std::size_t idI, std::size_t idJ) const;
 
     std::size_t filterViews(
-        const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low,
-        float high);
+        const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low, float high);
 
     bool compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
         const std::pair<float, std::size_t>& rhs, float low, float high) const;
 
-    double calcReprojError(const std::vector<cv::Point2f>& ptsSrc,
-        std::vector<cv::Point2f>& ptsDst, const cv::Mat& trafo) const;
+    double calcReprojError(const std::vector<cv::Point2f>& ptsSrc, std::vector<cv::Point2f>& ptsDst,
+        const cv::Mat& trafo) const;
 
     static float l2Dist(const cv::KeyPoint& pt0, const cv::KeyPoint& pt1)
     {
@@ -42,8 +40,7 @@ private:
 
     static float l2Dist(const cv::Point2f& pt0, const cv::Point2f& pt1)
     {
-        return (pt0.x - pt1.x) * (pt0.x - pt1.x)
-            + (pt0.y - pt1.y) * (pt0.y - pt1.y);
+        return (pt0.x - pt1.x) * (pt0.x - pt1.x) + (pt0.y - pt1.y) * (pt0.y - pt1.y);
     }
 
     // pass by copy because of sorting
@@ -61,6 +58,7 @@ private:
         else
             return vec[size / 2];
     }
+
 private:
     std::shared_ptr<FeatureContainer> mFtContainer;
     cv::Size mImgSize;
@@ -68,4 +66,3 @@ private:
 };
 } // namespace ht
 #endif // HABITACK_KEY_FRAME_SELECTOR_H
-

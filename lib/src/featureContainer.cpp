@@ -1,10 +1,10 @@
 #include "habitrack/featureContainer.h"
-#include "unknownFeatureType.h"
 #include "progressBar.h"
-#include <opencv2/highgui.hpp>
-#include <opencv2/xfeatures2d.hpp>
+#include "unknownFeatureType.h"
 #include <fstream>
 #include <iostream>
+#include <opencv2/highgui.hpp>
+#include <opencv2/xfeatures2d.hpp>
 
 namespace fs = std::filesystem;
 
@@ -48,8 +48,7 @@ FeatureType FeatureContainer::getTypeFromFile(const fs::path& file)
     throw UnknownFeatureType(type);
 }
 
-std::filesystem::path FeatureContainer::getFileName(
-    std::size_t idx, detail::FtDesc ftDesc)
+std::filesystem::path FeatureContainer::getFileName(std::size_t idx, detail::FtDesc ftDesc)
 {
     auto stem = mImgContainer->getFileName(idx).stem();
     auto fullFile = mFtDir / stem;
@@ -78,7 +77,7 @@ void FeatureContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
 
         std::vector<std::vector<cv::KeyPoint>> fts(imgCache->getChunkSize(i));
         std::vector<cv::Mat> descs(imgCache->getChunkSize(i));
-        #pragma omp parallel for
+#pragma omp parallel for
         for (std::size_t j = 0; j < chunk.size(); j++)
             ftPtr->detectAndCompute(chunk[j], cv::Mat(), fts[j], descs[j]);
 
@@ -102,8 +101,7 @@ void FeatureContainer::writeChunk(std::pair<std::size_t, std::size_t> bounds,
     }
 }
 
-void FeatureContainer::writeFts(
-    const fs::path& file, const std::vector<cv::KeyPoint>& fts)
+void FeatureContainer::writeFts(const fs::path& file, const std::vector<cv::KeyPoint>& fts)
 {
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
     checkStream(stream, file);
@@ -137,8 +135,7 @@ cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr()
         throw UnknownFeatureType();
     }
 }
-std::vector<cv::KeyPoint> FeatureContainer::featureAt(
-    std::size_t idx)
+std::vector<cv::KeyPoint> FeatureContainer::featureAt(std::size_t idx)
 {
     assert(idx < mNumImgs && mIsComputed
         && "idx out of range in FeatureContainer::featureAt() or not computed");
@@ -175,22 +172,18 @@ cv::Mat FeatureContainer::descriptorAt(std::size_t idx)
 std::unique_ptr<FeatureCache> FeatureContainer::getFeatureCache(
     std::size_t maxChunkSize, const ImgIds& ids)
 {
-    return std::make_unique<FeatureCache>(
-        shared_from_this(), mNumImgs, maxChunkSize, ids);
+    return std::make_unique<FeatureCache>(shared_from_this(), mNumImgs, maxChunkSize, ids);
 }
 
 std::unique_ptr<DescriptorCache> FeatureContainer::getDescriptorCache(
     std::size_t maxChunkSize, const ImgIds& ids)
 {
-    return std::make_unique<DescriptorCache>(
-        shared_from_this(), mNumImgs, maxChunkSize, ids);
+    return std::make_unique<DescriptorCache>(shared_from_this(), mNumImgs, maxChunkSize, ids);
 }
 std::unique_ptr<PairwiseDescriptorCache> FeatureContainer::getPairwiseDescriptorCache(
-    std::size_t maxChunkSize,
-    const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
+    std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
 {
-    return std::make_unique<PairwiseDescriptorCache>(
-        shared_from_this(), maxChunkSize, pairs);
+    return std::make_unique<PairwiseDescriptorCache>(shared_from_this(), maxChunkSize, pairs);
 }
 
 std::shared_ptr<ImageContainer> FeatureContainer::getImageContainer() const
@@ -202,6 +195,5 @@ fs::path FeatureContainer::getFtDir() const { return mFtDir; }
 std::size_t FeatureContainer::getNumImgs() const { return mNumImgs; }
 cv::Size FeatureContainer::getImgSize() const { return mImgSize; }
 FeatureType FeatureContainer::getFtType() const { return mType; }
-
 
 }

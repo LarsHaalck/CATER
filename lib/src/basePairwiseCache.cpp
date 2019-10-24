@@ -2,8 +2,8 @@
 
 namespace ht
 {
-BasePairwiseCache::BasePairwiseCache(std::size_t maxChunkSize,
-    const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
+BasePairwiseCache::BasePairwiseCache(
+    std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
     : BaseCache(pairs.size(), maxChunkSize, {})
     , mPairs(pairs)
 {

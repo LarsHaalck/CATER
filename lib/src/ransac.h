@@ -58,7 +58,8 @@ public:
     public:
         virtual ~Callback() {}
         virtual int runKernel(InputArray m1, InputArray m2, OutputArray model) const = 0;
-        virtual void computeError(InputArray m1, InputArray m2, InputArray model, OutputArray err) const = 0;
+        virtual void computeError(
+            InputArray m1, InputArray m2, InputArray model, OutputArray err) const = 0;
         virtual bool checkSubset(InputArray, InputArray, int) const { return true; }
     };
 
@@ -71,16 +72,19 @@ int RANSACUpdateNumIters(double p, double ep, int modelPoints, int maxIters);
 class RANSACPointSetRegistrator : public PointSetRegistrator
 {
 public:
-    RANSACPointSetRegistrator(const Ptr<PointSetRegistrator::Callback>& _cb=Ptr<PointSetRegistrator::Callback>(),
-                              int _modelPoints=0, double _threshold=0, double _confidence=0.99, int _maxIters=1000);
+    RANSACPointSetRegistrator(
+        const Ptr<PointSetRegistrator::Callback>& _cb = Ptr<PointSetRegistrator::Callback>(),
+        int _modelPoints = 0, double _threshold = 0, double _confidence = 0.99,
+        int _maxIters = 1000);
 
-    int findInliers( const Mat& m1, const Mat& m2, const Mat& model, Mat& err, Mat& mask, double thresh ) const;
+    int findInliers(
+        const Mat& m1, const Mat& m2, const Mat& model, Mat& err, Mat& mask, double thresh) const;
 
-    bool getSubset( const Mat& m1, const Mat& m2,
-                    Mat& ms1, Mat& ms2, RNG& rng,
-                    int maxAttempts=1000 ) const;
+    bool getSubset(
+        const Mat& m1, const Mat& m2, Mat& ms1, Mat& ms2, RNG& rng, int maxAttempts = 1000) const;
 
-    bool run(InputArray _m1, InputArray _m2, OutputArray _model, OutputArray _mask) const CV_OVERRIDE;
+    bool run(
+        InputArray _m1, InputArray _m2, OutputArray _model, OutputArray _mask) const CV_OVERRIDE;
     void setCallback(const Ptr<PointSetRegistrator::Callback>& _cb) CV_OVERRIDE;
 
     Ptr<PointSetRegistrator::Callback> cb;
@@ -92,21 +96,22 @@ public:
 
 inline bool haveCollinearPoints(const Mat& m, int count)
 {
-    int j, k, i = count-1;
+    int j, k, i = count - 1;
     const Point2f* ptr = m.ptr<Point2f>();
 
     // check that the i-th selected point does not belong
     // to a line connecting some previously selected points
     // also checks that points are not too close to each other
-    for( j = 0; j < i; j++ )
+    for (j = 0; j < i; j++)
     {
         double dx1 = ptr[j].x - ptr[i].x;
         double dy1 = ptr[j].y - ptr[i].y;
-        for( k = 0; k < j; k++ )
+        for (k = 0; k < j; k++)
         {
             double dx2 = ptr[k].x - ptr[i].x;
             double dy2 = ptr[k].y - ptr[i].y;
-            if( fabs(dx2*dy1 - dy2*dx1) <= FLT_EPSILON*(fabs(dx1) + fabs(dy1) + fabs(dx2) + fabs(dy2)))
+            if (fabs(dx2 * dy1 - dy2 * dx1)
+                <= FLT_EPSILON * (fabs(dx1) + fabs(dy1) + fabs(dx2) + fabs(dy2)))
                 return true;
         }
     }
@@ -117,14 +122,14 @@ Ptr<PointSetRegistrator> createRANSACPointSetRegistrator(
     const Ptr<PointSetRegistrator::Callback>& _cb, int _modelPoints, double _threshold,
     double _confidence, int _maxIters);
 
-template<typename T> inline int compressElems(T* ptr, const uchar* mask, int mstep,
-    int count)
+template <typename T>
+inline int compressElems(T* ptr, const uchar* mask, int mstep, int count)
 {
     int i, j;
-    for(i = j = 0; i < count; i++)
-        if(mask[i*mstep])
+    for (i = j = 0; i < count; i++)
+        if (mask[i * mstep])
         {
-            if(i > j)
+            if (i > j)
                 ptr[j] = ptr[i];
             j++;
         }

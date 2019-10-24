@@ -9,7 +9,7 @@
 
 namespace cereal
 {
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, cv::KeyPoint& kp)
 {
     archive(kp.pt.x, kp.pt.y, kp.size, kp.angle, kp.response, kp.octave, kp.class_id);

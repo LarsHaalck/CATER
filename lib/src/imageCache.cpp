@@ -3,8 +3,8 @@
 
 namespace ht
 {
-ImageCache::ImageCache(std::shared_ptr<ImageContainer> container,
-    std::size_t numElems, std::size_t maxChunkSize, const ImgIds& ids)
+ImageCache::ImageCache(std::shared_ptr<ImageContainer> container, std::size_t numElems,
+    std::size_t maxChunkSize, const ImgIds& ids)
     : BaseCache(numElems, maxChunkSize, ids)
     , mContainer(std::move(container))
 {

@@ -49,8 +49,7 @@
 namespace cv
 {
 Mat estimateIsometry2D(InputArray _from, InputArray _to, OutputArray _inliers,
-        double ransacReprojThreshold, size_t maxIters, double confidence,
-        size_t refineIters)
+    double ransacReprojThreshold, size_t maxIters, double confidence, size_t refineIters)
 {
     // BOILERPLATE CODE
     Mat from = _from.getMat(), to = _to.getMat();
@@ -58,7 +57,7 @@ Mat estimateIsometry2D(InputArray _from, InputArray _to, OutputArray _inliers,
     bool result = false;
     Mat H;
 
-    CV_Assert( count >= 0 && to.checkVector(2) == count );
+    CV_Assert(count >= 0 && to.checkVector(2) == count);
 
     if (from.type() != CV_32FC2 || to.type() != CV_32FC2)
     {
@@ -73,7 +72,7 @@ Mat estimateIsometry2D(InputArray _from, InputArray _to, OutputArray _inliers,
     to = to.reshape(2, count);
 
     Mat inliers;
-    if(_inliers.needed())
+    if (_inliers.needed())
     {
         _inliers.create(count, 1, CV_8U, -1, true);
         inliers = _inliers.getMat();
@@ -81,15 +80,16 @@ Mat estimateIsometry2D(InputArray _from, InputArray _to, OutputArray _inliers,
 
     // run robust estimation
     Ptr<PointSetRegistrator::Callback> cb = makePtr<Isometry2DEstimatorCallback>();
-    result = createRANSACPointSetRegistrator(cb, 2, ransacReprojThreshold,
-        confidence, static_cast<int>(maxIters))->run(from, to, H, inliers);
+    result = createRANSACPointSetRegistrator(
+        cb, 2, ransacReprojThreshold, confidence, static_cast<int>(maxIters))
+                 ->run(from, to, H, inliers);
 
-    if(result && count > 2 && refineIters)
+    if (result && count > 2 && refineIters)
     {
         // reorder to start with inliers
         compressElems(from.ptr<Point2f>(), inliers.ptr<uchar>(), 1, count);
         int inliers_count = compressElems(to.ptr<Point2f>(), inliers.ptr<uchar>(), 1, count);
-        if(inliers_count > 0)
+        if (inliers_count > 0)
         {
             Mat src = from.rowRange(0, inliers_count);
             Mat dst = to.rowRange(0, inliers_count);
@@ -99,12 +99,13 @@ Mat estimateIsometry2D(InputArray _from, InputArray _to, OutputArray _inliers,
             // Hvec model for LevMarq is
             //     (alpha, tx, ty)
             //  where alpha is the angle for the rotation matrix
-            double *Hptr = H.ptr<double>();
+            double* Hptr = H.ptr<double>();
             double angle = std::atan2(Hptr[3], Hptr[0]);
             double Hvec_buf[3] = {angle, Hptr[2], Hptr[5]};
-            Mat Hvec (3, 1, CV_64F, Hvec_buf);
-            LMSolver::create(makePtr<Isometry2DRefineCallback>(src, dst),
-                static_cast<int>(refineIters))->run(Hvec);
+            Mat Hvec(3, 1, CV_64F, Hvec_buf);
+            LMSolver::create(
+                makePtr<Isometry2DRefineCallback>(src, dst), static_cast<int>(refineIters))
+                ->run(Hvec);
 
             // update H with refined parameters
             Hptr[0] = Hptr[4] = std::cos(Hvec_buf[0]);
@@ -118,7 +119,7 @@ Mat estimateIsometry2D(InputArray _from, InputArray _to, OutputArray _inliers,
     if (!result)
     {
         H.release();
-        if(_inliers.needed())
+        if (_inliers.needed())
         {
             inliers = Mat::zeros(count, 1, CV_8U);
             inliers.copyTo(_inliers);
@@ -128,15 +129,14 @@ Mat estimateIsometry2D(InputArray _from, InputArray _to, OutputArray _inliers,
     return H;
 }
 
-int Isometry2DEstimatorCallback::runKernel( InputArray _m1, InputArray _m2,
-        OutputArray _model ) const
+int Isometry2DEstimatorCallback::runKernel(InputArray _m1, InputArray _m2, OutputArray _model) const
 {
     Mat m1 = _m1.getMat(), m2 = _m2.getMat();
     const Point2f* from = m1.ptr<Point2f>();
-    const Point2f* to   = m2.ptr<Point2f>();
+    const Point2f* to = m2.ptr<Point2f>();
     _model.create(2, 3, CV_64F);
     Mat M_mat = _model.getMat();
-    double *M = M_mat.ptr<double>();
+    double* M = M_mat.ptr<double>();
 
     // we need only 2 points to estimate transform
     double x1 = from[0].x;
@@ -154,24 +154,30 @@ int Isometry2DEstimatorCallback::runKernel( InputArray _m1, InputArray _m2,
     double meanFromy = (y1 + y2) / 2.0;
     double meanFromX = (X1 + X2) / 2.0;
     double meanFromY = (Y1 + Y2) / 2.0;
-    x1 -= meanFromx; x2 -= meanFromx;
-    y1 -= meanFromy; y2 -= meanFromy;
-    X1 -= meanFromX; X2 -= meanFromX;
-    Y1 -= meanFromY; Y2 -= meanFromY;
+    x1 -= meanFromx;
+    x2 -= meanFromx;
+    y1 -= meanFromy;
+    y2 -= meanFromy;
+    X1 -= meanFromX;
+    X2 -= meanFromX;
+    Y1 -= meanFromY;
+    Y2 -= meanFromY;
 
-    double normFrom1 = std::sqrt(x1*x1 + y1*y1);
-    double normFrom2 = std::sqrt(x2*x2 + y2*y2);
-    double normTo1 = std::sqrt(X1*X1 + Y1*Y1);
-    double normTo2 = std::sqrt(X2*X2 + Y2*Y2);
+    double normFrom1 = std::sqrt(x1 * x1 + y1 * y1);
+    double normFrom2 = std::sqrt(x2 * x2 + y2 * y2);
+    double normTo1 = std::sqrt(X1 * X1 + Y1 * Y1);
+    double normTo2 = std::sqrt(X2 * X2 + Y2 * Y2);
 
     // calculate mean angle
     // mean value of cosinus between the vectors determined by the dot product
-    double cosMean = ((x1 * X1 + y1 * Y1)/(normFrom1 * normTo1)
-        + (x2 * X2 + y2 * Y2)/(normFrom2 * normTo2)) / 2.0;
+    double cosMean = ((x1 * X1 + y1 * Y1) / (normFrom1 * normTo1)
+                         + (x2 * X2 + y2 * Y2) / (normFrom2 * normTo2))
+        / 2.0;
 
     // mean value of sinus between the vectors determined by the cross product
-    double sinMean = (std::abs(x1 * Y1 - y1 * X1)/(normFrom1 * normTo1)
-        + std::abs(x2 * Y2 - y2 * X2)/(normFrom2 * normTo2)) / 2.0;
+    double sinMean = (std::abs(x1 * Y1 - y1 * X1) / (normFrom1 * normTo1)
+                         + std::abs(x2 * Y2 - y2 * X2) / (normFrom2 * normTo2))
+        / 2.0;
 
     // translation determined by
     // (midpoint of "TO" points) - Rotation * (midpoint of "FROM" points)
@@ -190,16 +196,16 @@ int Isometry2DEstimatorCallback::runKernel( InputArray _m1, InputArray _m2,
     return 1;
 }
 
-void Isometry2DEstimatorCallback::computeError(InputArray _m1, InputArray _m2,
-    InputArray _model, OutputArray _err) const
+void Isometry2DEstimatorCallback::computeError(
+    InputArray _m1, InputArray _m2, InputArray _model, OutputArray _err) const
 {
     Mat m1 = _m1.getMat(), m2 = _m2.getMat(), model = _model.getMat();
     const Point2f* from = m1.ptr<Point2f>();
-    const Point2f* to   = m2.ptr<Point2f>();
+    const Point2f* to = m2.ptr<Point2f>();
     const double* F = model.ptr<double>();
 
     int count = m1.checkVector(2);
-    CV_Assert( count > 0 );
+    CV_Assert(count > 0);
 
     _err.create(count, 1, CV_32F);
     Mat err = _err.getMat();
@@ -208,20 +214,19 @@ void Isometry2DEstimatorCallback::computeError(InputArray _m1, InputArray _m2,
     float F0 = (float)F[0], F1 = (float)F[1], F2 = (float)F[2];
     float F3 = (float)F[3], F4 = (float)F[4], F5 = (float)F[5];
 
-    for(int i = 0; i < count; i++ )
+    for (int i = 0; i < count; i++)
     {
         const Point2f& f = from[i];
         const Point2f& t = to[i];
 
-        float a = F0*f.x + F1*f.y + F2 - t.x;
-        float b = F3*f.x + F4*f.y + F5 - t.y;
+        float a = F0 * f.x + F1 * f.y + F2 - t.x;
+        float b = F3 * f.x + F4 * f.y + F5 - t.y;
 
-        errptr[i] = a*a + b*b;
+        errptr[i] = a * a + b * b;
     }
 }
 
-bool Isometry2DEstimatorCallback::checkSubset(InputArray _ms1, InputArray _ms2,
-    int count) const
+bool Isometry2DEstimatorCallback::checkSubset(InputArray _ms1, InputArray _ms2, int count) const
 {
     Mat ms1 = _ms1.getMat();
     Mat ms2 = _ms2.getMat();
@@ -235,17 +240,16 @@ Isometry2DRefineCallback::Isometry2DRefineCallback(InputArray _src, InputArray _
     dst = _dst.getMat();
 }
 
-bool Isometry2DRefineCallback::compute(InputArray _param, OutputArray _err,
-        OutputArray _Jac) const
+bool Isometry2DRefineCallback::compute(InputArray _param, OutputArray _err, OutputArray _Jac) const
 
 {
     int i, count = src.checkVector(2);
     Mat param = _param.getMat();
-    _err.create(count*2, 1, CV_64F);
+    _err.create(count * 2, 1, CV_64F);
     Mat err = _err.getMat(), J;
-    if( _Jac.needed())
+    if (_Jac.needed())
     {
-        _Jac.create(count*2, param.rows, CV_64F);
+        _Jac.create(count * 2, param.rows, CV_64F);
         J = _Jac.getMat();
         CV_Assert(J.isContinuous() && J.cols == 3);
     }
@@ -257,13 +261,13 @@ bool Isometry2DRefineCallback::compute(InputArray _param, OutputArray _err,
     double* Jptr = J.data ? J.ptr<double>() : 0;
 
     /* double error = 0.0; */
-    for( i = 0; i < count; i++ )
+    for (i = 0; i < count; i++)
     {
         double Mx = M[i].x, My = M[i].y;
-        double xi = std::cos(h[0])*Mx - std::sin(h[0])*My + h[1];
-        double yi = std::sin(h[0])*Mx + std::cos(h[0])*My + h[2];
-        errptr[i*2] = xi - m[i].x;
-        errptr[i*2+1] = yi - m[i].y;
+        double xi = std::cos(h[0]) * Mx - std::sin(h[0]) * My + h[1];
+        double yi = std::sin(h[0]) * Mx + std::cos(h[0]) * My + h[2];
+        errptr[i * 2] = xi - m[i].x;
+        errptr[i * 2 + 1] = yi - m[i].y;
         /* error = errptr[i*2]*errptr[i*2] +  errptr[i*2+1]*errptr[i*2+1]; */
 
         /*
@@ -272,16 +276,18 @@ bool Isometry2DRefineCallback::compute(InputArray _param, OutputArray _err,
             {-sin(a)*x - cos(a)*y, 1, 0}
             {cos(a)*x - sin(a)*y, 0, 1}
         */
-        if(Jptr)
+        if (Jptr)
         {
-            Jptr[0] = -std::sin(h[0])*Mx - std::cos(h[0])*My;
-            Jptr[1] = 1.0; Jptr[2] = 0.0;
+            Jptr[0] = -std::sin(h[0]) * Mx - std::cos(h[0]) * My;
+            Jptr[1] = 1.0;
+            Jptr[2] = 0.0;
 
-            Jptr[3] = std::cos(h[0])*Mx - std::sin(h[0])*My;
-            Jptr[4] = 0.0; Jptr[5] = 1.0;
+            Jptr[3] = std::cos(h[0]) * Mx - std::sin(h[0]) * My;
+            Jptr[4] = 0.0;
+            Jptr[5] = 1.0;
 
             // move pointer
-            Jptr += 3*2;
+            Jptr += 3 * 2;
         }
     }
 
@@ -289,4 +295,3 @@ bool Isometry2DRefineCallback::compute(InputArray _param, OutputArray _err,
 }
 
 } // namespace cv
-

@@ -1,14 +1,14 @@
 #ifndef HABITRACK_IMAGE_CACHE_H
 #define HABITRACK_IMAGE_CACHE_H
 
-#include <memory>
-#include <vector>
-#include <opencv2/core.hpp>
 #include "baseCache.h"
+#include <memory>
+#include <opencv2/core.hpp>
+#include <vector>
 
 namespace ht
 {
-    class ImageContainer;
+class ImageContainer;
 }
 
 namespace ht
@@ -19,9 +19,9 @@ public:
     ImageCache(std::shared_ptr<ImageContainer> container, std::size_t numElems,
         std::size_t maxChunkSize, const std::vector<std::size_t>& ids);
     std::vector<cv::Mat> getChunk(std::size_t idx);
+
 private:
     std::shared_ptr<ImageContainer> mContainer;
 };
 }
 #endif // HABITRACK_IMAGE_CACHE_H
-
