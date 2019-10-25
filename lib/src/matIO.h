@@ -1,5 +1,5 @@
-#ifndef HT_DESCRIPTOR_IO_H
-#define HT_DESCRIPTOR_IO_H
+#ifndef HT_MAT_IO_H
+#define HT_MAT_IO_H
 
 #include <cereal/archives/portable_binary.hpp>
 #include <opencv2/core.hpp>
@@ -57,4 +57,4 @@ void load(Archive& archive, cv::Mat& mat)
 }
 } // namespace cereal
 
-#endif // HT_DESCRIPTOR_IO_H
+#endif // HT_MAT_IO_H

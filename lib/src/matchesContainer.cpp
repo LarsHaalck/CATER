@@ -128,7 +128,9 @@ void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
     auto iso = g::Isometry;
 
     if (static_cast<unsigned int>(mGeomType & hom))
+    {
         matches = getGeomMatches(cacheSize, hom, std::move(matches));
+    }
 
     if (static_cast<unsigned int>(mGeomType & aff))
         matches = getGeomMatches(cacheSize, aff, std::move(matches));
@@ -156,23 +158,24 @@ std::string MatchesContainer::typeToString(GeometricType type)
         return "";
     }
 }
-PairWiseMatches MatchesContainer::getGeomMatches(
-    size_t cacheSize, GeometricType type, PairWiseMatches&& matches)
+PairwiseMatches MatchesContainer::getGeomMatches(
+    size_t cacheSize, GeometricType type, PairwiseMatches&& matches)
 {
-    std::cout << "Computing geometric matches for " << typeToString(type) << "..." << std::endl;
-
     auto filteredMatches = std::move(matches);
-    auto pairList = getPairList(filteredMatches);
+    auto pairList = getKeyList(filteredMatches);
     auto featCache = mFtContainer->getPairwiseFeatureCache(cacheSize, pairList);
 
+    auto trafos = PairwiseTrafos();
+
     // TODO: is inplace modify via at() thread-safe?
+    std::cout << "Computing geometric matches for " << typeToString(type) << "..." << std::endl;
     ProgressBar bar(featCache->getNumChunks());
     for (std::size_t i = 0; i < featCache->getNumChunks(); i++)
     {
         auto chunk = featCache->getChunk(i);
         auto [lower, _] = featCache->getChunkBounds(i);
 
-#pragma omp parallel for
+        #pragma omp parallel for
         for (std::size_t k = 0; k < featCache->getChunkSize(i); k++)
         {
             auto currPair = pairList[lower + k];
@@ -183,6 +186,9 @@ PairWiseMatches MatchesContainer::getGeomMatches(
 
             auto currFilteredMatches = geomMatch(featI, featJ, type, currMatches);
             currMatches = currFilteredMatches.second;
+
+            if (!currMatches.empty())
+                trafos.insert(std::make_pair(currPair, currFilteredMatches.first));
         }
         ++bar;
         bar.display();
@@ -190,11 +196,12 @@ PairWiseMatches MatchesContainer::getGeomMatches(
 
     filterEmptyMatches(filteredMatches);
 
-    writeMatches(filteredMatches, type);
+    /* writeMatches(filteredMatches, type); */
+    /* writeTrafos(trafos, type); */
     return filteredMatches;
 }
 
-void MatchesContainer::filterEmptyMatches(PairWiseMatches& matches)
+void MatchesContainer::filterEmptyMatches(PairwiseMatches& matches)
 {
     for (auto it = std::begin(matches); it != std::end(matches);)
     {
@@ -206,6 +213,28 @@ void MatchesContainer::filterEmptyMatches(PairWiseMatches& matches)
 }
 
 Matches MatchesContainer::putMatch(
+    cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ)
+{
+    auto matchesI = putMatchHelper(descMatcher, descI, descJ);
+    auto matchesJ = putMatchHelper(descMatcher, descJ, descI);
+
+    std::vector<cv::DMatch> remainingMatches;
+    for (const auto& matchI : matchesI)
+    {
+        for (const auto& matchJ : matchesJ)
+        {
+            if (matchI.trainIdx == matchJ.queryIdx &&
+                matchJ.trainIdx == matchI.queryIdx)
+            {
+                remainingMatches.push_back(matchI);
+                break;
+            }
+        }
+    }
+    return remainingMatches;
+}
+
+Matches MatchesContainer::putMatchHelper(
     cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ)
 {
     std::vector<cv::DMatch> currMatches;
@@ -303,6 +332,11 @@ std::pair<Trafo, Matches> MatchesContainer::geomMatch(const std::vector<cv::KeyP
     std::vector<cv::Point2f> src, dst;
     for (size_t i = 0; i < matches.size(); i++)
     {
+        if (matches[i].queryIdx < 0 || matches[i].queryIdx >= featI.size())
+        {
+            std::cout << "ALARM: " << matches[i].queryIdx << std::endl;
+            std::cout << featI.size() << std::endl;
+        }
         src.push_back(featI[matches[i].queryIdx].pt);
         dst.push_back(featJ[matches[i].trainIdx].pt);
     }
@@ -418,21 +452,21 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskHomography
     return std::make_pair(mask, mat);
 }
 
-PairWiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize)
+PairwiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize)
 {
-    std::cout << "Computing putative matches..." << std::endl;
     auto pairList = getPairList(mFtContainer->getNumImgs());
     auto descCache = mFtContainer->getPairwiseDescriptorCache(cacheSize, pairList);
     auto descMatcher = getMatcher();
 
+    std::cout << "Computing putative matches..." << std::endl;
     ProgressBar bar(descCache->getNumChunks());
-    PairWiseMatches matches;
+    PairwiseMatches matches;
     for (std::size_t i = 0; i < descCache->getNumChunks(); i++)
     {
         auto chunk = descCache->getChunk(i);
         auto [lower, _] = descCache->getChunkBounds(i);
 
-#pragma omp parallel for
+        #pragma omp parallel for
         for (std::size_t k = 0; k < descCache->getChunkSize(i); k++)
         {
             auto currPair = pairList[lower + k];
@@ -442,18 +476,18 @@ PairWiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize)
             auto currMatches = putMatch(descMatcher, descI, descJ);
             if (!currMatches.empty())
             {
-#pragma omp critical
+                #pragma omp critical
                 matches.insert(std::make_pair(currPair, std::move(currMatches)));
             }
         }
         ++bar;
         bar.display();
     }
-    writeMatches(matches, g::Putative);
+    /* writeMatches(matches, g::Putative); */
     return matches;
 }
 
-void MatchesContainer::writeMatches(const PairWiseMatches& matches, GeometricType type) const
+void MatchesContainer::writeMatches(const PairwiseMatches& matches, GeometricType type) const
 {
     auto file = getFileName(detail::MatchTrafo::Match, type);
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
@@ -464,17 +498,17 @@ void MatchesContainer::writeMatches(const PairWiseMatches& matches, GeometricTyp
     }
 }
 
-std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
-    const PairWiseMatches& matches) const
+void MatchesContainer::writeTrafos(const PairwiseTrafos& trafos, GeometricType type) const
 {
-    auto keys = std::vector<std::pair<std::size_t, std::size_t>>();
-    keys.reserve(matches.size());
-    for (const auto& match : matches)
-        keys.push_back(match.first);
-
-    std::sort(std::begin(keys), std::end(keys));
-    return keys;
+    auto file = getFileName(detail::MatchTrafo::Trafo, type);
+    std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
+    checkStream(stream, file);
+    {
+        cereal::PortableBinaryOutputArchive archive(stream);
+        archive(trafos);
+    }
 }
+
 
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
     std::size_t size) const
@@ -486,8 +520,7 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
         pairs = getExhaustivePairList(size);
         break;
     case MatchType::MILD:
-        pairs = {};
-        /* pairs =  getMILDPairList(size); */
+        pairs = getMILDPairList(size);
         break;
     case MatchType::Windowed:
         pairs = getWindowPairList(size);
@@ -527,112 +560,94 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustive
     return pairList;
 }
 
-/* std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairList( */
-/*     std::size_t size) */
-/* { */
-/*     std::cout << "Using MILD to get possible image pairs" << std::endl; */
-/*     // make orb feature container (sift does not work) */
-/*     auto ftContainer = std::make_shared<FeatureContainer>( */
-/*         mFtContainer->getImageContainer(), mFtContainer->getFtDir(), FeatureType::ORB, */
-/*         5000); */
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairList(
+    std::size_t size) const
+{
+    // make orb feature container (sift does not work)
+    auto ftContainer = std::make_shared<FeatureContainer>(
+        mFtContainer->getImageContainer(), mFtContainer->getFtDir(), FeatureType::ORB, 5000);
 
-/*     MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0); */
-/*     MILD::BayesianFilter filter(0.6, 4, 4, 60); */
-/*     ProgressBar bar(ftContainer->getNumImgs()); */
+    ftContainer->compute(1000, ComputeBehavior::Keep);
 
-/*     Eigen::VectorXf prevVisitProb(1); */
-/*     prevVisitProb << 0.1; */
-/*     std::vector<Eigen::VectorXf> prevVisitFlag; */
+    MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0);
+    MILD::BayesianFilter filter(0.3, 4, 4, mWindow);
 
-/*     for (std::size_t i = 0; i < ftContainer->getNumImgs(); i++) */
-/*     { */
-/*         auto desc = ftContainer->descriptorAt(i); */
-/*         std::vector<float> simScore; */
-/*         lcd.insert_and_query_database(desc, simScore); */
+    Eigen::VectorXf prevVisitProb(1);
+    prevVisitProb << 0.1;
+    std::vector<Eigen::VectorXf> prevVisitFlag;
 
-/*         filter.filter(simScore, prevVisitProb, prevVisitFlag); */
+    std::vector<std::pair<std::size_t, std::size_t>> pairs;
+    std::unordered_map<std::pair<std::size_t, std::size_t>, double> scores;
 
-/*         ++bar; */
-/*         bar.display(); */
-/*     } */
+    std::size_t numImgs = ftContainer->getNumImgs();
+    std::cout << "Using MILD to get possible image pairs" << std::endl;
+    ProgressBar bar(numImgs);
+    for (std::size_t k = 0; k < numImgs; k++)
+    {
+        auto desc = ftContainer->descriptorAt(k);
 
-/*     // insert descriptors into lcd */
+        std::vector<float> simScore;
+        simScore.clear();
+        lcd.insert_and_query_database(desc, simScore);
+        filter.filter(simScore, prevVisitProb, prevVisitFlag);
 
-/*     return {}; */
-/* } */
-/* GeometricType MatchesContainer::findNextBestModel(GeometricType currType) */
-/* { */
-/*     using g = GeometricType; */
-/*     switch (currType) */
-/*     { */
-/*         case g::Isometry: */
-/*             if (static_cast<unsigned int>(mGeomType & g::Similarity)) */
-/*                 return g::Similarity; */
-/*             [[fallthrough]]; */
-/*         case g::Similarity: */
-/*             if (static_cast<unsigned int>(mGeomType & g::Affinity)) */
-/*                 return g::Affinity; */
-/*             [[fallthrough]]; */
-/*         case g::Affinity: */
-/*             if (static_cast<unsigned int>(mGeomType & g::Homography)) */
-/*                 return g::Homography; */
-/*             [[fallthrough]]; */
-/*         case g::Homography: */
-/*             return g::Putative; */
-/*         default: */
-/*             return g::Undefined; */
-/*     } */
-/* } */
+        if (prevVisitFlag.size() >= 1)
+        {
+            for (int i = 0; i < prevVisitFlag[prevVisitFlag.size() - 1].size(); i++)
+                scores[std::make_pair(i, k)] = prevVisitFlag[prevVisitFlag.size() - 1][i];
+        }
+        ++bar;
+        bar.display();
+    }
 
-/* void FeatureContainer::writeChunk(std::pair<std::size_t, std::size_t> bounds, */
-/*     const std::vector<std::vector<cv::KeyPoint>>& fts, const std::vector<cv::Mat>& descs) */
-/* { */
-/*     auto [lower, upper] = bounds; */
+    if (prevVisitFlag.size() >= 4)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            for (int i = 0; i < prevVisitFlag[prevVisitFlag.size() - (3 - j)].size(); i++)
+            {
+                scores[std::make_pair(i, numImgs - (3 - j))]
+                    = prevVisitFlag[prevVisitFlag.size() - (3 - j)][i];
+            }
+        }
+    }
 
-/*     for (std::size_t i = lower; i < upper; i++) */
-/*     { */
-/*         auto ftFileName = getFileName(i, detail::FtDesc::Feature); */
-/*         auto descFileName = getFileName(i, detail::FtDesc::Descriptor); */
-/*         writeFts(ftFileName, fts[i - lower]); */
-/*         writeDescs(descFileName, descs[i - lower]); */
-/*     } */
-/* } */
+    /* dilatePairList(scores); */
 
-/* void FeatureContainer::writeFts( */
-/*     const fs::path& file, const std::vector<cv::KeyPoint>& fts) */
-/* { */
-/*     std::ofstream stream(file.string(), std::ios::out | std::ios::binary); */
-/*     checkStream(stream, file); */
+    auto windowPairs = getWindowPairList(size);
+    for (const auto& [pair, score] : scores)
+    {
+        if (score > 0)
+            windowPairs.push_back(pair);
+    }
 
-/*     { */
-/*         cereal::PortableBinaryOutputArchive archive(stream); */
-/*         archive(fts); */
-/*     } */
-/* } */
+    return windowPairs;
+}
 
-/* void FeatureContainer::writeDescs(const fs::path& file, const cv::Mat& descs) */
-/* { */
-/*     std::ofstream stream(file.string(), std::ios::out | std::ios::binary); */
-/*     checkStream(stream, file); */
 
-/*     { */
-/*         cereal::PortableBinaryOutputArchive archive(stream); */
-/*         archive(descs); */
-/*     } */
-/* } */
-
-/* cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr() */
-/* { */
-/*     switch (mType) */
-/*     { */
-/*     case FeatureType::ORB: */
-/*         return cv::ORB::create(mNumFeatures); */
-/*     case FeatureType::SIFT: */
-/*         return cv::xfeatures2d::SIFT::create(mNumFeatures); */
-/*     default: */
-/*         throw UnknownFeatureType(); */
-/*     } */
-/* } */
+void MatchesContainer::dilatePairList(
+        std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list) const
+{
+    auto pairs = getKeyList(list);
+    for (const auto [i, j] : pairs)
+    {
+        for (int n = -5; n <=5; n++)
+        {
+            for (int m = -5; m <= 5; m++)
+            {
+                auto iShift = i + n;
+                auto jShift = j + m;
+                auto pairShift = std::make_pair(iShift, jShift);
+                // check boundary conditions and if the key already exists, otherwise insert
+                if (iShift < mFtContainer->getNumImgs() && jShift < mFtContainer->getNumImgs()
+                    && jShift > iShift + mWindow && !list.count(pairShift))
+                {
+                    list.insert(std::make_pair(pairShift, 1.0));
+                }
+            }
+        }
+    }
+}
 /* std::vector<cv::KeyPoint> FeatureContainer::featureAt( */
 /*     std::size_t idx, ImageType imageType) */
 /* { */
