@@ -49,9 +49,7 @@ std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
                 std::size_t nextView = currView + 1 + (k + currThread);
 
                 if (nextView < mFtContainer->getNumImgs())
-                {
                     currDistOverlapVec[currThread] = getMedianDistanceShift(currView, nextView);
-                }
             }
 
             // investigate tuples, break if shift is to high or no feature points
@@ -124,7 +122,7 @@ std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
 
     auto ftsI = mFtContainer->featureAt(idI);
     auto ftsJ = mFtContainer->featureAt(idJ);
-    auto [trafos, matches] = matcher->compute(idI, idJ);
+    auto [trafos, matches] = matcher->computePair(idI, idJ);
 
     // skip putative matches and empty trafo
     auto trafo = trafos[1];
@@ -176,9 +174,6 @@ std::size_t KeyFrameSelector::filterViews(
 {
     auto maxView = std::max_element(std::begin(distOverlapVec), std::end(distOverlapVec),
         [&](const auto& lhs, const auto& rhs) { return compareMaxOverlap(lhs, rhs, low, high); });
-
-    /* if (maxView == std::end(distOverlapVec)) */
-    /*     std::cout << "should not happen" << std::endl; */
 
     return static_cast<std::size_t>(std::distance(std::begin(distOverlapVec), maxView));
 }

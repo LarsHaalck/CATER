@@ -13,7 +13,7 @@ using namespace ht;
 int main()
 {
     std::size_t cacheSize = 5000;
-    auto path = std::string("/home/lars/data/ontogenyTest/vid1");
+    auto path = std::string("/home/lars/data/ontogenyTest/vid3");
 
     auto imgContainer = std::make_shared<ImageContainer>(path + "/imgs");
 
@@ -33,9 +33,9 @@ int main()
 
     /* std::cout << std::endl; */
 
-    auto matchContainer = std::make_shared<MatchesContainer>(ftContainer,
-        path + "/matches", MatchType::MILD, 50,
-        GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity);
+    auto matchContainer
+        = std::make_shared<MatchesContainer>(ftContainer, path + "/matches", MatchType::MILD, 10,
+            GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity);
 
     matchContainer->compute(cacheSize, ComputeBehavior::Overwrite);
     /* matchContainer->compute(cacheSize, false); */

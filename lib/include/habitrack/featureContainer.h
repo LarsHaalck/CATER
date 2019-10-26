@@ -1,7 +1,6 @@
 #ifndef HABITRACK_FEATURE_CONTAINER_H
 #define HABITRACK_FEATURE_CONTAINER_H
 
-#include "matIO.h"
 #include "featureIO.h"
 #include "habitrack/computeBehavior.h"
 #include "habitrack/descriptorCache.h"
@@ -9,6 +8,7 @@
 #include "habitrack/imageContainer.h"
 #include "habitrack/pairwiseDescriptorCache.h"
 #include "habitrack/pairwiseFeatureCache.h"
+#include "matIO.h"
 #include <filesystem>
 #include <vector>
 

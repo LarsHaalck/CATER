@@ -11,8 +11,8 @@
 #include "habitrack/imageContainer.h"
 #include "habitrack/isometry.h"
 
-#include "matchesIO.h"
 #include "matIO.h"
+#include "matchesIO.h"
 #include "pairHash.h"
 
 /* #include "habitrack/matchesCache.h" */
@@ -62,7 +62,7 @@ public:
     void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep);
 
     // for "manual" matching
-    std::pair<Trafos, std::vector<Matches>> compute(std::size_t idxI, std::size_t idxJ);
+    std::pair<Trafos, std::vector<Matches>> computePair(std::size_t idxI, std::size_t idxJ);
 
     /* std::vector<cv::DMatch> matchesAt(ImgId idI, ImgId idj); */
     /* cv::Mat trafoAt(ImgId idI, ImgId idj, GeometricType geomType); */
@@ -79,13 +79,14 @@ private:
     PairwiseMatches getPutativeMatches(std::size_t cacheSize);
     PairwiseMatches getGeomMatches(
         std::size_t cacheSize, GeometricType type, PairwiseMatches&& matches);
-    std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size) const;
-
 
     // TODO: outsource with strategy pattern --> PairSuggestor.getPairList();
+    std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size) const;
     std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(std::size_t size) const;
     std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(std::size_t size) const;
     std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList(std::size_t size) const;
+    void dilatePairList(
+        std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list) const;
 
     template <typename T>
     std::vector<std::pair<std::size_t, std::size_t>> getKeyList(
@@ -101,14 +102,14 @@ private:
     }
 
     cv::Ptr<cv::DescriptorMatcher> getMatcher() const;
-    Matches putMatch(
+    Matches putMatchPair(
         cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ);
-    Matches putMatchHelper(
+    Matches putMatchPairHelper(
         cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ);
-    std::pair<Trafo, Matches> geomMatch(const std::vector<cv::KeyPoint>& featI,
+    std::pair<Trafo, Matches> geomMatchPair(const std::vector<cv::KeyPoint>& featI,
         const std::vector<cv::KeyPoint>& featJ, GeometricType filterType, const Matches& matches);
-    GeometricType findNextBestModel(GeometricType currType);
 
+    // transformation fitting
     std::pair<std::vector<uchar>, cv::Mat> getInlierMask(const std::vector<cv::Point2f>& src,
         const std::vector<cv::Point2f>& dst, GeometricType type);
     std::pair<std::vector<uchar>, cv::Mat> getInlierMaskIsometry(
@@ -119,11 +120,6 @@ private:
         const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
     std::pair<std::vector<uchar>, cv::Mat> getInlierMaskHomography(
         const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
-
-    void dilatePairList(
-        std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list) const;
-    std::string typeToString(GeometricType type);
-    void filterEmptyMatches(PairwiseMatches& matches);
 
     inline size_t getInlierCount(const std::vector<uchar>& mask)
     {
@@ -136,8 +132,12 @@ private:
         return count;
     }
 
+    std::string typeToString(GeometricType type);
+    void filterEmptyMatches(PairwiseMatches& matches);
+
     void writeMatches(const PairwiseMatches& matches, GeometricType type) const;
     void writeTrafos(const PairwiseTrafos& matches, GeometricType type) const;
+
 private:
     std::shared_ptr<FeatureContainer> mFtContainer;
     std::filesystem::path mMatchDir;

@@ -21,6 +21,7 @@ public:
     }
 
     void operator++() { mTicks++; }
+
     ProgressBar& operator+=(int inc)
     {
         mTicks += inc;

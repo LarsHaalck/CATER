@@ -17,11 +17,15 @@ namespace fs = std::filesystem;
 
 namespace ht
 {
-using g = GeometricType;
-/* constexpr std::pair<Trafo, std::vector<uchar>> zeroMaskTrafoTuple */
+using Gt = GeometricType;
+auto Put = Gt::Putative;
+auto Hom = Gt::Homography;
+auto Aff = Gt::Affinity;
+auto Sim = Gt::Similarity;
+auto Iso = Gt::Isometry;
 
 MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureContainer,
-    const fs::path& matchDir, MatchType matchType, std::size_t window, GeometricType geomType)
+    const fs::path& matchDir, MatchType matchType, std::size_t window, Gt geomType)
     : mFtContainer(std::move(featureContainer))
     , mMatchDir(matchDir)
     , mMatchType(matchType)
@@ -29,24 +33,24 @@ MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureCont
     , mGeomType(geomType)
     , mIsComputed(true)
 {
-    if (static_cast<unsigned int>(mGeomType & g::Homography))
+    if (static_cast<unsigned int>(mGeomType & Hom))
     {
-        if (!checkIfExists(g::Homography))
+        if (!checkIfExists(Hom))
             mIsComputed = false;
     }
-    if (static_cast<unsigned int>(mGeomType & g::Affinity))
+    if (static_cast<unsigned int>(mGeomType & Aff))
     {
-        if (!checkIfExists(g::Affinity))
+        if (!checkIfExists(Aff))
             mIsComputed = false;
     }
-    if (static_cast<unsigned int>(mGeomType & g::Similarity))
+    if (static_cast<unsigned int>(mGeomType & Sim))
     {
-        if (!checkIfExists(g::Similarity))
+        if (!checkIfExists(Sim))
             mIsComputed = false;
     }
-    if (static_cast<unsigned int>(mGeomType & g::Isometry))
+    if (static_cast<unsigned int>(mGeomType & Iso))
     {
-        if (!checkIfExists(g::Isometry))
+        if (!checkIfExists(Iso))
             mIsComputed = false;
     }
 
@@ -54,7 +58,7 @@ MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureCont
         fs::create_directories(matchDir);
 }
 
-bool MatchesContainer::checkIfExists(GeometricType geomType) const
+bool MatchesContainer::checkIfExists(Gt geomType) const
 {
     auto trafoFile = getFileName(detail::MatchTrafo::Trafo, geomType);
     auto matchFile = getFileName(detail::MatchTrafo::Match, geomType);
@@ -64,25 +68,25 @@ bool MatchesContainer::checkIfExists(GeometricType geomType) const
     return true;
 }
 
-GeometricType MatchesContainer::getTypeFromFile(const fs::path& file) const
+Gt MatchesContainer::getTypeFromFile(const fs::path& file) const
 {
     auto type = file.stem().extension();
     if (type == ".put")
-        return g::Putative;
+        return Put;
     if (type == ".h")
-        return g::Homography;
+        return Hom;
     if (type == ".a")
-        return g::Affinity;
+        return Aff;
     if (type == ".s")
-        return g::Similarity;
+        return Sim;
     if (type == ".i")
-        return g::Isometry;
+        return Iso;
 
     throw UnknownGeometricType(type);
 }
 
 std::filesystem::path MatchesContainer::getFileName(
-    detail::MatchTrafo matchTrafo, GeometricType geomType) const
+    detail::MatchTrafo matchTrafo, Gt geomType) const
 {
     auto fullFile = mMatchDir;
     if (matchTrafo == detail::MatchTrafo::Match)
@@ -92,19 +96,19 @@ std::filesystem::path MatchesContainer::getFileName(
 
     switch (geomType)
     {
-    case g::Putative:
+    case Gt::Putative:
         fullFile += ".put";
         break;
-    case g::Homography:
+    case Gt::Homography:
         fullFile += ".h";
         break;
-    case g::Affinity:
+    case Gt::Affinity:
         fullFile += ".a";
         break;
-    case g::Similarity:
+    case Gt::Similarity:
         fullFile += ".s";
         break;
-    case g::Isometry:
+    case Gt::Isometry:
         fullFile += ".i";
         break;
     default:
@@ -122,44 +126,37 @@ void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
     // maps pairs to their matches vector
     auto matches = getPutativeMatches(cacheSize);
 
-    auto hom = g::Homography;
-    auto aff = g::Affinity;
-    auto sim = g::Similarity;
-    auto iso = g::Isometry;
+    if (static_cast<unsigned int>(mGeomType & Hom))
+        matches = getGeomMatches(cacheSize, Hom, std::move(matches));
 
-    if (static_cast<unsigned int>(mGeomType & hom))
-    {
-        matches = getGeomMatches(cacheSize, hom, std::move(matches));
-    }
+    if (static_cast<unsigned int>(mGeomType & Aff))
+        matches = getGeomMatches(cacheSize, Aff, std::move(matches));
 
-    if (static_cast<unsigned int>(mGeomType & aff))
-        matches = getGeomMatches(cacheSize, aff, std::move(matches));
+    if (static_cast<unsigned int>(mGeomType & Sim))
+        matches = getGeomMatches(cacheSize, Sim, std::move(matches));
 
-    if (static_cast<unsigned int>(mGeomType & sim))
-        matches = getGeomMatches(cacheSize, sim, std::move(matches));
-
-    if (static_cast<unsigned int>(mGeomType & iso))
-        matches = getGeomMatches(cacheSize, iso, std::move(matches));
+    if (static_cast<unsigned int>(mGeomType & Iso))
+        matches = getGeomMatches(cacheSize, Iso, std::move(matches));
 }
 
-std::string MatchesContainer::typeToString(GeometricType type)
+std::string MatchesContainer::typeToString(Gt type)
 {
     switch (type)
     {
-    case g::Homography:
+    case Gt::Homography:
         return "homography";
-    case g::Affinity:
+    case Gt::Affinity:
         return "affinity";
-    case g::Similarity:
+    case Gt::Similarity:
         return "similarity";
-    case g::Isometry:
+    case Gt::Isometry:
         return "isometry";
     default:
         return "";
     }
 }
 PairwiseMatches MatchesContainer::getGeomMatches(
-    size_t cacheSize, GeometricType type, PairwiseMatches&& matches)
+    size_t cacheSize, Gt type, PairwiseMatches&& matches)
 {
     auto filteredMatches = std::move(matches);
     auto pairList = getKeyList(filteredMatches);
@@ -175,7 +172,7 @@ PairwiseMatches MatchesContainer::getGeomMatches(
         auto chunk = featCache->getChunk(i);
         auto [lower, _] = featCache->getChunkBounds(i);
 
-        #pragma omp parallel for
+#pragma omp parallel for
         for (std::size_t k = 0; k < featCache->getChunkSize(i); k++)
         {
             auto currPair = pairList[lower + k];
@@ -184,7 +181,7 @@ PairwiseMatches MatchesContainer::getGeomMatches(
 
             auto& currMatches = filteredMatches.at(currPair);
 
-            auto currFilteredMatches = geomMatch(featI, featJ, type, currMatches);
+            auto currFilteredMatches = geomMatchPair(featI, featJ, type, currMatches);
             currMatches = currFilteredMatches.second;
 
             if (!currMatches.empty())
@@ -196,8 +193,8 @@ PairwiseMatches MatchesContainer::getGeomMatches(
 
     filterEmptyMatches(filteredMatches);
 
-    /* writeMatches(filteredMatches, type); */
-    /* writeTrafos(trafos, type); */
+    writeMatches(filteredMatches, type);
+    writeTrafos(trafos, type);
     return filteredMatches;
 }
 
@@ -212,19 +209,18 @@ void MatchesContainer::filterEmptyMatches(PairwiseMatches& matches)
     }
 }
 
-Matches MatchesContainer::putMatch(
+Matches MatchesContainer::putMatchPair(
     cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ)
 {
-    auto matchesI = putMatchHelper(descMatcher, descI, descJ);
-    auto matchesJ = putMatchHelper(descMatcher, descJ, descI);
+    auto matchesI = putMatchPairHelper(descMatcher, descI, descJ);
+    auto matchesJ = putMatchPairHelper(descMatcher, descJ, descI);
 
     std::vector<cv::DMatch> remainingMatches;
     for (const auto& matchI : matchesI)
     {
         for (const auto& matchJ : matchesJ)
         {
-            if (matchI.trainIdx == matchJ.queryIdx &&
-                matchJ.trainIdx == matchI.queryIdx)
+            if (matchI.trainIdx == matchJ.queryIdx && matchJ.trainIdx == matchI.queryIdx)
             {
                 remainingMatches.push_back(matchI);
                 break;
@@ -234,7 +230,7 @@ Matches MatchesContainer::putMatch(
     return remainingMatches;
 }
 
-Matches MatchesContainer::putMatchHelper(
+Matches MatchesContainer::putMatchPairHelper(
     cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ)
 {
     std::vector<cv::DMatch> currMatches;
@@ -267,7 +263,7 @@ cv::Ptr<cv::DescriptorMatcher> MatchesContainer::getMatcher() const
     }
 }
 
-std::pair<Trafos, std::vector<Matches>> MatchesContainer::compute(
+std::pair<Trafos, std::vector<Matches>> MatchesContainer::computePair(
     std::size_t idxI, std::size_t idxJ)
 {
     auto descI = mFtContainer->descriptorAt(idxI);
@@ -276,19 +272,19 @@ std::pair<Trafos, std::vector<Matches>> MatchesContainer::compute(
 
     Trafos trafos;
     std::vector<Matches> matches;
-    auto currMatches = putMatch(descMatcher, descI, descJ);
+    auto currMatches = putMatchPair(descMatcher, descI, descJ);
     trafos.push_back(cv::Mat());
     matches.push_back(currMatches);
 
-    auto hom = g::Homography;
-    auto aff = g::Affinity;
-    auto sim = g::Similarity;
-    auto iso = g::Isometry;
+    auto hom = Hom;
+    auto aff = Aff;
+    auto sim = Sim;
+    auto iso = Iso;
     auto featI = mFtContainer->featureAt(idxI);
     auto featJ = mFtContainer->featureAt(idxJ);
     if (static_cast<unsigned int>(mGeomType & hom))
     {
-        auto [trafo, geomMatches] = geomMatch(featI, featJ, hom, currMatches);
+        auto [trafo, geomMatches] = geomMatchPair(featI, featJ, hom, currMatches);
         trafos.push_back(trafo);
         matches.push_back(geomMatches);
 
@@ -297,7 +293,7 @@ std::pair<Trafos, std::vector<Matches>> MatchesContainer::compute(
     }
     if (static_cast<unsigned int>(mGeomType & aff))
     {
-        auto [trafo, geomMatches] = geomMatch(featI, featJ, aff, currMatches);
+        auto [trafo, geomMatches] = geomMatchPair(featI, featJ, aff, currMatches);
         matches.push_back(geomMatches);
         trafos.push_back(trafo);
 
@@ -306,7 +302,7 @@ std::pair<Trafos, std::vector<Matches>> MatchesContainer::compute(
     }
     if (static_cast<unsigned int>(mGeomType & sim))
     {
-        auto [trafo, geomMatches] = geomMatch(featI, featJ, sim, currMatches);
+        auto [trafo, geomMatches] = geomMatchPair(featI, featJ, sim, currMatches);
         matches.push_back(geomMatches);
         trafos.push_back(trafo);
 
@@ -315,7 +311,7 @@ std::pair<Trafos, std::vector<Matches>> MatchesContainer::compute(
     }
     if (static_cast<unsigned int>(mGeomType & iso))
     {
-        auto [trafo, geomMatches] = geomMatch(featI, featJ, iso, currMatches);
+        auto [trafo, geomMatches] = geomMatchPair(featI, featJ, iso, currMatches);
         matches.push_back(geomMatches);
         trafos.push_back(trafo);
 
@@ -326,17 +322,17 @@ std::pair<Trafos, std::vector<Matches>> MatchesContainer::compute(
     return std::make_pair(trafos, matches);
 }
 
-std::pair<Trafo, Matches> MatchesContainer::geomMatch(const std::vector<cv::KeyPoint>& featI,
-    const std::vector<cv::KeyPoint>& featJ, GeometricType filterType, const Matches& matches)
+std::pair<Trafo, Matches> MatchesContainer::geomMatchPair(const std::vector<cv::KeyPoint>& featI,
+    const std::vector<cv::KeyPoint>& featJ, Gt filterType, const Matches& matches)
 {
     std::vector<cv::Point2f> src, dst;
     for (size_t i = 0; i < matches.size(); i++)
     {
-        if (matches[i].queryIdx < 0 || matches[i].queryIdx >= featI.size())
-        {
-            std::cout << "ALARM: " << matches[i].queryIdx << std::endl;
-            std::cout << featI.size() << std::endl;
-        }
+        /* if (matches[i].queryIdx < 0 || matches[i].queryIdx >= featI.size()) */
+        /* { */
+        /*     std::cout << "ALARM: " << matches[i].queryIdx << std::endl; */
+        /*     std::cout << featI.size() << std::endl; */
+        /* } */
         src.push_back(featI[matches[i].queryIdx].pt);
         dst.push_back(featJ[matches[i].trainIdx].pt);
     }
@@ -370,17 +366,17 @@ std::pair<Trafo, Matches> MatchesContainer::geomMatch(const std::vector<cv::KeyP
 }
 
 std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMask(
-    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst, g type)
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst, Gt type)
 {
     switch (type)
     {
-    case g::Isometry:
+    case Gt::Isometry:
         return getInlierMaskIsometry(src, dst);
-    case g::Similarity:
+    case Gt::Similarity:
         return getInlierMaskSimilarity(src, dst);
-    case g::Affinity:
+    case Gt::Affinity:
         return getInlierMaskAffinity(src, dst);
-    case g::Homography:
+    case Gt::Homography:
         return getInlierMaskHomography(src, dst);
     default:
         return std::make_pair(std::vector<uchar>(), cv::Mat());
@@ -466,28 +462,28 @@ PairwiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize)
         auto chunk = descCache->getChunk(i);
         auto [lower, _] = descCache->getChunkBounds(i);
 
-        #pragma omp parallel for
+#pragma omp parallel for
         for (std::size_t k = 0; k < descCache->getChunkSize(i); k++)
         {
             auto currPair = pairList[lower + k];
             auto descI = chunk[currPair.first];
             auto descJ = chunk[currPair.second];
 
-            auto currMatches = putMatch(descMatcher, descI, descJ);
+            auto currMatches = putMatchPair(descMatcher, descI, descJ);
             if (!currMatches.empty())
             {
-                #pragma omp critical
+#pragma omp critical
                 matches.insert(std::make_pair(currPair, std::move(currMatches)));
             }
         }
         ++bar;
         bar.display();
     }
-    /* writeMatches(matches, g::Putative); */
+    writeMatches(matches, Put);
     return matches;
 }
 
-void MatchesContainer::writeMatches(const PairwiseMatches& matches, GeometricType type) const
+void MatchesContainer::writeMatches(const PairwiseMatches& matches, Gt type) const
 {
     auto file = getFileName(detail::MatchTrafo::Match, type);
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
@@ -498,7 +494,7 @@ void MatchesContainer::writeMatches(const PairwiseMatches& matches, GeometricTyp
     }
 }
 
-void MatchesContainer::writeTrafos(const PairwiseTrafos& trafos, GeometricType type) const
+void MatchesContainer::writeTrafos(const PairwiseTrafos& trafos, Gt type) const
 {
     auto file = getFileName(detail::MatchTrafo::Trafo, type);
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
@@ -508,7 +504,6 @@ void MatchesContainer::writeTrafos(const PairwiseTrafos& trafos, GeometricType t
         archive(trafos);
     }
 }
-
 
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
     std::size_t size) const
@@ -624,14 +619,13 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairLi
     return windowPairs;
 }
 
-
 void MatchesContainer::dilatePairList(
-        std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list) const
+    std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list) const
 {
     auto pairs = getKeyList(list);
     for (const auto [i, j] : pairs)
     {
-        for (int n = -5; n <=5; n++)
+        for (int n = -5; n <= 5; n++)
         {
             for (int m = -5; m <= 5; m++)
             {
