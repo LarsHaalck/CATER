@@ -35,10 +35,11 @@ public:
     FeatureContainer(std::shared_ptr<ImageContainer> imgContainer,
         const std::filesystem::path& ftDir, FeatureType type, std::size_t numFeatures);
 
-    void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep);
+    void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep,
+        const ImgIds& ids = ImgIds());
 
-    std::vector<cv::KeyPoint> featureAt(std::size_t idx);
-    cv::Mat descriptorAt(std::size_t idx);
+    std::vector<cv::KeyPoint> featureAt(std::size_t idx) const;
+    cv::Mat descriptorAt(std::size_t idx) const;
 
     std::unique_ptr<FeatureCache> getFeatureCache(
         std::size_t maxChunkSize, const ImgIds& ids = ImgIds());
@@ -56,13 +57,16 @@ public:
     FeatureType getFtType() const;
 
 private:
-    FeatureType getTypeFromFile(const std::filesystem::path& file);
-    std::filesystem::path getFileName(std::size_t idx, detail::FtDesc ftDesc);
-    cv::Ptr<cv::Feature2D> getFtPtr();
+    FeatureType getTypeFromFile(const std::filesystem::path& file) const;
+    std::filesystem::path getFileName(std::size_t idx, detail::FtDesc ftDesc) const;
+    cv::Ptr<cv::Feature2D> getFtPtr() const;
     void writeChunk(std::pair<std::size_t, std::size_t> bounds,
-        const std::vector<std::vector<cv::KeyPoint>>& fts, const std::vector<cv::Mat>& descs);
-    void writeFts(const std::filesystem::path& file, const std::vector<cv::KeyPoint>& fts);
-    void writeDescs(const std::filesystem::path& file, const cv::Mat& descs);
+        const std::vector<std::vector<cv::KeyPoint>>& fts, const std::vector<cv::Mat>& descs,
+        const ImgIds& ids) const;
+    void writeFts(const std::filesystem::path& file, const std::vector<cv::KeyPoint>& fts) const;
+    void writeDescs(const std::filesystem::path& file, const cv::Mat& descs) const;
+
+    bool isComputed(const ImgIds& ids) const;
 
 private:
     std::shared_ptr<ImageContainer> mImgContainer;
@@ -71,7 +75,6 @@ private:
     std::size_t mNumFeatures;
     std::size_t mNumImgs;
     cv::Size mImgSize;
-    bool mIsComputed;
 };
 } // namespace ht
 

@@ -18,26 +18,48 @@ FeatureContainer::FeatureContainer(std::shared_ptr<ImageContainer> imgContainer,
     , mNumFeatures(numFeatures)
     , mNumImgs(mImgContainer->getNumImgs())
     , mImgSize(mImgContainer->getImgSize())
-    , mIsComputed(true)
 {
-    // check if some file is missing or other type expected
-    // TODO: should I be able to instantiate the container on key frames only?
-    for (std::size_t i = 0; i < mNumImgs; i++)
-    {
-        // only check for feature or descriptor because they are calculated together
-        auto ftFile = getFileName(i, detail::FtDesc::Feature);
-        if (!fs::is_regular_file(ftFile) || getTypeFromFile(ftFile) != mType)
-        {
-            mIsComputed = false;
-            break;
-        }
-    }
-
     if (!fs::exists(ftDir) || !fs::is_directory(ftDir))
         fs::create_directories(ftDir);
 }
 
-FeatureType FeatureContainer::getTypeFromFile(const fs::path& file)
+bool FeatureContainer::isComputed(const ImgIds& ids) const
+{
+    bool isComputed = true;
+
+    if (ids.empty())
+    {
+        // check if some file is missing or other type expected
+        for (std::size_t i = 0; i < mNumImgs; i++)
+        {
+            // only check for feature or descriptor because they are calculated together
+            auto ftFile = getFileName(i, detail::FtDesc::Feature);
+            if (!fs::is_regular_file(ftFile) || getTypeFromFile(ftFile) != mType)
+            {
+                isComputed = false;
+                break;
+            }
+        }
+        return isComputed;
+    }
+    else
+    {
+        // check if some file is missing or other type expected
+        for (auto i : ids)
+        {
+            // only check for feature or descriptor because they are calculated together
+            auto ftFile = getFileName(i, detail::FtDesc::Feature);
+            if (!fs::is_regular_file(ftFile) || getTypeFromFile(ftFile) != mType)
+            {
+                isComputed = false;
+                break;
+            }
+        }
+        return isComputed;
+    }
+}
+
+FeatureType FeatureContainer::getTypeFromFile(const fs::path& file) const
 {
     auto type = file.stem().extension();
     if (type == ".orb")
@@ -48,7 +70,7 @@ FeatureType FeatureContainer::getTypeFromFile(const fs::path& file)
     throw UnknownFeatureType(type);
 }
 
-std::filesystem::path FeatureContainer::getFileName(std::size_t idx, detail::FtDesc ftDesc)
+std::filesystem::path FeatureContainer::getFileName(std::size_t idx, detail::FtDesc ftDesc) const
 {
     auto stem = mImgContainer->getFileName(idx).stem();
     auto fullFile = mFtDir / stem;
@@ -58,16 +80,17 @@ std::filesystem::path FeatureContainer::getFileName(std::size_t idx, detail::FtD
     return fullFile;
 }
 
-void FeatureContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
+void FeatureContainer::compute(
+        std::size_t cacheSize, ComputeBehavior behavior, const ImgIds& ids)
 {
-    if (mIsComputed && behavior == ComputeBehavior::Keep)
+    if (isComputed(ids) && behavior == ComputeBehavior::Keep)
     {
         std::cout << "Skipping Feature Computation..." << std::endl;
         return;
     }
 
     auto ftPtr = getFtPtr();
-    auto imgCache = mImgContainer->gray()->getCache(cacheSize);
+    auto imgCache = mImgContainer->gray()->getCache(cacheSize, ids);
 
     std::cout << "Computing Features..." << std::endl;
     ProgressBar bar(imgCache->getNumChunks());
@@ -77,31 +100,32 @@ void FeatureContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
 
         std::vector<std::vector<cv::KeyPoint>> fts(imgCache->getChunkSize(i));
         std::vector<cv::Mat> descs(imgCache->getChunkSize(i));
-#pragma omp parallel for
+        #pragma omp parallel for
         for (std::size_t j = 0; j < chunk.size(); j++)
             ftPtr->detectAndCompute(chunk[j], cv::Mat(), fts[j], descs[j]);
 
         ++bar;
         bar.display();
-        writeChunk(imgCache->getChunkBounds(i), fts, descs);
+        writeChunk(imgCache->getChunkBounds(i), fts, descs, ids);
     }
-    mIsComputed = true;
 }
 
 void FeatureContainer::writeChunk(std::pair<std::size_t, std::size_t> bounds,
-    const std::vector<std::vector<cv::KeyPoint>>& fts, const std::vector<cv::Mat>& descs)
+    const std::vector<std::vector<cv::KeyPoint>>& fts, const std::vector<cv::Mat>& descs,
+    const ImgIds& ids) const
 {
     const auto [lower, upper] = bounds;
     for (std::size_t i = lower; i < upper; i++)
     {
-        auto ftFileName = getFileName(i, detail::FtDesc::Feature);
-        auto descFileName = getFileName(i, detail::FtDesc::Descriptor);
+        auto idx = ids.empty() ? i : ids[i];
+        auto ftFileName = getFileName(idx, detail::FtDesc::Feature);
+        auto descFileName = getFileName(idx, detail::FtDesc::Descriptor);
         writeFts(ftFileName, fts[i - lower]);
         writeDescs(descFileName, descs[i - lower]);
     }
 }
 
-void FeatureContainer::writeFts(const fs::path& file, const std::vector<cv::KeyPoint>& fts)
+void FeatureContainer::writeFts(const fs::path& file, const std::vector<cv::KeyPoint>& fts) const
 {
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
     checkStream(stream, file);
@@ -112,7 +136,7 @@ void FeatureContainer::writeFts(const fs::path& file, const std::vector<cv::KeyP
     }
 }
 
-void FeatureContainer::writeDescs(const fs::path& file, const cv::Mat& descs)
+void FeatureContainer::writeDescs(const fs::path& file, const cv::Mat& descs) const
 {
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
     checkStream(stream, file);
@@ -123,7 +147,7 @@ void FeatureContainer::writeDescs(const fs::path& file, const cv::Mat& descs)
     }
 }
 
-cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr()
+cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr() const
 {
     switch (mType)
     {
@@ -135,9 +159,9 @@ cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr()
         throw UnknownFeatureType();
     }
 }
-std::vector<cv::KeyPoint> FeatureContainer::featureAt(std::size_t idx)
+std::vector<cv::KeyPoint> FeatureContainer::featureAt(std::size_t idx) const
 {
-    assert(idx < mNumImgs && mIsComputed
+    assert(idx < mNumImgs && isComputed({})
         && "idx out of range in FeatureContainer::featureAt() or not computed");
 
     auto file = getFileName(idx, detail::FtDesc::Feature);
@@ -152,9 +176,9 @@ std::vector<cv::KeyPoint> FeatureContainer::featureAt(std::size_t idx)
     return fts;
 }
 
-cv::Mat FeatureContainer::descriptorAt(std::size_t idx)
+cv::Mat FeatureContainer::descriptorAt(std::size_t idx) const
 {
-    assert(idx < mNumImgs && mIsComputed
+    assert(idx < mNumImgs && isComputed({})
         && "idx out of range in FeatureContainer::descriptorAt() or not computed");
 
     auto file = getFileName(idx, detail::FtDesc::Descriptor);
