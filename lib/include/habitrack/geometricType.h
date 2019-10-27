@@ -1,6 +1,9 @@
 #ifndef HABITRACK_GEOMETRIC_TYPE_H
 #define HABITRACK_GEOMETRIC_TYPE_H
 
+#include <ostream>
+#include <vector>
+
 namespace ht
 {
 enum class GeometricType : unsigned int
@@ -50,5 +53,9 @@ inline GeometricType& operator^=(GeometricType& x, GeometricType y)
     x = x ^ y;
     return x;
 }
+
+std::vector<GeometricType> typeToTypeList(GeometricType t);
+std::ostream& operator<<(std::ostream& os, const GeometricType& type);
+
 } // namespace ht
 #endif // HABITRACK_GEOMETTRIC_TYPE_H
