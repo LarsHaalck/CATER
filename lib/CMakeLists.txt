@@ -10,31 +10,43 @@ add_subdirectory(external/mild)
 ###########################################################################
 set(SOURCES
     main.cpp
+    # abstract classes
     src/baseCache.cpp
+    src/baseDecorator.cpp
 
+    # image container related
     src/imageContainer.cpp
     src/imageCache.cpp
-    src/baseDecorator.cpp
     src/resizeDecorator.cpp
     src/grayDecorator.cpp
     src/specialGrayDecorator.cpp
-
+    
+    # feature container
     src/featureContainer.cpp
     src/featureCache.cpp
     src/descriptorCache.cpp
     src/unknownFeatureType.cpp
 
+    # matches container
     src/geometricType.cpp
     src/matchesContainer.cpp
     src/unknownGeometricType.cpp
     src/basePairwiseCache.cpp
     src/pairwiseDescriptorCache.cpp
     src/pairwiseFeatureCache.cpp
-
-    src/keyFrameSelector.cpp
-
     src/ransac.cpp
     src/isometry.cpp
+    src/transformation.cpp
+
+    # key frames
+    src/keyFrameSelector.cpp
+
+    # pano
+    src/panoramaStitcher.cpp
+    src/homographyGlobalOptimizer.cpp
+    src/affinityGlobalOptimizer.cpp
+    src/similarityGlobalOptimizer.cpp
+    src/isometryGlobalOptimizer.cpp
 )
 
 
