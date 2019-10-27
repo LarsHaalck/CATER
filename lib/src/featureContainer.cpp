@@ -80,8 +80,7 @@ std::filesystem::path FeatureContainer::getFileName(std::size_t idx, detail::FtD
     return fullFile;
 }
 
-void FeatureContainer::compute(
-        std::size_t cacheSize, ComputeBehavior behavior, const ImgIds& ids)
+void FeatureContainer::compute(std::size_t cacheSize, ComputeBehavior behavior, const ImgIds& ids)
 {
     if (isComputed(ids) && behavior == ComputeBehavior::Keep)
     {
@@ -100,7 +99,7 @@ void FeatureContainer::compute(
 
         std::vector<std::vector<cv::KeyPoint>> fts(imgCache->getChunkSize(i));
         std::vector<cv::Mat> descs(imgCache->getChunkSize(i));
-        #pragma omp parallel for
+#pragma omp parallel for
         for (std::size_t j = 0; j < chunk.size(); j++)
             ftPtr->detectAndCompute(chunk[j], cv::Mat(), fts[j], descs[j]);
 
@@ -129,7 +128,6 @@ void FeatureContainer::writeFts(const fs::path& file, const std::vector<cv::KeyP
 {
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
     checkStream(stream, file);
-
     {
         cereal::PortableBinaryOutputArchive archive(stream);
         archive(fts);
@@ -140,7 +138,6 @@ void FeatureContainer::writeDescs(const fs::path& file, const cv::Mat& descs) co
 {
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
     checkStream(stream, file);
-
     {
         cereal::PortableBinaryOutputArchive archive(stream);
         archive(descs);
@@ -161,13 +158,12 @@ cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr() const
 }
 std::vector<cv::KeyPoint> FeatureContainer::featureAt(std::size_t idx) const
 {
-    assert(idx < mNumImgs && isComputed({})
+    assert(idx < mNumImgs && isComputed({idx})
         && "idx out of range in FeatureContainer::featureAt() or not computed");
 
     auto file = getFileName(idx, detail::FtDesc::Feature);
     std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
     checkStream(stream, file);
-
     std::vector<cv::KeyPoint> fts;
     {
         cereal::PortableBinaryInputArchive archive(stream);
@@ -178,13 +174,12 @@ std::vector<cv::KeyPoint> FeatureContainer::featureAt(std::size_t idx) const
 
 cv::Mat FeatureContainer::descriptorAt(std::size_t idx) const
 {
-    assert(idx < mNumImgs && isComputed({})
+    assert(idx < mNumImgs && isComputed({idx})
         && "idx out of range in FeatureContainer::descriptorAt() or not computed");
 
     auto file = getFileName(idx, detail::FtDesc::Descriptor);
     std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
     checkStream(stream, file);
-
     cv::Mat descs;
     {
         cereal::PortableBinaryInputArchive archive(stream);
