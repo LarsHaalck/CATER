@@ -37,7 +37,6 @@ enum class MatchType
 {
     Exhaustive,
     MILD,
-    /* NN, */
     Windowed,
     Manual
 };
@@ -59,47 +58,48 @@ public:
         GeometricType geomType);
 
     // for "automatic" matching
-    void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep);
+    void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep,
+        const ImgIds& ids = ImgIds());
 
-    // for "manual" matching
+    // for "manual" matching, e.g. in KFS
     std::pair<Trafos, std::vector<Matches>> computePair(std::size_t idxI, std::size_t idxJ);
 
-    /* std::vector<cv::DMatch> matchesAt(ImgId idI, ImgId idj); */
+    PairwiseMatches getMatches(GeometricType geomType);
+    PairwiseTrafos getTrafos(GeometricType geomType);
+
+    GeometricType getUsableTypes(const ImgIds& ids = ImgIds());
+
+    /* std::vector<cv::DMatch> matchesAt(ImgId idI, ImgId idj, GeometricType geomType); */
     /* cv::Mat trafoAt(ImgId idI, ImgId idj, GeometricType geomType); */
 
     /* std::unique_ptr<MatchesCache> getMatchesCache(std::size_t maxChunkSize, */
     /*     const ImgIds& ids = ImgIds()); */
     /* std::unique_ptr<TrafoCache> getTrafoCache(std::size_t maxChunkSize, */
     /*     const ImgIds& ids = ImgIds(); */
+    std::filesystem::path getMatchDir() const;
+
 private:
+    std::vector<GeometricType> getTypeList() const;
     GeometricType getTypeFromFile(const std::filesystem::path& file) const;
     std::filesystem::path getFileName(detail::MatchTrafo matchTrafo, GeometricType geomType) const;
     bool checkIfExists(GeometricType geomType) const;
 
-    PairwiseMatches getPutativeMatches(std::size_t cacheSize);
+    PairwiseMatches getPutativeMatches(std::size_t cacheSize, const ImgIds& ids);
     PairwiseMatches getGeomMatches(
         std::size_t cacheSize, GeometricType type, PairwiseMatches&& matches);
 
+    // helper function for different pair types
+    std::vector<std::pair<std::size_t, std::size_t>> getPairList(
+        std::size_t size, const ImgIds& ids) const;
     // TODO: outsource with strategy pattern --> PairSuggestor.getPairList();
-    std::vector<std::pair<std::size_t, std::size_t>> getPairList(std::size_t size) const;
-    std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(std::size_t size) const;
-    std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(std::size_t size) const;
-    std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList(std::size_t size) const;
-    void dilatePairList(
-        std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list) const;
-
-    template <typename T>
-    std::vector<std::pair<std::size_t, std::size_t>> getKeyList(
-        const std::unordered_map<std::pair<std::size_t, std::size_t>, T>& map) const
-    {
-        auto keys = std::vector<std::pair<std::size_t, std::size_t>>();
-        keys.reserve(map.size());
-        for (const auto& match : map)
-            keys.push_back(match.first);
-
-        std::sort(std::begin(keys), std::end(keys));
-        return keys;
-    }
+    std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(
+        std::size_t size, const ImgIds& ids) const;
+    std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(
+        std::size_t size, const ImgIds& ids) const;
+    std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList(
+        std::size_t size, const ImgIds& ids) const;
+    void dilatePairList(std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list,
+        std::size_t size) const;
 
     cv::Ptr<cv::DescriptorMatcher> getMatcher() const;
     Matches putMatchPair(
@@ -121,6 +121,14 @@ private:
     std::pair<std::vector<uchar>, cv::Mat> getInlierMaskHomography(
         const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
 
+    std::string typeToString(GeometricType type);
+    void filterEmptyMatches(PairwiseMatches& matches);
+
+    void writeMatches(const PairwiseMatches& matches, GeometricType type) const;
+    void writeTrafos(const PairwiseTrafos& matches, GeometricType type) const;
+    PairwiseMatches loadMatches(GeometricType type) const;
+    PairwiseTrafos loadTrafos(GeometricType type) const;
+
     inline size_t getInlierCount(const std::vector<uchar>& mask)
     {
         size_t count = 0;
@@ -132,11 +140,18 @@ private:
         return count;
     }
 
-    std::string typeToString(GeometricType type);
-    void filterEmptyMatches(PairwiseMatches& matches);
+    template <typename T>
+    std::vector<std::pair<std::size_t, std::size_t>> getKeyList(
+        const std::unordered_map<std::pair<std::size_t, std::size_t>, T>& map) const
+    {
+        auto keys = std::vector<std::pair<std::size_t, std::size_t>>();
+        keys.reserve(map.size());
+        for (const auto& match : map)
+            keys.push_back(match.first);
 
-    void writeMatches(const PairwiseMatches& matches, GeometricType type) const;
-    void writeTrafos(const PairwiseTrafos& matches, GeometricType type) const;
+        std::sort(std::begin(keys), std::end(keys));
+        return keys;
+    }
 
 private:
     std::shared_ptr<FeatureContainer> mFtContainer;

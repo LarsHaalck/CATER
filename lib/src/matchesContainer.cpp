@@ -30,31 +30,48 @@ MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureCont
     , mMatchDir(matchDir)
     , mMatchType(matchType)
     , mWindow(window)
-    , mGeomType(geomType)
+    , mGeomType(geomType | Put)
     , mIsComputed(true)
 {
-    if (static_cast<unsigned int>(mGeomType & Hom))
+    // TODO: maybe smarter to only calculate missing, but this is fine for now
+    if (static_cast<unsigned int>(mGeomType & Put))
     {
-        if (!checkIfExists(Hom))
-            mIsComputed = false;
-    }
-    if (static_cast<unsigned int>(mGeomType & Aff))
-    {
-        if (!checkIfExists(Aff))
-            mIsComputed = false;
-    }
-    if (static_cast<unsigned int>(mGeomType & Sim))
-    {
-        if (!checkIfExists(Sim))
-            mIsComputed = false;
-    }
-    if (static_cast<unsigned int>(mGeomType & Iso))
-    {
-        if (!checkIfExists(Iso))
+        auto matchFile = getFileName(detail::MatchTrafo::Match, Put);
+        if (!fs::is_regular_file(matchFile))
             mIsComputed = false;
     }
 
-    if (!fs::exists(matchDir) || !fs::is_directory(matchDir))
+    for (auto type : getTypeList())
+    {
+        if (!checkIfExists(type))
+        {
+            mIsComputed = false;
+            break;
+        }
+    }
+
+    /* if (static_cast<unsigned int>(mGeomType & Hom)) */
+    /* { */
+    /*     if (!checkIfExists(Hom)) */
+    /*         mIsComputed = false; */
+    /* } */
+    /* if (static_cast<unsigned int>(mGeomType & Aff)) */
+    /* { */
+    /*     if (!checkIfExists(Aff)) */
+    /*         mIsComputed = false; */
+    /* } */
+    /* if (static_cast<unsigned int>(mGeomType & Sim)) */
+    /* { */
+    /*     if (!checkIfExists(Sim)) */
+    /*         mIsComputed = false; */
+    /* } */
+    /* if (static_cast<unsigned int>(mGeomType & Iso)) */
+    /* { */
+    /*     if (!checkIfExists(Iso)) */
+    /*         mIsComputed = false; */
+    /* } */
+
+    if (matchType != MatchType::Manual && (!fs::exists(matchDir) || !fs::is_directory(matchDir)))
         fs::create_directories(matchDir);
 }
 
@@ -118,25 +135,72 @@ std::filesystem::path MatchesContainer::getFileName(
     return fullFile;
 }
 
-void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior)
+std::vector<GeometricType> MatchesContainer::getTypeList() const
+{
+    std::vector<GeometricType> types;
+    if (static_cast<unsigned int>(mGeomType & Hom))
+        types.push_back(Hom);
+    if (static_cast<unsigned int>(mGeomType & Aff))
+        types.push_back(Aff);
+    if (static_cast<unsigned int>(mGeomType & Sim))
+        types.push_back(Sim);
+    if (static_cast<unsigned int>(mGeomType & Iso))
+        types.push_back(Iso);
+    return types;
+}
+
+void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior, const ImgIds& ids)
 {
     if ((mIsComputed && behavior == ComputeBehavior::Keep) || mMatchType == MatchType::Manual)
+    {
+        std::cout << "Skipping Feature Matching..." << std::endl;
         return;
+    }
 
     // maps pairs to their matches vector
-    auto matches = getPutativeMatches(cacheSize);
+    auto matches = getPutativeMatches(cacheSize, ids);
 
-    if (static_cast<unsigned int>(mGeomType & Hom))
-        matches = getGeomMatches(cacheSize, Hom, std::move(matches));
+    for (auto type : getTypeList())
+        matches = getGeomMatches(cacheSize, type, std::move(matches));
 
-    if (static_cast<unsigned int>(mGeomType & Aff))
-        matches = getGeomMatches(cacheSize, Aff, std::move(matches));
+    /* if (static_cast<unsigned int>(mGeomType & Hom)) */
+    /*     matches = getGeomMatches(cacheSize, Hom, std::move(matches)); */
 
-    if (static_cast<unsigned int>(mGeomType & Sim))
-        matches = getGeomMatches(cacheSize, Sim, std::move(matches));
+    /* if (static_cast<unsigned int>(mGeomType & Aff)) */
+    /*     matches = getGeomMatches(cacheSize, Aff, std::move(matches)); */
 
-    if (static_cast<unsigned int>(mGeomType & Iso))
-        matches = getGeomMatches(cacheSize, Iso, std::move(matches));
+    /* if (static_cast<unsigned int>(mGeomType & Sim)) */
+    /*     matches = getGeomMatches(cacheSize, Sim, std::move(matches)); */
+
+    /* if (static_cast<unsigned int>(mGeomType & Iso)) */
+    /*     matches = getGeomMatches(cacheSize, Iso, std::move(matches)); */
+}
+
+GeometricType MatchesContainer::getUsableTypes(const ImgIds& ids)
+{
+    GeometricType useableTypes = GeometricType::Undefined;
+    for (auto type : getTypeList())
+    {
+        std::cout << "Checking usability of: " << type << std::endl;
+        auto matches = loadMatches(type);
+        auto numImgs = ids.empty() ? mFtContainer->getNumImgs() : ids.size();
+        bool useable = true;
+        for (std::size_t i = 1; i < numImgs; i++)
+        {
+            auto prevIdx = ids.empty() ? i - 1 : ids[i - 1];
+            auto currIdx = ids.empty() ? i : ids[i];
+            if (!matches.count(std::make_pair(prevIdx, currIdx)))
+            {
+                std::cout << "Missing link: " << prevIdx << " -> " << currIdx << std::endl;
+                useable = false;
+                break;
+            }
+        }
+        if (useable)
+            useableTypes |= type;
+    }
+
+    return useableTypes;
 }
 
 std::string MatchesContainer::typeToString(Gt type)
@@ -192,7 +256,6 @@ PairwiseMatches MatchesContainer::getGeomMatches(
     }
 
     filterEmptyMatches(filteredMatches);
-
     writeMatches(filteredMatches, type);
     writeTrafos(trafos, type);
     return filteredMatches;
@@ -276,48 +339,58 @@ std::pair<Trafos, std::vector<Matches>> MatchesContainer::computePair(
     trafos.push_back(cv::Mat());
     matches.push_back(currMatches);
 
-    auto hom = Hom;
-    auto aff = Aff;
-    auto sim = Sim;
-    auto iso = Iso;
     auto featI = mFtContainer->featureAt(idxI);
     auto featJ = mFtContainer->featureAt(idxJ);
-    if (static_cast<unsigned int>(mGeomType & hom))
+    for (auto type : getTypeList())
     {
-        auto [trafo, geomMatches] = geomMatchPair(featI, featJ, hom, currMatches);
+        auto [trafo, geomMatches] = geomMatchPair(featI, featJ, type, currMatches);
         trafos.push_back(trafo);
         matches.push_back(geomMatches);
 
         currMatches.clear();
         currMatches = std::move(geomMatches);
     }
-    if (static_cast<unsigned int>(mGeomType & aff))
-    {
-        auto [trafo, geomMatches] = geomMatchPair(featI, featJ, aff, currMatches);
-        matches.push_back(geomMatches);
-        trafos.push_back(trafo);
 
-        currMatches.clear();
-        currMatches = std::move(geomMatches);
-    }
-    if (static_cast<unsigned int>(mGeomType & sim))
-    {
-        auto [trafo, geomMatches] = geomMatchPair(featI, featJ, sim, currMatches);
-        matches.push_back(geomMatches);
-        trafos.push_back(trafo);
+    /* auto hom = Hom; */
+    /* auto aff = Aff; */
+    /* auto sim = Sim; */
+    /* auto iso = Iso; */
+    /* if (static_cast<unsigned int>(mGeomType & hom)) */
+    /* { */
+    /*     auto [trafo, geomMatches] = geomMatchPair(featI, featJ, hom, currMatches); */
+    /*     trafos.push_back(trafo); */
+    /*     matches.push_back(geomMatches); */
 
-        currMatches.clear();
-        currMatches = std::move(geomMatches);
-    }
-    if (static_cast<unsigned int>(mGeomType & iso))
-    {
-        auto [trafo, geomMatches] = geomMatchPair(featI, featJ, iso, currMatches);
-        matches.push_back(geomMatches);
-        trafos.push_back(trafo);
+    /*     currMatches.clear(); */
+    /*     currMatches = std::move(geomMatches); */
+    /* } */
+    /* if (static_cast<unsigned int>(mGeomType & aff)) */
+    /* { */
+    /*     auto [trafo, geomMatches] = geomMatchPair(featI, featJ, aff, currMatches); */
+    /*     matches.push_back(geomMatches); */
+    /*     trafos.push_back(trafo); */
 
-        currMatches.clear();
-        currMatches = std::move(geomMatches);
-    }
+    /*     currMatches.clear(); */
+    /*     currMatches = std::move(geomMatches); */
+    /* } */
+    /* if (static_cast<unsigned int>(mGeomType & sim)) */
+    /* { */
+    /*     auto [trafo, geomMatches] = geomMatchPair(featI, featJ, sim, currMatches); */
+    /*     matches.push_back(geomMatches); */
+    /*     trafos.push_back(trafo); */
+
+    /*     currMatches.clear(); */
+    /*     currMatches = std::move(geomMatches); */
+    /* } */
+    /* if (static_cast<unsigned int>(mGeomType & iso)) */
+    /* { */
+    /*     auto [trafo, geomMatches] = geomMatchPair(featI, featJ, iso, currMatches); */
+    /*     matches.push_back(geomMatches); */
+    /*     trafos.push_back(trafo); */
+
+    /*     currMatches.clear(); */
+    /*     currMatches = std::move(geomMatches); */
+    /* } */
 
     return std::make_pair(trafos, matches);
 }
@@ -328,39 +401,17 @@ std::pair<Trafo, Matches> MatchesContainer::geomMatchPair(const std::vector<cv::
     std::vector<cv::Point2f> src, dst;
     for (size_t i = 0; i < matches.size(); i++)
     {
-        /* if (matches[i].queryIdx < 0 || matches[i].queryIdx >= featI.size()) */
-        /* { */
-        /*     std::cout << "ALARM: " << matches[i].queryIdx << std::endl; */
-        /*     std::cout << featI.size() << std::endl; */
-        /* } */
         src.push_back(featI[matches[i].queryIdx].pt);
         dst.push_back(featJ[matches[i].trainIdx].pt);
     }
 
     auto [mask, trafo] = getInlierMask(src, dst, filterType);
-
     std::vector<cv::DMatch> filteredMatches;
-    /* std::vector<cv::Point2f> srcFiltered, dstFiltered; */
     for (size_t r = 0; r < mask.size(); r++)
     {
         if (mask[r])
-        {
             filteredMatches.push_back(matches[r]);
-            /* srcFiltered.push_back(src[r]); */
-            /* dstFiltered.push_back(dst[r]); */
-        }
     }
-
-    /* if (mMinCoverage) */
-    /* { */
-    /*     int rectI = cv::boundingRect(srcFiltered).area(); */
-    /*     int rectJ = cv::boundingRect(dstFiltered).area(); */
-    /*     int areaI = imgReader.getImage(idI).rows * imgReader.getImage(idI).cols; */
-    /*     int areaJ = imgReader.getImage(idJ).rows * imgReader.getImage(idJ).cols; */
-    /*     if (rectI < mMinCoverage * areaI || rectJ < mMinCoverage * areaJ) */
-    /*         filteredMatches.clear(); */
-
-    /* } */
 
     return std::make_pair(trafo, filteredMatches);
 }
@@ -448,9 +499,9 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskHomography
     return std::make_pair(mask, mat);
 }
 
-PairwiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize)
+PairwiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize, const ImgIds& ids)
 {
-    auto pairList = getPairList(mFtContainer->getNumImgs());
+    auto pairList = getPairList(mFtContainer->getNumImgs(), ids);
     auto descCache = mFtContainer->getPairwiseDescriptorCache(cacheSize, pairList);
     auto descMatcher = getMatcher();
 
@@ -505,20 +556,46 @@ void MatchesContainer::writeTrafos(const PairwiseTrafos& trafos, Gt type) const
     }
 }
 
+PairwiseMatches MatchesContainer::loadMatches(Gt type) const
+{
+    auto file = getFileName(detail::MatchTrafo::Match, type);
+    std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
+    checkStream(stream, file);
+    PairwiseMatches matches;
+    {
+        cereal::PortableBinaryInputArchive archive(stream);
+        archive(matches);
+    }
+    return matches;
+}
+
+PairwiseTrafos MatchesContainer::loadTrafos(Gt type) const
+{
+    auto file = getFileName(detail::MatchTrafo::Trafo, type);
+    std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
+    checkStream(stream, file);
+    PairwiseTrafos trafos;
+    {
+        cereal::PortableBinaryInputArchive archive(stream);
+        archive(trafos);
+    }
+    return trafos;
+}
+
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
-    std::size_t size) const
+    std::size_t size, const ImgIds& ids) const
 {
     std::vector<std::pair<std::size_t, std::size_t>> pairs;
     switch (mMatchType)
     {
     case MatchType::Exhaustive:
-        pairs = getExhaustivePairList(size);
+        pairs = getExhaustivePairList(size, ids);
         break;
     case MatchType::MILD:
-        pairs = getMILDPairList(size);
+        pairs = getMILDPairList(size, ids);
         break;
     case MatchType::Windowed:
-        pairs = getWindowPairList(size);
+        pairs = getWindowPairList(size, ids);
         break;
     default:
         pairs = {};
@@ -530,39 +607,54 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
 }
 
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPairList(
-    std::size_t size) const
+    std::size_t size, const ImgIds& ids) const
 {
+    if (!ids.empty())
+        size = ids.size();
+
     std::vector<std::pair<std::size_t, std::size_t>> pairList;
     for (std::size_t i = 0; i < size; i++)
     {
         for (std::size_t j = i + 1; (j < i + mWindow) && (j < size); j++)
         {
-            pairList.push_back(std::make_pair(i, j));
+            if (!ids.empty())
+                pairList.push_back(std::make_pair(ids[i], ids[j]));
+            else
+                pairList.push_back(std::make_pair(i, j));
+        }
+    }
+
+    return pairList;
+}
+
+std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustivePairList(
+    std::size_t size, const ImgIds& ids) const
+{
+    if (!ids.empty())
+        size = ids.size();
+
+    std::vector<std::pair<size_t, size_t>> pairList;
+    for (size_t i = 0; i < size; i++)
+    {
+        for (size_t j = i + 1; j < size; j++)
+        {
+            if (!ids.empty())
+                pairList.push_back(std::make_pair(ids[i], ids[j]));
+            else
+                pairList.push_back(std::make_pair(i, j));
         }
     }
     return pairList;
 }
 
-std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustivePairList(
-    std::size_t size) const
-{
-    std::vector<std::pair<size_t, size_t>> pairList;
-    for (size_t i = 0; i < size; i++)
-    {
-        for (size_t j = i + 1; j < size; j++)
-            pairList.push_back(std::make_pair(i, j));
-    }
-    return pairList;
-}
-
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairList(
-    std::size_t size) const
+    std::size_t size, const ImgIds& ids) const
 {
     // make orb feature container (sift does not work)
     auto ftContainer = std::make_shared<FeatureContainer>(
-        mFtContainer->getImageContainer(), mFtContainer->getFtDir(), FeatureType::ORB, 5000);
+        mFtContainer->getImageContainer(), getMatchDir() / "MILD", FeatureType::ORB, 5000);
 
-    ftContainer->compute(1000, ComputeBehavior::Keep);
+    ftContainer->compute(1000, ComputeBehavior::Keep, ids);
 
     MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0);
     MILD::BayesianFilter filter(0.3, 4, 4, mWindow);
@@ -571,15 +663,17 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairLi
     prevVisitProb << 0.1;
     std::vector<Eigen::VectorXf> prevVisitFlag;
 
-    std::vector<std::pair<std::size_t, std::size_t>> pairs;
+    /* std::vector<std::pair<std::size_t, std::size_t>> pairs; */
     std::unordered_map<std::pair<std::size_t, std::size_t>, double> scores;
 
-    std::size_t numImgs = ftContainer->getNumImgs();
+    auto transId = [&ids](std::size_t i) { return ids.empty() ? i : ids[i]; };
+
+    std::size_t numImgs = ids.empty() ? ftContainer->getNumImgs() : ids.size();
     std::cout << "Using MILD to get possible image pairs" << std::endl;
     ProgressBar bar(numImgs);
     for (std::size_t k = 0; k < numImgs; k++)
     {
-        auto desc = ftContainer->descriptorAt(k);
+        auto desc = ftContainer->descriptorAt(transId(k));
 
         std::vector<float> simScore;
         simScore.clear();
@@ -589,7 +683,9 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairLi
         if (prevVisitFlag.size() >= 1)
         {
             for (int i = 0; i < prevVisitFlag[prevVisitFlag.size() - 1].size(); i++)
+            {
                 scores[std::make_pair(i, k)] = prevVisitFlag[prevVisitFlag.size() - 1][i];
+            }
         }
         ++bar;
         bar.display();
@@ -607,20 +703,19 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairLi
         }
     }
 
-    /* dilatePairList(scores); */
-
-    auto windowPairs = getWindowPairList(size);
+    dilatePairList(scores, numImgs);
+    auto windowPairs = getWindowPairList(size, ids);
     for (const auto& [pair, score] : scores)
     {
         if (score > 0)
-            windowPairs.push_back(pair);
+            windowPairs.push_back(std::make_pair(transId(pair.first), transId(pair.second)));
     }
 
     return windowPairs;
 }
 
 void MatchesContainer::dilatePairList(
-    std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list) const
+    std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list, std::size_t size) const
 {
     auto pairs = getKeyList(list);
     for (const auto [i, j] : pairs)
@@ -633,8 +728,8 @@ void MatchesContainer::dilatePairList(
                 auto jShift = j + m;
                 auto pairShift = std::make_pair(iShift, jShift);
                 // check boundary conditions and if the key already exists, otherwise insert
-                if (iShift < mFtContainer->getNumImgs() && jShift < mFtContainer->getNumImgs()
-                    && jShift > iShift + mWindow && !list.count(pairShift))
+                if (iShift < size && jShift < size && jShift > iShift + mWindow
+                    && !list.count(pairShift))
                 {
                     list.insert(std::make_pair(pairShift, 1.0));
                 }
@@ -642,55 +737,29 @@ void MatchesContainer::dilatePairList(
         }
     }
 }
-/* std::vector<cv::KeyPoint> FeatureContainer::featureAt( */
-/*     std::size_t idx, ImageType imageType) */
-/* { */
-/*     assert(idx < mImgContainer->getNumImages(imageType) && mIsComputed */
-/*         && "idx out of range in FeatureContainer::featureAt() or not computed"); */
 
-/*     auto realIdx = mImgContainer->getImageIdx(idx, imageType); */
-/*     auto file = getFileName(realIdx, detail::FtDesc::Feature); */
-/*     std::ifstream stream(file.string(), std::ios::in | std::ios::binary); */
-/*     checkStream(stream, file); */
+fs::path MatchesContainer::getMatchDir() const { return mMatchDir; }
 
-/*     std::vector<cv::KeyPoint> fts; */
-/*     { */
-/*         cereal::PortableBinaryInputArchive archive(stream); */
-/*         archive(fts); */
-/*     } */
-/*     return fts; */
-/* } */
+PairwiseMatches MatchesContainer::getMatches(GeometricType geomType)
+{
+    assert(static_cast<unsigned int>(geomType & mGeomType)
+        && "Requested geometric type that was not computed");
 
-/* cv::Mat FeatureContainer::descriptorAt(std::size_t idx, ImageType imageType) */
-/* { */
-/*     assert(idx < mImgContainer->getNumImages(imageType) && mIsComputed */
-/*         && "idx out of range in FeatureContainer::descriptorAt() or not computed"); */
+    if (static_cast<unsigned int>(geomType & mGeomType))
+        return loadMatches(geomType);
 
-/*     auto realIdx = mImgContainer->getImageIdx(idx, imageType); */
-/*     auto file = getFileName(realIdx, detail::FtDesc::Descriptor); */
-/*     std::ifstream stream(file.string(), std::ios::in | std::ios::binary); */
-/*     checkStream(stream, file); */
-
-/*     cv::Mat descs; */
-/*     { */
-/*         cereal::PortableBinaryInputArchive archive(stream); */
-/*         archive(descs); */
-/*     } */
-/*     return descs; */
-/* } */
-
-/* std::unique_ptr<FeatureCache> FeatureContainer::getFeatureCache( */
-/*     std::size_t maxChunkSize, ImageType imageType) */
-/* { */
-/*     auto numElems = mImgContainer->getNumImages(imageType); */
-/*     return std::make_unique<FeatureCache>( */
-/*         shared_from_this(), numElems, maxChunkSize, imageType); */
-/* } */
-/* std::unique_ptr<DescriptorCache> FeatureContainer::getDescriptorCache( */
-/*     std::size_t maxChunkSize, ImageType imageType) */
-/* { */
-/*     auto numElems = mImgContainer->getNumImages(imageType); */
-/*     return std::make_unique<DescriptorCache>( */
-/*         shared_from_this(), numElems, maxChunkSize, imageType); */
-/* } */
+    return {};
 }
+
+PairwiseTrafos MatchesContainer::getTrafos(GeometricType geomType)
+{
+    assert(static_cast<unsigned int>(geomType & mGeomType)
+        && "Requested geometric type that was not computed");
+
+    if (static_cast<unsigned int>(geomType & mGeomType) && geomType != Put)
+        return loadTrafos(geomType);
+
+    return {};
+}
+
+} // namespace ht
