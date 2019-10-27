@@ -3,10 +3,9 @@
 
 #include <Eigen/Dense>
 
-
 template <typename T>
-Eigen::Matrix<T, 2, 1> undistort(const T* const camParams, const T* const distParams,
-    const Eigen::Matrix<T, 2, 1>& q)
+Eigen::Matrix<T, 2, 1> undistort(
+    const T* const camParams, const T* const distParams, const Eigen::Matrix<T, 2, 1>& q)
 {
     using Vec2 = Eigen::Matrix<T, 2, 1>;
     Vec2 qt;
@@ -28,8 +27,7 @@ Eigen::Matrix<T, 2, 1> undistort(const T* const camParams, const T* const distPa
 
 template <typename T>
 void symmetricReprojectionError(const Eigen::Matrix<T, 3, 3>& trafo,
-    const Eigen::Matrix<T, 2, 1>& q1, const Eigen::Matrix<T, 2, 1>& q2,
-    T errors[4])
+    const Eigen::Matrix<T, 2, 1>& q1, const Eigen::Matrix<T, 2, 1>& q2, T errors[4])
 {
     using Vec3 = Eigen::Matrix<T, 3, 1>;
 
@@ -52,4 +50,3 @@ void symmetricReprojectionError(const Eigen::Matrix<T, 3, 3>& trafo,
 }
 
 #endif // METRICS_H
-

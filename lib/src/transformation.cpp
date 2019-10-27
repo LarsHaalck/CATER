@@ -4,8 +4,7 @@ namespace ht
 {
 cv::Mat makeFull(const cv::Mat& matrix)
 {
-    if ((matrix.rows == 3 && matrix.cols == 3)
-        || matrix.rows != 2 || matrix.cols != 3)
+    if ((matrix.rows == 3 && matrix.cols == 3) || matrix.rows != 2 || matrix.cols != 3)
         return matrix;
 
     cv::Mat full;
@@ -45,10 +44,7 @@ cv::Mat invertIsometry(const cv::Mat& matrix, bool full)
 }
 
 // TODO this can be done better
-cv::Mat invertSimilarity(const cv::Mat& matrix, bool full)
-{
-    return invertAffine(matrix, full);
-}
+cv::Mat invertSimilarity(const cv::Mat& matrix, bool full) { return invertAffine(matrix, full); }
 
 cv::Mat invertAffine(const cv::Mat& matrix, bool full)
 {
@@ -78,25 +74,24 @@ cv::Mat invertAffine(const cv::Mat& matrix, bool full)
 
 cv::Mat invertSpecial(const cv::Mat& matrix, GeometricType type, bool full)
 {
-    assert(matrix.type() == CV_64F &&
-        "Matrix type not CV_64F in invertSpecial");
+    assert(matrix.type() == CV_64F && "Matrix type not CV_64F in invertSpecial");
 
     switch (type)
     {
-        case GeometricType::Isometry:
-            return invertIsometry(matrix, full);
-        case GeometricType::Similarity:
-            return invertSimilarity(matrix, full);
-        case GeometricType::Affinity:
-            return invertAffine(matrix, full);
-        case GeometricType::Homography:
-        {
-            cv::Mat inverse;
-            cv::invert(matrix, inverse);
-            return inverse;
-        }
-        default:
-            break;
+    case GeometricType::Isometry:
+        return invertIsometry(matrix, full);
+    case GeometricType::Similarity:
+        return invertSimilarity(matrix, full);
+    case GeometricType::Affinity:
+        return invertAffine(matrix, full);
+    case GeometricType::Homography:
+    {
+        cv::Mat inverse;
+        cv::invert(matrix, inverse);
+        return inverse;
+    }
+    default:
+        break;
     }
 
     return cv::Mat();

@@ -1,8 +1,8 @@
 #ifndef HABITRACK_TRANSFORMATION_H
 #define HABITRACK_TRANSFORMATION_H
 
-#include <opencv2/core.hpp>
 #include "habitrack/geometricType.h"
+#include <opencv2/core.hpp>
 
 namespace ht
 {

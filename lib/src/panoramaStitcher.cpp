@@ -1,8 +1,8 @@
 #include "habitrack/panoramaStitcher.h"
 
 #include <iostream>
-#include <opencv2/highgui.hpp>
 #include <opencv2/calib3d.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/stitching.hpp>
 
 #include <Eigen/Dense>
@@ -13,10 +13,10 @@
 /* #include "io/featureReader.h" */
 /* #include "io/matchesReader.h" */
 
-#include "homographyGlobalOptimizer.h"
 #include "affinityGlobalOptimizer.h"
-#include "similarityGlobalOptimizer.h"
+#include "homographyGlobalOptimizer.h"
 #include "isometryGlobalOptimizer.h"
+#include "similarityGlobalOptimizer.h"
 
 using Gt = ht::GeometricType;
 namespace ht
@@ -31,9 +31,9 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
     , mKeyFrames(keyFrames)
     , mType(type)
     , mBlend(blend)
-    /* , mCamMat(camMat) */
-    /* , mCamMatInv() */
-    /* , mDistCoeffs(distCoeffs) */
+/* , mCamMat(camMat) */
+/* , mCamMatInv() */
+/* , mDistCoeffs(distCoeffs) */
 {
     /* if (mCamMat.empty()) */
     /* { */
@@ -52,10 +52,10 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
     /* Thinning thinning(mFtReader, mMatchReader, size.height, size.width); */
     /* mKeyFrames = thinning.estimate(0.3, 0.5, 50); */
     /* /1* mKeyFrames.erase(mKeyFrames.begin() + 28, mKeyFrames.end()); *1/ */
-    /* std::cout << "Keeping: " << mKeyFrames.size() << " of " << mImgReader->numImages()  << std::endl; */
+    /* std::cout << "Keeping: " << mKeyFrames.size() << " of " << mImgReader->numImages()  <<
+     * std::endl; */
     /* mKeyFrames = {0, 5, 10, 15, 20, 26, 29, 36}; */
 }
-
 
 /* cv::Mat PanoGenerator::draw(const cv::Mat& trafo, size_t idI, size_t idJ) */
 /* { */
@@ -77,7 +77,6 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
 /*     cv::putText(imgJ, std::to_string(idI) + " to " + std::to_string(idJ), */
 /*         cv::Point(200, 200), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0)); */
 
-
 /*     cv::imshow("bla", imgJ); */
 /*     while (cv::waitKey(0) != 27) */
 /*     { */
@@ -92,7 +91,8 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
 /*     return  alpha * homography + (1.0 - alpha) * eye; */
 /* } */
 
-/* std::vector<size_t> getMatchedImgs(size_t currImg, const std::vector<std::pair<size_t, size_t>>& matchPairs) */
+/* std::vector<size_t> getMatchedImgs(size_t currImg, const std::vector<std::pair<size_t, size_t>>&
+ * matchPairs) */
 /* { */
 /*     std::vector<size_t> matchedIds; */
 /*     for (const auto& pair : matchPairs) */
@@ -268,7 +268,8 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
 /*     invParams.reserve(3); */
 /*     invParams.push_back(-params[0]); */
 /*     invParams.push_back(3 * params[0] * params[0] - params[1]); */
-/*     invParams.push_back(8 * params[0] * params[1] - 12 * params[0] * params[0] * params[0] - params[2]); */
+/*     invParams.push_back(8 * params[0] * params[1] - 12 * params[0] * params[0] * params[0] -
+ * params[2]); */
 /*     return invParams; */
 /* } */
 
@@ -371,7 +372,6 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
 /*         } */
 /*     } */
 
-
 /*     /1* problem.SetParameterBlockVariable(camParams.data()); *1/ */
 /*     /1* problem.SetParameterBlockVariable(distParams.data()); *1/ */
 
@@ -394,9 +394,6 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
 /*     cv::Size targetSize(2560, 1440); */
 /*     return std::get<0>(stitchPano(boundingRect, globalTrafos, targetSize)); */
 /* } */
-
-
-
 
 /* //TODO connected components */
 /* std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoGenerator::generatePano(cv::Size targetSize) */
@@ -450,7 +447,6 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
 /*     return stitchPano(boundingRect, trafos, targetSize); */
 /* } */
 
-
 /* std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoGenerator::stitchPano(cv::Rect2d rect, */
 /*     const std::vector<cv::Mat>& trafos, */
 /*     cv::Size targetSize) */
@@ -494,7 +490,6 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
 /*         /1* newCam = mCamMat; *1/ */
 /*         /1* undistImg = currImg; *1/ */
 
-
 /*         if (i >= trafos.size()) */
 /*             break; */
 
@@ -507,7 +502,6 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
 
 /*         cv::Mat warped; */
 /*         cv::warpPerspective(undistImg, warped, scaleMat * transMat  * currTrafo, newSize); */
-
 
 /*         if (mBlend) */
 /*         { */
@@ -610,26 +604,22 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
 /*     return std::make_tuple(trafo, ptIFiltered, ptJFiltered); */
 /* } */
 
-cv::Rect2d PanoramaStitcher::generateBoundingRect(const std::vector<cv::Mat>& trafos,
-    const cv::Size& imgSize)
+cv::Rect2d PanoramaStitcher::generateBoundingRect(
+    const std::vector<cv::Mat>& trafos, const cv::Size& imgSize)
 {
     cv::Rect2d boundingRect(0, 0, imgSize.width, imgSize.height);
 
     // store trafos relative to first frame
-    for(size_t i = 1; i < mKeyFrames.size(); i++)
+    for (size_t i = 1; i < mKeyFrames.size(); i++)
         boundingRect = generateBoundingRectHelper(trafos[i], imgSize, boundingRect);
     return boundingRect;
 }
 
-cv::Rect2d PanoramaStitcher::generateBoundingRectHelper(const cv::Mat& trafo, cv::Size size,
-    cv::Rect2d currRect)
+cv::Rect2d PanoramaStitcher::generateBoundingRectHelper(
+    const cv::Mat& trafo, cv::Size size, cv::Rect2d currRect)
 {
-    cv::Mat corners = (cv::Mat_<double>(4, 2) <<
-        0.0, 0.0,
-        size.width - 1, 0.0,
-        0.0, size.height - 1,
-        size.width - 1, size.height - 1
-    );
+    cv::Mat corners = (cv::Mat_<double>(4, 2) << 0.0, 0.0, size.width - 1, 0.0, 0.0,
+        size.height - 1, size.width - 1, size.height - 1);
 
     cv::Mat cornersHomo;
     cv::convertPointsToHomogeneous(corners, cornersHomo);
