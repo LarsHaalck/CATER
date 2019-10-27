@@ -50,27 +50,6 @@ MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureCont
         }
     }
 
-    /* if (static_cast<unsigned int>(mGeomType & Hom)) */
-    /* { */
-    /*     if (!checkIfExists(Hom)) */
-    /*         mIsComputed = false; */
-    /* } */
-    /* if (static_cast<unsigned int>(mGeomType & Aff)) */
-    /* { */
-    /*     if (!checkIfExists(Aff)) */
-    /*         mIsComputed = false; */
-    /* } */
-    /* if (static_cast<unsigned int>(mGeomType & Sim)) */
-    /* { */
-    /*     if (!checkIfExists(Sim)) */
-    /*         mIsComputed = false; */
-    /* } */
-    /* if (static_cast<unsigned int>(mGeomType & Iso)) */
-    /* { */
-    /*     if (!checkIfExists(Iso)) */
-    /*         mIsComputed = false; */
-    /* } */
-
     if (matchType != MatchType::Manual && (!fs::exists(matchDir) || !fs::is_directory(matchDir)))
         fs::create_directories(matchDir);
 }
@@ -157,23 +136,9 @@ void MatchesContainer::compute(std::size_t cacheSize, ComputeBehavior behavior, 
         return;
     }
 
-    // maps pairs to their matches vector
     auto matches = getPutativeMatches(cacheSize, ids);
-
     for (auto type : getTypeList())
         matches = getGeomMatches(cacheSize, type, std::move(matches));
-
-    /* if (static_cast<unsigned int>(mGeomType & Hom)) */
-    /*     matches = getGeomMatches(cacheSize, Hom, std::move(matches)); */
-
-    /* if (static_cast<unsigned int>(mGeomType & Aff)) */
-    /*     matches = getGeomMatches(cacheSize, Aff, std::move(matches)); */
-
-    /* if (static_cast<unsigned int>(mGeomType & Sim)) */
-    /*     matches = getGeomMatches(cacheSize, Sim, std::move(matches)); */
-
-    /* if (static_cast<unsigned int>(mGeomType & Iso)) */
-    /*     matches = getGeomMatches(cacheSize, Iso, std::move(matches)); */
 }
 
 GeometricType MatchesContainer::getUsableTypes(const ImgIds& ids)
@@ -350,47 +315,6 @@ std::pair<Trafos, std::vector<Matches>> MatchesContainer::computePair(
         currMatches.clear();
         currMatches = std::move(geomMatches);
     }
-
-    /* auto hom = Hom; */
-    /* auto aff = Aff; */
-    /* auto sim = Sim; */
-    /* auto iso = Iso; */
-    /* if (static_cast<unsigned int>(mGeomType & hom)) */
-    /* { */
-    /*     auto [trafo, geomMatches] = geomMatchPair(featI, featJ, hom, currMatches); */
-    /*     trafos.push_back(trafo); */
-    /*     matches.push_back(geomMatches); */
-
-    /*     currMatches.clear(); */
-    /*     currMatches = std::move(geomMatches); */
-    /* } */
-    /* if (static_cast<unsigned int>(mGeomType & aff)) */
-    /* { */
-    /*     auto [trafo, geomMatches] = geomMatchPair(featI, featJ, aff, currMatches); */
-    /*     matches.push_back(geomMatches); */
-    /*     trafos.push_back(trafo); */
-
-    /*     currMatches.clear(); */
-    /*     currMatches = std::move(geomMatches); */
-    /* } */
-    /* if (static_cast<unsigned int>(mGeomType & sim)) */
-    /* { */
-    /*     auto [trafo, geomMatches] = geomMatchPair(featI, featJ, sim, currMatches); */
-    /*     matches.push_back(geomMatches); */
-    /*     trafos.push_back(trafo); */
-
-    /*     currMatches.clear(); */
-    /*     currMatches = std::move(geomMatches); */
-    /* } */
-    /* if (static_cast<unsigned int>(mGeomType & iso)) */
-    /* { */
-    /*     auto [trafo, geomMatches] = geomMatchPair(featI, featJ, iso, currMatches); */
-    /*     matches.push_back(geomMatches); */
-    /*     trafos.push_back(trafo); */
-
-    /*     currMatches.clear(); */
-    /*     currMatches = std::move(geomMatches); */
-    /* } */
 
     return std::make_pair(trafos, matches);
 }
