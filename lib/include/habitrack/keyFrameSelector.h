@@ -2,9 +2,12 @@
 #define HABITACK_KEY_FRAME_SELECTOR_H
 
 #include <algorithm>
+#include <filesystem>
 #include <memory>
 #include <opencv2/features2d.hpp>
 #include <vector>
+
+#include "habitrack/computeBehavior.h"
 
 namespace ht
 {
@@ -16,8 +19,9 @@ namespace ht
 class KeyFrameSelector
 {
 public:
-    KeyFrameSelector(std::shared_ptr<FeatureContainer> ftContainer);
-    std::vector<std::size_t> compute(float low, float high);
+    KeyFrameSelector(
+        std::shared_ptr<FeatureContainer> ftContainer, const std::filesystem::path& file);
+    std::vector<std::size_t> compute(float low, float high, ComputeBehavior behavior);
 
 private:
     std::pair<float, float> getRealLowHigh(float low, float high) const;
@@ -25,10 +29,8 @@ private:
 
     std::size_t filterViews(
         const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low, float high);
-
     bool compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
         const std::pair<float, std::size_t>& rhs, float low, float high) const;
-
     double calcReprojError(const std::vector<cv::Point2f>& ptsSrc, std::vector<cv::Point2f>& ptsDst,
         const cv::Mat& trafo) const;
 
@@ -59,10 +61,15 @@ private:
             return vec[size / 2];
     }
 
+    void writeToFile(const std::vector<std::size_t>& keyFrames);
+    std::vector<std::size_t> loadFromFile();
+
 private:
     std::shared_ptr<FeatureContainer> mFtContainer;
+    std::filesystem::path mFile;
     cv::Size mImgSize;
     int mArea;
+    bool mIsComputed;
 };
 } // namespace ht
 #endif // HABITACK_KEY_FRAME_SELECTOR_H

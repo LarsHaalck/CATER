@@ -4,6 +4,8 @@
 
 #include "progressBar.h"
 
+#include <opencv2/core.hpp>
+
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -11,17 +13,30 @@
 #define omp_get_thread_num() 0
 #endif // _OPENMP
 
+namespace fs = std::filesystem;
 namespace ht
 {
-KeyFrameSelector::KeyFrameSelector(std::shared_ptr<FeatureContainer> ftContainer)
+KeyFrameSelector::KeyFrameSelector(
+    std::shared_ptr<FeatureContainer> ftContainer, const fs::path& file)
     : mFtContainer(std::move(ftContainer))
+    , mFile(file)
     , mImgSize(mFtContainer->getImgSize())
     , mArea(mImgSize.area())
+    , mIsComputed(true)
 {
+    if (!fs::is_regular_file(mFile))
+        mIsComputed = false;
 }
 
-std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
+std::vector<std::size_t> KeyFrameSelector::compute(
+    float relLow, float relHigh, ComputeBehavior behavior)
 {
+    if (mIsComputed && behavior == ComputeBehavior::Keep)
+    {
+        std::cout << "Skipping Key Frame Selection..." << std::endl;
+        return loadFromFile();
+    }
+
     const auto [low, high] = getRealLowHigh(relLow, relHigh);
     std::vector<std::size_t> keyFrames {};
 
@@ -94,6 +109,9 @@ std::vector<std::size_t> KeyFrameSelector::compute(float relLow, float relHigh)
 
     std::cout << "Keeping: " << keyFrames.size() << " of " << mFtContainer->getNumImgs()
               << " files. " << std::endl;
+
+    writeToFile(keyFrames);
+    mIsComputed = true;
     return keyFrames;
 }
 
@@ -116,7 +134,7 @@ std::pair<float, float> KeyFrameSelector::getRealLowHigh(float low, float high) 
 std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
     std::size_t idI, std::size_t idJ) const
 {
-    // TODO: store?????????
+    // TODO: store somehow?
     auto matcher = std::make_unique<MatchesContainer>(
         mFtContainer, "", MatchType::Manual, 0, GeometricType::Homography);
 
@@ -196,6 +214,43 @@ bool KeyFrameSelector::compareMaxOverlap(const std::pair<float, std::size_t>& lh
 
     // only for compiler warning, can't happen
     return true;
+}
+
+void KeyFrameSelector::writeToFile(const std::vector<std::size_t>& keyFrames)
+{
+    cv::FileStorage fs(mFile.string(), cv::FileStorage::WRITE);
+    if (!fs.isOpened())
+    {
+        throw std::filesystem::filesystem_error(
+            "Error opening key frame file", mFile, std::make_error_code(std::errc::io_error));
+    }
+
+    fs << "key_frames"
+       << "[";
+    for (auto& kf : keyFrames)
+        fs << static_cast<int>(kf);
+    fs.release();
+}
+
+std::vector<std::size_t> KeyFrameSelector::loadFromFile()
+{
+    cv::FileStorage fs(mFile.string(), cv::FileStorage::READ);
+    if (!fs.isOpened())
+    {
+        throw std::filesystem::filesystem_error(
+            "Error opening key frame file", mFile, std::make_error_code(std::errc::io_error));
+    }
+
+    std::vector<int> keyFramesInt;
+    auto keyFrameNode = fs["key_frames"];
+    for (auto it = std::begin(keyFrameNode); it != std::end(keyFrameNode); ++it)
+        keyFramesInt.push_back(static_cast<int>(*it));
+
+    std::vector<std::size_t> keyFrames;
+    keyFrames.reserve(keyFramesInt.size());
+
+    keyFrames.insert(std::end(keyFrames), std::begin(keyFramesInt), std::end(keyFramesInt));
+    return keyFrames;
 }
 
 } // namespace ht

@@ -46,6 +46,7 @@ public:
 private:
     void fillImageFilesFromFolder(const std::filesystem::path& path);
     void fillImageFilesFromFile(const std::filesystem::path& path);
+
 protected:
     // only to be used by deriving decorator classes
     ImageContainer(std::shared_ptr<detail::ImageData> data);
