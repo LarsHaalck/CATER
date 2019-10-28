@@ -1,10 +1,9 @@
 ###########################################################################
-#                           DEPENDENCIES                                  #
+#                              DEPENDENCIES                               #
 ###########################################################################
-add_subdirectory(external/cereal)
-add_subdirectory(external/mild)
-# add_subdirectory(external/eigen-git-mirror)
-
+find_package(Ceres REQUIRED)
+find_package(cereal REQUIRED)
+find_package(mild REQUIRED)
 ###########################################################################
 #                                FILES                                    #
 ###########################################################################
@@ -20,7 +19,7 @@ set(SOURCES
     src/resizeDecorator.cpp
     src/grayDecorator.cpp
     src/specialGrayDecorator.cpp
-    
+
     # feature container
     src/featureContainer.cpp
     src/featureCache.cpp
@@ -65,9 +64,10 @@ target_include_directories(${LIB_NAME}
 
 # TODO: link agains eigen::eigen later
 # this is only for prototyping because of Eigen warnings
-target_include_directories(${LIB_NAME} SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIRS})
+# target_include_directories(${LIB_NAME} SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIRS})
 
 target_link_libraries(${LIB_NAME}
+    PRIVATE
     opencv_core
     opencv_highgui
     opencv_imgproc
@@ -77,17 +77,20 @@ target_link_libraries(${LIB_NAME}
     opencv_flann
     opencv_stitching
     opencv_imgcodecs
-    cereal
-    mild
+    cereal::cereal
+    mild::mild
+    ceres
+    Eigen3::Eigen
 )
 
 if(${OpenMP_CXX_FOUND})
     target_link_libraries(${LIB_NAME}
+        PRIVATE
         OpenMP::OpenMP_CXX
     )
 endif()
 
 # only for profiling
-target_link_libraries(${LIB_NAME}
+target_link_libraries(${LIB_NAME} PRIVATE
     ${CMAKE_DL_LIBS}
 )
