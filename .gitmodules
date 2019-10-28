@@ -1,9 +1,0 @@
-[submodule "lib/external/cereal"]
-	path = lib/external/cereal
-	url = https://github.com/LarsHaalck/cereal
-[submodule "lib/external/mild"]
-	path = lib/external/mild
-	url = https://github.com/LarsHaalck/mild
-[submodule "lib/external/eigen-git-mirror"]
-	path = lib/external/eigen-git-mirror
-	url = https://github.com/eigenteam/eigen-git-mirror
