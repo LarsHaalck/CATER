@@ -106,3 +106,4 @@ build*/
 install*/
 .clangd/
 tags
+.gdb*
