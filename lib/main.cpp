@@ -5,15 +5,26 @@
 #include "habitrack/imageContainer.h"
 #include "habitrack/keyFrameSelector.h"
 #include "habitrack/matchesContainer.h"
+#include "habitrack/panoramaStitcher.h"
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
+void drawImg(const cv::Mat& img)
+{
+    int key = 0;
+    do
+    {
+        cv::imshow("img", img);
+        key = cv::waitKey(0);
+    } while (key != 27);
+}
+
 using namespace ht;
 int main()
 {
-    std::size_t cacheSize = 50;
-    auto path = std::string("/home/lars/data/ontogenyTest/vid3");
+    std::size_t cacheSize = 5;
+    auto path = std::string("/home/lars/data/timm/vidAll");
 
     // load images
     auto imgContainer = std::make_shared<ImageContainer>(path + "/imgs");
@@ -26,11 +37,11 @@ int main()
     // select key frames
     auto keyFrameSelector
         = std::make_unique<KeyFrameSelector>(ftContainer, path + "/key_frames.yml");
-    auto keyFrames = keyFrameSelector->compute(0.3, 0.75, ComputeBehavior::Keep);
+    auto keyFrames = keyFrameSelector->compute(0.3, 0.5, ComputeBehavior::Keep);
 
     // do (exhaustive|mild) matching on key frames only
     auto matchContainer
-        = std::make_shared<MatchesContainer>(ftContainer, path + "/kfs", MatchType::MILD, 10,
+        = std::make_shared<MatchesContainer>(ftContainer, path + "/kfs", MatchType::Exhaustive, 10,
             GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
                 | GeometricType::Isometry);
     matchContainer->compute(5000, ComputeBehavior::Keep, keyFrames);
@@ -47,13 +58,17 @@ int main()
     /* std::cout << matches.size() << std::endl; */
 
     // do pano stitching for every wanted type
-    /* auto stitcher = std::make_unique<PanoramaSticher>(imgContainer, ftContainer, matchContainer);
-     */
-    /* stitcher->initTrafos(); */
-    /* auto panoImg0 = sticher->stitchPano(); */
+    auto stitcher = std::make_unique<PanoramaStitcher>(imgContainer, ftContainer, matchContainer,
+        keyFrames, GeometricType::Similarity, Blending::NoBlend);
 
-    /* sticher->globalOptimize(); */
-    /* auto panoImg1 = sticher->stitchPano(); */
+    stitcher->initTrafos(); //GeometricType::Isometry);
+
+    /* auto panoImg0 = std::get<0>(stitcher->stitchPano(cv::Size(1920, 1080))); */
+    /* drawImg(panoImg0); */
+
+    stitcher->globalOptimize();
+    auto panoImg1 = std::get<0>(stitcher->stitchPano(cv::Size(1920, 1080)));
+    drawImg(panoImg1);
     /* auto trafoList = sticher->getTrafoList(); */
 
     // keep keyframe transformation constant

@@ -213,8 +213,14 @@ PairwiseMatches MatchesContainer::getGeomMatches(
             auto currFilteredMatches = geomMatchPair(featI, featJ, type, currMatches);
             currMatches = currFilteredMatches.second;
 
+            // maybe faster to insert placeholder transformation aka cv::Mat()
+            // and update inplace without critical
+            // needs truncating like filterEmptyMatches() afterwards
             if (!currMatches.empty())
+            {
+                #pragma omp critical
                 trafos.insert(std::make_pair(currPair, currFilteredMatches.first));
+            }
         }
         ++bar;
         bar.display();

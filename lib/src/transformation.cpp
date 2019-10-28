@@ -97,7 +97,7 @@ cv::Mat invertSpecial(const cv::Mat& matrix, GeometricType type, bool full)
     return cv::Mat();
 }
 
-cv::Mat getTranslationMat(double tx, double ty, double full)
+cv::Mat getIdentity(bool full)
 {
     cv::Mat mat;
     if (full)
@@ -107,23 +107,22 @@ cv::Mat getTranslationMat(double tx, double ty, double full)
     else
         mat = cv::Mat::eye(2, 3, CV_64F);
 
+    return mat;
+}
+
+cv::Mat getTranslationMat(double tx, double ty, bool full)
+{
+    cv::Mat mat = getIdentity(full);
     mat.at<double>(0, 2) = tx;
     mat.at<double>(1, 2) = ty;
     return mat;
 }
 
-cv::Mat getScaleMat(double scale, double full)
+cv::Mat getScaleMat(double scale, bool full)
 {
-    cv::Mat mat;
-    if (full)
-    {
-        mat = cv::Mat::eye(3, 3, CV_64F);
-    }
-    else
-        mat = cv::Mat::eye(2, 3, CV_64F);
-
+    cv::Mat mat = getIdentity(full);
     mat.at<double>(0, 0) = mat.at<double>(1, 1) = scale;
-
     return mat;
 }
+
 } // namespace ht

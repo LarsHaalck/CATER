@@ -68,15 +68,20 @@ public:
     PairwiseTrafos getTrafos(GeometricType geomType);
 
     GeometricType getUsableTypes(const ImgIds& ids = ImgIds());
-
-    /* std::vector<cv::DMatch> matchesAt(ImgId idI, ImgId idj, GeometricType geomType); */
-    /* cv::Mat trafoAt(ImgId idI, ImgId idj, GeometricType geomType); */
-
-    /* std::unique_ptr<MatchesCache> getMatchesCache(std::size_t maxChunkSize, */
-    /*     const ImgIds& ids = ImgIds()); */
-    /* std::unique_ptr<TrafoCache> getTrafoCache(std::size_t maxChunkSize, */
-    /*     const ImgIds& ids = ImgIds(); */
     std::filesystem::path getMatchDir() const;
+
+    template <typename T>
+    static std::vector<std::pair<std::size_t, std::size_t>> getKeyList(
+        const std::unordered_map<std::pair<std::size_t, std::size_t>, T>& map)
+    {
+        auto keys = std::vector<std::pair<std::size_t, std::size_t>>();
+        keys.reserve(map.size());
+        for (const auto& match : map)
+            keys.push_back(match.first);
+
+        std::sort(std::begin(keys), std::end(keys));
+        return keys;
+    }
 
 private:
     std::vector<GeometricType> getTypeList() const;
@@ -140,18 +145,6 @@ private:
         return count;
     }
 
-    template <typename T>
-    std::vector<std::pair<std::size_t, std::size_t>> getKeyList(
-        const std::unordered_map<std::pair<std::size_t, std::size_t>, T>& map) const
-    {
-        auto keys = std::vector<std::pair<std::size_t, std::size_t>>();
-        keys.reserve(map.size());
-        for (const auto& match : map)
-            keys.push_back(match.first);
-
-        std::sort(std::begin(keys), std::end(keys));
-        return keys;
-    }
 
 private:
     std::shared_ptr<FeatureContainer> mFtContainer;

@@ -1,21 +1,27 @@
 #ifndef HABITRACK_PANORAMA_STITCHER_H
 #define HABITRACK_PANORAMA_STITCHER_H
 
+#include "habitrack/featureContainer.h"
 #include "habitrack/geometricType.h"
+#include "habitrack/imageContainer.h"
+#include "habitrack/matchesContainer.h"
 #include "habitrack/transformation.h"
+
 #include <opencv2/core.hpp>
+
+namespace ceres
+{
+class Problem;
+}
 
 namespace ht
 {
-class ImageContainer;
-class FeatureContainer;
-class MatchesContainer;
-}
-
-/* namespace ceres */
-/* { */
-/* class Problem; */
-/* } */
+enum class Blending : bool
+{
+    NoBlend,
+    Blend
+};
+} // namespace ht
 
 namespace ht
 {
@@ -25,47 +31,48 @@ public:
     PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
         std::shared_ptr<FeatureContainer> ftContainer,
         std::shared_ptr<MatchesContainer> matchContainer, const std::vector<size_t>& keyFrames,
-        GeometricType type, bool blend);
-    /* const cv::Mat& camMat, const cv::Mat& distCoeffs); */
+        GeometricType type, Blending blend, const cv::Mat& camMat = cv::Mat(),
+        const cv::Mat& distCoeffs = cv::Mat());
 
-    /* cv::Mat optimizeGlobal(); */
-    /* std::tuple<cv::Mat, cv::Mat, cv::Mat> generatePano(cv::Size targetSize); */
+    void initTrafos(GeometricType type = GeometricType::Undefined);
+    std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize);
+    void globalOptimize();
+
 private:
-    /* std::vector<double> getCamParameterization(); */
-    /* std::vector<double> getDistParameterization(); */
-    /* std::vector<double> invertDistParameterization(const std::vector<double>& params); */
-
-    cv::Rect2d generateBoundingRect(const std::vector<cv::Mat>& trafos, const cv::Size& imageSize);
+    cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
-        const cv::Mat& trafo, cv::Size size, cv::Rect2d currRect = cv::Rect2d());
-    /* cv::Mat draw(const cv::Mat& trafo, size_t idI, size_t idJ); */
+        const cv::Mat& trafo, cv::Size size, cv::Rect2d currRect = cv::Rect2d()) const;
+    cv::Mat draw(const cv::Mat& trafo, size_t idI, size_t idJ);
 
-    /* void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, */
-    /*     const cv::Point2f& ptJ, cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, */
-    /*     double* distParams, std::vector<double>* paramsI, std::vector<double>* paramsJ); */
-    /* void repairTrafos(std::vector<cv::Mat>& trafos, */
-    /*    const std::vector<std::vector<double>>& params); */
-    /* void repairIntriniscs(const std::vector<double>& camParams, */
-    /*     const std::vector<double>& distParams); */
-    /* std::tuple<cv::Mat, std::vector<cv::Point2f>, std::vector<cv::Point2f>> getTransformation( */
-    /*     size_t idI, size_t idJ); */
+    void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, const cv::Point2f& ptJ,
+        cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
+        std::vector<double>* paramsI, std::vector<double>* paramsJ, double weight = 1.0);
+    void repairTrafos(const std::vector<std::vector<double>>& params);
 
-    /* std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Rect2d rect, */
-    /*     const std::vector<cv::Mat>& trafos, cv::Size targetSize); */
+    std::vector<double> getCamParameterization() const;
+    std::vector<double> getDistParameterization() const;
+    std::vector<double> invertDistParameterization(const std::vector<double>& params) const;
+    void repairIntriniscs(
+        const std::vector<double>& camParams, const std::vector<double>& distParams);
+
+    std::pair<std::vector<cv::Point2f>, std::vector<cv::Point2f>> getCorrespondingPoints(
+        std::pair<std::size_t, std::size_t> pair, const Matches& matches);
 
 private:
     std::shared_ptr<ImageContainer> mImgContainer;
     std::shared_ptr<FeatureContainer> mFtContainer;
     std::shared_ptr<MatchesContainer> mMatchContainer;
+    PairwiseMatches mMatches;
+    PairwiseTrafos mTrafos;
     std::vector<size_t> mKeyFrames;
     GeometricType mType;
     bool mBlend;
 
-    /* cv::Mat mCamMat; */
-    /* cv::Mat mCamMatInv; */
-    /* cv::Mat mDistCoeffs; */
+    cv::Mat mCamMat;
+    cv::Mat mCamMatInv;
+    cv::Mat mDistCoeffs;
 
-    /* std::vector<cv::Mat> globalTrafos; */
+    std::vector<cv::Mat> mOptimizedTrafos;
 };
 } // namespace ht
 #endif // HABITRACK_PANORAMA_STITCHER_H

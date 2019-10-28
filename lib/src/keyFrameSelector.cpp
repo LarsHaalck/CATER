@@ -134,7 +134,7 @@ std::pair<float, float> KeyFrameSelector::getRealLowHigh(float low, float high) 
 std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
     std::size_t idI, std::size_t idJ) const
 {
-    // TODO: store somehow?
+    // TODO: store somehow?, use other type of transformation???
     auto matcher = std::make_unique<MatchesContainer>(
         mFtContainer, "", MatchType::Manual, 0, GeometricType::Homography);
 
