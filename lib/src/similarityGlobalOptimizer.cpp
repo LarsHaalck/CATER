@@ -2,11 +2,11 @@
 
 namespace ht
 {
-SimilarityGlobalFunctor::SimilarityGlobalFunctor(
-    double weight, const Eigen::Vector2d& q1, const Eigen::Vector2d& q2)
-    : mWeight(weight)
-    , mQ1(q1)
+SimilarityGlobalFunctor::SimilarityGlobalFunctor(const Eigen::Vector2d& q1,
+    const Eigen::Vector2d& q2, double weight)
+    : mQ1(q1)
     , mQ2(q2)
+    , mWeight(weight)
 {
 }
 } // namespace ht

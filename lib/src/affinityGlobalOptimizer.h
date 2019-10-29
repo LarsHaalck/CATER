@@ -9,7 +9,7 @@ namespace ht
 class AffinityGlobalFunctor
 {
 public:
-    AffinityGlobalFunctor(const Eigen::Vector2d& q1, const Eigen::Vector2d& q2);
+    AffinityGlobalFunctor(const Eigen::Vector2d& q1, const Eigen::Vector2d& q2, double weight);
 
     template <typename T>
     bool operator()(const T* const camParams, const T* const distParams, const T* const affVec0,
@@ -36,13 +36,14 @@ public:
             T(1);
 
         Mat3 transformation = camMat * homMat1.inverse() * homMat0 * camMat.inverse();
-        symmetricReprojectionError<T>(transformation, mQ1T, mQ2T, errors);
+        symmetricReprojectionError<T>(transformation, mQ1T, mQ2T, errors, mWeight);
         return true;
     }
 
 private:
     const Eigen::Vector2d mQ1;
     const Eigen::Vector2d mQ2;
+    const double mWeight;
 };
 } // namespace ht
 #endif // HABITRACK_AFFINITY_GLOBAL_OPTIMIZER_H
