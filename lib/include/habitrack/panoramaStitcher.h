@@ -35,13 +35,13 @@ public:
         const cv::Mat& distCoeffs = cv::Mat());
 
     void initTrafos(GeometricType type = GeometricType::Undefined);
-    std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize);
+    std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool drawCenters = false);
     void globalOptimize();
-
+    void reintegrate();
 private:
     cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
-        const cv::Mat& trafo, cv::Size size, cv::Rect2d currRect = cv::Rect2d()) const;
+        const cv::Mat& trafo, cv::Rect2d currRect = cv::Rect2d()) const;
     cv::Mat draw(const cv::Mat& trafo, size_t idI, size_t idJ);
 
     void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, const cv::Point2f& ptJ,
@@ -55,8 +55,12 @@ private:
     void repairIntriniscs(
         const std::vector<double>& camParams, const std::vector<double>& distParams);
 
-    std::pair<std::vector<cv::Point2f>, std::vector<cv::Point2f>> getCorrespondingPoints(
+    std::pair<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>> getCorrespondingPoints(
         std::pair<std::size_t, std::size_t> pair, const Matches& matches);
+    cv::Point getCenter(const cv::Mat& trafo);
+
+    cv::Mat transformBoundingRect(const cv::Mat& trafo) const;
+    cv::Mat interpolateTrafo(double alpha, const cv::Mat& mat1, const cv::Mat& mat2) const;
 
 private:
     std::shared_ptr<ImageContainer> mImgContainer;
