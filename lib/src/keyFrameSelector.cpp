@@ -105,6 +105,10 @@ std::vector<std::size_t> KeyFrameSelector::compute(
         bar += offset + 1;
         bar.display();
     }
+    // always add last frame, so we don't need to extrapolate in the reintergration step
+    if (keyFrames[keyFrames.size() - 1] != mFtContainer->getNumImgs() - 1)
+        keyFrames.push_back(mFtContainer->getNumImgs() - 1);
+
     bar.done();
 
     std::cout << "Keeping: " << keyFrames.size() << " of " << mFtContainer->getNumImgs()

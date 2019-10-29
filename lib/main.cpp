@@ -54,21 +54,28 @@ int main()
         std::cout << type << std::endl;
     }
 
-    /* auto matches = matchContainer->getTrafos(GeometricType::Affinity); */
-    /* std::cout << matches.size() << std::endl; */
 
     // do pano stitching for every wanted type
     auto stitcher = std::make_unique<PanoramaStitcher>(imgContainer, ftContainer, matchContainer,
-        keyFrames, GeometricType::Similarity, Blending::NoBlend);
+        keyFrames, GeometricType::Homography, Blending::NoBlend);
 
-    stitcher->initTrafos(); //GeometricType::Isometry);
+    stitcher->initTrafos();
 
-    /* auto panoImg0 = std::get<0>(stitcher->stitchPano(cv::Size(1920, 1080))); */
+    /* auto panoImg0 = std::get<0>(stitcher->stitchPano(cv::Size(1920, 1080), true)); */
     /* drawImg(panoImg0); */
 
-    stitcher->globalOptimize();
-    auto panoImg1 = std::get<0>(stitcher->stitchPano(cv::Size(1920, 1080)));
+    /* stitcher->globalOptimize(); */
+    stitcher->reintegrate();
+    auto panoImg1 = std::get<0>(stitcher->stitchPano(cv::Size(1920, 1080), true));
     drawImg(panoImg1);
+    /* cv::Mat combinedImg; */
+    /* cv::hconcat(panoImg0, panoImg1, combinedImg); */
+    /* drawImg(combinedImg); */
+
+
+    /* stitcher->reintegrate(); */
+
+    /* stitcher->globalOptimize(); */
     /* auto trafoList = sticher->getTrafoList(); */
 
     // keep keyframe transformation constant

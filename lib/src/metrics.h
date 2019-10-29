@@ -28,7 +28,7 @@ Eigen::Matrix<T, 2, 1> undistort(
 template <typename T>
 void symmetricReprojectionError(const Eigen::Matrix<T, 3, 3>& trafo,
     const Eigen::Matrix<T, 2, 1>& q1, const Eigen::Matrix<T, 2, 1>& q2, T errors[4],
-    double weight = 1.0)
+    double weight)
 {
     using Vec3 = Eigen::Matrix<T, 3, 1>;
 
