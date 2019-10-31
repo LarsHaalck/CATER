@@ -11,13 +11,14 @@
 #include "habitrack/imageContainer.h"
 #include "habitrack/isometry.h"
 #include "habitrack/pairHash.h"
+#include "habitrack/pairRecommender.h"
 
 /* #include "habitrack/matchesCache.h" */
 /* #include "habitrack/trafoCache.h" */
 
 namespace ht
 {
-class FeatureContainer;
+class BaseFeatureContainer;
 }
 
 namespace ht
@@ -33,9 +34,9 @@ using PairwiseTrafos = std::unordered_map<std::pair<std::size_t, std::size_t>, T
 enum class MatchType
 {
     Exhaustive,
-    MILD,
     Windowed,
-    Manual
+    Manual,
+    Strategy
 };
 
 namespace detail
@@ -50,9 +51,9 @@ namespace detail
 class MatchesContainer : public std::enable_shared_from_this<MatchesContainer>
 {
 public:
-    MatchesContainer(std::shared_ptr<FeatureContainer> featureContainer,
+    MatchesContainer(std::shared_ptr<BaseFeatureContainer> featureContainer,
         const std::filesystem::path& matchDir, MatchType matchType, std::size_t window,
-        GeometricType geomType);
+        GeometricType geomType, std::unique_ptr<PairRecommender> recommender = nullptr);
 
     // for "automatic" matching
     void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep,
@@ -98,10 +99,8 @@ private:
         std::size_t size, const ImgIds& ids) const;
     std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(
         std::size_t size, const ImgIds& ids) const;
-    std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList(
-        std::size_t size, const ImgIds& ids) const;
-    void dilatePairList(std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list,
-        std::size_t size) const;
+    /* std::vector<std::pair<std::size_t, std::size_t>> getMILDPairList( */
+    /*     std::size_t size, const ImgIds& ids) const; */
 
     cv::Ptr<cv::DescriptorMatcher> getMatcher() const;
     Matches putMatchPair(
@@ -142,14 +141,14 @@ private:
         return count;
     }
 
-
 private:
-    std::shared_ptr<FeatureContainer> mFtContainer;
+    std::shared_ptr<BaseFeatureContainer> mFtContainer;
     std::filesystem::path mMatchDir;
     MatchType mMatchType;
     std::size_t mWindow;
     GeometricType mGeomType;
     bool mIsComputed;
+    std::unique_ptr<PairRecommender> mRecommender;
 };
 } // namespace ht
 

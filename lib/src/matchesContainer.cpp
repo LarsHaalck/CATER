@@ -1,15 +1,12 @@
 #include "habitrack/matchesContainer.h"
-#include "habitrack/featureContainer.h"
-#include "habitrack/imageContainer.h"
+#include "habitrack/baseFeatureContainer.h"
+/* #include "habitrack/imageContainer.h" */
 #include "unknownFeatureType.h"
 
 #include "matIO.h"
 #include "matchesIO.h"
 #include "progressBar.h"
 #include "unknownGeometricType.h"
-
-#include "MILD/BayesianFilter.hpp"
-#include "MILD/loop_closure_detector.h"
 
 #include <fstream>
 #include <iostream>
@@ -26,15 +23,18 @@ auto Aff = Gt::Affinity;
 auto Sim = Gt::Similarity;
 auto Iso = Gt::Isometry;
 
-MatchesContainer::MatchesContainer(std::shared_ptr<FeatureContainer> featureContainer,
-    const fs::path& matchDir, MatchType matchType, std::size_t window, Gt geomType)
+MatchesContainer::MatchesContainer(std::shared_ptr<BaseFeatureContainer> featureContainer,
+    const fs::path& matchDir, MatchType matchType, std::size_t window, Gt geomType,
+    std::unique_ptr<PairRecommender> recommender)
     : mFtContainer(std::move(featureContainer))
     , mMatchDir(matchDir)
     , mMatchType(matchType)
     , mWindow(window)
     , mGeomType(geomType | Put)
     , mIsComputed(true)
+    , mRecommender(std::move(recommender))
 {
+    // TODO: throw exception if no strategy passed but expected
     // TODO: maybe smarter to only calculate missing, but this is fine for now
     if (static_cast<unsigned int>(mGeomType & Put))
     {
@@ -523,11 +523,11 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(
     case MatchType::Exhaustive:
         pairs = getExhaustivePairList(size, ids);
         break;
-    case MatchType::MILD:
-        pairs = getMILDPairList(size, ids);
-        break;
     case MatchType::Windowed:
         pairs = getWindowPairList(size, ids);
+        break;
+    case MatchType::Strategy:
+        pairs = mRecommender->getPairs(size, mWindow, ids);
         break;
     default:
         pairs = {};
@@ -579,97 +579,6 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustive
     return pairList;
 }
 
-std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairList(
-    std::size_t size, const ImgIds& ids) const
-{
-    return {};
-    // make orb feature container (sift does not work)
-    /* auto ftContainer = std::make_shared<FeatureContainer>( */
-    /*     mFtContainer->getImageContainer(), getMatchDir() / "MILD", FeatureType::ORB, 5000); */
-
-    /* ftContainer->compute(1000, ComputeBehavior::Keep, ids); */
-
-    /* MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0); */
-    /* MILD::BayesianFilter filter(0.3, 4, 4, mWindow); */
-
-    /* Eigen::VectorXf prevVisitProb(1); */
-    /* prevVisitProb << 0.1; */
-    /* std::vector<Eigen::VectorXf> prevVisitFlag; */
-
-    /* /1* std::vector<std::pair<std::size_t, std::size_t>> pairs; *1/ */
-    /* std::unordered_map<std::pair<std::size_t, std::size_t>, double> scores; */
-
-    /* auto transId = [&ids](std::size_t i) { return ids.empty() ? i : ids[i]; }; */
-
-    /* std::size_t numImgs = ids.empty() ? ftContainer->getNumImgs() : ids.size(); */
-    /* std::cout << "Using MILD to get possible image pairs" << std::endl; */
-    /* ProgressBar bar(numImgs); */
-    /* for (std::size_t k = 0; k < numImgs; k++) */
-    /* { */
-    /*     auto desc = ftContainer->descriptorAt(transId(k)); */
-
-    /*     std::vector<float> simScore; */
-    /*     simScore.clear(); */
-    /*     lcd.insert_and_query_database(desc, simScore); */
-    /*     filter.filter(simScore, prevVisitProb, prevVisitFlag); */
-
-    /*     if (prevVisitFlag.size() >= 1) */
-    /*     { */
-    /*         for (int i = 0; i < prevVisitFlag[prevVisitFlag.size() - 1].size(); i++) */
-    /*         { */
-    /*             scores[std::make_pair(i, k)] = prevVisitFlag[prevVisitFlag.size() - 1][i]; */
-    /*         } */
-    /*     } */
-    /*     ++bar; */
-    /*     bar.display(); */
-    /* } */
-
-    /* if (prevVisitFlag.size() >= 4) */
-    /* { */
-    /*     for (int j = 0; j < 3; j++) */
-    /*     { */
-    /*         for (int i = 0; i < prevVisitFlag[prevVisitFlag.size() - (3 - j)].size(); i++) */
-    /*         { */
-    /*             scores[std::make_pair(i, numImgs - (3 - j))] */
-    /*                 = prevVisitFlag[prevVisitFlag.size() - (3 - j)][i]; */
-    /*         } */
-    /*     } */
-    /* } */
-
-    /* dilatePairList(scores, numImgs); */
-    /* auto windowPairs = getWindowPairList(size, ids); */
-    /* for (const auto& [pair, score] : scores) */
-    /* { */
-    /*     if (score > 0) */
-    /*         windowPairs.push_back(std::make_pair(transId(pair.first), transId(pair.second))); */
-    /* } */
-
-    /* return windowPairs; */
-}
-
-void MatchesContainer::dilatePairList(
-    std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list, std::size_t size) const
-{
-    auto pairs = getKeyList(list);
-    for (const auto [i, j] : pairs)
-    {
-        for (int n = -5; n <= 5; n++)
-        {
-            for (int m = -5; m <= 5; m++)
-            {
-                auto iShift = i + n;
-                auto jShift = j + m;
-                auto pairShift = std::make_pair(iShift, jShift);
-                // check boundary conditions and if the key already exists, otherwise insert
-                if (iShift < size && jShift < size && jShift > iShift + mWindow
-                    && !list.count(pairShift))
-                {
-                    list.insert(std::make_pair(pairShift, 1.0));
-                }
-            }
-        }
-    }
-}
 
 fs::path MatchesContainer::getMatchDir() const { return mMatchDir; }
 
