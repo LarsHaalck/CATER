@@ -30,7 +30,12 @@ public:
 
     void display() const
     {
-        auto progress = static_cast<float>(mTicks) / mTotalTicks;
+        float progress;
+        if (mTotalTicks > 0)
+            progress = static_cast<float>(mTicks) / mTotalTicks;
+        else
+            progress = 1.0f;
+
         auto pos = static_cast<unsigned int>(mBarWidth * progress);
 
         std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
