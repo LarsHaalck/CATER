@@ -40,6 +40,7 @@ set(SOURCES
     src/ransac.cpp
     src/isometry.cpp
     src/transformation.cpp
+    src/mildRecommender.cpp
 
     # key frames
     src/keyFrameSelector.cpp

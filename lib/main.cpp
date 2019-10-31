@@ -6,6 +6,7 @@
 #include "habitrack/keyFrameSelector.h"
 #include "habitrack/matchesContainer.h"
 #include "habitrack/panoramaStitcher.h"
+#include "habitrack/mildRecommender.h"
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -24,7 +25,7 @@ using namespace ht;
 int main()
 {
     std::size_t cacheSize = 5;
-    auto path = std::string("/home/lars/data/timm/vid3");
+    auto path = std::string("/home/lars/data/timm/vid4");
 
     // load images
     auto imgContainer = std::make_shared<ImageContainer>(path + "/imgs");
@@ -40,10 +41,14 @@ int main()
     auto keyFrames = keyFrameSelector->compute(0.3, 0.5, ComputeBehavior::Keep);
 
     // do (exhaustive|mild) matching on key frames only
-    auto matchContainer
-        = std::make_shared<MatchesContainer>(ftContainer, path + "/kfs", MatchType::Exhaustive, 10,
-            GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
-                | GeometricType::Isometry);
+
+    /* auto recommender = std::make_unique<MildRecommender>( */
+    /*     std::make_shared<FeatureContainer>(imgContainer, path + "/kfs/fts", FeatureType::ORB, 5000)); */
+
+    auto matchContainer = std::make_shared<MatchesContainer>(ftContainer, path + "/kfs/matches",
+        MatchType::Exhaustive, 10,
+        GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
+            | GeometricType::Isometry);
     matchContainer->compute(5000, ComputeBehavior::Keep, keyFrames);
 
     GeometricType useableTypes = matchContainer->getUsableTypes(keyFrames);
