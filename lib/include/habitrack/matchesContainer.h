@@ -10,10 +10,7 @@
 #include "habitrack/geometricType.h"
 #include "habitrack/imageContainer.h"
 #include "habitrack/isometry.h"
-
-#include "matIO.h"
-#include "matchesIO.h"
-#include "pairHash.h"
+#include "habitrack/pairHash.h"
 
 /* #include "habitrack/matchesCache.h" */
 /* #include "habitrack/trafoCache.h" */

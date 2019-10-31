@@ -24,7 +24,7 @@ using namespace ht;
 int main()
 {
     std::size_t cacheSize = 5;
-    auto path = std::string("/home/lars/data/timm/vidAll");
+    auto path = std::string("/home/lars/data/timm/vid3");
 
     // load images
     auto imgContainer = std::make_shared<ImageContainer>(path + "/imgs");
@@ -47,6 +47,7 @@ int main()
     matchContainer->compute(5000, ComputeBehavior::Keep, keyFrames);
 
     GeometricType useableTypes = matchContainer->getUsableTypes(keyFrames);
+    return 0;
 
     auto typeList = typeToTypeList(useableTypes);
     for (auto type : typeList)

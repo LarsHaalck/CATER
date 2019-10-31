@@ -8,20 +8,24 @@ find_package(mild REQUIRED)
 #                                FILES                                    #
 ###########################################################################
 set(SOURCES
-    main.cpp
+    # main.cpp
     # abstract classes
     src/baseCache.cpp
     src/baseDecorator.cpp
 
     # image container related
+    src/baseImageContainer.cpp
     src/imageContainer.cpp
+    src/imageAggregator.cpp
     src/imageCache.cpp
     src/resizeDecorator.cpp
     src/grayDecorator.cpp
     src/specialGrayDecorator.cpp
 
     # feature container
+    src/baseFeatureContainer.cpp
     src/featureContainer.cpp
+    src/featureAggregator.cpp
     src/featureCache.cpp
     src/descriptorCache.cpp
     src/unknownFeatureType.cpp
@@ -52,8 +56,9 @@ set(SOURCES
 ###########################################################################
 #                               TARGETS                                   #
 ###########################################################################
-set(LIB_NAME "lib${PROJECT_NAME}")
-add_executable(${LIB_NAME} ${SOURCES})
+set(LIB_NAME "libHabitrack")
+# add_executable(${LIB_NAME} ${SOURCES} main.cpp)
+add_library(${LIB_NAME} ${SOURCES})
 
 target_include_directories(${LIB_NAME}
     PUBLIC
@@ -67,8 +72,9 @@ target_include_directories(${LIB_NAME}
 # target_include_directories(${LIB_NAME} SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIRS})
 
 target_link_libraries(${LIB_NAME}
-    PRIVATE
+    PUBLIC
     opencv_core
+    PRIVATE
     opencv_highgui
     opencv_imgproc
     opencv_xfeatures2d

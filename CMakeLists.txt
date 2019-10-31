@@ -19,7 +19,6 @@ else()
         "-pedantic"
         "-Wstrict-aliasing"
         "-pedantic"
-        "-fmax-errors=5"
         "-Wunreachable-code"
         "-Wcast-align"
         "-Wcast-qual"
@@ -27,23 +26,16 @@ else()
         "-Wdisabled-optimization"
         "-Wformat=2"
         "-Winit-self"
-        "-Wlogical-op"
         "-Wmissing-include-dirs"
         "-Wold-style-cast"
         "-Woverloaded-virtual"
         "-Wredundant-decls"
         "-Wshadow"
         "-Wsign-promo"
-        "-Wstrict-null-sentinel"
         "-Wstrict-overflow=5"
         "-Wswitch-default"
         "-Wundef"
         "$<$<CONFIG:RELEASE>:-O3>")
-
-    # handle clang specifics
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        add_compile_options("-stdlib=libc++")
-    endif()
 endif()
 
 ###########################################################################
@@ -76,3 +68,4 @@ if(${BUILD_GUI})
 endif()
 
 add_subdirectory(lib)
+add_subdirectory(interVideoLC)

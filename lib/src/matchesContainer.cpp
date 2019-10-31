@@ -3,6 +3,8 @@
 #include "habitrack/imageContainer.h"
 #include "unknownFeatureType.h"
 
+#include "matIO.h"
+#include "matchesIO.h"
 #include "progressBar.h"
 #include "unknownGeometricType.h"
 
@@ -199,7 +201,7 @@ PairwiseMatches MatchesContainer::getGeomMatches(
     for (std::size_t i = 0; i < featCache->getNumChunks(); i++)
     {
         auto chunk = featCache->getChunk(i);
-        auto [lower, _] = featCache->getChunkBounds(i);
+        auto lower = featCache->getChunkBounds(i).first;
 
 #pragma omp parallel for
         for (std::size_t k = 0; k < featCache->getChunkSize(i); k++)
@@ -441,7 +443,7 @@ PairwiseMatches MatchesContainer::getPutativeMatches(std::size_t cacheSize, cons
     for (std::size_t i = 0; i < descCache->getNumChunks(); i++)
     {
         auto chunk = descCache->getChunk(i);
-        auto [lower, _] = descCache->getChunkBounds(i);
+        auto lower = descCache->getChunkBounds(i).first;
 
 #pragma omp parallel for
         for (std::size_t k = 0; k < descCache->getChunkSize(i); k++)
@@ -580,68 +582,69 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustive
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getMILDPairList(
     std::size_t size, const ImgIds& ids) const
 {
+    return {};
     // make orb feature container (sift does not work)
-    auto ftContainer = std::make_shared<FeatureContainer>(
-        mFtContainer->getImageContainer(), getMatchDir() / "MILD", FeatureType::ORB, 5000);
+    /* auto ftContainer = std::make_shared<FeatureContainer>( */
+    /*     mFtContainer->getImageContainer(), getMatchDir() / "MILD", FeatureType::ORB, 5000); */
 
-    ftContainer->compute(1000, ComputeBehavior::Keep, ids);
+    /* ftContainer->compute(1000, ComputeBehavior::Keep, ids); */
 
-    MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0);
-    MILD::BayesianFilter filter(0.3, 4, 4, mWindow);
+    /* MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0); */
+    /* MILD::BayesianFilter filter(0.3, 4, 4, mWindow); */
 
-    Eigen::VectorXf prevVisitProb(1);
-    prevVisitProb << 0.1;
-    std::vector<Eigen::VectorXf> prevVisitFlag;
+    /* Eigen::VectorXf prevVisitProb(1); */
+    /* prevVisitProb << 0.1; */
+    /* std::vector<Eigen::VectorXf> prevVisitFlag; */
 
-    /* std::vector<std::pair<std::size_t, std::size_t>> pairs; */
-    std::unordered_map<std::pair<std::size_t, std::size_t>, double> scores;
+    /* /1* std::vector<std::pair<std::size_t, std::size_t>> pairs; *1/ */
+    /* std::unordered_map<std::pair<std::size_t, std::size_t>, double> scores; */
 
-    auto transId = [&ids](std::size_t i) { return ids.empty() ? i : ids[i]; };
+    /* auto transId = [&ids](std::size_t i) { return ids.empty() ? i : ids[i]; }; */
 
-    std::size_t numImgs = ids.empty() ? ftContainer->getNumImgs() : ids.size();
-    std::cout << "Using MILD to get possible image pairs" << std::endl;
-    ProgressBar bar(numImgs);
-    for (std::size_t k = 0; k < numImgs; k++)
-    {
-        auto desc = ftContainer->descriptorAt(transId(k));
+    /* std::size_t numImgs = ids.empty() ? ftContainer->getNumImgs() : ids.size(); */
+    /* std::cout << "Using MILD to get possible image pairs" << std::endl; */
+    /* ProgressBar bar(numImgs); */
+    /* for (std::size_t k = 0; k < numImgs; k++) */
+    /* { */
+    /*     auto desc = ftContainer->descriptorAt(transId(k)); */
 
-        std::vector<float> simScore;
-        simScore.clear();
-        lcd.insert_and_query_database(desc, simScore);
-        filter.filter(simScore, prevVisitProb, prevVisitFlag);
+    /*     std::vector<float> simScore; */
+    /*     simScore.clear(); */
+    /*     lcd.insert_and_query_database(desc, simScore); */
+    /*     filter.filter(simScore, prevVisitProb, prevVisitFlag); */
 
-        if (prevVisitFlag.size() >= 1)
-        {
-            for (int i = 0; i < prevVisitFlag[prevVisitFlag.size() - 1].size(); i++)
-            {
-                scores[std::make_pair(i, k)] = prevVisitFlag[prevVisitFlag.size() - 1][i];
-            }
-        }
-        ++bar;
-        bar.display();
-    }
+    /*     if (prevVisitFlag.size() >= 1) */
+    /*     { */
+    /*         for (int i = 0; i < prevVisitFlag[prevVisitFlag.size() - 1].size(); i++) */
+    /*         { */
+    /*             scores[std::make_pair(i, k)] = prevVisitFlag[prevVisitFlag.size() - 1][i]; */
+    /*         } */
+    /*     } */
+    /*     ++bar; */
+    /*     bar.display(); */
+    /* } */
 
-    if (prevVisitFlag.size() >= 4)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            for (int i = 0; i < prevVisitFlag[prevVisitFlag.size() - (3 - j)].size(); i++)
-            {
-                scores[std::make_pair(i, numImgs - (3 - j))]
-                    = prevVisitFlag[prevVisitFlag.size() - (3 - j)][i];
-            }
-        }
-    }
+    /* if (prevVisitFlag.size() >= 4) */
+    /* { */
+    /*     for (int j = 0; j < 3; j++) */
+    /*     { */
+    /*         for (int i = 0; i < prevVisitFlag[prevVisitFlag.size() - (3 - j)].size(); i++) */
+    /*         { */
+    /*             scores[std::make_pair(i, numImgs - (3 - j))] */
+    /*                 = prevVisitFlag[prevVisitFlag.size() - (3 - j)][i]; */
+    /*         } */
+    /*     } */
+    /* } */
 
-    dilatePairList(scores, numImgs);
-    auto windowPairs = getWindowPairList(size, ids);
-    for (const auto& [pair, score] : scores)
-    {
-        if (score > 0)
-            windowPairs.push_back(std::make_pair(transId(pair.first), transId(pair.second)));
-    }
+    /* dilatePairList(scores, numImgs); */
+    /* auto windowPairs = getWindowPairList(size, ids); */
+    /* for (const auto& [pair, score] : scores) */
+    /* { */
+    /*     if (score > 0) */
+    /*         windowPairs.push_back(std::make_pair(transId(pair.first), transId(pair.second))); */
+    /* } */
 
-    return windowPairs;
+    /* return windowPairs; */
 }
 
 void MatchesContainer::dilatePairList(
