@@ -6,9 +6,10 @@
 #include "habitrack/keyFrameSelector.h"
 #include "habitrack/matchesContainer.h"
 #include "habitrack/panoramaStitcher.h"
-
 #include "habitrack/imageAggregator.h"
 #include "habitrack/featureAggregator.h"
+#include "habitrack/mildRecommender.h"
+#include "habitrack/idTranslator.h"
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -36,70 +37,52 @@ int main()
 
 
     std::vector<std::shared_ptr<ImageContainer>> imgContainers;
-    std::vector<std::shared_ptr<FeatureContainer>> ftContainers;
+    std::vector<std::shared_ptr<FeatureContainer>> ftSiftContainers;
+    std::vector<std::shared_ptr<FeatureContainer>> ftOrbContainers;
     std::vector<std::vector<std::size_t>> keyFrameList;
+    std::vector<std::size_t> sizes;
+
+    std::size_t minSize = std::numeric_limits<std::size_t>::max();
     for (const auto& path : videoPaths)
     {
         auto imgContainer = std::make_shared<ImageContainer>(path / "imgs");
-        auto ftContainer = std::make_shared<FeatureContainer>(
+        auto ftSiftContainer = std::make_shared<FeatureContainer>(
             imgContainer, path / "fts", FeatureType::SIFT, 5000);
+        /* ftSiftContainer->compute(50, ComputeBehavior::Keep); // TODO: needed? */
 
-        KeyFrameSelector selector(ftContainer, path / "key_frames.yml");
+        KeyFrameSelector selector(ftSiftContainer, path / "key_frames.yml");
+        auto currKeyFrames = selector.compute(0.3, 0.5, ComputeBehavior::Keep);
+        keyFrameList.push_back(currKeyFrames);
 
-        keyFrameList.push_back(selector.compute(0.3, 0.5, ComputeBehavior::Keep));
+        ftSiftContainers.push_back(std::move(ftSiftContainer));
+
+        auto ftOrbContainer = std::make_shared<FeatureContainer>(
+            imgContainer, path / "kfs/fts", FeatureType::ORB, 3000);
+        ftOrbContainer->compute(1000, ComputeBehavior::Keep, currKeyFrames);
+        ftOrbContainers.push_back(std::move(ftOrbContainer));
+
+        auto currSize = imgContainer->getNumImgs();
+        minSize = std::min(minSize, currKeyFrames.size());
+        sizes.push_back(currSize);
         imgContainers.push_back(std::move(imgContainer));
-        ftContainers.push_back(std::move(ftContainer));
     }
 
+    std::cout << "min video size is: " << minSize << std::endl;
     auto globalImgContainer = std::make_shared<ImageAggregator>(imgContainers);
-    auto globalFtContainer = std::make_shared<FeatureAggregator>(ftContainers);
+    auto globalFtSiftContainer = std::make_shared<FeatureAggregator>(ftSiftContainers);
 
-    /* std::cout << globalImgContainer->getNumImgs() << std::endl; */
 
-    /* auto cache = globalImgContainer->getCache(2, {0, 50, 100, 120, 140, 180, 200}); */
+    auto recommender = std::make_unique<MildRecommender>(ftOrbContainers);
+    auto matchContainer = std::make_shared<MatchesContainer>(globalFtSiftContainer,
+        basePath / "ivlc/matches", MatchType::Strategy, 0,
+        GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity |
+        GeometricType::Isometry, std::move(recommender));
 
-    /* std::cout << cache->getNumChunks() << std::endl; */
-    /* for (std::size_t i = 0; i < cache->getNumChunks(); i++) */
-    /* { */
-    /*     std::cout << cache->getChunkSize(i) << std::endl; */
-    /*     auto chunk = cache->getChunk(i); */
-    /*     for (std::size_t k = 0; k < cache->getChunkSize(i); k++) */
-    /*     { */
-    /*         drawImg(chunk[k]); */
-    /*     } */
-    /* } */
+    auto globalKeyFrames = translate::localToGlobal(keyFrameList, sizes);
+    matchContainer->compute(5000, ComputeBehavior::Keep, globalKeyFrames);
 
-    /* std::size_t cacheSize = 5; */
-    /* auto path = std::string("/home/lars/data/timm/vid4"); */
 
-    /* // load images */
-    /* auto imgContainer = std::make_shared<ImageContainer>(path + "/imgs"); */
-
-    /* // calc features */
-    /* auto ftContainer */
-    /*     = std::make_shared<FeatureContainer>(imgContainer, path + "/fts", FeatureType::SIFT, 5000); */
-    /* ftContainer->compute(cacheSize, ComputeBehavior::Keep); */
-
-    /* // select key frames */
-    /* auto keyFrameSelector */
-    /*     = std::make_unique<KeyFrameSelector>(ftContainer, path + "/key_frames.yml"); */
-    /* auto keyFrames = keyFrameSelector->compute(0.3, 0.5, ComputeBehavior::Keep); */
-
-    /* // do (exhaustive|mild) matching on key frames only */
-    /* auto matchContainer */
-    /*     = std::make_shared<MatchesContainer>(ftContainer, path + "/kfs", MatchType::Exhaustive, 10, */
-    /*         GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity */
-    /*             | GeometricType::Isometry); */
-    /* matchContainer->compute(5000, ComputeBehavior::Keep, keyFrames); */
-
-    /* GeometricType useableTypes = matchContainer->getUsableTypes(keyFrames); */
-    /* return 0; */
-
-    /* auto typeList = typeToTypeList(useableTypes); */
-    /* for (auto type : typeList) */
-    /* { */
-    /*     std::cout << type << std::endl; */
-    /* } */
+    // combined local dense matches and inter video sparse matches
 
 
     /* // do pano stitching for every wanted type */

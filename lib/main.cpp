@@ -25,15 +25,16 @@ using namespace ht;
 int main()
 {
     std::size_t cacheSize = 5;
-    auto path = std::string("/home/lars/data/timm/vid4");
+    auto path = std::string("/home/lars/data/timm/vidAll");
 
     // load images
     auto imgContainer = std::make_shared<ImageContainer>(path + "/imgs");
 
     // calc features
     auto ftContainer
-        = std::make_shared<FeatureContainer>(imgContainer, path + "/fts", FeatureType::SIFT, 5000);
+        = std::make_shared<FeatureContainer>(imgContainer, path + "/ftsOrb", FeatureType::ORB, 3000);
     ftContainer->compute(cacheSize, ComputeBehavior::Keep);
+    return 0;
 
     // select key frames
     auto keyFrameSelector

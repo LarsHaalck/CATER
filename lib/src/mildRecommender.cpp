@@ -1,5 +1,5 @@
 #include "habitrack/mildRecommender.h"
-#include "habitrack/featureContainer.h"
+#include "habitrack/featureAggregator.h"
 #include "habitrack/matchesContainer.h"
 
 #include "MILD/BayesianFilter.hpp"
@@ -9,21 +9,28 @@
 
 namespace ht
 {
-MildRecommender::MildRecommender(std::shared_ptr<FeatureContainer> featureContainer)
-    : mFtContainer(std::move(featureContainer))
+MildRecommender::MildRecommender(std::shared_ptr<BaseFeatureContainer> ftContainer)
+    : mFtContainer(std::move(ftContainer))
+    , mBlockList()
 {
     assert(mFtContainer->getFtType() == FeatureType::ORB &&
         "FeatureType must be ORB for MILD Recommender");
 
 }
 
+MildRecommender::MildRecommender(std::vector<std::shared_ptr<FeatureContainer>> ftContainers)
+    : MildRecommender(std::make_shared<FeatureAggregator>(ftContainers))
+{
+    for (const auto& ftContainer : ftContainers)
+        mBlockList.push_back(ftContainer->getNumImgs());
+}
 
 std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
     std::size_t, std::size_t window, const std::vector<std::size_t>& ids)
 {
     // make orb feature container (sift does not work)
-    std::cout << "Computing Features for MILD Recommender" << std::endl;
-    mFtContainer->compute(1000, ComputeBehavior::Keep, ids);
+    /* std::cout << "Computing Features for MILD Recommender" << std::endl; */
+    /* mFtContainer->compute(1000, ComputeBehavior::Keep, ids); */
 
     MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0);
     MILD::BayesianFilter filter(0.3, 4, 4, window);
@@ -80,6 +87,7 @@ std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
             pairs.push_back(std::make_pair(transId(pair.first), transId(pair.second)));
     }
 
+    filterPairList(pairs, numImgs);
     return pairs;
 }
 
@@ -106,6 +114,57 @@ void MildRecommender::dilatePairList(
             }
         }
     }
+}
+
+
+// is only called for inter video loop closure
+void MildRecommender::filterPairList(std::vector<std::pair<std::size_t, std::size_t>>& pairs,
+    std::size_t size) const
+{
+    if (mBlockList.empty())
+        return;
+
+    {
+        std::sort(std::begin(pairs), std::end(pairs));
+
+        std::size_t currBlock = 0;
+        std::size_t shift = 0;
+        std::vector<std::pair<std::size_t, std::size_t>> keepPairs;
+        for (std::size_t i = 0; i < pairs.size(); i++)
+        {
+            auto pair = pairs[i];
+            if (pair.first - shift >=mBlockList[currBlock])
+                shift += mBlockList[currBlock++];
+
+            // delete intra video matches
+            if (pair.second - shift >= mBlockList[currBlock])
+                keepPairs.push_back(pair);
+            else
+                std::cout << pair.first << ", " << pair.second << std::endl;
+        }
+        pairs = std::move(keepPairs);
+    }
+
+
+    // add pairs for easy fusing between start and end points of video
+    /* for (std::size_t i = 0; i < mBlockList.size(); i++) */
+    /* { */
+    /*     auto currSize = mBlockList[i]; */
+    /*     for (int n = -5; n <= 5; n++) */
+    /*     { */
+    /*         auto idI = currSize + n; */
+    /*         for (int m = n + 1; m <= 5; m++) */
+    /*         { */
+    /*             auto idJ = currSize + m; */
+    /*             if (idI < size && idJ < size) */
+    /*             { */
+    /*                 auto pair = std::make_pair(idI, idJ); */
+    /*                 if (!list.count(pair)) */
+    /*                     list.insert(std::make_pair(pair, 1.0)); */
+    /*             } */
+    /*         } */
+    /*     } */
+    /* } */
 }
 
 } // namespace ht

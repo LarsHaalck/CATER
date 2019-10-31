@@ -51,6 +51,9 @@ set(SOURCES
     src/affinityGlobalOptimizer.cpp
     src/similarityGlobalOptimizer.cpp
     src/isometryGlobalOptimizer.cpp
+
+    # misc
+    src/idTranslator.cpp
 )
 
 
@@ -58,9 +61,15 @@ set(SOURCES
 #                               TARGETS                                   #
 ###########################################################################
 set(LIB_NAME "libHabitrack")
-# add_executable(${LIB_NAME} ${SOURCES} main.cpp)
+add_executable(genData ${SOURCES} main.cpp)
 add_library(${LIB_NAME} ${SOURCES})
 
+target_include_directories(genData
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 target_include_directories(${LIB_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -68,10 +77,23 @@ target_include_directories(${LIB_NAME}
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-# TODO: link agains eigen::eigen later
-# this is only for prototyping because of Eigen warnings
-# target_include_directories(${LIB_NAME} SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIRS})
-
+target_link_libraries(genData
+    PUBLIC
+    opencv_core
+    opencv_highgui
+    opencv_imgproc
+    opencv_xfeatures2d
+    opencv_features2d
+    opencv_calib3d
+    opencv_flann
+    opencv_stitching
+    opencv_imgcodecs
+    cereal::cereal
+    mild::mild
+    ceres
+    Eigen3::Eigen
+    OpenMP::OpenMP_CXX
+)
 target_link_libraries(${LIB_NAME}
     PUBLIC
     opencv_core
@@ -96,8 +118,3 @@ if(${OpenMP_CXX_FOUND})
         OpenMP::OpenMP_CXX
     )
 endif()
-
-# only for profiling
-target_link_libraries(${LIB_NAME} PRIVATE
-    ${CMAKE_DL_LIBS}
-)
