@@ -1,9 +1,9 @@
 #include "habitrack/descriptorCache.h"
-#include "habitrack/featureContainer.h"
+#include "habitrack/baseFeatureContainer.h"
 
 namespace ht
 {
-DescriptorCache::DescriptorCache(std::shared_ptr<FeatureContainer> container, std::size_t numElems,
+DescriptorCache::DescriptorCache(std::shared_ptr<BaseFeatureContainer> container, std::size_t numElems,
     std::size_t maxChunkSize, const std::vector<std::size_t>& ids)
     : BaseCache(numElems, maxChunkSize, ids)
     , mContainer(std::move(container))

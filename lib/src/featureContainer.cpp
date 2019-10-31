@@ -1,4 +1,6 @@
 #include "habitrack/featureContainer.h"
+#include "featureIO.h"
+#include "matIO.h"
 #include "progressBar.h"
 #include "unknownFeatureType.h"
 #include <fstream>
@@ -212,14 +214,13 @@ std::unique_ptr<PairwiseFeatureCache> FeatureContainer::getPairwiseFeatureCache(
     return std::make_unique<PairwiseFeatureCache>(shared_from_this(), maxChunkSize, pairs);
 }
 
-std::shared_ptr<ImageContainer> FeatureContainer::getImageContainer() const
-{
-    return mImgContainer;
-}
+/* std::shared_ptr<ImageContainer> FeatureContainer::getImageContainer() const */
+/* { */
+/*     return mImgContainer; */
+/* } */
 
-fs::path FeatureContainer::getFtDir() const { return mFtDir; }
 std::size_t FeatureContainer::getNumImgs() const { return mNumImgs; }
 cv::Size FeatureContainer::getImgSize() const { return mImgSize; }
 FeatureType FeatureContainer::getFtType() const { return mType; }
 
-}
+} // namespace ht

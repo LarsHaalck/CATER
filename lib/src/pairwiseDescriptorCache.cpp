@@ -1,11 +1,9 @@
 #include "habitrack/pairwiseDescriptorCache.h"
-#include "habitrack/featureContainer.h"
-
-#include "pairHash.h"
+#include "habitrack/baseFeatureContainer.h"
 
 namespace ht
 {
-PairwiseDescriptorCache::PairwiseDescriptorCache(std::shared_ptr<FeatureContainer> container,
+PairwiseDescriptorCache::PairwiseDescriptorCache(std::shared_ptr<BaseFeatureContainer> container,
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
     : BasePairwiseCache(maxChunkSize, pairs)
     , mContainer(std::move(container))

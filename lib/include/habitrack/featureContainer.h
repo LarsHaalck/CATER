@@ -1,25 +1,19 @@
 #ifndef HABITRACK_FEATURE_CONTAINER_H
 #define HABITRACK_FEATURE_CONTAINER_H
 
-#include "featureIO.h"
+#include "habitrack/baseFeatureContainer.h"
 #include "habitrack/computeBehavior.h"
 #include "habitrack/descriptorCache.h"
 #include "habitrack/featureCache.h"
 #include "habitrack/imageContainer.h"
 #include "habitrack/pairwiseDescriptorCache.h"
 #include "habitrack/pairwiseFeatureCache.h"
-#include "matIO.h"
 #include <filesystem>
+#include <opencv2/features2d.hpp>
 #include <vector>
 
 namespace ht
 {
-enum class FeatureType
-{
-    ORB,
-    SIFT
-};
-
 namespace detail
 {
     enum class FtDesc : bool
@@ -29,7 +23,8 @@ namespace detail
     };
 }
 
-class FeatureContainer : public std::enable_shared_from_this<FeatureContainer>
+class FeatureContainer : public BaseFeatureContainer,
+                         public std::enable_shared_from_this<FeatureContainer>
 {
 public:
     FeatureContainer(std::shared_ptr<ImageContainer> imgContainer,
@@ -38,23 +33,22 @@ public:
     void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep,
         const ImgIds& ids = ImgIds());
 
-    std::vector<cv::KeyPoint> featureAt(std::size_t idx) const;
-    cv::Mat descriptorAt(std::size_t idx) const;
+    std::vector<cv::KeyPoint> featureAt(std::size_t idx) const override;
+    cv::Mat descriptorAt(std::size_t idx) const override;
 
     std::unique_ptr<FeatureCache> getFeatureCache(
-        std::size_t maxChunkSize, const ImgIds& ids = ImgIds());
+        std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) override;
     std::unique_ptr<DescriptorCache> getDescriptorCache(
-        std::size_t maxChunkSize, const ImgIds& ids = ImgIds());
-    std::unique_ptr<PairwiseDescriptorCache> getPairwiseDescriptorCache(
-        std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs);
-    std::unique_ptr<PairwiseFeatureCache> getPairwiseFeatureCache(
-        std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs);
+        std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) override;
+    std::unique_ptr<PairwiseDescriptorCache> getPairwiseDescriptorCache(std::size_t maxChunkSize,
+        const std::vector<std::pair<std::size_t, std::size_t>>& pairs) override;
+    std::unique_ptr<PairwiseFeatureCache> getPairwiseFeatureCache(std::size_t maxChunkSize,
+        const std::vector<std::pair<std::size_t, std::size_t>>& pairs) override;
 
-    std::shared_ptr<ImageContainer> getImageContainer() const;
-    std::filesystem::path getFtDir() const;
-    std::size_t getNumImgs() const;
-    cv::Size getImgSize() const;
-    FeatureType getFtType() const;
+    /* std::shared_ptr<ImageContainer> getImageContainer() const; */
+    std::size_t getNumImgs() const override;
+    cv::Size getImgSize() const override;
+    FeatureType getFtType() const override;
 
 private:
     FeatureType getTypeFromFile(const std::filesystem::path& file) const;

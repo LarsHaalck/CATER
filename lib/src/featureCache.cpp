@@ -1,11 +1,11 @@
 #include "habitrack/featureCache.h"
-#include "habitrack/featureContainer.h"
+#include "habitrack/baseFeatureContainer.h"
 
 #include <iostream>
 
 namespace ht
 {
-FeatureCache::FeatureCache(std::shared_ptr<FeatureContainer> container, std::size_t numElems,
+FeatureCache::FeatureCache(std::shared_ptr<BaseFeatureContainer> container, std::size_t numElems,
     std::size_t maxChunkSize, const std::vector<std::size_t>& ids)
     : BaseCache(numElems, maxChunkSize, ids)
     , mContainer(std::move(container))

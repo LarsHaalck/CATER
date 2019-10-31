@@ -1,17 +1,15 @@
 #ifndef HABITRACK_IMAGE_CONTAINER_H
 #define HABITRACK_IMAGE_CONTAINER_H
 
-#include "habitrack/imageCache.h"
 #include <filesystem>
 #include <memory>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
+#include "habitrack/baseImageContainer.h"
+
 namespace ht
 {
-using ImgId = std::size_t;
-using ImgIds = std::vector<ImgId>;
-
 namespace detail
 {
     struct ImageData
@@ -22,20 +20,20 @@ namespace detail
 
 } // namespace detail
 
-class ImageContainer : public std::enable_shared_from_this<ImageContainer>
+class ImageContainer : public BaseImageContainer, public std::enable_shared_from_this<ImageContainer>
 {
 public:
     ImageContainer(const std::filesystem::path& path);
     virtual ~ImageContainer();
 
-    std::filesystem::path getFileName(ImgId idx) const;
-    std::size_t getNumImgs() const;
-
-    std::unique_ptr<ImageCache> getCache(std::size_t maxChunkSize, const ImgIds& ids = ImgIds());
+    std::size_t getNumImgs() const override;
+    std::unique_ptr<ImageCache> getCache(
+        std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) override;
 
     // maybe overriden by decorator (e.g. resize)
-    virtual cv::Mat at(ImgId idx) const;
-    virtual cv::Size getImgSize() const;
+    virtual cv::Mat at(ImgId idx) const override;
+    virtual cv::Size getImgSize() const override;
+    std::filesystem::path getFileName(ImgId idx) const;
 
     // decorator related methods
     std::shared_ptr<detail::ImageData> getData() const;

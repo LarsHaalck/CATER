@@ -1,9 +1,9 @@
 #include "habitrack/imageCache.h"
-#include "habitrack/imageContainer.h"
+#include "habitrack/baseImageContainer.h"
 
 namespace ht
 {
-ImageCache::ImageCache(std::shared_ptr<ImageContainer> container, std::size_t numElems,
+ImageCache::ImageCache(std::shared_ptr<BaseImageContainer> container, std::size_t numElems,
     std::size_t maxChunkSize, const ImgIds& ids)
     : BaseCache(numElems, maxChunkSize, ids)
     , mContainer(std::move(container))
