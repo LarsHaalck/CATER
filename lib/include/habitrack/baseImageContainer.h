@@ -20,7 +20,8 @@ public:
     virtual cv::Size getImgSize() const = 0;
 
     virtual std::unique_ptr<ImageCache> getCache(
-        std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) = 0;
+        std::size_t maxChunkSize, const ImgIds& ids = ImgIds())
+        = 0;
 };
 } // namespace ht
 #endif // HABITRACK_BASE_IMAGE_CONTAINER_H

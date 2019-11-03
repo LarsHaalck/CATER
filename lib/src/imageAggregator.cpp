@@ -10,8 +10,8 @@ ImageAggregator::ImageAggregator(const std::vector<std::shared_ptr<ImageContaine
     auto size = mImgContainers[0]->getImgSize();
     for (auto& c : mImgContainers)
     {
-        assert(c->getImgSize() == size
-            && "Image sizes of containers in ImageAggregator do not match");
+        assert(
+            c->getImgSize() == size && "Image sizes of containers in ImageAggregator do not match");
     }
 
     auto [total, sizeVec] = sumNumImgs(imgContainers);
@@ -20,7 +20,7 @@ ImageAggregator::ImageAggregator(const std::vector<std::shared_ptr<ImageContaine
 }
 
 ImageAggregator::ImageAggregator(std::shared_ptr<ImageContainer> imgContainer)
-    : ImageAggregator(std::vector<std::shared_ptr<ImageContainer>>{imgContainer})
+    : ImageAggregator(std::vector<std::shared_ptr<ImageContainer>> {imgContainer})
 {
 }
 
@@ -34,7 +34,6 @@ std::pair<std::size_t, std::vector<std::size_t>> ImageAggregator::sumNumImgs(
         auto currSize = c->getNumImgs();
         numVec.push_back(currSize);
         total += currSize;
-
     }
     return std::make_pair(total, numVec);
 }

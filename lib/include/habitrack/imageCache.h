@@ -22,6 +22,7 @@ public:
 
 private:
     cv::Mat getElem(std::size_t idx);
+
 private:
     std::shared_ptr<BaseImageContainer> mContainer;
 };

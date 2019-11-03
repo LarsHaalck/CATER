@@ -7,25 +7,22 @@
 #include <opencv2/features2d.hpp>
 #include <vector>
 
+#include "habitrack/baseFeatureContainer.h"
 #include "habitrack/computeBehavior.h"
-
-namespace ht
-{
-class FeatureContainer;
-} // namespace ht
+#include "habitrack/matchesContainer.h"
 
 namespace ht
 {
 class KeyFrameSelector
 {
 public:
-    KeyFrameSelector(
-        std::shared_ptr<FeatureContainer> ftContainer, const std::filesystem::path& file);
+    KeyFrameSelector(std::shared_ptr<BaseFeatureContainer> ftContainer, GeometricType type,
+        const std::filesystem::path& file);
     std::vector<std::size_t> compute(float low, float high, ComputeBehavior behavior);
 
 private:
     std::pair<float, float> getRealLowHigh(float low, float high) const;
-    std::pair<float, std::size_t> getMedianDistanceShift(std::size_t idI, std::size_t idJ) const;
+    std::pair<float, std::size_t> getMedianDistanceShift(std::size_t idI, std::size_t idJ);
 
     std::size_t filterViews(
         const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low, float high);
@@ -65,11 +62,15 @@ private:
     std::vector<std::size_t> loadFromFile();
 
 private:
-    std::shared_ptr<FeatureContainer> mFtContainer;
+    std::shared_ptr<BaseFeatureContainer> mFtContainer;
+    GeometricType mType;
     std::filesystem::path mFile;
+    std::unique_ptr<MatchesContainer> mMatchesContainer;
     cv::Size mImgSize;
     int mArea;
     bool mIsComputed;
+
+    PairwiseMatches mMatches;
 };
 } // namespace ht
 #endif // HABITACK_KEY_FRAME_SELECTOR_H

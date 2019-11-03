@@ -26,15 +26,17 @@ public:
     virtual cv::Mat descriptorAt(std::size_t idx) const = 0;
 
     virtual std::unique_ptr<FeatureCache> getFeatureCache(
-        std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) = 0;
+        std::size_t maxChunkSize, const ImgIds& ids = ImgIds())
+        = 0;
     virtual std::unique_ptr<DescriptorCache> getDescriptorCache(
-        std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) = 0;
+        std::size_t maxChunkSize, const ImgIds& ids = ImgIds())
+        = 0;
     virtual std::unique_ptr<PairwiseDescriptorCache> getPairwiseDescriptorCache(
-        std::size_t maxChunkSize, const std::vector<std::pair<std::size_t,
-        std::size_t>>& pairs) = 0;
+        std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
+        = 0;
     virtual std::unique_ptr<PairwiseFeatureCache> getPairwiseFeatureCache(
-        std::size_t maxChunkSize, const std::vector<std::pair<std::size_t,
-        std::size_t>>& pairs) = 0;
+        std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
+        = 0;
 
     virtual std::size_t getNumImgs() const = 0;
     virtual cv::Size getImgSize() const = 0;

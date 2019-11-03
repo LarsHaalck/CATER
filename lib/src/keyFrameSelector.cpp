@@ -1,7 +1,4 @@
 #include "habitrack/keyFrameSelector.h"
-#include "habitrack/featureContainer.h"
-#include "habitrack/matchesContainer.h"
-
 #include "progressBar.h"
 
 #include <opencv2/core.hpp>
@@ -17,9 +14,12 @@ namespace fs = std::filesystem;
 namespace ht
 {
 KeyFrameSelector::KeyFrameSelector(
-    std::shared_ptr<FeatureContainer> ftContainer, const fs::path& file)
+    std::shared_ptr<BaseFeatureContainer> ftContainer, GeometricType type, const fs::path& file)
     : mFtContainer(std::move(ftContainer))
+    , mType(type)
     , mFile(file)
+    , mMatchesContainer(
+          std::make_unique<MatchesContainer>(mFtContainer, "", MatchType::Manual, 0, mType))
     , mImgSize(mFtContainer->getImgSize())
     , mArea(mImgSize.area())
     , mIsComputed(true)
@@ -100,14 +100,17 @@ std::vector<std::size_t> KeyFrameSelector::compute(
         std::size_t offset = filterViews(distOverlapVec, low, high);
 
         // + 1 because ids in overlap vec are relative to first neighbor
-        currView += offset + 1;
+        currView += +offset + 1;
         keyFrames.push_back(currView);
+
         bar += offset + 1;
         bar.display();
     }
     // always add last frame, so we don't need to extrapolate in the reintergration step
     if (keyFrames[keyFrames.size() - 1] != mFtContainer->getNumImgs() - 1)
+    {
         keyFrames.push_back(mFtContainer->getNumImgs() - 1);
+    }
 
     bar.done();
 
@@ -116,8 +119,36 @@ std::vector<std::size_t> KeyFrameSelector::compute(
 
     writeToFile(keyFrames);
     mIsComputed = true;
+
     return keyFrames;
 }
+
+/* void KeyFrameSelector::finalizeMatches(std::size_t prevView, std::size_t currView) */
+/* { */
+/*     // remove matches beyond current frame */
+/*     for (auto it = mMatches.begin(); it != mMatches.end();) */
+/*     { */
+/*         // get second id of matches pair (i.e. the frame the match ends on) */
+/*         auto idJ = it->first.second; */
+/*         if (idJ > currView) */
+/*             it = mMatches.erase(it); */
+/*         else */
+/*             it++; */
+/*     } */
+
+/* // add matches from intermediate frames to current view */
+/* #pragma omp parallel for */
+/*     for (auto i = prevView + 1; i < currView; i++) */
+/*     { */
+/*         auto matches = std::get<1>(mMatchesContainer->computePair(i, currView))[1]; */
+
+/*         if (matches.size() > 0) */
+/*         { */
+/* #pragma omp critical */
+/*             mMatches.insert(std::make_pair(std::make_pair(i, currView), std::move(matches))); */
+/*         } */
+/*     } */
+/* } */
 
 std::pair<float, float> KeyFrameSelector::getRealLowHigh(float low, float high) const
 {
@@ -136,15 +167,11 @@ std::pair<float, float> KeyFrameSelector::getRealLowHigh(float low, float high) 
 }
 
 std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
-    std::size_t idI, std::size_t idJ) const
+    std::size_t idI, std::size_t idJ)
 {
-    // TODO: store somehow?, use other type of transformation???
-    auto matcher = std::make_unique<MatchesContainer>(
-        mFtContainer, "", MatchType::Manual, 0, GeometricType::Homography);
-
     auto ftsI = mFtContainer->featureAt(idI);
     auto ftsJ = mFtContainer->featureAt(idJ);
-    auto [trafos, matches] = matcher->computePair(idI, idJ);
+    auto [trafos, matches] = mMatchesContainer->computePair(idI, idJ);
 
     // skip putative matches and empty trafo
     auto trafo = trafos[1];
@@ -166,6 +193,12 @@ std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
     if (srcFiltered.size() < 10)
         return std::make_pair(0.0f, 0);
 
+    auto pair = std::make_pair(idI, idJ);
+    if (!mMatches.count(pair))
+    {
+#pragma omp critical
+        mMatches.insert(std::make_pair(pair, geomMatches));
+    }
     return std::make_pair(getMedian(distances), distances.size());
 }
 

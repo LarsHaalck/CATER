@@ -44,9 +44,9 @@
 #ifndef CV_ISOMETRY_H
 #define CV_ISOMETRY_H
 
+#include "habitrack/ransac.h"
 #include <opencv2/calib3d.hpp>
 #include <opencv2/core.hpp>
-#include "habitrack/ransac.h"
 
 namespace cv
 {

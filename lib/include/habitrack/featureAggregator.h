@@ -4,7 +4,6 @@
 #include "habitrack/baseFeatureContainer.h"
 #include "habitrack/featureContainer.h"
 
-
 namespace ht
 {
 class FeatureAggregator : public BaseFeatureContainer,
@@ -21,19 +20,19 @@ public:
         std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) override;
     std::unique_ptr<DescriptorCache> getDescriptorCache(
         std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) override;
-    std::unique_ptr<PairwiseDescriptorCache> getPairwiseDescriptorCache(
-        std::size_t maxChunkSize, const std::vector<std::pair<std::size_t,
-        std::size_t>>& pairs) override;
-    std::unique_ptr<PairwiseFeatureCache> getPairwiseFeatureCache(
-        std::size_t maxChunkSize, const std::vector<std::pair<std::size_t,
-        std::size_t>>& pairs) override;
+    std::unique_ptr<PairwiseDescriptorCache> getPairwiseDescriptorCache(std::size_t maxChunkSize,
+        const std::vector<std::pair<std::size_t, std::size_t>>& pairs) override;
+    std::unique_ptr<PairwiseFeatureCache> getPairwiseFeatureCache(std::size_t maxChunkSize,
+        const std::vector<std::pair<std::size_t, std::size_t>>& pairs) override;
 
     std::size_t getNumImgs() const override;
     cv::Size getImgSize() const override;
     FeatureType getFtType() const override;
+
 private:
     std::pair<std::size_t, std::vector<std::size_t>> sumNumImgs(
         const std::vector<std::shared_ptr<FeatureContainer>>& ftContainers) const;
+
 private:
     std::vector<std::shared_ptr<FeatureContainer>> mFtContainers;
     std::size_t mNumImgs;

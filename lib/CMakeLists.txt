@@ -41,6 +41,7 @@ set(SOURCES
     src/isometry.cpp
     src/transformation.cpp
     src/mildRecommender.cpp
+    src/keyFrameRecommender.cpp
 
     # key frames
     src/keyFrameSelector.cpp

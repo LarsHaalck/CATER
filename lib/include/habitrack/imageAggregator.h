@@ -4,10 +4,10 @@
 #include "habitrack/baseImageContainer.h"
 #include "habitrack/imageContainer.h"
 
-
 namespace ht
 {
-class ImageAggregator : public BaseImageContainer, public std::enable_shared_from_this<ImageAggregator>
+class ImageAggregator : public BaseImageContainer,
+                        public std::enable_shared_from_this<ImageAggregator>
 {
 public:
     ImageAggregator(const std::vector<std::shared_ptr<ImageContainer>>& imgContainers);
@@ -23,6 +23,7 @@ public:
 private:
     std::pair<std::size_t, std::vector<std::size_t>> sumNumImgs(
         const std::vector<std::shared_ptr<ImageContainer>>& imgContainers) const;
+
 private:
     std::vector<std::shared_ptr<ImageContainer>> mImgContainers;
     std::size_t mNumImgs;

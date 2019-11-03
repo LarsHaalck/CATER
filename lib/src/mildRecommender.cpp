@@ -13,9 +13,8 @@ MildRecommender::MildRecommender(std::shared_ptr<BaseFeatureContainer> ftContain
     : mFtContainer(std::move(ftContainer))
     , mBlockList()
 {
-    assert(mFtContainer->getFtType() == FeatureType::ORB &&
-        "FeatureType must be ORB for MILD Recommender");
-
+    assert(mFtContainer->getFtType() == FeatureType::ORB
+        && "FeatureType must be ORB for MILD Recommender");
 }
 
 MildRecommender::MildRecommender(std::vector<std::shared_ptr<FeatureContainer>> ftContainers)
@@ -116,10 +115,9 @@ void MildRecommender::dilatePairList(
     }
 }
 
-
 // is only called for inter video loop closure
-void MildRecommender::filterPairList(std::vector<std::pair<std::size_t, std::size_t>>& pairs,
-    std::size_t size) const
+void MildRecommender::filterPairList(
+    std::vector<std::pair<std::size_t, std::size_t>>& pairs, std::size_t) const
 {
     if (mBlockList.empty())
         return;
@@ -133,18 +131,18 @@ void MildRecommender::filterPairList(std::vector<std::pair<std::size_t, std::siz
         for (std::size_t i = 0; i < pairs.size(); i++)
         {
             auto pair = pairs[i];
-            if (pair.first - shift >=mBlockList[currBlock])
+            if (pair.first - shift >= mBlockList[currBlock])
                 shift += mBlockList[currBlock++];
 
             // delete intra video matches
+            // keep only matches from one video to another
             if (pair.second - shift >= mBlockList[currBlock])
                 keepPairs.push_back(pair);
-            else
-                std::cout << pair.first << ", " << pair.second << std::endl;
+            /* else */
+            /*     std::cout << pair.first << ", " << pair.second << std::endl; */
         }
         pairs = std::move(keepPairs);
     }
-
 
     // add pairs for easy fusing between start and end points of video
     /* for (std::size_t i = 0; i < mBlockList.size(); i++) */

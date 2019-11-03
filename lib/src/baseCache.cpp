@@ -5,7 +5,7 @@ namespace ht
 constexpr std::size_t ceil(std::size_t n, std::size_t k)
 {
     if (n > 0)
-        return 1 + ((n - 1) / k); 
+        return 1 + ((n - 1) / k);
     return 0;
 }
 

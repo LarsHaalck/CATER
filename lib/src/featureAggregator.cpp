@@ -85,15 +85,13 @@ std::unique_ptr<DescriptorCache> FeatureAggregator::getDescriptorCache(
 std::unique_ptr<PairwiseDescriptorCache> FeatureAggregator::getPairwiseDescriptorCache(
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
 {
-    return std::make_unique<PairwiseDescriptorCache>(
-        shared_from_this(), maxChunkSize, pairs);
+    return std::make_unique<PairwiseDescriptorCache>(shared_from_this(), maxChunkSize, pairs);
 }
 
 std::unique_ptr<PairwiseFeatureCache> FeatureAggregator::getPairwiseFeatureCache(
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
 {
-    return std::make_unique<PairwiseFeatureCache>(
-        shared_from_this(), maxChunkSize, pairs);
+    return std::make_unique<PairwiseFeatureCache>(shared_from_this(), maxChunkSize, pairs);
 }
 
 std::size_t FeatureAggregator::getNumImgs() const { return mNumImgs; }

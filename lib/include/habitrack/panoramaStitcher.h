@@ -1,13 +1,16 @@
 #ifndef HABITRACK_PANORAMA_STITCHER_H
 #define HABITRACK_PANORAMA_STITCHER_H
 
-#include "habitrack/featureContainer.h"
+#include "habitrack/baseFeatureContainer.h"
+#include "habitrack/baseImageContainer.h"
+
 #include "habitrack/geometricType.h"
-#include "habitrack/imageContainer.h"
 #include "habitrack/matchesContainer.h"
 #include "habitrack/transformation.h"
 
 #include <opencv2/core.hpp>
+
+#include <unordered_set>
 
 namespace ceres
 {
@@ -21,6 +24,17 @@ enum class Blending : bool
     NoBlend,
     Blend
 };
+
+enum class FramesMode : bool
+{
+    KeyFramesOnly,
+    AllFrames
+};
+enum class KeyFramesMode : bool
+{
+    Fixed,
+    Variable
+};
 } // namespace ht
 
 namespace ht
@@ -28,26 +42,33 @@ namespace ht
 class PanoramaStitcher
 {
 public:
-    PanoramaStitcher(std::shared_ptr<ImageContainer> imgContainer,
-        std::shared_ptr<FeatureContainer> ftContainer,
+    PanoramaStitcher(std::shared_ptr<BaseImageContainer> imgContainer,
+        std::shared_ptr<BaseFeatureContainer> ftContainer, const PairwiseMatches& matches,
+        const PairwiseTrafos& trafos, const std::vector<size_t>& keyFrames, GeometricType type,
+        Blending blend, const cv::Mat& camMat = cv::Mat(), const cv::Mat& distCoeffs = cv::Mat());
+
+    PanoramaStitcher(std::shared_ptr<BaseImageContainer> imgContainer,
+        std::shared_ptr<BaseFeatureContainer> ftContainer,
         std::shared_ptr<MatchesContainer> matchContainer, const std::vector<size_t>& keyFrames,
         GeometricType type, Blending blend, const cv::Mat& camMat = cv::Mat(),
         const cv::Mat& distCoeffs = cv::Mat());
 
-    void initTrafos(GeometricType type = GeometricType::Undefined);
+    void initTrafos();
     std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool drawCenters = false);
-    void globalOptimize();
+    void globalOptimize(FramesMode framesMode = FramesMode::KeyFramesOnly,
+        KeyFramesMode keyFramesMode = KeyFramesMode::Variable);
     void reintegrate();
+
 private:
     cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
         const cv::Mat& trafo, cv::Rect2d currRect = cv::Rect2d()) const;
-    cv::Mat draw(const cv::Mat& trafo, size_t idI, size_t idJ);
+    cv::Mat draw(const cv::Mat& trafo, std::size_t idI, std::size_t idJ);
 
     void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, const cv::Point2f& ptJ,
         cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
         std::vector<double>* paramsI, std::vector<double>* paramsJ, double weight = 1.0);
-    void repairTrafos(const std::vector<std::vector<double>>& params);
+    void repairTrafos(const std::vector<std::vector<double>>& params, FramesMode framesMode);
 
     std::vector<double> getCamParameterization() const;
     std::vector<double> getDistParameterization() const;
@@ -62,13 +83,15 @@ private:
     cv::Mat transformBoundingRect(const cv::Mat& trafo) const;
     cv::Mat interpolateTrafo(double alpha, const cv::Mat& mat1, const cv::Mat& mat2) const;
 
+    inline bool isKeyFrame(std::size_t idx) { return mKeyFramesSet.count(idx); };
+
 private:
-    std::shared_ptr<ImageContainer> mImgContainer;
-    std::shared_ptr<FeatureContainer> mFtContainer;
-    std::shared_ptr<MatchesContainer> mMatchContainer;
+    std::shared_ptr<BaseImageContainer> mImgContainer;
+    std::shared_ptr<BaseFeatureContainer> mFtContainer;
     PairwiseMatches mMatches;
     PairwiseTrafos mTrafos;
-    std::vector<size_t> mKeyFrames;
+    std::vector<std::size_t> mKeyFrames;
+    std::unordered_set<std::size_t> mKeyFramesSet;
     GeometricType mType;
     bool mBlend;
 

@@ -18,8 +18,8 @@ namespace ht
 class PairwiseDescriptorCache : public BasePairwiseCache
 {
 public:
-    PairwiseDescriptorCache(std::shared_ptr<BaseFeatureContainer> container, std::size_t maxChunkSize,
-        const std::vector<std::pair<std::size_t, std::size_t>>& pairs);
+    PairwiseDescriptorCache(std::shared_ptr<BaseFeatureContainer> container,
+        std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs);
 
     std::unordered_map<std::size_t, cv::Mat> getChunk(std::size_t idx);
 

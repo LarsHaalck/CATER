@@ -13,9 +13,6 @@
 #include "habitrack/pairHash.h"
 #include "habitrack/pairRecommender.h"
 
-/* #include "habitrack/matchesCache.h" */
-/* #include "habitrack/trafoCache.h" */
-
 namespace ht
 {
 class BaseFeatureContainer;
@@ -147,8 +144,8 @@ private:
     MatchType mMatchType;
     std::size_t mWindow;
     GeometricType mGeomType;
-    bool mIsComputed;
     std::unique_ptr<PairRecommender> mRecommender;
+    bool mIsComputed;
 };
 } // namespace ht
 

@@ -20,7 +20,8 @@ namespace detail
 
 } // namespace detail
 
-class ImageContainer : public BaseImageContainer, public std::enable_shared_from_this<ImageContainer>
+class ImageContainer : public BaseImageContainer,
+                       public std::enable_shared_from_this<ImageContainer>
 {
 public:
     ImageContainer(const std::filesystem::path& path);

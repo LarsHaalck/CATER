@@ -31,10 +31,11 @@ MatchesContainer::MatchesContainer(std::shared_ptr<BaseFeatureContainer> feature
     , mMatchType(matchType)
     , mWindow(window)
     , mGeomType(geomType | Put)
-    , mIsComputed(true)
     , mRecommender(std::move(recommender))
+    , mIsComputed(true)
 {
     // TODO: throw exception if no strategy passed but expected
+    // TODO: throw when empty and not manual?
     // TODO: maybe smarter to only calculate missing, but this is fine for now
     if (static_cast<unsigned int>(mGeomType & Put))
     {
@@ -52,7 +53,7 @@ MatchesContainer::MatchesContainer(std::shared_ptr<BaseFeatureContainer> feature
         }
     }
 
-    if (matchType != MatchType::Manual && (!fs::exists(matchDir) || !fs::is_directory(matchDir)))
+    if (mMatchType != MatchType::Manual && (!fs::exists(matchDir) || !fs::is_directory(matchDir)))
         fs::create_directories(matchDir);
 }
 
@@ -220,7 +221,7 @@ PairwiseMatches MatchesContainer::getGeomMatches(
             // needs truncating like filterEmptyMatches() afterwards
             if (!currMatches.empty())
             {
-                #pragma omp critical
+#pragma omp critical
                 trafos.insert(std::make_pair(currPair, currFilteredMatches.first));
             }
         }
@@ -578,7 +579,6 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustive
     }
     return pairList;
 }
-
 
 fs::path MatchesContainer::getMatchDir() const { return mMatchDir; }
 
