@@ -224,7 +224,7 @@ void PanoramaStitcher::refineNonKeyFrames(const PairwiseMatches& matches, std::s
 {
     auto pairs = MatchesContainer::getKeyList(matches);
 
-    std::size_t currMatchId;
+    std::size_t currMatchId = 0;
     for (std::size_t i = 1; i < mKeyFrames.size(); i++)
     {
         std::cout << "Performaing local correction of keyframe pair: " << i - 1 << " / "
