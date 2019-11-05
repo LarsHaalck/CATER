@@ -206,7 +206,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
         for (std::size_t i = 0; i < centers.size(); i++)
         {
             auto center = centers[i];
-            cv::drawMarker(pano, center, cv::Scalar(0, 255, 0));
+            /* cv::drawMarker(pano, center, cv::Scalar(0, 255, 0)); */
 
             if (i > 0)
                 cv::line(pano, centers[i - 1], centers[i], cv::Scalar(0, 255, 0));
@@ -216,7 +216,59 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     return std::make_tuple(pano, scaleMat, transMat);
 }
 
-void PanoramaStitcher::globalOptimize(FramesMode framesMode, KeyFramesMode keyFramesMode)
+void PanoramaStitcher::globalOptimizeKeyFrames(std::size_t limitTo)
+{
+    globalOptimizeHelper(mMatches, FramesMode::KeyFramesOnly, limitTo);
+}
+void PanoramaStitcher::refineNonKeyFrames(const PairwiseMatches& matches, std::size_t limitTo)
+{
+    auto pairs = MatchesContainer::getKeyList(matches);
+
+    std::size_t currMatchId;
+    for (std::size_t i = 1; i < mKeyFrames.size(); i++)
+    {
+        std::cout << "Performaing local correction of keyframe pair: " << i - 1 << " / "
+                  << mKeyFrames.size() - 2 << std::endl;
+        auto prevKf = mKeyFrames[i - 1];
+        auto currKf = mKeyFrames[i];
+
+        PairwiseMatches currMatches;
+
+        auto pair = pairs[currMatchId];
+        while (pair.first >= prevKf && pair.second <= currKf)
+        {
+            currMatches.insert(std::make_pair(pair, matches.at(pair)));
+            currMatchId++;
+            pair = pairs[currMatchId];
+        }
+
+        globalOptimizeHelper(currMatches, FramesMode::AllFrames, limitTo);
+    }
+}
+
+std::vector<std::size_t> PanoramaStitcher::sortIdsByResponseProduct(
+    const std::vector<cv::KeyPoint>& ftsI, const std::vector<cv::KeyPoint>& ftsJ)
+{
+    auto ids = std::vector<std::size_t>(ftsI.size());
+    std::iota(std::begin(ids), std::end(ids), 0);
+
+    std::sort(std::begin(ids), std::end(ids), [&](std::size_t k, std::size_t l) {
+        return (ftsI[k].response * ftsJ[k].response) > (ftsI[l].response * ftsJ[l].response);
+    });
+
+    return ids;
+}
+
+std::vector<cv::KeyPoint> PanoramaStitcher::permute(
+    const std::vector<cv::KeyPoint>& fts, const std::vector<std::size_t>& p)
+{
+    std::vector<cv::KeyPoint> sorted(p.size());
+    std::transform(p.begin(), p.end(), sorted.begin(), [&](std::size_t i){ return fts[i]; });
+    return sorted;
+}
+
+void PanoramaStitcher::globalOptimizeHelper(
+    const PairwiseMatches& matches, FramesMode framesMode, std::size_t limitTo)
 {
     auto camParams = getCamParameterization();
     auto distParams = getDistParameterization();
@@ -237,59 +289,69 @@ void PanoramaStitcher::globalOptimize(FramesMode framesMode, KeyFramesMode keyFr
     options.minimizer_progress_to_stdout = true;
 
     std::cout << "Building Optimization Problem..." << std::endl;
-    ProgressBar bar(mMatches.size());
+    ProgressBar bar(matches.size());
 
-    std::size_t numFunctors = 0;
-    for (const auto& [pair, match] : mMatches)
+    for (const auto& [pair, match] : matches)
     {
         auto [idI, idJ] = pair;
         cv::Mat* trafoI = &mOptimizedTrafos[idI];
         cv::Mat* trafoJ = &mOptimizedTrafos[idJ];
 
-        if (framesMode == FramesMode::KeyFramesOnly && (!isKeyFrame(idI) || !isKeyFrame(idJ)))
-        {
-            ++bar;
-            continue;
-        }
+        /* if (framesMode == FramesMode::KeyFramesOnly && (!isKeyFrame(idI) || !isKeyFrame(idJ))) */
+        /* { */
+        /*     ++bar; */
+        /*     continue; */
+        /* } */
 
         auto [ftsI, ftsJ] = getCorrespondingPoints(pair, match);
-        for (size_t k = 0; k < ftsI.size(); k++)
+
+        auto numFunctors = ftsI.size();
+        if (limitTo)
         {
+            auto p = sortIdsByResponseProduct(ftsI, ftsJ);
+            ftsI = permute(ftsI, p);
+            ftsJ = permute(ftsJ, p);
+            numFunctors = std::min(limitTo, numFunctors);
+        }
+        for (size_t k = 0; k < numFunctors; k++)
+        {
+            /* if (limitTo) */
+            /*     std::cout << ftsI[k].response * ftsJ[k].response << std::endl; */
             addFunctor(problem, ftsI[k].pt, ftsJ[k].pt, trafoI, trafoJ, camParams.data(),
                 distParams.data(), &params[idI], &params[idJ], ftsI[k].response * ftsJ[k].response);
-
-            if (keyFramesMode == KeyFramesMode::Fixed && isKeyFrame(idI))
-                problem.SetParameterBlockConstant(trafoI->ptr<double>(0));
-            if (keyFramesMode == KeyFramesMode::Fixed && isKeyFrame(idJ))
-                problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
-
-            numFunctors++;
         }
+        if (framesMode == FramesMode::AllFrames && isKeyFrame(idI))
+            problem.SetParameterBlockConstant(trafoI->ptr<double>(0));
+        if (framesMode == FramesMode::AllFrames && isKeyFrame(idJ))
+            problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
         ++bar;
         bar.display();
     }
     bar.done();
 
-    std::cout << "num functors: " << numFunctors << std::endl;
-
     std::cout << "Optimizing Problem..." << std::endl;
 
+    // TODO: is this even needed anymore?
+    if (framesMode == FramesMode::KeyFramesOnly)
+    {
+        problem.SetParameterBlockConstant(mOptimizedTrafos[mKeyFrames[0]].ptr<double>(0));
+        /* problem.SetParameterBlockConstant(params[mKeyFrames[0]].data()); */
+    }
+
+    // for now
     problem.SetParameterBlockConstant(camParams.data());
     problem.SetParameterBlockConstant(distParams.data());
-
-    problem.SetParameterBlockConstant(mOptimizedTrafos[mKeyFrames[0]].ptr<double>(0));
-    /* problem.SetParameterBlockConstant(params[mKeyFrames[0]].data()); */
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     std::cout << summary.FullReport() << std::endl;
 
+    // convert parametrizations back to full transformation if needed
     repairTrafos(params, framesMode);
 
+    /* std::cout << "Estimated camera parameters: " << std::endl; */
     /* std::cout << mCamMat << std::endl; */
     /* std::cout << mDistCoeffs << std::endl; */
-
-    /* return std::get<0>(stitchPano(boundingRect, globalTrafos, targetSize)); */
 }
 
 void PanoramaStitcher::reintegrate()
@@ -337,20 +399,6 @@ cv::Mat PanoramaStitcher::interpolateTrafo(
     cv::eigen2cv(res, interp);
     return interp;
 }
-
-/* std::vector<size_t> getMatchedImgs(size_t currImg, const std::vector<std::pair<size_t, size_t>>&
- * matchPairs) */
-/* { */
-/*     std::vector<size_t> matchedIds; */
-/*     for (const auto& pair : matchPairs) */
-/*     { */
-/*         if (pair.second == currImg) */
-/*             matchedIds.push_back(pair.first); */
-/*         if (pair.first >= currImg) */
-/*             break; */
-/*     } */
-/*     return matchedIds; */
-/* } */
 
 void PanoramaStitcher::addFunctor(ceres::Problem& problem, const cv::Point2f& ptI,
     const cv::Point2f& ptJ, cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
@@ -441,7 +489,8 @@ void PanoramaStitcher::repairTrafos(
         // rebuild matrix from params vector
         for (std::size_t i = 0; i < mImgContainer->getNumImgs(); i++)
         {
-            if (framesMode == FramesMode::AllFrames || isKeyFrame(i))
+            if ((framesMode == FramesMode::AllFrames && !isKeyFrame(i))
+                || (framesMode == FramesMode::KeyFramesOnly && isKeyFrame(i)))
             {
                 mOptimizedTrafos[i].at<double>(0, 0) = std::cos(params[i][0]);
                 mOptimizedTrafos[i].at<double>(0, 1) = std::sin(params[i][0]);
@@ -454,10 +503,11 @@ void PanoramaStitcher::repairTrafos(
         }
         break;
     case GeometricType::Similarity:
-        // ensure similartiy property
+        // ensure similarity property
         for (std::size_t i = 0; i < mImgContainer->getNumImgs(); i++)
         {
-            if (framesMode == FramesMode::AllFrames || isKeyFrame(i))
+            if ((framesMode == FramesMode::AllFrames && !isKeyFrame(i))
+                || (framesMode == FramesMode::KeyFramesOnly && isKeyFrame(i)))
             {
                 auto& trafo = mOptimizedTrafos[i];
                 trafo.at<double>(1, 0) = -trafo.at<double>(0, 1);

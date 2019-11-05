@@ -26,7 +26,7 @@ using namespace ht;
 int main()
 {
     std::size_t cacheSize = 20;
-    auto path = std::string("/home/lars/data/ontogenyTest/vid4");
+    auto path = std::string("/home/lars/data/ontogenyTest/vid3");
 
     // load images
     auto imgContainer = std::make_shared<ImageContainer>(path + "/imgs");
@@ -42,23 +42,23 @@ int main()
     auto keyFrames = keyFrameSelector->compute(0.3, 0.5, ComputeBehavior::Keep);
 
     auto keyFrameRecommender = std::make_unique<KeyFrameRecommender>(keyFrames);
-    auto matchContainer = std::make_shared<MatchesContainer>(ftContainer,
+    auto matchIntraContainer = std::make_shared<MatchesContainer>(ftContainer,
         path + "/kfs/matches_intra", MatchType::Strategy, 0,
         GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
             | GeometricType::Isometry,
         std::move(keyFrameRecommender));
-    matchContainer->compute(5000, ComputeBehavior::Keep);
+    matchIntraContainer->compute(5000, ComputeBehavior::Keep);
 
     /* for (auto& elem : keyFrames) */
     /*     std::cout << elem << std::endl; */
     // do (exhaustive|mild) matching on key frames only
-    matchContainer = std::make_shared<MatchesContainer>(ftContainer, path + "/kfs/matches_inter",
-        MatchType::Exhaustive, 10,
+    auto matchInterContainer = std::make_shared<MatchesContainer>(ftContainer,
+        path + "/kfs/matches_inter", MatchType::Exhaustive, 10,
         GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
             | GeometricType::Isometry);
-    matchContainer->compute(5000, ComputeBehavior::Keep, keyFrames);
+    matchInterContainer->compute(5000, ComputeBehavior::Keep, keyFrames);
 
-    GeometricType useableTypes = matchContainer->getUsableTypes(keyFrames);
+    GeometricType useableTypes = matchInterContainer->getUsableTypes(keyFrames);
 
     auto typeList = typeToTypeList(useableTypes);
     for (auto type : typeList)
@@ -66,22 +66,44 @@ int main()
         std::cout << type << std::endl;
     }
 
+    auto matches = matchInterContainer->getMatches(GeometricType::Similarity);
+    auto trafos = matchInterContainer->getTrafos(GeometricType::Similarity);
+
+    /* auto matchesAdd = matchIntraContainer->getMatches(GeometricType::Similarity); */
+    /* matches.insert(std::begin(matchesAdd), std::end(matchesAdd)); */
+
     // do pano stitching for every wanted type
-    auto stitcher = std::make_unique<PanoramaStitcher>(imgContainer, ftContainer, matchContainer,
+    auto stitcher = std::make_unique<PanoramaStitcher>(imgContainer, ftContainer, matches, trafos,
         keyFrames, GeometricType::Similarity, Blending::NoBlend);
 
     stitcher->initTrafos();
 
-    auto panoImg0 = std::get<0>(stitcher->stitchPano(cv::Size(1920, 1080)));
+    auto panoImg0 = std::get<0>(stitcher->stitchPano(cv::Size(2560, 1440)));
+    cv::imwrite("pano0.png", panoImg0);
     /* drawImg(panoImg0); */
 
-    stitcher->globalOptimize();
-    /* stitcher->reintegrate(); */
-    auto panoImg1 = std::get<0>(stitcher->stitchPano(cv::Size(1920, 1080)));
-    drawImg(panoImg1);
-    cv::Mat combinedImg;
-    cv::hconcat(panoImg0, panoImg1, combinedImg);
-    drawImg(combinedImg);
+    stitcher->globalOptimizeKeyFrames();
+    stitcher->reintegrate();
+    auto panoImg1 = std::get<0>(stitcher->stitchPano(cv::Size(2560, 1440), true));
+    cv::imwrite("pano1.png", panoImg1);
+    /* drawImg(panoImg1); */
+
+    stitcher->refineNonKeyFrames(matchIntraContainer->getMatches(GeometricType::Similarity), 50);
+    auto panoImg2 = std::get<0>(stitcher->stitchPano(cv::Size(2560, 1440), true));
+    cv::imwrite("pano2.png", panoImg2);
+    /* drawImg(panoImg2); */
+    /* cv::Mat combinedImg; */
+    /* cv::hconcat(panoImg1, panoImg2, combinedImg); */
+    /* drawImg(combinedImg); */
+
+
+
+    /* stitcher->globalOptimize(FramesMode::AllFrames, KeyFramesMode::Fixed); */
+    /* auto panoImg2 = std::get<0>(stitcher->stitchPano(cv::Size(2560, 1440), true)); */
+    /* drawImg(panoImg2); */
+    /* cv::Mat combinedImg; */
+    /* cv::hconcat(panoImg0, panoImg1, combinedImg); */
+    /* drawImg(combinedImg); */
 
     /* stitcher->reintegrate(); */
 

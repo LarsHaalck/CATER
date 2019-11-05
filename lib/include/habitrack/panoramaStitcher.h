@@ -30,11 +30,11 @@ enum class FramesMode : bool
     KeyFramesOnly,
     AllFrames
 };
-enum class KeyFramesMode : bool
-{
-    Fixed,
-    Variable
-};
+/* enum class KeyFramesMode : bool */
+/* { */
+/*     Fixed, */
+/*     Variable */
+/* }; */
 } // namespace ht
 
 namespace ht
@@ -55,11 +55,19 @@ public:
 
     void initTrafos();
     std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool drawCenters = false);
-    void globalOptimize(FramesMode framesMode = FramesMode::KeyFramesOnly,
-        KeyFramesMode keyFramesMode = KeyFramesMode::Variable);
+
+
+    void globalOptimizeKeyFrames(std::size_t limitTo = 0);
+    void refineNonKeyFrames(const PairwiseMatches& matches, std::size_t limitTo = 0);
     void reintegrate();
 
 private:
+    std::vector<std::size_t> sortIdsByResponseProduct(
+        const std::vector<cv::KeyPoint>& ftsI, const std::vector<cv::KeyPoint>& ftsJ);
+    std::vector<cv::KeyPoint> permute(
+        const std::vector<cv::KeyPoint>& fts, const std::vector<std::size_t>& p);
+    void globalOptimizeHelper(
+        const PairwiseMatches& matches, FramesMode keyFramesMode, std::size_t limitTo);
     cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
         const cv::Mat& trafo, cv::Rect2d currRect = cv::Rect2d()) const;
