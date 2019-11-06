@@ -30,11 +30,6 @@ enum class FramesMode : bool
     KeyFramesOnly,
     AllFrames
 };
-/* enum class KeyFramesMode : bool */
-/* { */
-/*     Fixed, */
-/*     Variable */
-/* }; */
 } // namespace ht
 
 namespace ht
@@ -54,14 +49,23 @@ public:
         const cv::Mat& distCoeffs = cv::Mat());
 
     void initTrafos();
+    void initTrafosFromMultipleVideos(const std::vector<std::size_t> sizes,
+        const std::vector<std::vector<cv::Mat>>& localOptimalTrafos,
+        const std::unordered_map<std::pair<std::size_t, std::size_t>,
+            std::pair<std::size_t, std::size_t>>& optimalTransitions);
+    void initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
+        const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes);
     std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool drawCenters = false);
-
 
     void globalOptimizeKeyFrames(std::size_t limitTo = 0);
     void refineNonKeyFrames(const PairwiseMatches& matches, std::size_t limitTo = 0);
     void reintegrate();
 
+    static std::vector<cv::Mat> loadTrafos(const std::filesystem::path& file);
+    void writeTrafos(FramesMode framesMode, const std::filesystem::path& file);
+
 private:
+    void highlightImg(cv::Mat& img);
     std::vector<std::size_t> sortIdsByResponseProduct(
         const std::vector<cv::KeyPoint>& ftsI, const std::vector<cv::KeyPoint>& ftsJ);
     std::vector<cv::KeyPoint> permute(

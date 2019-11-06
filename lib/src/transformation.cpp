@@ -7,14 +7,15 @@ cv::Mat makeFull(const cv::Mat& matrix)
     if ((matrix.rows == 3 && matrix.cols == 3) || matrix.rows != 2 || matrix.cols != 3)
         return matrix;
 
-    cv::Mat full;
-    full = cv::Mat(3, 3, CV_64F);
+    /* cv::Mat full = cv::Mat::eye(3, 3, CV_64F); */
+
+    cv::Mat full = cv::Mat(3, 3, CV_64F);
     full.at<double>(2, 0) = full.at<double>(2, 1) = 0.0;
     full.at<double>(2, 2) = 1.0;
 
     // copy upper left 2x2 matrix to new matrix
-    cv::Mat tmp = full(cv::Rect(0, 0, 2, 2));
-    matrix.rowRange(0, 2).colRange(0, 2).copyTo(tmp);
+    cv::Mat tmp = full(cv::Rect(0, 0, 3, 2));
+    matrix.rowRange(0, 2).colRange(0, 3).copyTo(tmp);
     return full;
 }
 cv::Mat invertIsometry(const cv::Mat& matrix, bool full)

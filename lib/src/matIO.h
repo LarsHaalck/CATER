@@ -2,6 +2,7 @@
 #define HT_MAT_IO_H
 
 #include <cereal/archives/portable_binary.hpp>
+#include <cereal/types/vector.hpp>
 #include <opencv2/core.hpp>
 
 #include "io.h"

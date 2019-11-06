@@ -1,5 +1,7 @@
 #include "habitrack/idTranslator.h"
 
+#include <numeric>
+
 namespace ht::translate
 {
 std::vector<std::size_t> localToGlobal(
@@ -17,9 +19,32 @@ std::vector<std::size_t> localToGlobal(
     return globalIds;
 }
 
-/* std::vector<std::size_t> globalToLocal( */
-/*     std::vector<std::size_t>& ids, const std::vector<std::size_t>& sizes) */
-/* { */
-/* } */
-
 } // namespace ht::translate
+
+namespace ht
+{
+Translator::Translator(const std::vector<std::size_t>& sizes)
+    : mCumSums(sizes.size())
+{
+    std::partial_sum(std::begin(sizes), std::end(sizes) - 1, std::begin(mCumSums) + 1);
+}
+std::pair<std::size_t, std::size_t> Translator::globalToLocal(std::size_t idx)
+{
+    auto pair = std::make_pair(0, 0);
+    for (int i = static_cast<int>(mCumSums.size()) - 1; i >= 0; i--)
+    {
+        if (idx >= mCumSums[i])
+        {
+            pair.first = i;
+            pair.second = idx - mCumSums[i];
+            return pair;
+        }
+    }
+    return pair;
+}
+
+std::size_t Translator::localToGlobal(std::pair<std::size_t, std::size_t> vidFrameId)
+{
+    return mCumSums[vidFrameId.first] + vidFrameId.second;
+}
+} // namespace ht

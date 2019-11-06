@@ -55,6 +55,7 @@ set(SOURCES
 
     # misc
     src/idTranslator.cpp
+    src/mst.cpp
 )
 
 
@@ -62,15 +63,8 @@ set(SOURCES
 #                               TARGETS                                   #
 ###########################################################################
 set(LIB_NAME "libHabitrack")
-add_executable(genData ${SOURCES} main.cpp)
 add_library(${LIB_NAME} ${SOURCES})
 
-target_include_directories(genData
-    PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
 target_include_directories(${LIB_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -78,27 +72,9 @@ target_include_directories(${LIB_NAME}
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(genData
-    PUBLIC
-    opencv_core
-    opencv_highgui
-    opencv_imgproc
-    opencv_xfeatures2d
-    opencv_features2d
-    opencv_calib3d
-    opencv_flann
-    opencv_stitching
-    opencv_imgcodecs
-    cereal::cereal
-    mild::mild
-    ceres
-    Eigen3::Eigen
-    OpenMP::OpenMP_CXX
-)
 target_link_libraries(${LIB_NAME}
     PUBLIC
     opencv_core
-    PRIVATE
     opencv_highgui
     opencv_imgproc
     opencv_xfeatures2d

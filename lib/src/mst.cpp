@@ -3,28 +3,27 @@
 namespace ht
 {
 Graph::Graph(int V, int E)
+    : mV(V)
+    , mE(E)
 {
-    this->V = V;
-    this->E = E;
 }
 
 /* Functions returns weight of the MST*/
-int Graph::kruskalMST()
+std::vector<std::pair<int, int>> Graph::kruskalMST()
 {
     int mst_wt = 0; // Initialize result
 
     // Sort edges in increasing order on basis of cost
-    sort(edges.begin(), edges.end());
+    std::sort(std::begin(mEdges), std::end(mEdges));
 
     // Create disjoint sets
-    DisjointSets ds(V);
+    DisjointSets ds(mV);
 
     // Iterate through all sorted edges
-    std::vector<std::pair<int, iPair>>::iterator it;
-    for (it = edges.begin(); it != edges.end(); it++)
+    std::vector<std::pair<int, int>> mstEdges;
+    for (auto it = std::begin(mEdges); it != mEdges.end(); ++it)
     {
-        int u = it->second.first;
-        int v = it->second.second;
+        auto [u, v] = it->second;
 
         int set_u = ds.find(u);
         int set_v = ds.find(v);
@@ -36,7 +35,8 @@ int Graph::kruskalMST()
         {
             // Current edge will be in the MST
             // so print it
-            std::cout << u << " - " << v << std::endl;
+            /* std::cout << u << " - " << v << std::endl; */
+            mstEdges.push_back(std::make_pair(u, v));
 
             // Update MST weight
             mst_wt += it->first;
@@ -46,34 +46,27 @@ int Graph::kruskalMST()
         }
     }
 
-    return mst_wt;
+    return mstEdges;
 }
 
 DisjointSets::DisjointSets(int n)
+    : mN(n)
+    , mRnk(n + 1, 0)
+    , mParent(n + 1)
 {
-    // Allocate memory
-    this->n = n;
-    parent = new int[n + 1];
-    rnk = new int[n + 1];
 
     // Initially, all vertices are in
     // different sets and have rank 0.
-    for (int i = 0; i <= n; i++)
-    {
-        rnk[i] = 0;
-
-        // every element is parent of itself
-        parent[i] = i;
-    }
+    std::iota(std::begin(mParent), std::end(mParent), 0);
 }
 
 int DisjointSets::find(int u)
 {
     /* Make the parent of the nodes in the path
     from u--> parent[u] point to parent[u] */
-    if (u != parent[u])
-        parent[u] = find(parent[u]);
-    return parent[u];
+    if (u != mParent[u])
+        mParent[u] = find(mParent[u]);
+    return mParent[u];
 }
 
 void DisjointSets::merge(int x, int y)
@@ -82,12 +75,12 @@ void DisjointSets::merge(int x, int y)
 
     /* Make tree with smaller height
     a subtree of the other tree */
-    if (rnk[x] > rnk[y])
-        parent[y] = x;
-    else // If rnk[x] <= rnk[y]
-        parent[x] = y;
+    if (mRnk[x] > mRnk[y])
+        mParent[y] = x;
+    else // If mRnk[x] <= mRnk[y]
+        mParent[x] = y;
 
-    if (rnk[x] == rnk[y])
-        rnk[y]++;
+    if (mRnk[x] == mRnk[y])
+        mRnk[y]++;
 }
 } // namespace ht

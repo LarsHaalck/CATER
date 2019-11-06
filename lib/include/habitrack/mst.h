@@ -15,13 +15,12 @@ class Graph
 {
 public:
     Graph(int V, int E);
-    void addEdge(int u, int v, int w) { edges.push_back({w, {u, v}}); }
-    int kruskalMST();
-
+    void addEdge(int u, int v, int w) { mEdges.push_back({w, {u, v}}); }
+    std::vector<std::pair<int, int>> kruskalMST();
 private:
-    int V;
-    int E;
-    std::vector<std::pair<int, iPair>> edges;
+    int mV;
+    int mE;
+    std::vector<std::pair<int, iPair>> mEdges;
 };
 
 // To represent Disjoint Sets
@@ -36,11 +35,10 @@ public:
 
     // Union by rank
     void merge(int x, int y);
-
 private:
-    int* parent;
-    int* rnk;
-    int n;
+    int mN;
+    std::vector<int> mRnk;
+    std::vector<int> mParent;
 };
 
 } // namespace ht
