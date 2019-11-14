@@ -289,11 +289,17 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     {
         for (std::size_t i = 0; i < centers.size(); i++)
         {
-            auto center = centers[i];
-            /* cv::drawMarker(pano, center, cv::Scalar(0, 255, 0)); */
+            cv::Scalar color;
+            if (i < 106)
+                color = cv::Scalar(0, 0, 255);
+            else if (i < 7589)
+                color = cv::Scalar(0, 255, 0);
+            else
+                color = cv::Scalar(255, 0, 0);
 
+            auto center = centers[i];
             if (i > 0)
-                cv::line(pano, centers[i - 1], centers[i], cv::Scalar(0, 255, 0));
+                cv::line(pano, centers[i - 1], centers[i], color);
         }
     }
     // DEBUG
