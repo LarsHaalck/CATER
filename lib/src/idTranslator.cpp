@@ -2,25 +2,6 @@
 
 #include <numeric>
 
-namespace ht::translate
-{
-std::vector<std::size_t> localToGlobal(
-    const std::vector<std::vector<std::size_t>>& ids, const std::vector<std::size_t>& sizes)
-{
-    std::vector<std::size_t> globalIds;
-    std::size_t cumSum = 0;
-    for (std::size_t i = 0; i < ids.size(); i++)
-    {
-        for (auto id : ids[i])
-            globalIds.push_back(id + cumSum);
-        cumSum += sizes[i];
-    }
-
-    return globalIds;
-}
-
-} // namespace ht::translate
-
 namespace ht
 {
 Translator::Translator(const std::vector<std::size_t>& sizes)
@@ -46,5 +27,36 @@ std::pair<std::size_t, std::size_t> Translator::globalToLocal(std::size_t idx)
 std::size_t Translator::localToGlobal(std::pair<std::size_t, std::size_t> vidFrameId)
 {
     return mCumSums[vidFrameId.first] + vidFrameId.second;
+}
+
+std::vector<std::size_t> Translator::localToGlobal(
+    const std::vector<std::vector<std::size_t>>& ids)
+{
+    std::vector<std::size_t> globalIds;
+    for (std::size_t i = 0; i < ids.size(); i++)
+    {
+        for (std::size_t j = 0; j < ids[i].size(); j++)
+            globalIds.push_back(localToGlobal(std::make_pair(i, ids[i][j])));
+    }
+    return globalIds;
+}
+
+PairwiseMatches Translator::localToGlobal(const std::vector<PairwiseMatches>& matches)
+{
+    PairwiseMatches globalMatches;
+    for (std::size_t i = 0; i < matches.size(); i++)
+    {
+        for (const auto& match : matches[i])
+        {
+            // get indexing pair and convert from current local block to global frame
+            auto idxPair = match.first;
+            idxPair.first = localToGlobal(std::make_pair(i, idxPair.first));
+            idxPair.second = localToGlobal(std::make_pair(i, idxPair.second));
+
+            // vector of cv::DMatch does not change
+            globalMatches[idxPair] = match.second;
+        }
+    }
+    return globalMatches;
 }
 } // namespace ht

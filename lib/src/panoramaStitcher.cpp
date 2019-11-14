@@ -126,6 +126,7 @@ void PanoramaStitcher::initTrafosFromMultipleVideos(const std::vector<std::size_
             if (transBlock.first == currBlock && !marked.count(transBlock.second))
             {
                 cv::Mat pairTrans = invertSpecial(mTrafos.at(transFrame), mType);
+
                 auto localId = translator.globalToLocal(transFrame.second).second;
                 cv::Mat preMult = localOptimalTrafos[transBlock.second][localId];
                 cv::Mat postMult = mOptimizedTrafos[transFrame.first];
@@ -137,25 +138,19 @@ void PanoramaStitcher::initTrafosFromMultipleVideos(const std::vector<std::size_
             }
             else if (transBlock.second == currBlock && !marked.count(transBlock.first))
             {
-                std::cout << "no no no" << std::endl;
-                cv::Mat trans = makeFull(mTrafos.at(transFrame));
-                cv::Mat preMult = mOptimizedTrafos[transFrame.second];
-                queue.push(std::make_pair(transBlock.first, preMult * trans));
+                cv::Mat pairTrans = makeFull(mTrafos.at(transFrame));
+
+                auto localId = translator.globalToLocal(transFrame.first).second;
+                cv::Mat preMult = localOptimalTrafos[transBlock.first][localId];
+                cv::Mat postMult = mOptimizedTrafos[transFrame.second];
+
+                cv::Mat invertPreMult;
+                cv::invert(preMult, invertPreMult);
+                cv::Mat newTrans = pairTrans * postMult * invertPreMult;
+                queue.push(std::make_pair(transBlock.first, newTrans));
             }
         }
     }
-
-    /* for (auto elem : marked) */
-    /*     std::cout << elem << std::endl; */
-
-    /* for (int i = 0; i < mKeyFrames.size(); i++) */
-    /* { */
-    /*     if (mOptimizedTrafos[mKeyFrames[i]].empty()) */
-    /*         std::cout << "shit: " << i << std::endl; */
-    /* } */
-
-
-    std::cout << std::endl;
 }
 
 cv::Mat PanoramaStitcher::transformBoundingRect(const cv::Mat& trafo) const
@@ -230,7 +225,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
         auto currId = mKeyFrames[i];
         cv::Mat currImg = mImgContainer->at(mKeyFrames[i]);
 
-        /* if (currId == 6971) */
+        /* if (currId == 0 || currId == 7589) */
         /*     highlightImg(currImg); */
         cv::Mat mask(currImg.size(), CV_8UC1, cv::Scalar(255));
 
@@ -309,6 +304,7 @@ void PanoramaStitcher::globalOptimizeKeyFrames(std::size_t limitTo)
 {
     globalOptimizeHelper(mMatches, FramesMode::KeyFramesOnly, limitTo);
 }
+
 void PanoramaStitcher::refineNonKeyFrames(const PairwiseMatches& matches, std::size_t limitTo)
 {
     auto pairs = MatchesContainer::getKeyList(matches);
@@ -751,24 +747,12 @@ std::vector<cv::Mat> PanoramaStitcher::loadTrafos(const fs::path& file)
     return trafos;
 }
 
-void PanoramaStitcher::writeTrafos(FramesMode framesMode, const fs::path& file)
+void PanoramaStitcher::writeTrafos(const fs::path& file)
 {
     std::vector<cv::Mat> trafos;
-    if (framesMode == FramesMode::KeyFramesOnly)
-    {
-        trafos.reserve(mKeyFrames.size());
-        for (std::size_t i = 0; i < mKeyFrames.size(); i++)
-        {
-            auto id = mKeyFrames[i];
-            trafos.push_back(mOptimizedTrafos[id]);
-        }
-    }
-    else
-    {
-        trafos.reserve(mImgContainer->getNumImgs());
-        for (std::size_t i = 0; i < mImgContainer->getNumImgs(); i++)
-            trafos.push_back(mOptimizedTrafos[i]);
-    }
+    trafos.reserve(mImgContainer->getNumImgs());
+    for (std::size_t i = 0; i < mImgContainer->getNumImgs(); i++)
+        trafos.push_back(mOptimizedTrafos[i]);
 
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
     checkStream(stream, file);

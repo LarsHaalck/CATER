@@ -211,8 +211,12 @@ void Isometry2DEstimatorCallback::computeError(
     Mat err = _err.getMat();
     float* errptr = err.ptr<float>();
     // transform matrix to floats
-    float F0 = (float)F[0], F1 = (float)F[1], F2 = (float)F[2];
-    float F3 = (float)F[3], F4 = (float)F[4], F5 = (float)F[5];
+    float F0 = static_cast<float>(F[0]);
+    float F1 = static_cast<float>(F[1]);
+    float F2 = static_cast<float>(F[2]);
+    float F3 = static_cast<float>(F[3]);
+    float F4 = static_cast<float>(F[4]);
+    float F5 = static_cast<float>(F[5]);
 
     for (int i = 0; i < count; i++)
     {

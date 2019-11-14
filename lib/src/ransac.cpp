@@ -88,12 +88,12 @@ int RANSACPointSetRegistrator::findInliers(
 
     const float* errptr = err.ptr<float>();
     uchar* maskptr = mask.ptr<uchar>();
-    float t = (float)(thresh * thresh);
-    int i, n = (int)err.total(), nz = 0;
+    float t = static_cast<float>(thresh * thresh);
+    int i, n = static_cast<int>(err.total()), nz = 0;
     for (i = 0; i < n; i++)
     {
         int f = errptr[i] <= t;
-        maskptr[i] = (uchar)f;
+        maskptr[i] = static_cast<uchar>(f);
         nz += f;
     }
     return nz;
@@ -107,7 +107,8 @@ bool RANSACPointSetRegistrator::getSubset(
     int i = 0, j, k, iters = 0;
     int d1 = m1.channels() > 1 ? m1.channels() : m1.cols;
     int d2 = m2.channels() > 1 ? m2.channels() : m2.cols;
-    int esz1 = (int)m1.elemSize1() * d1, esz2 = (int)m2.elemSize1() * d2;
+    int esz1 = static_cast<int>(m1.elemSize1()) * d1;
+    int esz2 = static_cast<int>(m2.elemSize1()) * d2;
     int count = m1.checkVector(d1), count2 = m2.checkVector(d2);
     const int *m1ptr = m1.ptr<int>(), *m2ptr = m2.ptr<int>();
 
@@ -161,7 +162,7 @@ bool RANSACPointSetRegistrator::run(
     int d2 = m2.channels() > 1 ? m2.channels() : m2.cols;
     int count = m1.checkVector(d1), count2 = m2.checkVector(d2), maxGoodCount = 0;
 
-    RNG rng((uint64)-1);
+    RNG rng(static_cast<uint64>(-1));
 
     CV_Assert(cb);
     CV_Assert(confidence > 0 && confidence < 1);
@@ -176,7 +177,8 @@ bool RANSACPointSetRegistrator::run(
     {
         _mask.create(count, 1, CV_8U, -1, true);
         bestMask0 = bestMask = _mask.getMat();
-        CV_Assert((bestMask.cols == 1 || bestMask.rows == 1) && (int)bestMask.total() == count);
+        CV_Assert((bestMask.cols == 1 || bestMask.rows == 1)
+            && static_cast<int>(bestMask.total()) == count);
     }
     else
     {
@@ -224,7 +226,7 @@ bool RANSACPointSetRegistrator::run(
                 model_i.copyTo(bestModel);
                 maxGoodCount = goodCount;
                 niters = RANSACUpdateNumIters(
-                    confidence, (double)(count - goodCount) / count, modelPoints, niters);
+                    confidence, static_cast<double>(count - goodCount) / count, modelPoints, niters);
             }
         }
     }

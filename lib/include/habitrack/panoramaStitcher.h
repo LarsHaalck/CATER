@@ -62,7 +62,7 @@ public:
     void reintegrate();
 
     static std::vector<cv::Mat> loadTrafos(const std::filesystem::path& file);
-    void writeTrafos(FramesMode framesMode, const std::filesystem::path& file);
+    void writeTrafos(const std::filesystem::path& file);
 
 private:
     void highlightImg(cv::Mat& img);

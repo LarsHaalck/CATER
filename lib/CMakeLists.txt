@@ -55,6 +55,7 @@ set(SOURCES
 
     # misc
     src/idTranslator.cpp
+    src/transitions.cpp
     src/mst.cpp
 )
 

@@ -72,9 +72,9 @@ int main(int argc, char** argv)
         return 0;
 
     // select key frames
-    auto keyFrameSelector = std::make_unique<KeyFrameSelector>(
-        ftContainer, GeometricType::Similarity, basePath / "key_frames.yml");
-    auto keyFrames = keyFrameSelector->compute(0.3, 0.5, ComputeBehavior::Keep);
+    auto keyFrameSelector
+        = KeyFrameSelector(ftContainer, GeometricType::Similarity, basePath / "key_frames.yml");
+    auto keyFrames = keyFrameSelector.compute(0.3, 0.5, ComputeBehavior::Keep);
 
     if (stage < 2)
         return 0;
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
 
     // globally optimized these keyframe tranformations and write them for later IVLC
     stitcher->globalOptimizeKeyFrames();
-    stitcher->writeTrafos(FramesMode::AllFrames, basePath / "kfs/opt_trafos.bin");
+    stitcher->writeTrafos(basePath / "kfs/opt_trafos.bin");
     if (showResults)
     {
         auto pano = std::get<0>(stitcher->stitchPano(cv::Size(cols, rows)));
@@ -148,7 +148,7 @@ int main(int argc, char** argv)
 
     // refine all keyframes
     stitcher->refineNonKeyFrames(matchIntraContainer->getMatches(GeometricType::Similarity), 50);
-    stitcher->writeTrafos(FramesMode::AllFrames, basePath / "opt_trafos.bin");
+    stitcher->writeTrafos(basePath / "opt_trafos.bin");
     if (showResults)
     {
         auto pano = std::get<0>(stitcher->stitchPano(cv::Size(cols, rows), true));
