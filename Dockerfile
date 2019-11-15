@@ -70,3 +70,9 @@ RUN cd /tmp \
     && make && make install \
     && rm -rf /tmp/*
 
+RUN cd /tmp \
+    && git clone https://github.com/jarro2783/cxxopts \
+    && cd cxxopts && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ../ \
+    && make && make install \
+    && rm -rf /tmp/*

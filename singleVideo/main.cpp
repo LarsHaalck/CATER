@@ -57,8 +57,11 @@ int main(int argc, char** argv)
     std::cout << "You called: " << std::endl;
     std::cout << "i: " << basePath.string() << std::endl;
     std::cout << "v: " << showResults << std::endl;
+    std::cout << "k: " << cols << std::endl;
+    std::cout << "k: " << rows << std::endl;
     std::cout << "c: " << cacheSize << std::endl;
     std::cout << "s: " << stage << std::endl;
+    return 0;
 
     // load images
     auto imgContainer = std::make_shared<ImageContainer>(basePath / "imgs");

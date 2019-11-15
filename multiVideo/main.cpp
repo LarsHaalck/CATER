@@ -43,8 +43,6 @@ int main()
     std::vector<PairwiseMatches> matchesIntraList;
     std::vector<PairwiseMatches> matchesInterList;
 
-    PairwiseMatches intraMatches;
-    PairwiseTrafos intraTrafos;
     for (const auto& path : videoPaths)
     {
         auto imgContainer = std::make_shared<ImageContainer>(path / "imgs");
@@ -125,12 +123,23 @@ int main()
 
     stitcher->initTrafosFromMultipleVideos(sizes, localOptimalTrafos, optimalTransitions);
     auto panoImg0 = std::get<0>(stitcher->stitchPano(cv::Size(2*1920, 2*1080)));
-    drawImg(panoImg0);
+    /* drawImg(panoImg0); */
+    cv::imwrite("combined0.png", panoImg0);
 
     stitcher->globalOptimizeKeyFrames();
     auto panoImg1 = std::get<0>(stitcher->stitchPano(cv::Size(2*1920, 2*1080)));
-    drawImg(panoImg1);
-    cv::imwrite("combined.png", panoImg1);
+    /* drawImg(panoImg1); */
+    cv::imwrite("combined1.png", panoImg1);
+
+    stitcher->reintegrate();
+    auto panoImg2 = std::get<0>(stitcher->stitchPano(cv::Size(2*1920, 2*1080), true));
+    cv::imwrite("combined2.png", panoImg2);
+
+    auto globalIntraMatches = translator.localToGlobal(matchesIntraList);
+    matchesIntraList.clear();
+    stitcher->refineNonKeyFrames(globalIntraMatches);
+    auto panoImg3 = std::get<0>(stitcher->stitchPano(cv::Size(2*1920, 2*1080), true));
+    cv::imwrite("combined3.png", panoImg3);
 
     return 0;
 }
