@@ -262,10 +262,8 @@ void KeyFrameSelector::writeToFile(const std::vector<std::size_t>& keyFrames)
             "Error opening key frame file", mFile, std::make_error_code(std::errc::io_error));
     }
 
-    fs << "key_frames"
-       << "[";
-    for (auto& kf : keyFrames)
-        fs << static_cast<int>(kf);
+    std::vector<int> keyFramesInt(std::begin(keyFrames), std::end(keyFrames));
+    fs << "key_frames" << keyFramesInt;
     fs.release();
 }
 
@@ -279,14 +277,17 @@ std::vector<std::size_t> KeyFrameSelector::loadFromFile()
     }
 
     std::vector<int> keyFramesInt;
-    auto keyFrameNode = fs["key_frames"];
-    for (auto it = std::begin(keyFrameNode); it != std::end(keyFrameNode); ++it)
-        keyFramesInt.push_back(static_cast<int>(*it));
+    fs["key_frames"] >> keyFramesInt;
 
-    std::vector<std::size_t> keyFrames;
-    keyFrames.reserve(keyFramesInt.size());
+    std::vector<std::size_t> keyFrames(std::begin(keyFramesInt), std::end(keyFramesInt));
+    /* auto keyFrameNode = fs["key_frames"]; */
+    /* for (auto it = std::begin(keyFrameNode); it != std::end(keyFrameNode); ++it) */
+    /*     keyFramesInt.push_back(static_cast<int>(*it)); */
 
-    keyFrames.insert(std::end(keyFrames), std::begin(keyFramesInt), std::end(keyFramesInt));
+    /* std::vector<std::size_t> keyFrames; */
+    /* keyFrames.reserve(keyFramesInt.size()); */
+
+    /* keyFrames.insert(std::end(keyFrames), std::begin(keyFramesInt), std::end(keyFramesInt)); */
     return keyFrames;
 }
 

@@ -30,6 +30,12 @@ enum class FramesMode : bool
     KeyFramesOnly,
     AllFrames
 };
+
+enum class WriteType : bool
+{
+    Binary,
+    Readable
+};
 } // namespace ht
 
 namespace ht
@@ -62,7 +68,7 @@ public:
     void reintegrate();
 
     static std::vector<cv::Mat> loadTrafos(const std::filesystem::path& file);
-    void writeTrafos(const std::filesystem::path& file);
+    void writeTrafos(const std::filesystem::path& file, WriteType writeType = WriteType::Binary);
 
 private:
     void highlightImg(cv::Mat& img);

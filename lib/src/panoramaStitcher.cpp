@@ -301,6 +301,10 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
             if (i > 0)
                 cv::line(pano, centers[i - 1], centers[i], color);
         }
+
+        cv::FileStorage fs("centers.yml", cv::FileStorage::WRITE);
+        fs << "pos" << centers;
+        fs.release();
     }
     // DEBUG
     return std::make_tuple(pano, scaleMat, transMat);
@@ -319,13 +323,12 @@ void PanoramaStitcher::refineNonKeyFrames(const PairwiseMatches& matches, std::s
     for (std::size_t i = 1; i < mKeyFrames.size(); i++)
     {
         std::cout << "Performaing local correction of keyframe pair: " << i - 1 << " / "
-                  << mKeyFrames.size() - 2 << std::endl;
+            << mKeyFrames.size() - 2 << std::endl;
+
         auto prevKf = mKeyFrames[i - 1];
         auto currKf = mKeyFrames[i];
-
-        PairwiseMatches currMatches;
-
         auto pair = pairs[currMatchId];
+        PairwiseMatches currMatches;
         while (pair.first >= prevKf && pair.second <= currKf && currMatchId < pairs.size())
         {
             currMatches.insert(std::make_pair(pair, matches.at(pair)));
@@ -382,7 +385,6 @@ void PanoramaStitcher::globalOptimizeHelper(
 
     std::cout << "Building Optimization Problem..." << std::endl;
     ProgressBar bar(matches.size());
-
     for (const auto& [pair, match] : matches)
     {
         auto [idI, idJ] = pair;
@@ -416,11 +418,11 @@ void PanoramaStitcher::globalOptimizeHelper(
             problem.SetParameterBlockConstant(trafoI->ptr<double>(0));
         if (framesMode == FramesMode::AllFrames && isKeyFrame(idJ))
             problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
+
         ++bar;
         bar.display();
     }
     bar.done();
-
     std::cout << "Optimizing Problem..." << std::endl;
 
     // TODO: is this even needed anymore?
@@ -753,18 +755,33 @@ std::vector<cv::Mat> PanoramaStitcher::loadTrafos(const fs::path& file)
     return trafos;
 }
 
-void PanoramaStitcher::writeTrafos(const fs::path& file)
+void PanoramaStitcher::writeTrafos(const fs::path& file, WriteType writeType)
 {
     std::vector<cv::Mat> trafos;
     trafos.reserve(mImgContainer->getNumImgs());
     for (std::size_t i = 0; i < mImgContainer->getNumImgs(); i++)
         trafos.push_back(mOptimizedTrafos[i]);
 
-    std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
-    checkStream(stream, file);
+    if (writeType == WriteType::Binary)
     {
-        cereal::PortableBinaryOutputArchive archive(stream);
-        archive(trafos);
+        std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
+        checkStream(stream, file);
+        {
+            cereal::PortableBinaryOutputArchive archive(stream);
+            archive(trafos);
+        }
+        return;
     }
+
+    cv::FileStorage fs(file.string(), cv::FileStorage::WRITE);
+    checkFileStorage(fs, file);
+
+    auto rect = generateBoundingRect();
+    rect.width = rect.width - rect.x;
+    rect.height = rect.height - rect.y;
+
+    fs << "bounding_rect" << rect;
+    fs << "trafos" << trafos;
+    fs.release();
 }
 } // namespace ht

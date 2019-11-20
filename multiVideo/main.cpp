@@ -32,7 +32,8 @@ int main()
 {
     std::filesystem::path basePath = "/home/lars/data/ontogenyTest";
     std::vector<std::filesystem::path> videoPaths
-        = {basePath / "vid2", basePath / "vid3", basePath / "vid4"};
+        = {basePath / "vid2"};
+        /* = {basePath / "vid2", basePath / "vid3", basePath / "vid4"}; */
 
     // collect img and ft containers and list of keyframes
     std::vector<std::shared_ptr<ImageContainer>> imgContainers;
@@ -140,6 +141,8 @@ int main()
     stitcher->refineNonKeyFrames(globalIntraMatches);
     auto panoImg3 = std::get<0>(stitcher->stitchPano(cv::Size(2*1920, 2*1080), true));
     cv::imwrite("combined3.png", panoImg3);
+
+    stitcher->writeTrafos(basePath / "ivlc/opt_trafos.yml", WriteType::Readable);
 
     return 0;
 }

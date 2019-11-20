@@ -61,7 +61,6 @@ int main(int argc, char** argv)
     std::cout << "k: " << rows << std::endl;
     std::cout << "c: " << cacheSize << std::endl;
     std::cout << "s: " << stage << std::endl;
-    return 0;
 
     // load images
     auto imgContainer = std::make_shared<ImageContainer>(basePath / "imgs");
@@ -158,5 +157,7 @@ int main(int argc, char** argv)
         cv::imwrite("pano3.png", pano);
         /* drawImg(pano); */
     }
+
+    stitcher->writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
     return 0;
 }
