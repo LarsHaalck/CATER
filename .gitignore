@@ -107,3 +107,4 @@ install*/
 .clangd/
 tags
 .gdb*
+*.mp4
