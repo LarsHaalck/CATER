@@ -218,8 +218,8 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
 
     // here we start from 0 instead of 1 because we explicitly added the identity trafo
     cv::Mat img0;
-    std::vector<cv::Point> centers;
-    centers.reserve(mKeyFrames.size());
+    std::vector<cv::Point> centersTrans;
+    centersTrans.reserve(mKeyFrames.size());
     for (size_t i = 0; i < mKeyFrames.size(); i++)
     {
         auto currId = mKeyFrames[i];
@@ -249,10 +249,10 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
                 {
                     auto interpTrafo
                         = scaleMat * transMat * mCamMat * mOptimizedTrafos[j] * mCamMatInv;
-                    centers.push_back(getCenter(interpTrafo));
+                    centersTrans.push_back(getCenter(interpTrafo));
                 }
             }
-            centers.push_back(getCenter(currTrafo));
+            centersTrans.push_back(getCenter(currTrafo));
         }
         // DEBUG
 
@@ -287,7 +287,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     // DEBUG
     if (drawCenters)
     {
-        for (std::size_t i = 0; i < centers.size(); i++)
+        for (std::size_t i = 0; i < centersTrans.size(); i++)
         {
             cv::Scalar color;
             if (i < 106)
@@ -297,13 +297,13 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
             else
                 color = cv::Scalar(255, 0, 0);
 
-            auto center = centers[i];
+            auto center = centersTrans[i];
             if (i > 0)
-                cv::line(pano, centers[i - 1], centers[i], color);
+                cv::line(pano, centersTrans[i - 1], centersTrans[i], color);
         }
 
-        cv::FileStorage fs("centers.yml", cv::FileStorage::WRITE);
-        fs << "pos" << centers;
+        cv::FileStorage fs("centersTrans.yml", cv::FileStorage::WRITE);
+        fs << "pos" << centersTrans;
         fs.release();
     }
     // DEBUG
