@@ -1,6 +1,5 @@
 #include "habitrack/matchesContainer.h"
 #include "habitrack/baseFeatureContainer.h"
-/* #include "habitrack/imageContainer.h" */
 #include "unknownFeatureType.h"
 
 #include "matIO.h"
@@ -11,6 +10,8 @@
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
+
+#include <opencv2/imgproc.hpp>
 
 namespace fs = std::filesystem;
 
@@ -25,12 +26,13 @@ auto Iso = Gt::Isometry;
 
 MatchesContainer::MatchesContainer(std::shared_ptr<BaseFeatureContainer> featureContainer,
     const fs::path& matchDir, MatchType matchType, std::size_t window, Gt geomType,
-    std::unique_ptr<PairRecommender> recommender)
+    double minCoverage, std::unique_ptr<PairRecommender> recommender)
     : mFtContainer(std::move(featureContainer))
     , mMatchDir(matchDir)
     , mMatchType(matchType)
     , mWindow(window)
     , mGeomType(geomType | Put)
+    , mMinCoverage(minCoverage)
     , mRecommender(std::move(recommender))
     , mIsComputed(true)
 {
@@ -229,22 +231,12 @@ PairwiseMatches MatchesContainer::getGeomMatches(
         bar.display();
     }
 
-    filterEmptyMatches(filteredMatches);
+    filterEmptyPairwise(filteredMatches);
     writeMatches(filteredMatches, type);
     writeTrafos(trafos, type);
     return filteredMatches;
 }
 
-void MatchesContainer::filterEmptyMatches(PairwiseMatches& matches)
-{
-    for (auto it = std::begin(matches); it != std::end(matches);)
-    {
-        if (it->second.empty())
-            it = matches.erase(it);
-        else
-            ++it;
-    }
-}
 
 Matches MatchesContainer::putMatchPair(
     cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ)
@@ -340,10 +332,27 @@ std::pair<Trafo, Matches> MatchesContainer::geomMatchPair(const std::vector<cv::
 
     auto [mask, trafo] = getInlierMask(src, dst, filterType);
     std::vector<cv::DMatch> filteredMatches;
+    std::vector<cv::Point2f> srcFiltered, dstFiltered;
     for (size_t r = 0; r < mask.size(); r++)
     {
         if (mask[r])
-            filteredMatches.push_back(matches[r]);
+        {
+           filteredMatches.push_back(matches[r]);
+           if (mMinCoverage)
+           {
+               srcFiltered.push_back(src[r]);
+               dstFiltered.push_back(dst[r]);
+           }
+        }
+    }
+
+    if (mMinCoverage)
+    {
+        int rectI = cv::boundingRect(srcFiltered).area();
+        int rectJ = cv::boundingRect(dstFiltered).area();
+        int area = mFtContainer->getImgSize().area();
+        if (rectI < mMinCoverage * area || rectJ < mMinCoverage * area)
+            filteredMatches.clear();
     }
 
     return std::make_pair(trafo, filteredMatches);

@@ -37,6 +37,8 @@ int main(int argc, char** argv)
     int cols = 2 * 1920;
     int rows = 2 * 1080;
 
+    double minCoverage = 0.0;
+
     cxxopts::Options options("single", "");
     options.add_options()
         ("i,in", "base path containing imgs dir", cxxopts::value(basePath))
@@ -44,6 +46,7 @@ int main(int argc, char** argv)
         ("c", "cache", cxxopts::value(cacheSize))
         ("k, cols", "cols", cxxopts::value(cols))
         ("l, rows", "rows", cxxopts::value(rows))
+        ("m, min_coverage", "min coverage", cxxopts::value(minCoverage))
         ("s,stage", "0: fts, 1: kfs: 2: matches, 3: init, 4: global, 5: reint; 6: global",
             cxxopts::value(stage));
 
@@ -57,9 +60,10 @@ int main(int argc, char** argv)
     std::cout << "You called: " << std::endl;
     std::cout << "i: " << basePath.string() << std::endl;
     std::cout << "v: " << showResults << std::endl;
+    std::cout << "c: " << cacheSize << std::endl;
     std::cout << "k: " << cols << std::endl;
     std::cout << "k: " << rows << std::endl;
-    std::cout << "c: " << cacheSize << std::endl;
+    std::cout << "m: " << minCoverage << std::endl;
     std::cout << "s: " << stage << std::endl;
 
     // load images
@@ -67,7 +71,7 @@ int main(int argc, char** argv)
 
     // calc features
     auto ftContainer
-        = std::make_shared<FeatureContainer>(imgContainer, basePath / "fts", FeatureType::SIFT, 3000);
+        = std::make_shared<FeatureContainer>(imgContainer, basePath / "fts", FeatureType::SIFT, 5000);
     ftContainer->compute(cacheSize, ComputeBehavior::Keep);
 
     if (stage < 1)
@@ -87,14 +91,14 @@ int main(int argc, char** argv)
         basePath / "kfs/matches_intra", MatchType::Strategy, 0,
         GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
             | GeometricType::Isometry,
-        std::move(keyFrameRecommender));
+        0, std::move(keyFrameRecommender));
     matchIntraContainer->compute(5000, ComputeBehavior::Keep);
 
     // calculate matches between keyframes via exhaustive matching
     auto matchInterContainer = std::make_shared<MatchesContainer>(ftContainer,
         basePath / "kfs/matches_inter", MatchType::Exhaustive, 10,
         GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
-            | GeometricType::Isometry);
+            | GeometricType::Isometry, minCoverage);
     matchInterContainer->compute(5000, ComputeBehavior::Keep, keyFrames);
 
     // panoramas can only be calculated from theses Types

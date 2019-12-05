@@ -297,7 +297,6 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
             else
                 color = cv::Scalar(255, 0, 0);
 
-            auto center = centersTrans[i];
             if (i > 0)
                 cv::line(pano, centersTrans[i - 1], centersTrans[i], color);
         }

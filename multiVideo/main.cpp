@@ -98,7 +98,7 @@ int main()
         basePath / "ivlc/matches", MatchType::Strategy, 1, // TODO: incorporate into ML estimator?
         GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
             | GeometricType::Isometry,
-        std::move(recommender));
+        0, std::move(recommender));
 
     // list of local keyframes to global keyframes
     auto globalKeyFrames = translator.localToGlobal(keyFrameList);

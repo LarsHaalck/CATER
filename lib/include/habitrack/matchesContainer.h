@@ -50,7 +50,8 @@ class MatchesContainer : public std::enable_shared_from_this<MatchesContainer>
 public:
     MatchesContainer(std::shared_ptr<BaseFeatureContainer> featureContainer,
         const std::filesystem::path& matchDir, MatchType matchType, std::size_t window,
-        GeometricType geomType, std::unique_ptr<PairRecommender> recommender = nullptr);
+        GeometricType geomType, double minCoverage = 0.0,
+        std::unique_ptr<PairRecommender> recommender = nullptr);
 
     // for "automatic" matching
     void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep,
@@ -120,7 +121,18 @@ private:
         const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
 
     std::string typeToString(GeometricType type);
-    void filterEmptyMatches(PairwiseMatches& matches);
+
+    template <typename T>
+    void filterEmptyPairwise(T& matches)
+    {
+        for (auto it = std::begin(matches); it != std::end(matches);)
+        {
+            if (it->second.empty())
+                it = matches.erase(it);
+            else
+                ++it;
+        }
+    }
 
     void writeMatches(const PairwiseMatches& matches, GeometricType type) const;
     void writeTrafos(const PairwiseTrafos& matches, GeometricType type) const;
@@ -144,6 +156,7 @@ private:
     MatchType mMatchType;
     std::size_t mWindow;
     GeometricType mGeomType;
+    double mMinCoverage;
     std::unique_ptr<PairRecommender> mRecommender;
     bool mIsComputed;
 };
