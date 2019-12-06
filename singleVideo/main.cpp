@@ -96,7 +96,7 @@ int main(int argc, char** argv)
 
     // calculate matches between keyframes via exhaustive matching
     auto matchInterContainer = std::make_shared<MatchesContainer>(ftContainer,
-        basePath / "kfs/matches_inter", MatchType::Exhaustive, 10,
+        basePath / "kfs/matches_inter", MatchType::Exhaustive, 0,
         GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
             | GeometricType::Isometry, minCoverage);
     matchInterContainer->compute(5000, ComputeBehavior::Keep, keyFrames);
