@@ -355,6 +355,9 @@ std::pair<Trafo, Matches> MatchesContainer::geomMatchPair(const std::vector<cv::
             filteredMatches.clear();
     }
 
+    if (filteredMatches.size() < 10)
+        filteredMatches.clear();
+
     return std::make_pair(trafo, filteredMatches);
 }
 

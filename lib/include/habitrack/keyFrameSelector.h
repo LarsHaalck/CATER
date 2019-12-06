@@ -17,7 +17,7 @@ class KeyFrameSelector
 {
 public:
     KeyFrameSelector(std::shared_ptr<BaseFeatureContainer> ftContainer, GeometricType type,
-        const std::filesystem::path& file);
+        const std::filesystem::path& file, double minCoverage = 0.0);
     std::vector<std::size_t> compute(float low, float high, ComputeBehavior behavior);
 
 private:

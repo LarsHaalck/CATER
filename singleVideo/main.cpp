@@ -78,8 +78,8 @@ int main(int argc, char** argv)
         return 0;
 
     // select key frames
-    auto keyFrameSelector
-        = KeyFrameSelector(ftContainer, GeometricType::Similarity, basePath / "key_frames.yml");
+    auto keyFrameSelector = KeyFrameSelector(
+        ftContainer, GeometricType::Similarity, basePath / "key_frames.yml", minCoverage);
     auto keyFrames = keyFrameSelector.compute(0.3, 0.5, ComputeBehavior::Keep);
 
     if (stage < 2)
@@ -120,7 +120,7 @@ int main(int argc, char** argv)
     if (showResults)
     {
         auto pano = std::get<0>(stitcher->stitchPano(cv::Size(cols, rows)));
-        cv::imwrite("pano0.png", pano);
+        cv::imwrite((basePath / "pano0.png").string(), pano);
         /* drawImg(pano); */
     }
 
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
     if (showResults)
     {
         auto pano = std::get<0>(stitcher->stitchPano(cv::Size(cols, rows)));
-        cv::imwrite("pano1.png", pano);
+        cv::imwrite((basePath / "pano1.png").string(), pano);
         /* drawImg(pano); */
     }
 
@@ -145,7 +145,7 @@ int main(int argc, char** argv)
     if (showResults)
     {
         auto pano = std::get<0>(stitcher->stitchPano(cv::Size(cols, rows), true));
-        cv::imwrite("pano2.png", pano);
+        cv::imwrite((basePath / "pano2.png").string(), pano);
         /* drawImg(pano); */
     }
 
@@ -158,7 +158,7 @@ int main(int argc, char** argv)
     if (showResults)
     {
         auto pano = std::get<0>(stitcher->stitchPano(cv::Size(cols, rows), true));
-        cv::imwrite("pano3.png", pano);
+        cv::imwrite((basePath / "pano3.png").string(), pano);
         /* drawImg(pano); */
     }
 

@@ -13,13 +13,13 @@
 namespace fs = std::filesystem;
 namespace ht
 {
-KeyFrameSelector::KeyFrameSelector(
-    std::shared_ptr<BaseFeatureContainer> ftContainer, GeometricType type, const fs::path& file)
+KeyFrameSelector::KeyFrameSelector(std::shared_ptr<BaseFeatureContainer> ftContainer,
+    GeometricType type, const fs::path& file, double minCoverage)
     : mFtContainer(std::move(ftContainer))
     , mType(type)
     , mFile(file)
-    , mMatchesContainer(
-          std::make_unique<MatchesContainer>(mFtContainer, "", MatchType::Manual, 0, mType))
+    , mMatchesContainer(std::make_unique<MatchesContainer>(
+          mFtContainer, "", MatchType::Manual, 0, mType, minCoverage))
     , mImgSize(mFtContainer->getImgSize())
     , mArea(mImgSize.area())
     , mIsComputed(true)
