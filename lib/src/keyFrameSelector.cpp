@@ -75,20 +75,25 @@ std::vector<std::size_t> KeyFrameSelector::compute(
                 auto [shift, numFts] = pair;
                 if (numFts == 0)
                 {
-                    if (warning)
-                        break;
                     warning = true;
+                    break;
+                    /* if (warning) */
+                    /*     break; */
+                    /* warning = true; */
                 }
-                else
-                    warning = false;
+                /* else */
+                /*     warning = false; */
 
                 if (shift > high)
                 {
                     warning = true;
                     break;
+                    /* break; */
                 }
                 distOverlapVec.push_back(pair);
             }
+            if (warning && distOverlapVec.empty())
+                distOverlapVec.push_back(currDistOverlapVec[0]);
             if (warning)
                 break;
         }
@@ -122,33 +127,6 @@ std::vector<std::size_t> KeyFrameSelector::compute(
 
     return keyFrames;
 }
-
-/* void KeyFrameSelector::finalizeMatches(std::size_t prevView, std::size_t currView) */
-/* { */
-/*     // remove matches beyond current frame */
-/*     for (auto it = mMatches.begin(); it != mMatches.end();) */
-/*     { */
-/*         // get second id of matches pair (i.e. the frame the match ends on) */
-/*         auto idJ = it->first.second; */
-/*         if (idJ > currView) */
-/*             it = mMatches.erase(it); */
-/*         else */
-/*             it++; */
-/*     } */
-
-/* // add matches from intermediate frames to current view */
-/* #pragma omp parallel for */
-/*     for (auto i = prevView + 1; i < currView; i++) */
-/*     { */
-/*         auto matches = std::get<1>(mMatchesContainer->computePair(i, currView))[1]; */
-
-/*         if (matches.size() > 0) */
-/*         { */
-/* #pragma omp critical */
-/*             mMatches.insert(std::make_pair(std::make_pair(i, currView), std::move(matches))); */
-/*         } */
-/*     } */
-/* } */
 
 std::pair<float, float> KeyFrameSelector::getRealLowHigh(float low, float high) const
 {
