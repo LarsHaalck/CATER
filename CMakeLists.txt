@@ -14,6 +14,7 @@ if(MSVC)
     add_compile_options("/W4" "$<$<CONFIG:RELEASE>:/O2>")
 else()
     add_compile_options(
+        "-g"
         "-Wall"
         "-Wextra"
         "-pedantic"
