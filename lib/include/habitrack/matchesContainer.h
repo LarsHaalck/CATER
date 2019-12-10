@@ -58,7 +58,7 @@ public:
         const ImgIds& ids = ImgIds());
 
     // for "manual" matching, e.g. in KFS
-    std::pair<Trafos, std::vector<Matches>> computePair(std::size_t idxI, std::size_t idxJ);
+    std::pair<Trafos, std::vector<Matches>> computePair(std::size_t idxI, std::size_t idxJ) const;
 
     PairwiseMatches getMatches(GeometricType geomType);
     PairwiseTrafos getTrafos(GeometricType geomType);
@@ -101,24 +101,25 @@ private:
     /*     std::size_t size, const ImgIds& ids) const; */
 
     cv::Ptr<cv::DescriptorMatcher> getMatcher() const;
-    Matches putMatchPair(
-        cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ);
-    Matches putMatchPairHelper(
-        cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ);
+    Matches putMatchPair(cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI,
+        const cv::Mat& descJ) const;
+    Matches putMatchPairHelper(cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI,
+        const cv::Mat& descJ) const;
     std::pair<Trafo, Matches> geomMatchPair(const std::vector<cv::KeyPoint>& featI,
-        const std::vector<cv::KeyPoint>& featJ, GeometricType filterType, const Matches& matches);
+        const std::vector<cv::KeyPoint>& featJ, GeometricType filterType,
+        const Matches& matches) const;
 
     // transformation fitting
     std::pair<std::vector<uchar>, cv::Mat> getInlierMask(const std::vector<cv::Point2f>& src,
-        const std::vector<cv::Point2f>& dst, GeometricType type);
+        const std::vector<cv::Point2f>& dst, GeometricType type) const;
     std::pair<std::vector<uchar>, cv::Mat> getInlierMaskIsometry(
-        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
+        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst) const;
     std::pair<std::vector<uchar>, cv::Mat> getInlierMaskSimilarity(
-        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
+        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst) const;
     std::pair<std::vector<uchar>, cv::Mat> getInlierMaskAffinity(
-        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
+        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst) const;
     std::pair<std::vector<uchar>, cv::Mat> getInlierMaskHomography(
-        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst);
+        const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst) const;
 
     std::string typeToString(GeometricType type);
 
@@ -139,7 +140,7 @@ private:
     PairwiseMatches loadMatches(GeometricType type) const;
     PairwiseTrafos loadTrafos(GeometricType type) const;
 
-    inline size_t getInlierCount(const std::vector<uchar>& mask)
+    inline size_t getInlierCount(const std::vector<uchar>& mask) const
     {
         size_t count = 0;
         for (const auto id : mask)

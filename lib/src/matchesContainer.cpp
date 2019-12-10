@@ -237,12 +237,12 @@ PairwiseMatches MatchesContainer::getGeomMatches(
     return filteredMatches;
 }
 
-
 Matches MatchesContainer::putMatchPair(
-    cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ)
+    cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ) const
 {
     auto matchesI = putMatchPairHelper(descMatcher, descI, descJ);
     auto matchesJ = putMatchPairHelper(descMatcher, descJ, descI);
+    /* descMatcher->clear(); */
 
     std::vector<cv::DMatch> remainingMatches;
     for (const auto& matchI : matchesI)
@@ -260,7 +260,7 @@ Matches MatchesContainer::putMatchPair(
 }
 
 Matches MatchesContainer::putMatchPairHelper(
-    cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ)
+    cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ) const
 {
     std::vector<cv::DMatch> currMatches;
     std::vector<std::vector<cv::DMatch>> knnMatches;
@@ -286,14 +286,16 @@ cv::Ptr<cv::DescriptorMatcher> MatchesContainer::getMatcher() const
         return cv::makePtr<cv::FlannBasedMatcher>(
             cv::makePtr<cv::flann::LshIndexParams>(20, 10, 2));
     case FeatureType::SIFT:
-        return cv::DescriptorMatcher::create(cv::DescriptorMatcher::MatcherType::FLANNBASED);
+        return cv::DescriptorMatcher::create(
+            cv::DescriptorMatcher::MatcherType::BRUTEFORCE);
+        /* return cv::DescriptorMatcher::create(cv::DescriptorMatcher::MatcherType::FLANNBASED); */
     default:
         throw UnknownFeatureType("not orb or sift");
     }
 }
 
 std::pair<Trafos, std::vector<Matches>> MatchesContainer::computePair(
-    std::size_t idxI, std::size_t idxJ)
+    std::size_t idxI, std::size_t idxJ) const
 {
     auto descI = mFtContainer->descriptorAt(idxI);
     auto descJ = mFtContainer->descriptorAt(idxJ);
@@ -321,7 +323,7 @@ std::pair<Trafos, std::vector<Matches>> MatchesContainer::computePair(
 }
 
 std::pair<Trafo, Matches> MatchesContainer::geomMatchPair(const std::vector<cv::KeyPoint>& featI,
-    const std::vector<cv::KeyPoint>& featJ, Gt filterType, const Matches& matches)
+    const std::vector<cv::KeyPoint>& featJ, Gt filterType, const Matches& matches) const
 {
     std::vector<cv::Point2f> src, dst;
     for (size_t i = 0; i < matches.size(); i++)
@@ -337,12 +339,12 @@ std::pair<Trafo, Matches> MatchesContainer::geomMatchPair(const std::vector<cv::
     {
         if (mask[r])
         {
-           filteredMatches.push_back(matches[r]);
-           if (mMinCoverage)
-           {
-               srcFiltered.push_back(src[r]);
-               dstFiltered.push_back(dst[r]);
-           }
+            filteredMatches.push_back(matches[r]);
+            if (mMinCoverage)
+            {
+                srcFiltered.push_back(src[r]);
+                dstFiltered.push_back(dst[r]);
+            }
         }
     }
 
@@ -362,7 +364,7 @@ std::pair<Trafo, Matches> MatchesContainer::geomMatchPair(const std::vector<cv::
 }
 
 std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMask(
-    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst, Gt type)
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst, Gt type) const
 {
     switch (type)
     {
@@ -381,7 +383,7 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMask(
 }
 
 std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskIsometry(
-    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst)
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst) const
 {
     cv::Mat mat;
     std::vector<uchar> mask;
@@ -397,7 +399,7 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskIsometry(
 }
 
 std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskSimilarity(
-    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst)
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst) const
 {
     cv::Mat mat;
     std::vector<uchar> mask;
@@ -413,7 +415,7 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskSimilarity
 }
 
 std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskAffinity(
-    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst)
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst) const
 {
     cv::Mat mat;
     std::vector<uchar> mask;
@@ -429,7 +431,7 @@ std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskAffinity(
 }
 
 std::pair<std::vector<uchar>, cv::Mat> MatchesContainer::getInlierMaskHomography(
-    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst)
+    const std::vector<cv::Point2f>& src, const std::vector<cv::Point2f>& dst) const
 {
     std::vector<uchar> mask;
     cv::Mat mat;
