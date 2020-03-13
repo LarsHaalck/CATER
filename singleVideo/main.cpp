@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 
     // calc features
     auto ftContainer
-        = std::make_shared<FeatureContainer>(imgContainer, basePath / "fts", FeatureType::SIFT, 5000);
+        = std::make_shared<FeatureContainer>(imgContainer, basePath / "fts", FeatureType::SIFT, 10000);
     ftContainer->compute(cacheSize, ComputeBehavior::Keep);
 
     if (stage < 1)
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
         GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
             | GeometricType::Isometry,
         0, std::move(keyFrameRecommender));
-    matchIntraContainer->compute(5000, ComputeBehavior::Keep);
+    /* matchIntraContainer->compute(5000, ComputeBehavior::Keep); */
 
     // calculate matches between keyframes via exhaustive matching
     auto matchInterContainer = std::make_shared<MatchesContainer>(ftContainer,
