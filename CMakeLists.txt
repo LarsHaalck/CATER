@@ -71,4 +71,4 @@ endif()
 
 add_subdirectory(lib)
 add_subdirectory(singleVideo)
-add_subdirectory(multiVideo)
+# add_subdirectory(multiVideo)
