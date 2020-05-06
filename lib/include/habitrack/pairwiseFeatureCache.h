@@ -19,13 +19,13 @@ namespace ht
 class PairwiseFeatureCache : public BasePairwiseCache
 {
 public:
-    PairwiseFeatureCache(std::shared_ptr<BaseFeatureContainer> container, std::size_t maxChunkSize,
+    PairwiseFeatureCache(const BaseFeatureContainer& container, std::size_t maxChunkSize,
         const std::vector<std::pair<std::size_t, std::size_t>>& pairs);
 
     std::unordered_map<std::size_t, std::vector<cv::KeyPoint>> getChunk(std::size_t idx);
 
 private:
-    std::shared_ptr<BaseFeatureContainer> mContainer;
+    const BaseFeatureContainer& mContainer;
 };
 }
 #endif // HABITRACK_PAIRWISE_FEATURE_CACHE_H

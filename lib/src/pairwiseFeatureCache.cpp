@@ -3,10 +3,10 @@
 
 namespace ht
 {
-PairwiseFeatureCache::PairwiseFeatureCache(std::shared_ptr<BaseFeatureContainer> container,
+PairwiseFeatureCache::PairwiseFeatureCache(const BaseFeatureContainer& container,
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
     : BasePairwiseCache(maxChunkSize, pairs)
-    , mContainer(std::move(container))
+    , mContainer(container)
 {
 }
 
@@ -22,10 +22,10 @@ std::unordered_map<std::size_t, std::vector<cv::KeyPoint>> PairwiseFeatureCache:
     {
         auto [idI, idJ] = getPair(i);
         if (!cacheBlock.count(idI))
-            cacheBlock[idI] = mContainer->featureAt(idI);
+            cacheBlock[idI] = mContainer.featureAt(idI);
 
         if (!cacheBlock.count(idJ))
-            cacheBlock[idJ] = mContainer->featureAt(idJ);
+            cacheBlock[idJ] = mContainer.featureAt(idJ);
     }
     return cacheBlock;
 }

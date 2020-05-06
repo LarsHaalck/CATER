@@ -11,51 +11,47 @@ set(SOURCES
     # main.cpp
     # abstract classes
     src/baseCache.cpp
-    src/baseDecorator.cpp
 
     # image container related
     src/baseImageContainer.cpp
     src/imageContainer.cpp
-    src/imageAggregator.cpp
+    # src/imageAggregator.cpp
     src/imageCache.cpp
-    src/resizeDecorator.cpp
-    src/grayDecorator.cpp
-    src/specialGrayDecorator.cpp
 
     # feature container
     src/baseFeatureContainer.cpp
     src/featureContainer.cpp
-    src/featureAggregator.cpp
+    # src/featureAggregator.cpp
+    src/pairwiseFeatureCache.cpp
     src/featureCache.cpp
     src/descriptorCache.cpp
+    src/basePairwiseCache.cpp
+    src/pairwiseDescriptorCache.cpp
     src/unknownFeatureType.cpp
 
     # matches container
     src/geometricType.cpp
     src/matchesContainer.cpp
     src/unknownGeometricType.cpp
-    src/basePairwiseCache.cpp
-    src/pairwiseDescriptorCache.cpp
-    src/pairwiseFeatureCache.cpp
-    src/ransac.cpp
-    src/isometry.cpp
-    src/transformation.cpp
-    src/mildRecommender.cpp
-    src/keyFrameRecommender.cpp
+    # src/ransac.cpp
+    # src/isometry.cpp
+    # src/transformation.cpp
+    # src/mildRecommender.cpp
+    # src/keyFrameRecommender.cpp
 
-    # key frames
-    src/keyFrameSelector.cpp
+    # # key frames
+    # src/keyFrameSelector.cpp
 
-    # pano
-    src/panoramaStitcher.cpp
-    src/homographyGlobalOptimizer.cpp
-    src/affinityGlobalOptimizer.cpp
-    src/similarityGlobalOptimizer.cpp
-    src/isometryGlobalOptimizer.cpp
+    # # pano
+    # src/panoramaStitcher.cpp
+    # src/homographyGlobalOptimizer.cpp
+    # src/affinityGlobalOptimizer.cpp
+    # src/similarityGlobalOptimizer.cpp
+    # src/isometryGlobalOptimizer.cpp
 
     # misc
     src/idTranslator.cpp
-    src/transitions.cpp
+    # src/transitions.cpp
     src/mst.cpp
 )
 

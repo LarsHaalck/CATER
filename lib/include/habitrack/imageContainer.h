@@ -10,48 +10,41 @@
 
 namespace ht
 {
-namespace detail
+enum class ReadMode
 {
-    struct ImageData
-    {
-        std::vector<std::string> mImageFiles; // holds filenames for all images
-        cv::Size mImgSize;
-    };
+    Gray,
+    SpecialGray,
+    Unchanged,
+};
 
-} // namespace detail
-
-class ImageContainer : public BaseImageContainer,
-                       public std::enable_shared_from_this<ImageContainer>
+class ImageContainer : public BaseImageContainer
 {
 public:
-    ImageContainer(const std::filesystem::path& path);
+    ImageContainer(const std::filesystem::path& path,
+        ReadMode mode = ReadMode::Unchanged,
+        cv::Vec3d weights = cv::Vec3d(),
+        cv::Vec2d resize = cv::Vec2d());
     virtual ~ImageContainer();
 
-    std::size_t getNumImgs() const override;
-    std::unique_ptr<ImageCache> getCache(
-        std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) override;
+    std::size_t size() const;
+    ImageCache getCache(std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) const;
 
-    // maybe overriden by decorator (e.g. resize)
-    virtual cv::Mat at(ImgId idx) const override;
-    virtual cv::Size getImgSize() const override;
+    virtual cv::Mat at(ImgId idx) const;
+    virtual cv::Size getImgSize() const;
     std::filesystem::path getFileName(ImgId idx) const;
-
-    // decorator related methods
-    std::shared_ptr<detail::ImageData> getData() const;
-    std::shared_ptr<ImageContainer> resize(double scale);
-    std::shared_ptr<ImageContainer> resize(double scaleX, double scaleY);
-    std::shared_ptr<ImageContainer> gray();
 
 private:
     void fillImageFilesFromFolder(const std::filesystem::path& path);
     void fillImageFilesFromFile(const std::filesystem::path& path);
 
-protected:
-    // only to be used by deriving decorator classes
-    ImageContainer(std::shared_ptr<detail::ImageData> data);
+    cv::Mat transformToWeightedGray(cv::Mat mat) const;
 
 private:
-    std::shared_ptr<detail::ImageData> mData;
+    std::vector<std::filesystem::path> mImageFiles; // holds filenames for all images
+    cv::Size mImgSize;
+    ReadMode mMode;
+    cv::Vec3d mWeights;
+    cv::Vec2d mResize;
 };
 } // namespace ht
 

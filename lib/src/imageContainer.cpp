@@ -1,6 +1,4 @@
 #include "habitrack/imageContainer.h"
-#include "habitrack/grayDecorator.h"
-#include "habitrack/resizeDecorator.h"
 
 #include <fstream>
 #include <iostream>
@@ -11,8 +9,11 @@ namespace fs = std::filesystem;
 
 namespace ht
 {
-ImageContainer::ImageContainer(const fs::path& path)
-    : mData(std::make_shared<detail::ImageData>())
+ImageContainer::ImageContainer(
+    const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize)
+    : mMode(mode)
+    , mWeights(weights)
+    , mResize(resize)
 {
     if (!fs::exists(path))
     {
@@ -32,10 +33,15 @@ ImageContainer::ImageContainer(const fs::path& path)
         fillImageFilesFromFile(path);
 
     // sort files to cope with different operating system conventions
-    std::sort(std::begin(mData->mImageFiles), std::end(mData->mImageFiles));
+    std::sort(std::begin(mImageFiles), std::end(mImageFiles));
 
-    auto testImg = at(0);
-    mData->mImgSize = testImg.size();
+    auto firstImg = at(0);
+    mImgSize = firstImg.size();
+    if (resize[0] > 0 && resize[1] > 0)
+    {
+        mImgSize = cv::Size(
+            std::round(resize[0] * mImgSize.width), std::round(resize[1] * mImgSize.height));
+    }
 }
 
 void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
@@ -50,7 +56,7 @@ void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
                 || extension == ".TIFF" || extension == ".JPG" || extension == ".PNG"
                 || extension == ".JPEG")
             {
-                mData->mImageFiles.push_back(p.path().string());
+                mImageFiles.push_back(p.path());
             }
         }
     }
@@ -70,61 +76,82 @@ void ImageContainer::fillImageFilesFromFile(const fs::path& path)
                 throw fs::filesystem_error("Image file from file list does not exist", imgPath,
                     std::make_error_code(std::errc::no_such_file_or_directory));
             }
-            mData->mImageFiles.push_back(imgPath.string());
+            mImageFiles.push_back(imgPath);
         }
     }
 }
 
 ImageContainer::~ImageContainer() {}
 
-// TODO: imread type?
-cv::Mat ImageContainer::at(ImgId idx) const
+cv::Mat ImageContainer::transformToWeightedGray(cv::Mat mat) const
 {
-    assert(idx < getNumImgs() && "idx out of range in ImageContainer::at()");
+    cv::Mat channels[3];
+    cv::split(mat, channels);
+    channels[0].convertTo(channels[0], CV_32FC1);
+    channels[1].convertTo(channels[1], CV_32FC1);
+    channels[2].convertTo(channels[2], CV_32FC1);
 
-    cv::Mat mat = cv::imread(mData->mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
+    channels[0] *= mWeights(0);
+    channels[1] *= mWeights(1);
+    channels[2] *= mWeights(2);
 
-    cv::Mat resMat;
-    mat.convertTo(resMat, CV_8UC3);
-    return resMat;
+    channels[0] = channels[0] + channels[1] + channels[2];
+    cv::Mat tmp;
+    channels[0].convertTo(tmp, CV_8U);
+    return tmp;
 }
 
-std::size_t ImageContainer::getNumImgs() const { return mData->mImageFiles.size(); }
+cv::Mat ImageContainer::at(ImgId idx) const
+{
+    assert(idx < size() && "idx out of range in ImageContainer::at()");
+
+    cv::Mat mat;
+    switch (mMode)
+    {
+        case ReadMode::Unchanged:
+            mat = cv::imread(mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
+            break;
+        case ReadMode::SpecialGray:
+        {
+            mat = cv::imread(mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
+            if (mat.channels() != 3)
+                break;
+
+            mat = transformToWeightedGray(mat);
+            break;
+        }
+        case ReadMode::Gray:
+            mat = cv::imread(mImageFiles[idx], cv::ImreadModes::IMREAD_GRAYSCALE);
+            break;
+        default:
+            mat = cv::Mat();
+    }
+
+    if (mResize(0) > 0 && mResize(1) > 0)
+    {
+        cv::Mat resized;
+        cv::resize(
+            mat, resized, cv::Size(), mResize(0), mResize(1), cv::InterpolationFlags::INTER_CUBIC);
+        return resized;
+    }
+    return mat;
+}
+
+std::size_t ImageContainer::size() const { return mImageFiles.size(); }
 
 std::filesystem::path ImageContainer::getFileName(ImgId idx) const
 {
-    auto file = mData->mImageFiles[idx];
+    assert(idx < size() && "idx out of range in ImageContainer::getFileName()");
+    auto file = mImageFiles[idx];
     auto path = fs::path(file);
     return path.filename();
 }
 
-std::unique_ptr<ImageCache> ImageContainer::getCache(std::size_t maxChunkSize, const ImgIds& ids)
+ImageCache ImageContainer::getCache(std::size_t maxChunkSize, const ImgIds& ids) const
 {
-    auto numElems = getNumImgs();
-    return std::make_unique<ImageCache>(shared_from_this(), numElems, maxChunkSize, ids);
+    auto numElems = size();
+    return ImageCache{*this, numElems, maxChunkSize, ids};
 }
 
-cv::Size ImageContainer::getImgSize() const { return mData->mImgSize; }
-
-std::shared_ptr<detail::ImageData> ImageContainer::getData() const { return mData; }
-std::shared_ptr<ImageContainer> ImageContainer::resize(double scale)
-{
-    return resize(scale, scale);
-}
-
-std::shared_ptr<ImageContainer> ImageContainer::resize(double scaleX, double scaleY)
-{
-    return std::make_shared<ResizeDecorator>(scaleX, scaleY, shared_from_this());
-}
-
-std::shared_ptr<ImageContainer> ImageContainer::gray()
-{
-    return std::make_shared<GrayDecorator>(shared_from_this());
-}
-
-ImageContainer::ImageContainer(std::shared_ptr<detail::ImageData> data)
-    : mData(std::move(data))
-{
-}
-
+cv::Size ImageContainer::getImgSize() const { return mImgSize; }
 } // namespace ht

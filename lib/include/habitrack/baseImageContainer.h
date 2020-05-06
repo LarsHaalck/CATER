@@ -15,12 +15,12 @@ class BaseImageContainer
 public:
     BaseImageContainer() = default;
 
-    virtual std::size_t getNumImgs() const = 0;
+    virtual std::size_t size() const = 0;
     virtual cv::Mat at(ImgId idx) const = 0;
     virtual cv::Size getImgSize() const = 0;
 
-    virtual std::unique_ptr<ImageCache> getCache(
-        std::size_t maxChunkSize, const ImgIds& ids = ImgIds())
+    virtual ImageCache getCache(
+        std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) const
         = 0;
 };
 } // namespace ht

@@ -70,5 +70,6 @@ if(${BUILD_GUI})
 endif()
 
 add_subdirectory(lib)
-add_subdirectory(singleVideo)
+add_subdirectory(tracker)
+# add_subdirectory(singleVideo)
 # add_subdirectory(multiVideo)

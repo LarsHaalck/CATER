@@ -3,10 +3,10 @@
 
 namespace ht
 {
-ImageCache::ImageCache(std::shared_ptr<BaseImageContainer> container, std::size_t numElems,
+ImageCache::ImageCache(const BaseImageContainer& container, std::size_t numElems,
     std::size_t maxChunkSize, const ImgIds& ids)
     : BaseCache(numElems, maxChunkSize, ids)
-    , mContainer(std::move(container))
+    , mContainer(container)
 {
 }
 
@@ -18,7 +18,7 @@ std::vector<cv::Mat> ImageCache::getChunk(std::size_t idx)
 
     auto [lower, upper] = getChunkBounds(idx);
     for (std::size_t i = lower; i < upper; i++)
-        cacheBlock.push_back(mContainer->at(transformId(i)));
+        cacheBlock.push_back(mContainer.at(transformId(i)));
     return cacheBlock;
 }
 

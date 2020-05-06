@@ -16,7 +16,7 @@ namespace ht
 class ImageCache : public BaseCache
 {
 public:
-    ImageCache(std::shared_ptr<BaseImageContainer> container, std::size_t numElems,
+    ImageCache(const BaseImageContainer& container, std::size_t numElems,
         std::size_t maxChunkSize, const std::vector<std::size_t>& ids);
     std::vector<cv::Mat> getChunk(std::size_t idx);
 
@@ -24,7 +24,7 @@ private:
     cv::Mat getElem(std::size_t idx);
 
 private:
-    std::shared_ptr<BaseImageContainer> mContainer;
+    const BaseImageContainer& mContainer;
 };
 }
 #endif // HABITRACK_IMAGE_CACHE_H

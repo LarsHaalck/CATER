@@ -3,10 +3,10 @@
 
 namespace ht
 {
-PairwiseDescriptorCache::PairwiseDescriptorCache(std::shared_ptr<BaseFeatureContainer> container,
+PairwiseDescriptorCache::PairwiseDescriptorCache(const BaseFeatureContainer& container,
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
     : BasePairwiseCache(maxChunkSize, pairs)
-    , mContainer(std::move(container))
+    , mContainer(container)
 {
 }
 
@@ -21,10 +21,10 @@ std::unordered_map<std::size_t, cv::Mat> PairwiseDescriptorCache::getChunk(std::
     {
         auto [idI, idJ] = getPair(i);
         if (!cacheBlock.count(idI))
-            cacheBlock[idI] = mContainer->descriptorAt(idI);
+            cacheBlock[idI] = mContainer.descriptorAt(idI);
 
         if (!cacheBlock.count(idJ))
-            cacheBlock[idJ] = mContainer->descriptorAt(idJ);
+            cacheBlock[idJ] = mContainer.descriptorAt(idJ);
     }
     return cacheBlock;
 }
