@@ -1,4 +1,5 @@
 #include "habitrack/baseCache.h"
+#include <algorithm>
 
 namespace ht
 {
@@ -12,7 +13,7 @@ constexpr std::size_t ceil(std::size_t n, std::size_t k)
 BaseCache::BaseCache(
     std::size_t numElems, std::size_t maxChunkSize, const std::vector<std::size_t>& ids)
     : mNumElems(ids.empty() ? numElems : ids.size())
-    , mMaxChunkSize(maxChunkSize ? maxChunkSize : mNumElems)
+    , mMaxChunkSize(std::max(maxChunkSize ? maxChunkSize : mNumElems, size_t(1)))
     , mNumChunks(ceil(mNumElems, mMaxChunkSize))
     , mRemainder(mNumElems % mMaxChunkSize)
     , mIds(ids)
@@ -29,6 +30,7 @@ std::size_t BaseCache::transformId(std::size_t idx) const
         return idx;
     return mIds[idx];
 }
+
 std::size_t BaseCache::getChunkSize(std::size_t chunkIdx) const
 {
     // definitely full chunks

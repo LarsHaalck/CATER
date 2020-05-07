@@ -1,4 +1,4 @@
-#include "habitrack/matchesContainer.h"
+#include "habitrack/matches.h"
 #include "unknownFeatureType.h"
 
 #include "matIO.h"
@@ -22,42 +22,6 @@ auto Hom = Gt::Homography;
 auto Aff = Gt::Affinity;
 auto Sim = Gt::Similarity;
 auto Iso = Gt::Isometry;
-
-/* MatchesContainer::MatchesContainer(std::shared_ptr<BaseFeatureContainer> featureContainer, */
-/*     const fs::path& matchDir, MatchType matchType, std::size_t window, Gt geomType, */
-/*     double minCoverage, std::unique_ptr<PairRecommender> recommender) */
-/*     : mFtContainer(std::move(featureContainer)) */
-/*     , mMatchDir(matchDir) */
-/*     , mMatchType(matchType) */
-/*     , mWindow(window) */
-/*     , mGeomType(geomType | Put) */
-/*     , mMinCoverage(minCoverage) */
-/*     , mRecommender(std::move(recommender)) */
-/*     , mIsComputed(true) */
-/* { */
-/*     // TODO: throw exception if no strategy passed but expected */
-/*     // TODO: throw when empty and not manual? */
-/*     // TODO: maybe smarter to only calculate missing, but this is fine for now */
-/*     if (static_cast<unsigned int>(mGeomType & Put)) */
-/*     { */
-/*         auto matchFile = getFileName(detail::MatchTrafo::Match, Put); */
-/*         if (!fs::is_regular_file(matchFile)) */
-/*             mIsComputed = false; */
-/*     } */
-
-/*     for (auto type : getTypeList()) */
-/*     { */
-/*         if (!checkIfExists(type)) */
-/*         { */
-/*             mIsComputed = false; */
-/*             break; */
-/*         } */
-/*     } */
-
-/*     if (mMatchType != MatchType::Manual && (!fs::exists(matchDir) ||
- * !fs::is_directory(matchDir))) */
-/*         fs::create_directories(matchDir); */
-/* } */
 
 bool MatchesContainer::isComputed(const fs::path& matchDir, Gt geomType)
 {
@@ -94,23 +58,6 @@ bool MatchesContainer::checkIfExists(const fs::path& matchDir, Gt geomType)
 
     return true;
 }
-
-/* Gt MatchesContainer::getTypeFromFile(const fs::path& file) const */
-/* { */
-/*     auto type = file.stem().extension(); */
-/*     if (type == ".put") */
-/*         return Put; */
-/*     if (type == ".h") */
-/*         return Hom; */
-/*     if (type == ".a") */
-/*         return Aff; */
-/*     if (type == ".s") */
-/*         return Sim; */
-/*     if (type == ".i") */
-/*         return Iso; */
-
-/*     throw UnknownGeometricType(type); */
-/* } */
 
 std::filesystem::path MatchesContainer::getFileName(
     const fs::path& matchDir, detail::MatchTrafo matchTrafo, Gt geomType)
@@ -159,20 +106,24 @@ std::vector<GeometricType> MatchesContainer::getTypeList(Gt type)
     return types;
 }
 MatchesContainer MatchesContainer::compute(const fs::path& matchDir, GeometricType geomType,
-    const BaseFeatureContainer& fts, MatchType matchType, std::size_t window,
-    double minCoverage, std::unique_ptr<PairRecommender> recommender, std::size_t cacheSize,
-    const ImgIds& ids)
+    const BaseFeatureContainer& fts, MatchType matchType, std::size_t window, double minCoverage,
+    std::unique_ptr<PairRecommender> recommender, std::size_t cacheSize, const size_t_vec& ids)
 {
+    if (matchType != MatchType::Manual && (!fs::exists(matchDir) || !fs::is_directory(matchDir)))
+        fs::create_directories(matchDir);
     auto matches = getPutativeMatches(
         matchDir, fts, matchType, window, std::move(recommender), cacheSize, ids);
     for (auto type : getTypeList(geomType))
-        matches = getGeomMatches(matchDir, fts, type, minCoverage, cacheSize, std::move(matches));
+    {
+        matches = getGeomMatches(matchDir, fts, type, minCoverage, fts.getImageSize().area(),
+            cacheSize, std::move(matches));
+    }
     return MatchesContainer();
 }
 
 PairwiseMatches MatchesContainer::getPutativeMatches(const fs::path& matchDir,
     const BaseFeatureContainer& fts, MatchType matchType, std::size_t window,
-    std::unique_ptr<PairRecommender> recommender, std::size_t cacheSize, const ImgIds& ids)
+    std::unique_ptr<PairRecommender> recommender, std::size_t cacheSize, const size_t_vec& ids)
 {
     auto pairList = getPairList(matchType, fts.size(), window, std::move(recommender), ids);
     auto descCache = fts.getPairwiseDescriptorCache(cacheSize, pairList);
@@ -186,7 +137,13 @@ PairwiseMatches MatchesContainer::getPutativeMatches(const fs::path& matchDir,
         auto chunk = descCache.getChunk(i);
         auto lower = descCache.getChunkBounds(i).first;
 
-#pragma omp parallel for
+        for (std::size_t k = 0; k < descCache.getChunkSize(i); k++)
+        {
+            auto currPair = pairList[lower + k];
+            matches.insert(std::make_pair(currPair, Matches()));
+        }
+
+        #pragma omp parallel for
         for (std::size_t k = 0; k < descCache.getChunkSize(i); k++)
         {
             auto currPair = pairList[lower + k];
@@ -196,13 +153,16 @@ PairwiseMatches MatchesContainer::getPutativeMatches(const fs::path& matchDir,
             auto currMatches = putMatchPair(descMatcher, descI, descJ);
             if (!currMatches.empty())
             {
-#pragma omp critical
-                matches.insert(std::make_pair(currPair, std::move(currMatches)));
+                /* #pragma omp critical */
+                /* matches.insert(std::make_pair(currPair, std::move(currMatches))); */
+
+                matches.at(currPair) = std::move(currMatches);
             }
         }
         ++bar;
         bar.display();
     }
+    filterEmptyPairwise(matches);
     writeMatches(matchDir, matches, Put);
     return matches;
 }
@@ -221,7 +181,7 @@ cv::Ptr<cv::DescriptorMatcher> MatchesContainer::getMatcher(FeatureType featureT
     }
 }
 
-/* GeometricType MatchesContainer::getUsableTypes(const ImgIds& ids) */
+/* GeometricType MatchesContainer::getUsableTypes(const size_t_vec& ids) */
 /* { */
 /*     GeometricType useableTypes = GeometricType::Undefined; */
 /*     for (auto type : getTypeList()) */
@@ -266,7 +226,8 @@ std::string MatchesContainer::typeToString(Gt type)
 }
 
 PairwiseMatches MatchesContainer::getGeomMatches(const fs::path& matchDir,
-const BaseFeatureContainer& fts, Gt geomType, std::size_t cacheSize, PairwiseMatches&& matches)
+    const BaseFeatureContainer& fts, Gt geomType, double minCoverage, int area,
+    std::size_t cacheSize, PairwiseMatches&& matches)
 {
     auto filteredMatches = std::move(matches);
     auto pairList = getKeyList(filteredMatches);
@@ -275,12 +236,19 @@ const BaseFeatureContainer& fts, Gt geomType, std::size_t cacheSize, PairwiseMat
     auto trafos = PairwiseTrafos();
 
     // TODO: is inplace modify via at() thread-safe?
+    // TODO: profile this and check if really faster
     std::cout << "Computing geometric matches for " << typeToString(geomType) << "..." << std::endl;
     ProgressBar bar(featCache.getNumChunks());
     for (std::size_t i = 0; i < featCache.getNumChunks(); i++)
     {
         auto chunk = featCache.getChunk(i);
         auto lower = featCache.getChunkBounds(i).first;
+
+        for (std::size_t k = 0; k < featCache.getChunkSize(i); k++)
+        {
+            auto currPair = pairList[lower + k];
+            trafos.insert(std::make_pair(currPair, cv::Mat()));
+        }
 
 #pragma omp parallel for
         for (std::size_t k = 0; k < featCache.getChunkSize(i); k++)
@@ -291,7 +259,8 @@ const BaseFeatureContainer& fts, Gt geomType, std::size_t cacheSize, PairwiseMat
 
             auto& currMatches = filteredMatches.at(currPair);
 
-            auto currFilteredMatches = geomMatchPair(featI, featJ, geomType, currMatches);
+            auto currFilteredMatches
+                = geomMatchPair(featI, featJ, geomType, minCoverage, area, currMatches);
             currMatches = currFilteredMatches.second;
 
             // maybe faster to insert placeholder transformation aka cv::Mat()
@@ -299,14 +268,16 @@ const BaseFeatureContainer& fts, Gt geomType, std::size_t cacheSize, PairwiseMat
             // needs truncating like filterEmptyMatches() afterwards
             if (!currMatches.empty())
             {
-#pragma omp critical
-                trafos.insert(std::make_pair(currPair, currFilteredMatches.first));
+/* #pragma omp critical */
+/*                 trafos.insert(std::make_pair(currPair, currFilteredMatches.first)); */
+                trafos.at(currPair) = currFilteredMatches.first;
             }
         }
         ++bar;
         bar.display();
     }
 
+    filterEmptyPairwise(trafos);
     filterEmptyPairwise(filteredMatches);
     writeMatches(matchDir, filteredMatches, geomType);
     writeTrafos(matchDir, trafos, geomType);
@@ -381,7 +352,8 @@ Matches MatchesContainer::putMatchPairHelper(
 /* } */
 
 std::pair<Trafo, Matches> MatchesContainer::geomMatchPair(const std::vector<cv::KeyPoint>& featI,
-    const std::vector<cv::KeyPoint>& featJ, Gt filterType, double minCoverage, int area, const Matches& matches) const
+    const std::vector<cv::KeyPoint>& featJ, Gt filterType, double minCoverage, int area,
+    const Matches& matches)
 {
     std::vector<cv::Point2f> src, dst;
     for (size_t i = 0; i < matches.size(); i++)
@@ -554,7 +526,7 @@ void MatchesContainer::writeTrafos(const fs::path& matchDir, const PairwiseTrafo
 
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(MatchType type,
     std::size_t size, std::size_t window, std::unique_ptr<PairRecommender> recommender,
-    const ImgIds& ids)
+    const size_t_vec& ids)
 {
     std::vector<std::pair<std::size_t, std::size_t>> pairs;
     switch (type)
@@ -578,7 +550,7 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getPairList(M
 }
 
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPairList(
-    std::size_t size, std::size_t window, const ImgIds& ids)
+    std::size_t size, std::size_t window, const size_t_vec& ids)
 {
     if (!ids.empty())
         size = ids.size();
@@ -599,7 +571,7 @@ std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getWindowPair
 }
 
 std::vector<std::pair<std::size_t, std::size_t>> MatchesContainer::getExhaustivePairList(
-    std::size_t size, const ImgIds& ids)
+    std::size_t size, const size_t_vec& ids)
 {
     if (!ids.empty())
         size = ids.size();

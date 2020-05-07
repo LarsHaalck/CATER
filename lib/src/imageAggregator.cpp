@@ -2,62 +2,56 @@
 
 namespace ht
 {
-ImageAggregator::ImageAggregator(const std::vector<std::shared_ptr<ImageContainer>>& imgContainers)
+ImageAggregator::ImageAggregator(
+    const std::vector<std::reference_wrapper<const Images>>& imgContainers)
     : mImgContainers(imgContainers)
     , mNumImgs()
     , mNumImgsVec()
 {
-    auto size = mImgContainers[0]->getImgSize();
+    auto size = mImgContainers[0].get().getImgSize();
     for (auto& c : mImgContainers)
     {
         assert(
-            c->getImgSize() == size && "Image sizes of containers in ImageAggregator do not match");
+            c.get().getImgSize() == size && "Image sizes of containers in ImageAggregator do not match");
     }
 
-    auto [total, sizeVec] = sumNumImgs(imgContainers);
+    auto [total, sizeVec] = sumNumImgs();
     mNumImgs = total;
     mNumImgsVec = std::move(sizeVec);
 }
 
-ImageAggregator::ImageAggregator(std::shared_ptr<ImageContainer> imgContainer)
-    : ImageAggregator(std::vector<std::shared_ptr<ImageContainer>> {imgContainer})
-{
-}
-
-std::pair<std::size_t, std::vector<std::size_t>> ImageAggregator::sumNumImgs(
-    const std::vector<std::shared_ptr<ImageContainer>>& imgContainers) const
+std::pair<std::size_t, std::vector<std::size_t>> ImageAggregator::sumNumImgs() const
 {
     std::vector<std::size_t> numVec;
     std::size_t total = 0;
-    for (auto& c : imgContainers)
+    for (auto c : mImgContainers)
     {
-        auto currSize = c->getNumImgs();
+        auto currSize = c.get().size();
         numVec.push_back(currSize);
         total += currSize;
     }
     return std::make_pair(total, numVec);
 }
 
-std::size_t ImageAggregator::getNumImgs() const { return mNumImgs; }
+std::size_t ImageAggregator::size() const { return mNumImgs; }
 
-cv::Mat ImageAggregator::at(ImgId idx) const
+cv::Mat ImageAggregator::at(std::size_t idx) const
 {
     for (std::size_t i = 0; i < mImgContainers.size(); i++)
     {
         auto currSize = mNumImgsVec[i];
         if (idx < currSize)
-            return mImgContainers[i]->at(idx);
+            return mImgContainers[i].get().at(idx);
 
         idx -= currSize;
     }
     return cv::Mat();
 }
 
-cv::Size ImageAggregator::getImgSize() const { return mImgContainers[0]->getImgSize(); }
+cv::Size ImageAggregator::getImgSize() const { return mImgContainers[0].get().getImgSize(); }
 
-std::unique_ptr<ImageCache> ImageAggregator::getCache(std::size_t maxChunkSize, const ImgIds& ids)
+ImageCache ImageAggregator::getCache(std::size_t maxChunkSize, const size_t_vec& ids) const
 {
-    auto numElems = getNumImgs();
-    return std::make_unique<ImageCache>(shared_from_this(), numElems, maxChunkSize, ids);
+    return ImageCache {*this, size(), maxChunkSize, ids};
 }
 } // namespace ht

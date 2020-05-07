@@ -1,43 +1,45 @@
-#include "habitrack/imageContainer.h"
-#include "habitrack/featureContainer.h"
-#include "habitrack/matchesContainer.h"
+#include "habitrack/images.h"
+#include "habitrack/features.h"
+#include "habitrack/matches.h"
 
+#include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
-#include <iostream>
 using namespace std;
 
-constexpr std::string_view img_folder = "/home/lars/data/ant_long/imgs";
-constexpr std::string_view ft_folder = "/home/lars/data/ant_long/fts";
-constexpr std::string_view match_folder = "/home/lars/data/ant_long/matches";
+using path = std::filesystem::path;
+path base_path = "/home/lars/data/ant_long";
+path img_folder = base_path / "imgs";
+path ft_folder = base_path / "fts";
+path match_folder = base_path / "matches";
+constexpr std::size_t cache_size = 200;
 
 int main()
 {
-    ht::ImageContainer imgs{img_folder, ht::ReadMode::Gray};
+    ht::Images imgs {img_folder, ht::ReadMode::Gray};
 
-    ht::FeatureContainer fts;
-    if (ht::FeatureContainer::isComputed(imgs, ft_folder, ht::FeatureType::ORB))
+    ht::Features fts;
+    if (ht::Features::isComputed(imgs, ft_folder, ht::FeatureType::ORB))
     {
         cout << "Skipping Feature computation..." << endl;
-        fts = ht::FeatureContainer::fromDir(
-            imgs, "/home/lars/data/ant_long/fts", ht::FeatureType::ORB);
+        fts = ht::Features::fromDir(imgs, ft_folder, ht::FeatureType::ORB);
     }
     else
     {
-        fts = ht::FeatureContainer::compute(
-            imgs, "/home/lars/data/ant_long/fts", ht::FeatureType::ORB, 5000, 200);
+        fts = ht::Features::compute(
+            imgs, ft_folder, ht::FeatureType::ORB, 500, cache_size);
     }
 
     ht::MatchesContainer matches;
     if (ht::MatchesContainer::isComputed(match_folder, ht::GeometricType::Similarity))
     {
-        cout << "yes" << endl;
+        cout << "Skipping Feature computation..." << endl;
     }
     else
     {
-        matches = ht::MatchesContainer::compute(match_folder, ht::GeometricType::Similarity, fts, ht::MatchType::Exhaustive);
+        matches = ht::MatchesContainer::compute(match_folder, ht::GeometricType::Similarity, fts,
+            ht::MatchType::Windowed, 2, 0.0, nullptr, cache_size);
     }
-
 
     return 0;
 }

@@ -1,5 +1,5 @@
-#ifndef HABITRACK_IMAGE_CONTAINER_H
-#define HABITRACK_IMAGE_CONTAINER_H
+#ifndef HABITRACK_IMAGES_H
+#define HABITRACK_IMAGES_H
 
 #include <filesystem>
 #include <memory>
@@ -17,21 +17,22 @@ enum class ReadMode
     Unchanged,
 };
 
-class ImageContainer : public BaseImageContainer
+class Images : public BaseImageContainer
 {
 public:
-    ImageContainer(const std::filesystem::path& path,
+    Images() = default; // needed for aggregator
+
+    Images(const std::filesystem::path& path,
         ReadMode mode = ReadMode::Unchanged,
         cv::Vec3d weights = cv::Vec3d(),
         cv::Vec2d resize = cv::Vec2d());
-    virtual ~ImageContainer();
 
     std::size_t size() const;
-    ImageCache getCache(std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) const;
+    ImageCache getCache(std::size_t maxChunkSize, const size_t_vec& ids = size_t_vec()) const;
 
-    virtual cv::Mat at(ImgId idx) const;
-    virtual cv::Size getImgSize() const;
-    std::filesystem::path getFileName(ImgId idx) const;
+    cv::Mat at(std::size_t idx) const;
+    cv::Size getImgSize() const;
+    std::filesystem::path getFileName(std::size_t idx) const;
 
 private:
     void fillImageFilesFromFolder(const std::filesystem::path& path);
@@ -48,4 +49,4 @@ private:
 };
 } // namespace ht
 
-#endif // HABITRACK_IMAGE_CONTAINER_H
+#endif // HABITRACK_IMAGES_H

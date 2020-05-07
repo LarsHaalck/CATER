@@ -1,4 +1,4 @@
-#include "habitrack/imageContainer.h"
+#include "habitrack/images.h"
 
 #include <fstream>
 #include <iostream>
@@ -9,7 +9,7 @@ namespace fs = std::filesystem;
 
 namespace ht
 {
-ImageContainer::ImageContainer(
+Images::Images(
     const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize)
     : mMode(mode)
     , mWeights(weights)
@@ -44,7 +44,7 @@ ImageContainer::ImageContainer(
     }
 }
 
-void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
+void Images::fillImageFilesFromFolder(const fs::path& path)
 {
     for (const auto& p : fs::recursive_directory_iterator(path))
     {
@@ -62,7 +62,7 @@ void ImageContainer::fillImageFilesFromFolder(const fs::path& path)
     }
 }
 
-void ImageContainer::fillImageFilesFromFile(const fs::path& path)
+void Images::fillImageFilesFromFile(const fs::path& path)
 {
     std::ifstream stream {path};
     std::string currLine;
@@ -81,9 +81,7 @@ void ImageContainer::fillImageFilesFromFile(const fs::path& path)
     }
 }
 
-ImageContainer::~ImageContainer() {}
-
-cv::Mat ImageContainer::transformToWeightedGray(cv::Mat mat) const
+cv::Mat Images::transformToWeightedGray(cv::Mat mat) const
 {
     cv::Mat channels[3];
     cv::split(mat, channels);
@@ -101,9 +99,9 @@ cv::Mat ImageContainer::transformToWeightedGray(cv::Mat mat) const
     return tmp;
 }
 
-cv::Mat ImageContainer::at(ImgId idx) const
+cv::Mat Images::at(std::size_t idx) const
 {
-    assert(idx < size() && "idx out of range in ImageContainer::at()");
+    assert(idx < size() && "idx out of range in Images::at()");
 
     cv::Mat mat;
     switch (mMode)
@@ -137,21 +135,21 @@ cv::Mat ImageContainer::at(ImgId idx) const
     return mat;
 }
 
-std::size_t ImageContainer::size() const { return mImageFiles.size(); }
+std::size_t Images::size() const { return mImageFiles.size(); }
 
-std::filesystem::path ImageContainer::getFileName(ImgId idx) const
+std::filesystem::path Images::getFileName(std::size_t idx) const
 {
-    assert(idx < size() && "idx out of range in ImageContainer::getFileName()");
+    assert(idx < size() && "idx out of range in Images::getFileName()");
     auto file = mImageFiles[idx];
     auto path = fs::path(file);
     return path.filename();
 }
 
-ImageCache ImageContainer::getCache(std::size_t maxChunkSize, const ImgIds& ids) const
+ImageCache Images::getCache(std::size_t maxChunkSize, const size_t_vec& ids) const
 {
     auto numElems = size();
     return ImageCache{*this, numElems, maxChunkSize, ids};
 }
 
-cv::Size ImageContainer::getImgSize() const { return mImgSize; }
+cv::Size Images::getImgSize() const { return mImgSize; }
 } // namespace ht

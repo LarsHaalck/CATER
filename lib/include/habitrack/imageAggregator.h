@@ -2,30 +2,26 @@
 #define HABITRACK_IMAGE_AGGREGATOR_H
 
 #include "habitrack/baseImageContainer.h"
-#include "habitrack/imageContainer.h"
+#include "habitrack/images.h"
 
 namespace ht
 {
-class ImageAggregator : public BaseImageContainer,
-                        public std::enable_shared_from_this<ImageAggregator>
+class ImageAggregator : public BaseImageContainer
 {
 public:
-    ImageAggregator(const std::vector<std::shared_ptr<ImageContainer>>& imgContainers);
-    ImageAggregator(std::shared_ptr<ImageContainer> imgContainer);
+    ImageAggregator(const std::vector<std::reference_wrapper<const Images>>& imgContainers);
 
-    std::size_t getNumImgs() const override;
-    cv::Mat at(ImgId idx) const override;
+    std::size_t size() const override;
+    cv::Mat at(std::size_t idx) const override;
     cv::Size getImgSize() const override;
 
-    std::unique_ptr<ImageCache> getCache(
-        std::size_t maxChunkSize, const ImgIds& ids = ImgIds()) override;
+    ImageCache getCache(std::size_t maxChunkSize, const size_t_vec& ids = size_t_vec()) const override;
 
 private:
-    std::pair<std::size_t, std::vector<std::size_t>> sumNumImgs(
-        const std::vector<std::shared_ptr<ImageContainer>>& imgContainers) const;
+    std::pair<std::size_t, std::vector<std::size_t>> sumNumImgs() const;
 
 private:
-    std::vector<std::shared_ptr<ImageContainer>> mImgContainers;
+    std::vector<std::reference_wrapper<const Images>> mImgContainers;
     std::size_t mNumImgs;
     std::vector<std::size_t> mNumImgsVec;
 };

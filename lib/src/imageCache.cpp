@@ -4,7 +4,7 @@
 namespace ht
 {
 ImageCache::ImageCache(const BaseImageContainer& container, std::size_t numElems,
-    std::size_t maxChunkSize, const ImgIds& ids)
+    std::size_t maxChunkSize, const size_t_vec& ids)
     : BaseCache(numElems, maxChunkSize, ids)
     , mContainer(container)
 {

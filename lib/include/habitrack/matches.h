@@ -8,7 +8,7 @@
 
 #include "habitrack/baseFeatureContainer.h"
 #include "habitrack/geometricType.h"
-#include "habitrack/imageContainer.h"
+#include "habitrack/images.h"
 #include "habitrack/isometry.h"
 #include "habitrack/pairHash.h"
 #include "habitrack/pairRecommender.h"
@@ -50,11 +50,11 @@ public:
     static MatchesContainer compute(const std::filesystem::path& matchDir, GeometricType geomType,
         const BaseFeatureContainer& featureContainer, MatchType matchType, std::size_t window = 0,
         double minCoverage = 0.0, std::unique_ptr<PairRecommender> recommender = nullptr,
-        std::size_t cacheSize = 0, const ImgIds& ids = ImgIds());
+        std::size_t cacheSize = 0, const size_t_vec& ids = size_t_vec());
 
     /* // for "automatic" matching */
     /* void compute(std::size_t cacheSize, ComputeBehavior behavior = ComputeBehavior::Keep, */
-    /*     const ImgIds& ids = ImgIds()); */
+    /*     const size_t_vec& ids = size_t_vec()); */
 
     /* // for "manual" matching, e.g. in KFS */
     /* std::pair<Trafos, std::vector<Matches>> computePair(std::size_t idxI, std::size_t idxJ) const; */
@@ -62,7 +62,7 @@ public:
     /* PairwiseMatches getMatches(GeometricType geomType); */
     /* PairwiseTrafos getTrafos(GeometricType geomType); */
 
-    /* GeometricType getUsableTypes(const ImgIds& ids = ImgIds()); */
+    /* GeometricType getUsableTypes(const size_t_vec& ids = size_t_vec()); */
     /* std::filesystem::path getMatchDir() const; */
 
     template <typename T>
@@ -79,8 +79,6 @@ public:
     }
 
 private:
-    /* GeometricType getTypeFromFile(const std::filesystem::path& file) const; */
-
     static std::vector<GeometricType> getTypeList(GeometricType type);
     static std::filesystem::path getFileName(const std::filesystem::path& matchDir,
             detail::MatchTrafo matchTrafo, GeometricType geomType);
@@ -88,20 +86,20 @@ private:
 
     static PairwiseMatches getPutativeMatches(const std::filesystem::path& matchDir,
     const BaseFeatureContainer& fts, MatchType matchType, std::size_t window,
-    std::unique_ptr<PairRecommender> recommender, std::size_t cacheSize, const ImgIds& ids);
+    std::unique_ptr<PairRecommender> recommender, std::size_t cacheSize, const size_t_vec& ids);
 
     static PairwiseMatches getGeomMatches(const std::filesystem::path& matchDir,
-        const BaseFeatureContainer& fts, GeometricType geomType, double minCoverage,
+        const BaseFeatureContainer& fts, GeometricType geomType, double minCoverage, int area,
         std::size_t cacheSize, PairwiseMatches&& matches);
 
     // helper function for different pair types
     static std::vector<std::pair<std::size_t, std::size_t>> getPairList(MatchType type,
         std::size_t size, std::size_t window, std::unique_ptr<PairRecommender> recommender,
-        const ImgIds& ids);
+        const size_t_vec& ids);
     static std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(
-        std::size_t size, std::size_t window, const ImgIds& ids);
+        std::size_t size, std::size_t window, const size_t_vec& ids);
     static std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(
-        std::size_t size, const ImgIds& ids);
+        std::size_t size, const size_t_vec& ids);
 
     static cv::Ptr<cv::DescriptorMatcher> getMatcher(FeatureType featureType);
     static Matches putMatchPair(cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI,
@@ -109,8 +107,8 @@ private:
     static Matches putMatchPairHelper(cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI,
         const cv::Mat& descJ);
     static std::pair<Trafo, Matches> geomMatchPair(const std::vector<cv::KeyPoint>& featI,
-        const std::vector<cv::KeyPoint>& featJ, GeometricType filterType,
-        const Matches& matches);
+        const std::vector<cv::KeyPoint>& featJ, GeometricType filterType, double minCoverage,
+        int Area, const Matches& matches);
 
     // transformation fitting
     static std::pair<std::vector<uchar>, cv::Mat> getInlierMask(const std::vector<cv::Point2f>& src,
@@ -142,10 +140,11 @@ private:
         GeometricType type);
     static void writeTrafos(const std::filesystem::path& machDir, const PairwiseTrafos& matches,
         GeometricType type);
+
     /* PairwiseMatches loadMatches(GeometricType type) const; */
     /* PairwiseTrafos loadTrafos(GeometricType type) const; */
 
-    inline size_t getInlierCount(const std::vector<uchar>& mask) const
+    inline static size_t getInlierCount(const std::vector<uchar>& mask)
     {
         size_t count = 0;
         for (const auto id : mask)

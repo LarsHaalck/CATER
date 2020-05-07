@@ -14,13 +14,13 @@ set(SOURCES
 
     # image container related
     src/baseImageContainer.cpp
-    src/imageContainer.cpp
-    # src/imageAggregator.cpp
+    src/images.cpp
+    src/imageAggregator.cpp
     src/imageCache.cpp
 
     # feature container
     src/baseFeatureContainer.cpp
-    src/featureContainer.cpp
+    src/features.cpp
     # src/featureAggregator.cpp
     src/pairwiseFeatureCache.cpp
     src/featureCache.cpp
@@ -31,11 +31,11 @@ set(SOURCES
 
     # matches container
     src/geometricType.cpp
-    src/matchesContainer.cpp
+    src/matches.cpp
     src/unknownGeometricType.cpp
-    # src/ransac.cpp
-    # src/isometry.cpp
-    # src/transformation.cpp
+    src/ransac.cpp
+    src/isometry.cpp
+    src/transformation.cpp
     # src/mildRecommender.cpp
     # src/keyFrameRecommender.cpp
 

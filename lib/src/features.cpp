@@ -1,4 +1,4 @@
-#include "habitrack/featureContainer.h"
+#include "habitrack/features.h"
 #include "featureIO.h"
 #include "matIO.h"
 #include "progressBar.h"
@@ -14,17 +14,18 @@ using Stems = std::unordered_map<std::size_t, std::filesystem::path>;
 
 namespace ht
 {
-FeatureContainer::FeatureContainer(
-    const std::filesystem::path& ftDir, FeatureType type, const Stems& ftStems)
+Features::Features(
+    const std::filesystem::path& ftDir, FeatureType type, cv::Size imageSize, const Stems& ftStems)
     : mFtDir(ftDir)
     , mType(type)
+    , mImgSize(imageSize)
     , mFtStems(ftStems)
 {
 }
 
-FeatureContainer FeatureContainer::compute(const ImageContainer& imgContainer,
+Features Features::compute(const Images& imgContainer,
     const std::filesystem::path& ftDir, FeatureType type, std::size_t numFeatures,
-    std::size_t cacheSize, const ImgIds& ids)
+    std::size_t cacheSize, const size_t_vec& ids)
 {
     // make sure folder exits
     if (!fs::exists(ftDir) || !fs::is_directory(ftDir))
@@ -52,12 +53,12 @@ FeatureContainer FeatureContainer::compute(const ImageContainer& imgContainer,
 
     // sanity check
     if (isComputed(imgContainer, ftDir, type, ids))
-        return FeatureContainer::fromDir(imgContainer, ftDir, type, ids);
-    return FeatureContainer {ftDir, type, Stems()};
+        return Features::fromDir(imgContainer, ftDir, type, ids);
+    return Features {ftDir, type, cv::Size(), Stems()};
 }
 
-bool FeatureContainer::isComputed(const ImageContainer& imgContainer,
-    const std::filesystem::path& ftDir, FeatureType type, const ImgIds& ids)
+bool Features::isComputed(const Images& imgContainer,
+    const std::filesystem::path& ftDir, FeatureType type, const size_t_vec& ids)
 {
     bool isComputed = true;
 
@@ -95,8 +96,8 @@ bool FeatureContainer::isComputed(const ImageContainer& imgContainer,
     }
 }
 
-FeatureContainer FeatureContainer::fromDir(const ImageContainer& imgContainer,
-    const std::filesystem::path& ftDir, FeatureType type, const ImgIds& ids)
+Features Features::fromDir(const Images& imgContainer,
+    const std::filesystem::path& ftDir, FeatureType type, const size_t_vec& ids)
 {
     Stems ftStems;
     if (ids.empty())
@@ -111,10 +112,10 @@ FeatureContainer FeatureContainer::fromDir(const ImageContainer& imgContainer,
         for (auto i : ids)
             ftStems.insert({i, imgContainer.getFileName(i).stem()});
     }
-    return FeatureContainer {ftDir, type, ftStems};
+    return Features {ftDir, type, imgContainer.getImgSize(), ftStems};
 }
 
-FeatureType FeatureContainer::getTypeFromFile(const fs::path& file)
+FeatureType Features::getTypeFromFile(const fs::path& file)
 {
     auto type = file.stem().extension();
     if (type == ".orb")
@@ -125,9 +126,9 @@ FeatureType FeatureContainer::getTypeFromFile(const fs::path& file)
     throw UnknownFeatureType(type);
 }
 
-std::vector<cv::KeyPoint> FeatureContainer::featureAt(std::size_t idx) const
+std::vector<cv::KeyPoint> Features::featureAt(std::size_t idx) const
 {
-    assert(mFtStems.count(idx) && "idx out of range in FeatureContainer::featureAt()");
+    assert(mFtStems.count(idx) && "idx out of range in Features::featureAt()");
 
     auto stem = mFtStems.at(idx);
     auto file = getFileName(mFtDir, mType, stem, detail::FtDesc::Feature);
@@ -141,9 +142,9 @@ std::vector<cv::KeyPoint> FeatureContainer::featureAt(std::size_t idx) const
     return fts;
 }
 
-cv::Mat FeatureContainer::descriptorAt(std::size_t idx) const
+cv::Mat Features::descriptorAt(std::size_t idx) const
 {
-    assert(mFtStems.count(idx) && "idx out of range in FeatureContainer::descriptorAt()");
+    assert(mFtStems.count(idx) && "idx out of range in Features::descriptorAt()");
 
     auto stem = mFtStems.at(idx);
     auto file = getFileName(mFtDir, mType, stem, detail::FtDesc::Descriptor);
@@ -157,7 +158,7 @@ cv::Mat FeatureContainer::descriptorAt(std::size_t idx) const
     return descs;
 }
 
-cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr(FeatureType type, std::size_t numFeatures)
+cv::Ptr<cv::Feature2D> Features::getFtPtr(FeatureType type, std::size_t numFeatures)
 {
     switch (type)
     {
@@ -170,10 +171,10 @@ cv::Ptr<cv::Feature2D> FeatureContainer::getFtPtr(FeatureType type, std::size_t 
     }
 }
 
-void FeatureContainer::writeChunk(const ImageContainer& imgContainer, const fs::path& ftDir,
+void Features::writeChunk(const Images& imgContainer, const fs::path& ftDir,
     FeatureType type, std::pair<std::size_t, std::size_t> bounds,
     const std::vector<std::vector<cv::KeyPoint>>& fts, const std::vector<cv::Mat>& descs,
-    const ImgIds& ids)
+    const size_t_vec& ids)
 {
     const auto [lower, upper] = bounds;
     for (std::size_t i = lower; i < upper; i++)
@@ -187,7 +188,7 @@ void FeatureContainer::writeChunk(const ImageContainer& imgContainer, const fs::
     }
 }
 
-std::filesystem::path FeatureContainer::getFileName(
+std::filesystem::path Features::getFileName(
     const fs::path& ftDir, FeatureType type, const fs::path& stem, detail::FtDesc ftDesc)
 {
     auto fullFile = ftDir / stem;
@@ -197,7 +198,7 @@ std::filesystem::path FeatureContainer::getFileName(
     return fullFile;
 }
 
-void FeatureContainer::writeFts(const fs::path& file, const std::vector<cv::KeyPoint>& fts)
+void Features::writeFts(const fs::path& file, const std::vector<cv::KeyPoint>& fts)
 {
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
     checkStream(stream, file);
@@ -207,7 +208,7 @@ void FeatureContainer::writeFts(const fs::path& file, const std::vector<cv::KeyP
     }
 }
 
-void FeatureContainer::writeDescs(const fs::path& file, const cv::Mat& descs)
+void Features::writeDescs(const fs::path& file, const cv::Mat& descs)
 {
     std::ofstream stream(file.string(), std::ios::out | std::ios::binary);
     checkStream(stream, file);
@@ -217,10 +218,11 @@ void FeatureContainer::writeDescs(const fs::path& file, const cv::Mat& descs)
     }
 }
 
-FeatureType FeatureContainer::getFeatureType() const { return mType; }
-std::size_t FeatureContainer::size() const { return mFtStems.size(); }
+FeatureType Features::getFeatureType() const { return mType; }
+cv::Size Features::getImageSize() const { return mImgSize; }
+std::size_t Features::size() const { return mFtStems.size(); }
 
-FeatureCache FeatureContainer::getFeatureCache(std::size_t maxChunkSize, const ImgIds& ids) const
+FeatureCache Features::getFeatureCache(std::size_t maxChunkSize, const size_t_vec& ids) const
 {
     assert(std::all_of(std::begin(ids), std::end(ids), [this](std::size_t i) {
         return this->mFtStems.count(i);
@@ -229,8 +231,8 @@ FeatureCache FeatureContainer::getFeatureCache(std::size_t maxChunkSize, const I
     return FeatureCache {*this, size(), maxChunkSize, ids};
 }
 
-DescriptorCache FeatureContainer::getDescriptorCache(
-    std::size_t maxChunkSize, const ImgIds& ids) const
+DescriptorCache Features::getDescriptorCache(
+    std::size_t maxChunkSize, const size_t_vec& ids) const
 {
     assert(std::all_of(std::begin(ids), std::end(ids), [this](std::size_t i) {
         return this->mFtStems.count(i);
@@ -239,7 +241,7 @@ DescriptorCache FeatureContainer::getDescriptorCache(
     return DescriptorCache {*this, size(), maxChunkSize, ids};
 }
 
-PairwiseFeatureCache FeatureContainer::getPairwiseFeatureCache(
+PairwiseFeatureCache Features::getPairwiseFeatureCache(
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs) const
 {
     assert(std::all_of(std::begin(pairs), std::end(pairs),
@@ -252,7 +254,7 @@ PairwiseFeatureCache FeatureContainer::getPairwiseFeatureCache(
     return PairwiseFeatureCache(*this, maxChunkSize, pairs);
 }
 
-PairwiseDescriptorCache FeatureContainer::getPairwiseDescriptorCache(
+PairwiseDescriptorCache Features::getPairwiseDescriptorCache(
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs) const
 {
     assert(std::all_of(std::begin(pairs), std::end(pairs),
