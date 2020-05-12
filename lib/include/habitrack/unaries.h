@@ -24,7 +24,15 @@ public:
         double subsample = 0.8, const matches::PairwiseTrafos& trafos = {},
         std::size_t cacheSize = 0);
 
+    static bool isComputed(const Images& imgContainer, const std::filesystem::path& unDir,
+        std::size_t start = 0, std::size_t end = -1);
+    static Unaries fromDir(const Images& imgContainer, const std::filesystem::path& unDir,
+        std::size_t start = 0, std::size_t end = -1);
+    cv::Mat at(std::size_t idx) const;
+
 private:
+    Unaries(const std::filesystem::path& unDir,
+        const std::unordered_map<std::size_t, std::filesystem::path> unFiles);
     static cv::Mat getOOPO1(const cv::Mat& img);
     static void writeChunk(const Images& imgContainer, const std::filesystem::path& unDir,
         std::pair<std::size_t, std::size_t> bounds, const std::vector<cv::Mat>& unaries,
@@ -35,18 +43,9 @@ private:
     static std::filesystem::path getFileName(const std::filesystem::path& unDir,
         const std::filesystem::path& stem);
 
-    /* static bool isComputed(const Images& imgContainer, const std::filesystem::path& ftDir, */
-    /*     FeatureType type, const size_t_vec& ids = size_t_vec()); */
-
-    /* static Features fromDir(const Images& imgContainer, const std::filesystem::path& ftDir, */
-    /*     FeatureType type, const size_t_vec& ids = size_t_vec()); */
-
-    /* std::vector<cv::KeyPoint> featureAt(std::size_t idx) const override; */
-    /* cv::Mat descriptorAt(std::size_t idx) const override; */
 private:
     std::filesystem::path mUnDir;
     std::unordered_map<std::size_t, std::filesystem::path> mUnFiles;
-    std::unordered_map<std::size_t, double> mUnQuality;
 };
 } // namespace ht
 #endif // HABITRACK_UNARIES_H

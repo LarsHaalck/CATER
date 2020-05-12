@@ -33,13 +33,17 @@ bool isComputed(const fs::path& matchDir, Gt geomType)
     {
         auto matchFile = getFileName(matchDir, detail::MatchTrafo::Match, Put);
         if (!fs::is_regular_file(matchFile))
+        {
+            spdlog::debug("Missing matches file: {}", matchFile.string());
             isComputed = false;
+        }
     }
 
     for (auto type : detail::getTypeList(geomType))
     {
         if (!detail::checkIfExists(matchDir, type))
         {
+            spdlog::debug("Missing matches file for type: {}", detail::typeToString(type));
             isComputed = false;
             break;
         }

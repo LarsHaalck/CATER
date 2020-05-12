@@ -80,7 +80,55 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
         }
         writeChunk(imgContainer, unDir, cache.getChunkBounds(i), unaries, start);
     }
-    return Unaries();
+    // sanity check
+    if (isComputed(imgContainer, unDir, start, end))
+        return Unaries::fromDir(imgContainer, unDir, start, end);
+
+    spdlog::warn("Unaries were not computed sucessfully");
+    return Unaries {unDir, {}};
+}
+bool Unaries::isComputed(const Images& imgContainer, const std::filesystem::path& unDir,
+    std::size_t start, std::size_t end)
+{
+    end = std::min(imgContainer.size(), end);
+
+    bool isComputed = true;
+    // check if some file is missing or other type expected
+    for (std::size_t i = start; i < end - 1; i++)
+    {
+        // only check for feature or descriptor because they are calculated together
+        auto stem = imgContainer.getFileName(i).stem();
+        auto unFile = getFileName(unDir, stem);
+        if (!fs::is_regular_file(unFile))
+        {
+            spdlog::debug("Missing unary file: {}", unFile.string());
+            isComputed = false;
+            break;
+        }
+    }
+    return isComputed;
+}
+
+Unaries Unaries::fromDir(const Images& imgContainer, const std::filesystem::path& unDir,
+    std::size_t start, std::size_t end)
+{
+    spdlog::info("Reading Unaries from disk");
+    std::unordered_map<std::size_t, fs::path> files;
+    end = std::min(imgContainer.size(), end);
+    files.reserve(end - start);
+
+    for (std::size_t i = start; i < end - 1; i++)
+        files.insert({i, getFileName(unDir, imgContainer.getFileName(i).stem())});
+
+    spdlog::debug("{} unary files available in folder {}", files.size(), unDir.string());
+    return Unaries{unDir, files};
+}
+
+Unaries::Unaries(const std::filesystem::path& unDir,
+    const std::unordered_map<std::size_t, std::filesystem::path> unFiles)
+    : mUnDir(unDir)
+    , mUnFiles(unFiles)
+{
 }
 
 void Unaries::writeChunk(const Images& imgContainer, const fs::path& unDir,

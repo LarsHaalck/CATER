@@ -58,17 +58,16 @@ int main()
     imgs = ht::Images{img_folder, ht::Images::ReadMode::Unchanged};
     auto trafos = ht::matches::getTrafos(match_folder, geom_type);
     ht::Unaries uns;
-    uns = ht::Unaries::compute(imgs, un_folder, 0, -1, true, 0.8, trafos, cache_size);
 
-    /* if (ht::Unaries::isComputed(imgs, ft_folder, ht::FeatureType::ORB)) */
-    /* { */
-    /*     cout << "Skipping Unary computation..." << endl; */
-    /*     /1* fts = ht::Features::fromDir(imgs, ft_folder, ht::FeatureType::ORB); *1/ */
-    /* } */
-    /* else */
-    /* { */
-    /*     /1* fts = ht::Features::compute(imgs, ft_folder, ht::FeatureType::ORB, 500, cache_size); *1/ */
-    /* } */
+    if (ht::Unaries::isComputed(imgs, un_folder))
+    {
+        spdlog::info("Skipping Unary computation");
+        uns = ht::Unaries::fromDir(imgs, un_folder);
+    }
+    else
+    {
+        /* uns = ht::Unaries::compute(imgs, un_folder, 0, -1, true, 0.8, trafos, cache_size); */
+    }
 
 
     return 0;
