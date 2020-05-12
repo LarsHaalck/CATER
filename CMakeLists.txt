@@ -55,6 +55,7 @@ find_package(OpenCV REQUIRED)
 find_package(OpenMP QUIET)
 find_package(Eigen3 REQUIRED)
 find_package(cxxopts REQUIRED)
+find_package(spdlog REQUIRED)
 
 if(NOT ${OpenMP_CXX_FOUND})
     message(STATUS "Could not find OpenMP; building without...")

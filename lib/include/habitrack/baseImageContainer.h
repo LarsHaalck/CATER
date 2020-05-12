@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "habitrack/imageCache.h"
+#include "habitrack/pairwiseImageCache.h"
 #include "habitrack/types.h"
 
 namespace ht
@@ -21,6 +22,8 @@ public:
     virtual ImageCache getCache(
         std::size_t maxChunkSize, const size_t_vec& ids = size_t_vec()) const
         = 0;
+    virtual PairwiseImageCache getPairwiseCache(std::size_t maxChunkSize,
+        const std::vector<std::pair<std::size_t, std::size_t>>& pairs) const = 0;
 };
 } // namespace ht
 #endif // HABITRACK_BASE_IMAGE_CONTAINER_H

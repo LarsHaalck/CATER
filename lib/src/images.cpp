@@ -5,6 +5,8 @@
 
 #include <opencv2/imgproc.hpp>
 
+#include <spdlog/spdlog.h>
+
 namespace fs = std::filesystem;
 
 namespace ht
@@ -32,6 +34,9 @@ Images::Images(
     else
         fillImageFilesFromFile(path);
 
+    if (mImageFiles.empty())
+        spdlog::warn("No images were loaded");
+
     // sort files to cope with different operating system conventions
     std::sort(std::begin(mImageFiles), std::end(mImageFiles));
 
@@ -46,6 +51,7 @@ Images::Images(
 
 void Images::fillImageFilesFromFolder(const fs::path& path)
 {
+    spdlog::info("Loading images from folder");
     for (const auto& p : fs::recursive_directory_iterator(path))
     {
         if (p.is_regular_file())
@@ -58,12 +64,16 @@ void Images::fillImageFilesFromFolder(const fs::path& path)
             {
                 mImageFiles.push_back(p.path());
             }
+            else
+                spdlog::warn("Skipped file due to wrong extension: {}", p.path().string());
         }
     }
+    spdlog::debug("Loaded {} images from folder: {}", mImageFiles.size(), path.string());
 }
 
 void Images::fillImageFilesFromFile(const fs::path& path)
 {
+    spdlog::info("Loading images from file");
     std::ifstream stream {path};
     std::string currLine;
     while (std::getline(stream, currLine))
@@ -79,6 +89,7 @@ void Images::fillImageFilesFromFile(const fs::path& path)
             mImageFiles.push_back(imgPath);
         }
     }
+    spdlog::debug("Loaded {} images from file: {}", mImageFiles.size(), path.string());
 }
 
 cv::Mat Images::transformToWeightedGray(cv::Mat mat) const
@@ -149,6 +160,19 @@ ImageCache Images::getCache(std::size_t maxChunkSize, const size_t_vec& ids) con
 {
     auto numElems = size();
     return ImageCache{*this, numElems, maxChunkSize, ids};
+}
+
+PairwiseImageCache Images::getPairwiseCache(
+    std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs) const
+{
+    assert(std::all_of(std::begin(pairs), std::end(pairs),
+               [this](std::pair<std::size_t, std::size_t> pair) {
+                   return (pair.first < this->size() && pair.second < this->size());
+               })
+        && "Passed id pair list is not a subset of available Images in "
+           "getPairwiseCache()");
+
+    return PairwiseImageCache(*this, maxChunkSize, pairs);
 }
 
 cv::Size Images::getImgSize() const { return mImgSize; }

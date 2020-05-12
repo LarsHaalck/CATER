@@ -1,35 +1,42 @@
 #ifndef HABITRACK_FEATURES_H
 #define HABITRACK_FEATURES_H
 
-#include "habitrack/baseFeatureContainer.h"
-#include "habitrack/descriptorCache.h"
-#include "habitrack/featureCache.h"
-#include "habitrack/images.h"
-#include "habitrack/pairwiseDescriptorCache.h"
-#include "habitrack/pairwiseFeatureCache.h"
 #include <filesystem>
 #include <opencv2/features2d.hpp>
 #include <vector>
 
+#include "habitrack/baseFeatureContainer.h"
+#include "habitrack/descriptorCache.h"
+#include "habitrack/featureCache.h"
+#include "habitrack/pairwiseDescriptorCache.h"
+#include "habitrack/pairwiseFeatureCache.h"
+
 namespace ht
 {
-namespace detail
+class Images;
+}
+
+namespace ht
 {
+class Features : public BaseFeatureContainer
+{
+private:
     enum class FtDesc : bool
     {
         Feature,
         Descriptor
     };
-}
 
-class Features : public BaseFeatureContainer
-{
 public:
     Features() = default;
 
     static Features compute(const Images& imgContainer, const std::filesystem::path& ftDir,
         FeatureType type, std::size_t numFeatures, std::size_t cacheSize = 0,
         const size_t_vec& ids = size_t_vec());
+
+    static Features compute(const Images& imgContainer, const std::filesystem::path& ftDir,
+        FeatureType type, std::size_t numFeatures, std::size_t start, std::size_t end,
+        std::size_t cacheSize = 0);
 
     static bool isComputed(const Images& imgContainer, const std::filesystem::path& ftDir,
         FeatureType type, const size_t_vec& ids = size_t_vec());
@@ -66,7 +73,7 @@ private:
         const size_t_vec& ids);
 
     static std::filesystem::path getFileName(const std::filesystem::path& ftDir, FeatureType type,
-        const std::filesystem::path& stem, detail::FtDesc ftDesc);
+        const std::filesystem::path& stem, FtDesc ftDesc);
     static void writeFts(const std::filesystem::path& file, const std::vector<cv::KeyPoint>& fts);
     static void writeDescs(const std::filesystem::path& file, const cv::Mat& descs);
 

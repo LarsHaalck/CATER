@@ -10,28 +10,29 @@
 
 namespace ht
 {
-enum class ReadMode
-{
-    Gray,
-    SpecialGray,
-    Unchanged,
-};
-
 class Images : public BaseImageContainer
 {
 public:
+    enum class ReadMode
+    {
+        Gray,
+        SpecialGray,
+        Unchanged,
+    };
+
     Images() = default; // needed for aggregator
 
-    Images(const std::filesystem::path& path,
-        ReadMode mode = ReadMode::Unchanged,
-        cv::Vec3d weights = cv::Vec3d(),
-        cv::Vec2d resize = cv::Vec2d());
+    Images(const std::filesystem::path& path, ReadMode mode = ReadMode::Unchanged,
+        cv::Vec3d weights = cv::Vec3d(), cv::Vec2d resize = cv::Vec2d());
 
-    std::size_t size() const;
-    ImageCache getCache(std::size_t maxChunkSize, const size_t_vec& ids = size_t_vec()) const;
+    std::size_t size() const override;
+    ImageCache getCache(
+        std::size_t maxChunkSize, const size_t_vec& ids = size_t_vec()) const override;
+    PairwiseImageCache getPairwiseCache(std::size_t maxChunkSize,
+        const std::vector<std::pair<std::size_t, std::size_t>>& pairs) const override;
 
-    cv::Mat at(std::size_t idx) const;
-    cv::Size getImgSize() const;
+    cv::Mat at(std::size_t idx) const override;
+    cv::Size getImgSize() const override;
     std::filesystem::path getFileName(std::size_t idx) const;
 
 private:

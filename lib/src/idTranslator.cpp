@@ -4,6 +4,8 @@
 
 namespace ht
 {
+using namespace matches;
+
 Translator::Translator(const std::vector<std::size_t>& sizes)
     : mCumSums(sizes.size())
 {

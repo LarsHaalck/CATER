@@ -4,6 +4,7 @@
 #include <memory>
 #include <opencv2/core.hpp>
 #include <vector>
+#include <unordered_map>
 
 #include "habitrack/baseCache.h"
 #include "habitrack/types.h"
@@ -21,6 +22,7 @@ public:
     ImageCache(const BaseImageContainer& container, std::size_t numElems,
         std::size_t maxChunkSize, const size_t_vec& ids);
     std::vector<cv::Mat> getChunk(std::size_t idx);
+    std::unordered_map<std::size_t, cv::Mat> getChunkWithIdx(std::size_t idx);
 
 private:
     cv::Mat getElem(std::size_t idx);

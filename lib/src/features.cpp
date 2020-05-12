@@ -1,12 +1,19 @@
 #include "habitrack/features.h"
+
+#include <fstream>
+#include <iostream>
+#include <numeric>
+
+#include <opencv2/imgproc.hpp>
+#include <opencv2/xfeatures2d.hpp>
+
+#include <spdlog/spdlog.h>
+
 #include "featureIO.h"
+#include "habitrack/images.h"
 #include "matIO.h"
 #include "progressBar.h"
 #include "unknownFeatureType.h"
-#include <fstream>
-#include <iostream>
-#include <opencv2/highgui.hpp>
-#include <opencv2/xfeatures2d.hpp>
 
 namespace fs = std::filesystem;
 
@@ -23,9 +30,8 @@ Features::Features(
 {
 }
 
-Features Features::compute(const Images& imgContainer,
-    const std::filesystem::path& ftDir, FeatureType type, std::size_t numFeatures,
-    std::size_t cacheSize, const size_t_vec& ids)
+Features Features::compute(const Images& imgContainer, const std::filesystem::path& ftDir,
+    FeatureType type, std::size_t numFeatures, std::size_t cacheSize, const size_t_vec& ids)
 {
     // make sure folder exits
     if (!fs::exists(ftDir) || !fs::is_directory(ftDir))
@@ -34,17 +40,22 @@ Features Features::compute(const Images& imgContainer,
     auto ftPtr = getFtPtr(type, numFeatures);
     auto imgCache = imgContainer.getCache(cacheSize, ids);
 
-    std::cout << "Computing Features..." << std::endl;
+    spdlog::info("Computing features");
     ProgressBar bar(imgCache.getNumChunks());
     for (std::size_t i = 0; i < imgCache.getNumChunks(); i++)
     {
         auto chunk = imgCache.getChunk(i);
+        spdlog::debug("Got chunk {}/{} with size {}", i + 1, imgCache.getNumChunks(), chunk.size());
 
         std::vector<std::vector<cv::KeyPoint>> fts(imgCache.getChunkSize(i));
         std::vector<cv::Mat> descs(imgCache.getChunkSize(i));
 #pragma omp parallel for
         for (std::size_t j = 0; j < chunk.size(); j++)
+        {
             ftPtr->detectAndCompute(chunk[j], cv::Mat(), fts[j], descs[j]);
+            spdlog::debug("Features computed of image {} with size {}",
+                    std::get<0>(imgCache.getChunkBounds(i))+j, fts.size());
+        }
 
         ++bar;
         bar.display();
@@ -54,11 +65,25 @@ Features Features::compute(const Images& imgContainer,
     // sanity check
     if (isComputed(imgContainer, ftDir, type, ids))
         return Features::fromDir(imgContainer, ftDir, type, ids);
+
+    spdlog::warn("Features were not computed sucessfully");
     return Features {ftDir, type, cv::Size(), Stems()};
 }
 
-bool Features::isComputed(const Images& imgContainer,
-    const std::filesystem::path& ftDir, FeatureType type, const size_t_vec& ids)
+Features Features::compute(const Images& imgContainer, const std::filesystem::path& ftDir,
+    FeatureType type, std::size_t numFeatures, std::size_t start, std::size_t end,
+    std::size_t cacheSize)
+{
+    assert(end < imgContainer.size()
+        && "start must be > 0 and end must be smaller than number of images in "
+           "Features::compute()");
+    size_t_vec ids(end - start);
+    std::iota(std::begin(ids), std::end(ids), 0);
+    return compute(imgContainer, ftDir, type, numFeatures, cacheSize, ids);
+}
+
+bool Features::isComputed(const Images& imgContainer, const std::filesystem::path& ftDir,
+    FeatureType type, const size_t_vec& ids)
 {
     bool isComputed = true;
 
@@ -69,7 +94,7 @@ bool Features::isComputed(const Images& imgContainer,
         {
             // only check for feature or descriptor because they are calculated together
             auto stem = imgContainer.getFileName(i).stem();
-            auto ftFile = getFileName(ftDir, type, stem, detail::FtDesc::Feature);
+            auto ftFile = getFileName(ftDir, type, stem, FtDesc::Feature);
             if (!fs::is_regular_file(ftFile) || getTypeFromFile(ftFile) != type)
             {
                 isComputed = false;
@@ -85,7 +110,7 @@ bool Features::isComputed(const Images& imgContainer,
         {
             // only check for feature or descriptor because they are calculated together
             auto stem = imgContainer.getFileName(i).stem();
-            auto ftFile = getFileName(ftDir, type, stem, detail::FtDesc::Feature);
+            auto ftFile = getFileName(ftDir, type, stem, FtDesc::Feature);
             if (!fs::is_regular_file(ftFile) || getTypeFromFile(ftFile) != type)
             {
                 isComputed = false;
@@ -96,9 +121,10 @@ bool Features::isComputed(const Images& imgContainer,
     }
 }
 
-Features Features::fromDir(const Images& imgContainer,
-    const std::filesystem::path& ftDir, FeatureType type, const size_t_vec& ids)
+Features Features::fromDir(const Images& imgContainer, const std::filesystem::path& ftDir,
+    FeatureType type, const size_t_vec& ids)
 {
+    spdlog::info("Reading Features from disk");
     Stems ftStems;
     if (ids.empty())
     {
@@ -112,6 +138,7 @@ Features Features::fromDir(const Images& imgContainer,
         for (auto i : ids)
             ftStems.insert({i, imgContainer.getFileName(i).stem()});
     }
+    spdlog::debug("{} feature files available in folder {}", ftStems.size(), ftDir.string());
     return Features {ftDir, type, imgContainer.getImgSize(), ftStems};
 }
 
@@ -131,7 +158,7 @@ std::vector<cv::KeyPoint> Features::featureAt(std::size_t idx) const
     assert(mFtStems.count(idx) && "idx out of range in Features::featureAt()");
 
     auto stem = mFtStems.at(idx);
-    auto file = getFileName(mFtDir, mType, stem, detail::FtDesc::Feature);
+    auto file = getFileName(mFtDir, mType, stem, FtDesc::Feature);
     std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
     checkStream(stream, file);
     std::vector<cv::KeyPoint> fts;
@@ -147,7 +174,7 @@ cv::Mat Features::descriptorAt(std::size_t idx) const
     assert(mFtStems.count(idx) && "idx out of range in Features::descriptorAt()");
 
     auto stem = mFtStems.at(idx);
-    auto file = getFileName(mFtDir, mType, stem, detail::FtDesc::Descriptor);
+    auto file = getFileName(mFtDir, mType, stem, FtDesc::Descriptor);
     std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
     checkStream(stream, file);
     cv::Mat descs;
@@ -171,28 +198,27 @@ cv::Ptr<cv::Feature2D> Features::getFtPtr(FeatureType type, std::size_t numFeatu
     }
 }
 
-void Features::writeChunk(const Images& imgContainer, const fs::path& ftDir,
-    FeatureType type, std::pair<std::size_t, std::size_t> bounds,
-    const std::vector<std::vector<cv::KeyPoint>>& fts, const std::vector<cv::Mat>& descs,
-    const size_t_vec& ids)
+void Features::writeChunk(const Images& imgContainer, const fs::path& ftDir, FeatureType type,
+    std::pair<std::size_t, std::size_t> bounds, const std::vector<std::vector<cv::KeyPoint>>& fts,
+    const std::vector<cv::Mat>& descs, const size_t_vec& ids)
 {
     const auto [lower, upper] = bounds;
     for (std::size_t i = lower; i < upper; i++)
     {
         auto idx = ids.empty() ? i : ids[i];
         auto stem = imgContainer.getFileName(idx).stem();
-        auto ftFileName = getFileName(ftDir, type, stem, detail::FtDesc::Feature);
-        auto descFileName = getFileName(ftDir, type, stem, detail::FtDesc::Descriptor);
+        auto ftFileName = getFileName(ftDir, type, stem, FtDesc::Feature);
+        auto descFileName = getFileName(ftDir, type, stem, FtDesc::Descriptor);
         writeFts(ftFileName, fts[i - lower]);
         writeDescs(descFileName, descs[i - lower]);
     }
 }
 
 std::filesystem::path Features::getFileName(
-    const fs::path& ftDir, FeatureType type, const fs::path& stem, detail::FtDesc ftDesc)
+    const fs::path& ftDir, FeatureType type, const fs::path& stem, FtDesc ftDesc)
 {
     auto fullFile = ftDir / stem;
-    fullFile += (ftDesc == detail::FtDesc::Feature) ? "-ft" : "-desc";
+    fullFile += (ftDesc == FtDesc::Feature) ? "-ft" : "-desc";
     fullFile += (type == FeatureType::ORB) ? ".orb" : ".sift";
     fullFile += ".bin";
     return fullFile;
@@ -231,8 +257,7 @@ FeatureCache Features::getFeatureCache(std::size_t maxChunkSize, const size_t_ve
     return FeatureCache {*this, size(), maxChunkSize, ids};
 }
 
-DescriptorCache Features::getDescriptorCache(
-    std::size_t maxChunkSize, const size_t_vec& ids) const
+DescriptorCache Features::getDescriptorCache(std::size_t maxChunkSize, const size_t_vec& ids) const
 {
     assert(std::all_of(std::begin(ids), std::end(ids), [this](std::size_t i) {
         return this->mFtStems.count(i);

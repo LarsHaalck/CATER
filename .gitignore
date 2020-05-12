@@ -233,4 +233,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+.ccls-cache
 

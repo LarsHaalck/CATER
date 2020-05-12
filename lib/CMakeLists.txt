@@ -17,6 +17,7 @@ set(SOURCES
     src/images.cpp
     src/imageAggregator.cpp
     src/imageCache.cpp
+    src/pairwiseImageCache.cpp
 
     # feature container
     src/baseFeatureContainer.cpp
@@ -48,6 +49,9 @@ set(SOURCES
     # src/affinityGlobalOptimizer.cpp
     # src/similarityGlobalOptimizer.cpp
     # src/isometryGlobalOptimizer.cpp
+
+    # unaries
+    src/unaries.cpp
 
     # misc
     src/idTranslator.cpp
@@ -84,6 +88,7 @@ target_link_libraries(${LIB_NAME}
     mild::mild
     ceres
     Eigen3::Eigen
+    spdlog::spdlog
 )
 
 if(${OpenMP_CXX_FOUND})

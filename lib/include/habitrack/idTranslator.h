@@ -15,7 +15,8 @@ public:
 
     std::size_t localToGlobal(std::pair<std::size_t, std::size_t> vidFrameIdx);
     std::vector<std::size_t> localToGlobal(const std::vector<std::vector<std::size_t>>& ids);
-    PairwiseMatches localToGlobal(const std::vector<PairwiseMatches>& ids);
+    matches::PairwiseMatches localToGlobal(const std::vector<matches::PairwiseMatches>& ids);
+
 private:
     std::vector<std::size_t> mCumSums;
 };
