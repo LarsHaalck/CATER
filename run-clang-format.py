@@ -40,6 +40,7 @@ class ExitStatus:
     DIFF = 1
     TROUBLE = 2
 
+
 def excludes_from_file(ignore_file):
     excludes = []
     try:
@@ -56,7 +57,8 @@ def excludes_from_file(ignore_file):
     except EnvironmentError as e:
         if e.errno != errno.ENOENT:
             raise
-    return excludes;
+    return excludes
+
 
 def list_files(files, recursive=False, extensions=None, exclude=None):
     if extensions is None:

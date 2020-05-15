@@ -56,7 +56,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback() {}
+        virtual ~Callback() { }
         virtual int runKernel(InputArray m1, InputArray m2, OutputArray model) const = 0;
         virtual void computeError(
             InputArray m1, InputArray m2, InputArray model, OutputArray err) const = 0;

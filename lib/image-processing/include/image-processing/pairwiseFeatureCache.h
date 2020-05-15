@@ -1,13 +1,11 @@
 #ifndef HABITRACK_PAIRWISE_FEATURE_CACHE_H
 #define HABITRACK_PAIRWISE_FEATURE_CACHE_H
 
+#include "cache/basePairwiseCache.h"
 #include <memory>
+#include <opencv2/core.hpp>
 #include <unordered_map>
 #include <vector>
-
-#include <opencv2/core.hpp>
-
-#include "cache/basePairwiseCache.h"
 
 namespace ht
 {

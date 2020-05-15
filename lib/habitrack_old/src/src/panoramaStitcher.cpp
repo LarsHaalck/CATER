@@ -1,8 +1,8 @@
 #include "habitrack/panoramaStitcher.h"
 
-#include <iostream>
-#include <fstream>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <queue>
 
 #include <opencv2/calib3d.hpp>
@@ -15,15 +15,15 @@
 
 #include <ceres/ceres.h>
 
-#include "habitrack/isometry.h"
-#include "habitrack/idTranslator.h"
 #include "affinityGlobalOptimizer.h"
+#include "habitrack/idTranslator.h"
+#include "habitrack/isometry.h"
 #include "homographyGlobalOptimizer.h"
+#include "io.h"
 #include "isometryGlobalOptimizer.h"
+#include "matIO.h"
 #include "progressBar.h"
 #include "similarityGlobalOptimizer.h"
-#include "io.h"
-#include "matIO.h"
 
 namespace fs = std::filesystem;
 using Gt = ht::GeometricType;
@@ -322,7 +322,7 @@ void PanoramaStitcher::refineNonKeyFrames(const PairwiseMatches& matches, std::s
     for (std::size_t i = 1; i < mKeyFrames.size(); i++)
     {
         std::cout << "Performaing local correction of keyframe pair: " << i - 1 << " / "
-            << mKeyFrames.size() - 2 << std::endl;
+                  << mKeyFrames.size() - 2 << std::endl;
 
         auto prevKf = mKeyFrames[i - 1];
         auto currKf = mKeyFrames[i];
@@ -357,7 +357,7 @@ std::vector<cv::KeyPoint> PanoramaStitcher::permute(
     const std::vector<cv::KeyPoint>& fts, const std::vector<std::size_t>& p)
 {
     std::vector<cv::KeyPoint> sorted(p.size());
-    std::transform(p.begin(), p.end(), sorted.begin(), [&](std::size_t i){ return fts[i]; });
+    std::transform(p.begin(), p.end(), sorted.begin(), [&](std::size_t i) { return fts[i]; });
     return sorted;
 }
 
@@ -735,9 +735,7 @@ cv::Mat PanoramaStitcher::draw(const cv::Mat& trafo, size_t idI, size_t idJ)
         cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0));
 
     cv::imshow("bla", imgJ);
-    while (cv::waitKey(0) != 27)
-    {
-    }
+    while (cv::waitKey(0) != 27) { }
 
     return imgJ;
 }

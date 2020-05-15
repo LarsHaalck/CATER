@@ -11,8 +11,8 @@ ImageAggregator::ImageAggregator(
     auto size = mImgContainers[0].get().getImgSize();
     for (auto& c : mImgContainers)
     {
-        assert(
-            c.get().getImgSize() == size && "Image sizes of containers in ImageAggregator do not match");
+        assert(c.get().getImgSize() == size
+            && "Image sizes of containers in ImageAggregator do not match");
     }
 
     auto [total, sizeVec] = sumNumImgs();

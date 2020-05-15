@@ -1,11 +1,10 @@
 #ifndef HABITRACK_BASE_PAIRWISE_BASE_CACHE_H
 #define HABITRACK_BASE_PAIRWISE_BASE_CACHE_H
 
+#include "cache/baseCache.h"
 #include <cstddef>
 #include <tuple>
 #include <vector>
-
-#include "cache/baseCache.h"
 
 namespace ht
 {

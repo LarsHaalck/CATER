@@ -1,15 +1,14 @@
 #include "habitrack/unaries.h"
 
+#include "image-processing/images.h"
+#include "image-processing/transformation.h"
+#include "progressbar/progressBar.h"
+#include "unaryIO.h"
+#include <algorithm>
 #include <fstream>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
-
 #include <spdlog/spdlog.h>
-
-#include "image-processing/images.h"
-#include "image-processing/transformation.h"
-#include "unaryIO.h"
-#include "progressbar/progressBar.h"
 
 namespace ht
 {
@@ -42,7 +41,6 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
         // placeholder for multi-threaded access
         qualities.insert({i, 0.0});
     }
-
 
     auto cache = imgContainer.getPairwiseCache(cacheSize, pairs);
     spdlog::info("Computing unaries");
@@ -102,8 +100,8 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
     return Unaries {unDir, {}, 0.0};
 }
 
-bool Unaries::isComputed(const Images& imgContainer, const fs::path& unDir,
-    std::size_t start, std::size_t end)
+bool Unaries::isComputed(
+    const Images& imgContainer, const fs::path& unDir, std::size_t start, std::size_t end)
 {
     end = std::min(imgContainer.size(), end);
 
@@ -124,8 +122,8 @@ bool Unaries::isComputed(const Images& imgContainer, const fs::path& unDir,
     return isComputed;
 }
 
-Unaries Unaries::fromDir(const Images& imgContainer, const fs::path& unDir,
-    std::size_t start, std::size_t end)
+Unaries Unaries::fromDir(
+    const Images& imgContainer, const fs::path& unDir, std::size_t start, std::size_t end)
 {
     spdlog::info("Reading Unaries from disk");
     std::unordered_map<std::size_t, fs::path> files;
@@ -139,7 +137,26 @@ Unaries Unaries::fromDir(const Images& imgContainer, const fs::path& unDir,
 
     spdlog::debug("{} unary files with subsample {} available in folder {}", files.size(),
         subsample, unDir.string());
-    return Unaries{unDir, files, subsample};
+    return Unaries {unDir, files, subsample};
+}
+
+cv::Mat Unaries::at(std::size_t idx) const
+{
+    assert(mUnFiles.count(idx) && "idx out of range in Unaries::at()");
+
+    auto stem = mUnFiles.at(idx);
+    auto file = getFileName(mUnDir, stem);
+    cv::Mat unary = cv::imread(file.string(), cv::IMREAD_UNCHANGED);
+    return unary;
+}
+
+size_t_vec Unaries::getIDs() const
+{
+    size_t_vec vec(mUnFiles.size());
+    std::transform(std::begin(mUnFiles), std::end(mUnFiles), std::begin(vec),
+        [](auto pair) { return pair.first; });
+    std::sort(std::begin(vec), std::end(vec));
+    return vec;
 }
 
 double Unaries::readProperties(const fs::path& unDir)
@@ -156,8 +173,8 @@ double Unaries::readProperties(const fs::path& unDir)
     return subsample;
 }
 
-Unaries::Unaries(const fs::path& unDir,
-    const std::unordered_map<std::size_t, fs::path> unFiles, double subsample)
+Unaries::Unaries(const fs::path& unDir, const std::unordered_map<std::size_t, fs::path> unFiles,
+    double subsample)
     : mUnDir(unDir)
     , mUnFiles(unFiles)
     , mSubsample(subsample)
@@ -179,7 +196,7 @@ void Unaries::writeChunk(const Images& imgContainer, const fs::path& unDir,
 }
 
 void Unaries::writeProperties(const fs::path& unDir, double subsample)
-    /* const std::unordered_map<std::size_t, double>& qualities) */
+/* const std::unordered_map<std::size_t, double>& qualities) */
 {
     auto file = unDir / "unaries.json";
     std::ofstream stream(file.string(), std::ios::out);
@@ -204,8 +221,7 @@ double Unaries::getUnaryQuality(const cv::Mat& unary)
     return quality;
 }
 
-fs::path Unaries::getFileName(const fs::path& unDir,
-    const fs::path& stem)
+fs::path Unaries::getFileName(const fs::path& unDir, const fs::path& stem)
 {
     auto fullFile = unDir / stem;
     fullFile += "-unary.png";

@@ -1,12 +1,11 @@
 #ifndef HABITRACK_BASE_IMAGE_CONTAINER_H
 #define HABITRACK_BASE_IMAGE_CONTAINER_H
 
-#include <memory>
-#include <vector>
-
 #include "image-processing/imageCache.h"
 #include "image-processing/pairwiseImageCache.h"
 #include "image-processing/types.h"
+#include <memory>
+#include <vector>
 
 namespace ht
 {
@@ -20,8 +19,7 @@ public:
     virtual cv::Size getImgSize() const = 0;
 
     virtual ImageCache getCache(
-        std::size_t maxChunkSize, const size_t_vec& ids = size_t_vec()) const
-        = 0;
+        std::size_t maxChunkSize, const size_t_vec& ids = size_t_vec()) const = 0;
     virtual PairwiseImageCache getPairwiseCache(std::size_t maxChunkSize,
         const std::vector<std::pair<std::size_t, std::size_t>>& pairs) const = 0;
 };

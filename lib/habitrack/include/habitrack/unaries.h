@@ -1,11 +1,10 @@
 #ifndef HABITRACK_UNARIES_H
 #define HABITRACK_UNARIES_H
 
-#include <filesystem>
-#include <vector>
-
 #include "image-processing/matches.h"
 #include "image-processing/types.h"
+#include <filesystem>
+#include <vector>
 
 namespace ht
 {
@@ -29,6 +28,7 @@ public:
     static Unaries fromDir(const Images& imgContainer, const std::filesystem::path& unDir,
         std::size_t start = 0, std::size_t end = -1);
     cv::Mat at(std::size_t idx) const;
+    size_t_vec getIDs() const;
 
 private:
     Unaries(const std::filesystem::path& unDir,
@@ -38,18 +38,16 @@ private:
         std::pair<std::size_t, std::size_t> bounds, const std::vector<cv::Mat>& unaries,
         std::size_t start);
     static void writeProperties(const std::filesystem::path& unDir, double subsample);
-        /* const std::unordered_map<std::size_t, double>& qualities); */
     static double readProperties(const std::filesystem::path& unDir);
     static void writeUnary(const std::filesystem::path& file, const cv::Mat& unary);
     static double getUnaryQuality(const cv::Mat& unary);
 
-    static std::filesystem::path getFileName(const std::filesystem::path& unDir,
-        const std::filesystem::path& stem);
+    static std::filesystem::path getFileName(
+        const std::filesystem::path& unDir, const std::filesystem::path& stem);
 
 private:
     std::filesystem::path mUnDir;
     std::unordered_map<std::size_t, std::filesystem::path> mUnFiles;
-    /* std::unordered_map<std::size_t, double> mQuality; */
     double mSubsample;
 };
 } // namespace ht

@@ -10,8 +10,7 @@ PairwiseImageCache::PairwiseImageCache(const BaseImageContainer& container,
 {
 }
 
-std::unordered_map<std::size_t, cv::Mat> PairwiseImageCache::getChunk(
-    std::size_t idx)
+std::unordered_map<std::size_t, cv::Mat> PairwiseImageCache::getChunk(std::size_t idx)
 {
     auto currSize = getChunkSize(idx);
     std::unordered_map<std::size_t, cv::Mat> cacheBlock;

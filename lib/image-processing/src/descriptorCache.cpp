@@ -3,8 +3,8 @@
 
 namespace ht
 {
-DescriptorCache::DescriptorCache(const BaseFeatureContainer& container,
-    std::size_t numElems, std::size_t maxChunkSize, const std::vector<std::size_t>& ids)
+DescriptorCache::DescriptorCache(const BaseFeatureContainer& container, std::size_t numElems,
+    std::size_t maxChunkSize, const std::vector<std::size_t>& ids)
     : BaseCache(numElems, maxChunkSize, ids)
     , mContainer(container)
 {

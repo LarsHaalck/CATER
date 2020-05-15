@@ -4,9 +4,9 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
-#include <opencv2/core.hpp>
 
 #include "io/io.h"
+#include <opencv2/core.hpp>
 
 namespace cereal
 {

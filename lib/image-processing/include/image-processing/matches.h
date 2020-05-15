@@ -1,17 +1,14 @@
 #ifndef HABITRACK_MATCHES_CONTAINER_H
 #define HABITRACK_MATCHES_CONTAINER_H
 
+#include "image-processing/baseFeatureContainer.h"
+#include "image-processing/geometricType.h"
+#include "image-processing/pairHash.h"
+#include "image-processing/pairRecommender.h"
 #include <filesystem>
 #include <opencv2/core.hpp>
 #include <opencv2/features2d.hpp>
 #include <vector>
-
-#include "image-processing/baseFeatureContainer.h"
-#include "image-processing/geometricType.h"
-#include "image-processing/images.h"
-#include "image-processing/isometry.h"
-#include "image-processing/pairHash.h"
-#include "image-processing/pairRecommender.h"
 
 namespace ht::matches
 {

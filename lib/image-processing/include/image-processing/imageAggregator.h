@@ -15,7 +15,8 @@ public:
     cv::Mat at(std::size_t idx) const override;
     cv::Size getImgSize() const override;
 
-    ImageCache getCache(std::size_t maxChunkSize, const size_t_vec& ids = size_t_vec()) const override;
+    ImageCache getCache(
+        std::size_t maxChunkSize, const size_t_vec& ids = size_t_vec()) const override;
 
 private:
     std::pair<std::size_t, std::vector<std::size_t>> sumNumImgs() const;

@@ -1,19 +1,16 @@
 #include "image-processing//features.h"
 
-#include <fstream>
-#include <iostream>
-#include <numeric>
-
-#include <opencv2/imgproc.hpp>
-#include <opencv2/xfeatures2d.hpp>
-
-#include <spdlog/spdlog.h>
-
 #include "featureIO.h"
 #include "image-processing//images.h"
 #include "matIO.h"
 #include "progressbar/progressBar.h"
 #include "unknownFeatureType.h"
+#include <fstream>
+#include <iostream>
+#include <numeric>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/xfeatures2d.hpp>
+#include <spdlog/spdlog.h>
 
 namespace fs = std::filesystem;
 
@@ -54,7 +51,7 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
         {
             ftPtr->detectAndCompute(chunk[j], cv::Mat(), fts[j], descs[j]);
             spdlog::debug("Features computed of image {} with size {}",
-                    std::get<0>(imgCache.getChunkBounds(i))+j, fts.size());
+                std::get<0>(imgCache.getChunkBounds(i)) + j, fts.size());
         }
 
         ++bar;

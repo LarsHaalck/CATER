@@ -49,7 +49,6 @@ cv::Mat invertSimilarity(const cv::Mat& matrix, bool full)
     else
         inverse = cv::Mat(2, 3, matrix.type());
 
-
     // copy upper left 2x2 matrix to new matrix
     cv::Mat tmp = inverse(cv::Rect(0, 0, 2, 2));
     matrix.rowRange(0, 2).colRange(0, 2).copyTo(tmp);
@@ -58,7 +57,7 @@ cv::Mat invertSimilarity(const cv::Mat& matrix, bool full)
     auto scale = cv::norm(matrix.col(0));
     scale *= scale;
     cv::Mat subMat = inverse.rowRange(0, 2).colRange(0, 2);
-    subMat = 1/scale * subMat.t();
+    subMat = 1 / scale * subMat.t();
 
     // -A^T * t for translation part
     inverse.rowRange(0, 2).col(2) = -subMat * matrix.rowRange(0, 2).col(2);
@@ -137,16 +136,14 @@ cv::Mat getScaleMat(double scale, bool full)
     mat.at<double>(0, 0) = mat.at<double>(1, 1) = scale;
     return mat;
 }
-cv::Mat concatFromTo(
-    std::size_t from, std::size_t to, const matches::PairwiseTrafos& trafos, GeometricType type,
-    bool full)
+cv::Mat concatFromTo(std::size_t from, std::size_t to, const matches::PairwiseTrafos& trafos,
+    GeometricType type, bool full)
 {
     auto trafo = makeFull(trafos.at({from, from + 1}));
     for (std::size_t i = from + 1; i < to; i++)
     {
         auto currTrafo = makeFull(trafos.at({i, i + 1}));
         trafo = trafo * currTrafo;
-
     }
 
     if (type == GeometricType::Homography || full)

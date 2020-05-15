@@ -1,18 +1,14 @@
 #include "image-processing/images.h"
 
 #include <fstream>
-#include <iostream>
-
 #include <opencv2/imgproc.hpp>
-
 #include <spdlog/spdlog.h>
 
 namespace fs = std::filesystem;
 
 namespace ht
 {
-Images::Images(
-    const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize)
+Images::Images(const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize)
     : mMode(mode)
     , mWeights(weights)
     , mResize(resize)
@@ -28,6 +24,9 @@ Images::Images(
         throw fs::filesystem_error("Image path is not a folder nor a file", path,
             std::make_error_code(std::errc::no_such_file_or_directory));
     }
+
+    if (mode == ReadMode::SpecialGray && cv::countNonZero(weights) == 0)
+        throw std::invalid_argument("Readmode SpecialGray cannot be used with all-zero-weights");
 
     if (fs::is_directory(path))
         fillImageFilesFromFolder(path);
@@ -117,23 +116,23 @@ cv::Mat Images::at(std::size_t idx) const
     cv::Mat mat;
     switch (mMode)
     {
-        case ReadMode::Unchanged:
-            mat = cv::imread(mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
+    case ReadMode::Unchanged:
+        mat = cv::imread(mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
+        break;
+    case ReadMode::SpecialGray:
+    {
+        mat = cv::imread(mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
+        if (mat.channels() != 3)
             break;
-        case ReadMode::SpecialGray:
-        {
-            mat = cv::imread(mImageFiles[idx], cv::ImreadModes::IMREAD_UNCHANGED);
-            if (mat.channels() != 3)
-                break;
 
-            mat = transformToWeightedGray(mat);
-            break;
-        }
-        case ReadMode::Gray:
-            mat = cv::imread(mImageFiles[idx], cv::ImreadModes::IMREAD_GRAYSCALE);
-            break;
-        default:
-            mat = cv::Mat();
+        mat = transformToWeightedGray(mat);
+        break;
+    }
+    case ReadMode::Gray:
+        mat = cv::imread(mImageFiles[idx], cv::ImreadModes::IMREAD_GRAYSCALE);
+        break;
+    default:
+        mat = cv::Mat();
     }
 
     if (mResize(0) > 0 && mResize(1) > 0)
@@ -159,7 +158,7 @@ std::filesystem::path Images::getFileName(std::size_t idx) const
 ImageCache Images::getCache(std::size_t maxChunkSize, const size_t_vec& ids) const
 {
     auto numElems = size();
-    return ImageCache{*this, numElems, maxChunkSize, ids};
+    return ImageCache {*this, numElems, maxChunkSize, ids};
 }
 
 PairwiseImageCache Images::getPairwiseCache(

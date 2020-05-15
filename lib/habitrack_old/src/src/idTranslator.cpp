@@ -31,8 +31,7 @@ std::size_t Translator::localToGlobal(std::pair<std::size_t, std::size_t> vidFra
     return mCumSums[vidFrameId.first] + vidFrameId.second;
 }
 
-std::vector<std::size_t> Translator::localToGlobal(
-    const std::vector<std::vector<std::size_t>>& ids)
+std::vector<std::size_t> Translator::localToGlobal(const std::vector<std::vector<std::size_t>>& ids)
 {
     std::vector<std::size_t> globalIds;
     for (std::size_t i = 0; i < ids.size(); i++)

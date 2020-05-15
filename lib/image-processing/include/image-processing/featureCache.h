@@ -1,13 +1,10 @@
 #ifndef HABITRACK_FEATURE_CACHE_H
 #define HABITRACK_FEATURE_CACHE_H
 
-
+#include "cache/baseCache.h"
+#include <opencv2/core.hpp>
 #include <unordered_map>
 #include <vector>
-
-#include <opencv2/core.hpp>
-
-#include "cache/baseCache.h"
 
 namespace ht
 {

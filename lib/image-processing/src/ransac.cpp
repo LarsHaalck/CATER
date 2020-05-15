@@ -225,8 +225,8 @@ bool RANSACPointSetRegistrator::run(
                 std::swap(mask, bestMask);
                 model_i.copyTo(bestModel);
                 maxGoodCount = goodCount;
-                niters = RANSACUpdateNumIters(
-                    confidence, static_cast<double>(count - goodCount) / count, modelPoints, niters);
+                niters = RANSACUpdateNumIters(confidence,
+                    static_cast<double>(count - goodCount) / count, modelPoints, niters);
             }
         }
     }

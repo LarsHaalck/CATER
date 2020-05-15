@@ -17,6 +17,7 @@ public:
     Graph(int V, int E);
     void addEdge(int u, int v, int w) { mEdges.push_back({w, {u, v}}); }
     std::vector<std::pair<int, int>> kruskalMST();
+
 private:
     int mV;
     int mE;
@@ -35,6 +36,7 @@ public:
 
     // Union by rank
     void merge(int x, int y);
+
 private:
     int mN;
     std::vector<int> mRnk;
