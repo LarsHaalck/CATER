@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/ui)
 
 option(BUILD_GUI "Build the graphical user interface" FALSE)
+option(BUILD_EXAMPLES "Build examples" TRUE)
+# option(BUILD_IMAGE_PROCESSING "Build the graphical user interface" FALSE)
 
 # enable highest error level and optimizations
 if(MSVC)
@@ -53,9 +55,8 @@ endif ()
 ###########################################################################
 find_package(OpenCV REQUIRED)
 find_package(OpenMP QUIET)
-find_package(Eigen3 REQUIRED)
-find_package(cxxopts REQUIRED)
 find_package(spdlog REQUIRED)
+# find_package(Eigen3 REQUIRED)
 
 if(NOT ${OpenMP_CXX_FOUND})
     message(STATUS "Could not find OpenMP; building without...")
@@ -65,12 +66,18 @@ if(OpenCV_VERSION VERSION_LESS "3.0")
     message(FATAL_ERROR "OpenCV version should be >= 3.0")
 endif()
 
-if(${BUILD_GUI})
-    find_package(Qt5Widgets REQUIRED)
-    add_subdirectory(gui)
-endif()
 
 add_subdirectory(lib)
-add_subdirectory(tracker)
+
+if(${BUILD_EXAMPLES})
+    add_subdirectory(examples)
+endif()
+
+# if(${BUILD_GUI})
+#     find_package(Qt5Widgets REQUIRED)
+#     add_subdirectory(gui)
+# endif()
+
+# add_subdirectory(tracker)
 # add_subdirectory(singleVideo)
 # add_subdirectory(multiVideo)
