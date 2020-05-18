@@ -4,6 +4,7 @@
 set(SOURCES
     src/main.cpp
     src/mainWindow.cpp
+    src/preferences.cpp
     src/preferencesDialog.cpp
     src/trackerGraphicsView.cpp
     src/trackerScene.cpp
@@ -19,7 +20,7 @@ set(GUI_HEADERS
 ###########################################################################
 #                               TARGETS                                   #
 ###########################################################################
-set(EXE_NAME gui)
+set(EXE_NAME habitrack-gui)
 
 # headers need to be added for automoc
 add_executable(${EXE_NAME} ${SOURCES} ${GUI_HEADERS})

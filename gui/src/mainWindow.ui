@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>HabiTrack</class>
+ <widget class="QMainWindow" name="HabiTrack">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -38,7 +38,7 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>-98</y>
+           <y>0</y>
            <width>303</width>
            <height>919</height>
           </rect>
@@ -762,6 +762,9 @@ color: white;
   <action name="actionPreferences">
    <property name="text">
     <string>Preferences...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
   <action name="actionExpertMode">

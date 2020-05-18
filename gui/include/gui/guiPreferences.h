@@ -1,5 +1,5 @@
-#ifndef GUI_PREFERENCES
-#define GUI_PREFERENCES
+#ifndef GUI_GUI_PREFERENCES
+#define GUI_GUI_PREFERENCES
 
 namespace gui
 {
@@ -13,4 +13,4 @@ struct GuiPreferences
 };
 } // namespace gui
 
-#endif // GUI_PREFERENCES
+#endif // GUI_GUI_PREFERENCES

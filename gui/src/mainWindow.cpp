@@ -8,11 +8,12 @@
 
 namespace gui
 {
-MainWindow::MainWindow(QWidget* parent)
+HabiTrack::HabiTrack(QWidget* parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+    , ui(new Ui::HabiTrack)
     , mGuiPrefs()
     , mGuiPrefsDefaults()
+    , mPrefs()
 {
     ui->setupUi(this);
     populateGuiDefaults();
@@ -40,10 +41,10 @@ MainWindow::MainWindow(QWidget* parent)
 
 }
 
-MainWindow::~MainWindow() { delete ui; }
+HabiTrack::~HabiTrack() { delete ui; }
 
 
-void MainWindow::populateGuiDefaults()
+void HabiTrack::populateGuiDefaults()
 {
     // set sliders
     resetToDefaults(ui->sliderOverlayUnaries);
@@ -52,19 +53,9 @@ void MainWindow::populateGuiDefaults()
 
     // set buttons
     resetToDefaults(ui->actionExpertMode);
-
-
-    /* ui->sliderOverlayUnaries->setValue(mGuiPrefsDefaults.overlayUnaries); */
-    /* ui->sliderOverlayTrackedPos->setValue(mGuiPrefsDefaults.overlayTrackedPos); */
-    /* ui->sliderOverlayTrajectory->setValue(mGuiPrefsDefaults.overlayTrajectory); */
-
-    /* // set buttons */
-    /* ui->actionExpertMode->setChecked(mGuiPrefsDefaults.enableExpertView); */
-    /* onToggleExpertMode(mGuiPrefsDefaults.enableExpertView); */
-
 }
 
-bool MainWindow::eventFilter(QObject* obj, QEvent*  event)
+bool HabiTrack::eventFilter(QObject* obj, QEvent*  event)
 {
     if (event->type() == QEvent::MouseButtonRelease)
     {
@@ -80,7 +71,7 @@ bool MainWindow::eventFilter(QObject* obj, QEvent*  event)
     return false;
 }
 
-void MainWindow::resetToDefaults(QObject* obj)
+void HabiTrack::resetToDefaults(QObject* obj)
 {
     if (obj == ui->sliderOverlayUnaries)
         ui->sliderOverlayUnaries->setValue(mGuiPrefsDefaults.overlayUnaries);
@@ -102,22 +93,22 @@ void MainWindow::resetToDefaults(QObject* obj)
 //////////////////////////////////////////////////////////////////////
 // OVERLAY SLIDERS
 //////////////////////////////////////////////////////////////////////
-void MainWindow::onSliderOverlayUnariesChanged(int value)
+void HabiTrack::onSliderOverlayUnariesChanged(int value)
 {
     mGuiPrefs.overlayUnaries = value;
 }
 
-void MainWindow::onSliderOverlayTrackedPosChanged(int value)
+void HabiTrack::onSliderOverlayTrackedPosChanged(int value)
 {
     mGuiPrefs.overlayTrackedPos = value;
 }
 
-void MainWindow::onSliderOverlayTrajectoryChanged(int value)
+void HabiTrack::onSliderOverlayTrajectoryChanged(int value)
 {
     mGuiPrefs.overlayTrajectory = value;
 }
 
-void MainWindow::onToggleExpertMode(bool value)
+void HabiTrack::onToggleExpertMode(bool value)
 {
     ui->frameTracking->setVisible(value);
     // implicitly hidden by hiding the frame
@@ -136,16 +127,15 @@ void MainWindow::onToggleExpertMode(bool value)
     ui->labelExpertMode->setVisible(value);
 }
 
-void MainWindow::onPreferencesClicked()
+void HabiTrack::onPreferencesClicked()
 {
-    // give him current and default settings
-    PreferencesDialog prefDialog(this);
-    /* prefDialog.populateDefaults() ??? */
+    PreferencesDialog prefDialog(this, mPrefs);
     auto code = prefDialog.exec();
     if (code == QDialog::Accepted)
     {
-        std::cout << "accepted" << std::endl;
-        // prefDialog.getPreferences() ???
+        // overwrite current settings if accepted, discard otherwise
+        mPrefs = prefDialog.getPreferences();
+        std::cout << mPrefs << std::endl;
     }
 
 }

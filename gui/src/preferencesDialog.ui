@@ -22,30 +22,20 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tabColor">
+     <widget class="QWidget" name="tabColour">
       <attribute name="title">
        <string>Colour Correction</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="3" column="1">
-        <widget class="QDoubleSpinBox" name="spinBlue"/>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_2">
+       <item row="2" column="0" colspan="2">
+        <widget class="QCheckBox" name="enableColourCorrection">
          <property name="text">
-          <string>Green</string>
+          <string>Enable Colour Correction</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Red</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <spacer name="verticalSpacer">
+       <item row="1" column="0">
+        <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
@@ -57,11 +47,12 @@
          </property>
         </spacer>
        </item>
-       <item row="5" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_3"/>
-       </item>
-       <item row="4" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
+       <item row="5" column="3">
+        <widget class="QLabel" name="label_18">
+         <property name="text">
+          <string>%</string>
+         </property>
+        </widget>
        </item>
        <item row="0" column="0" colspan="2">
         <widget class="QLabel" name="label_4">
@@ -79,15 +70,48 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label">
+       <item row="6" column="3">
+        <widget class="QLabel" name="label_16">
          <property name="text">
-          <string>Blue</string>
+          <string>%</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <spacer name="verticalSpacer_2">
+       <item row="6" column="1">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="4" column="2">
+        <widget class="QSpinBox" name="redSpin">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="maximum">
+          <number>200</number>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Green</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
@@ -99,10 +123,50 @@
          </property>
         </spacer>
        </item>
-       <item row="2" column="0" colspan="2">
-        <widget class="QCheckBox" name="checkBox">
+       <item row="4" column="3">
+        <widget class="QLabel" name="label_17">
          <property name="text">
-          <string>Enable Colour Correction</string>
+          <string>%</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="2">
+        <widget class="QSpinBox" name="blueSpin">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="maximum">
+          <number>200</number>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Blue</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Red</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="2">
+        <widget class="QSpinBox" name="greenSpin">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="maximum">
+          <number>200</number>
+         </property>
+         <property name="value">
+          <number>0</number>
          </property>
         </widget>
        </item>
@@ -113,8 +177,26 @@
        <string>Unaries</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="3" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_5"/>
+       <item row="11" column="1">
+        <widget class="QDoubleSpinBox" name="manualMultiplierSpin">
+         <property name="maximum">
+          <double>99.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>Suppress</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="2">
+        <widget class="QCheckBox" name="removeRedLasersCheck">
+         <property name="text">
+          <string>Remove Red Lasers</string>
+         </property>
+        </widget>
        </item>
        <item row="0" column="0" colspan="2">
         <spacer name="verticalSpacer_3">
@@ -129,6 +211,33 @@
          </property>
         </spacer>
        </item>
+       <item row="5" column="1">
+        <widget class="QDoubleSpinBox" name="unarySigmaSpin">
+         <property name="maximum">
+          <double>999.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="subsampleSpin">
+         <property name="decimals">
+          <number>2</number>
+         </property>
+         <property name="maximum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QLabel" name="label_19">
+         <property name="text">
+          <string>Manual Tracking Multiplier</string>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
@@ -136,34 +245,14 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>Suppress</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="label_6">
          <property name="text">
           <string>Sigma</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_4"/>
-       </item>
-       <item row="6" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_6"/>
-       </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="QCheckBox" name="checkBox_2">
-         <property name="text">
-          <string>Remove Red Lasers</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0" colspan="2">
+       <item row="12" column="0" colspan="2">
         <spacer name="verticalSpacer_4">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -176,6 +265,26 @@
          </property>
         </spacer>
        </item>
+       <item row="10" column="1">
+        <widget class="QDoubleSpinBox" name="suppressSpin">
+         <property name="maximum">
+          <double>99.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <spacer name="horizontalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="tabPairwise">
@@ -183,23 +292,30 @@
        <string>Pairwise</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_8">
-         <property name="text">
-          <string>Sigma</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_7"/>
-       </item>
-       <item row="1" column="1">
-        <widget class="QSpinBox" name="spinBox"/>
-       </item>
-       <item row="2" column="0">
+       <item row="4" column="0">
         <widget class="QLabel" name="label_9">
          <property name="text">
           <string>Size</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="2">
+        <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>Sigma</string>
          </property>
         </widget>
        </item>
@@ -216,33 +332,34 @@
          </property>
         </spacer>
        </item>
-       <item row="3" column="0" colspan="2">
-        <spacer name="verticalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="pairwiseSigmaSpin">
+         <property name="maximum">
+          <double>999.000000000000000</double>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QSpinBox" name="pairwiseSizeSpin">
+         <property name="maximum">
+          <number>200</number>
          </property>
-        </spacer>
+        </widget>
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_3">
+     <widget class="QWidget" name="tabPano">
       <attribute name="title">
        <string>Panorama</string>
       </attribute>
      </widget>
-     <widget class="QWidget" name="tab">
+     <widget class="QWidget" name="tabSmoothBearing">
       <attribute name="title">
        <string>Smooth Bearing</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_4">
        <item row="1" column="0" colspan="2">
-        <widget class="QCheckBox" name="checkBox_3">
+        <widget class="QCheckBox" name="enableSmoothBearing">
          <property name="text">
           <string>Enable Smooth Bearing</string>
          </property>
@@ -256,7 +373,11 @@
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QSpinBox" name="spinBox_3"/>
+        <widget class="QSpinBox" name="smoothBearingOutlierTolSpin">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+        </widget>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_11">
@@ -266,7 +387,11 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QSpinBox" name="spinBox_2"/>
+        <widget class="QSpinBox" name="smoothBearingWindowSpin">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+        </widget>
        </item>
        <item row="0" column="0" colspan="2">
         <spacer name="verticalSpacer_7">
@@ -296,50 +421,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_2">
-      <attribute name="title">
-       <string>Manual Tracking</string>
-      </attribute>
-      <layout class="QGridLayout" name="gridLayout_5">
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_12">
-         <property name="text">
-          <string>Multiplier</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_8"/>
-       </item>
-       <item row="2" column="0" colspan="2">
-        <spacer name="verticalSpacer_10">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="0" column="0" colspan="2">
-        <spacer name="verticalSpacer_9">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="tab_4">
+     <widget class="QWidget" name="tabTransformation">
       <attribute name="title">
        <string>Transformation</string>
       </attribute>
@@ -347,12 +429,12 @@
        <item row="3" column="0">
         <widget class="QLabel" name="label_14">
          <property name="text">
-          <string> Maximal Reprojection Error</string>
+          <string>Maximal Reprojection Error</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QCheckBox" name="checkBox_4">
+        <widget class="QCheckBox" name="removeCamMotion">
          <property name="text">
           <string>Remove Camera Motion</string>
          </property>
@@ -366,13 +448,31 @@
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_10"/>
+        <widget class="QDoubleSpinBox" name="maxReprojSpin">
+         <property name="maximum">
+          <double>100.000000000000000</double>
+         </property>
+        </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_9"/>
+        <widget class="QDoubleSpinBox" name="nnRatioSpin">
+         <property name="maximum">
+          <double>10.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+        </widget>
        </item>
        <item row="4" column="1">
-        <widget class="QSpinBox" name="spinBox_4"/>
+        <widget class="QSpinBox" name="numFeaturesSpin">
+         <property name="maximum">
+          <number>100000</number>
+         </property>
+         <property name="singleStep">
+          <number>100</number>
+         </property>
+        </widget>
        </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_13">
@@ -410,6 +510,40 @@
       </layout>
      </widget>
     </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QPushButton" name="resetButton">
+       <property name="text">
+        <string>Reset current</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="resetAllButton">
+       <property name="text">
+        <string>Reset all</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">

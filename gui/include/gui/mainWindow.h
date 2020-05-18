@@ -4,21 +4,22 @@
 #include <QMainWindow>
 
 #include "gui/guiPreferences.h"
+#include "gui/preferences.h"
 
 namespace Ui
 {
-class MainWindow;
+class HabiTrack;
 }
 
 namespace gui
 {
-class MainWindow : public QMainWindow
+class HabiTrack : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget* parent = nullptr);
-    ~MainWindow();
+    explicit HabiTrack(QWidget* parent = nullptr);
+    ~HabiTrack();
 private:
     void populateGuiDefaults();
 
@@ -33,10 +34,12 @@ private slots:
     void onPreferencesClicked();
 
 private:
-    Ui::MainWindow* ui;
+    Ui::HabiTrack* ui;
 
     GuiPreferences mGuiPrefs;
     const GuiPreferences mGuiPrefsDefaults;
+
+    Preferences mPrefs;
 
     // handles library related stuff
     // needs ui elements
