@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.5)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/ui)
 
-option(BUILD_GUI "Build the graphical user interface" FALSE)
+option(BUILD_GUI "Build the graphical user interface" TRUE)
 option(BUILD_EXAMPLES "Build examples" TRUE)
 # option(BUILD_IMAGE_PROCESSING "Build the graphical user interface" FALSE)
 
@@ -73,10 +73,10 @@ if(${BUILD_EXAMPLES})
     add_subdirectory(examples)
 endif()
 
-# if(${BUILD_GUI})
-#     find_package(Qt5Widgets REQUIRED)
-#     add_subdirectory(gui)
-# endif()
+if(${BUILD_GUI})
+    find_package(Qt5Widgets REQUIRED)
+    add_subdirectory(gui)
+endif()
 
 # add_subdirectory(tracker)
 # add_subdirectory(singleVideo)
