@@ -50,7 +50,7 @@ Images::Images(const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d
 
 void Images::fillImageFilesFromFolder(const fs::path& path)
 {
-    spdlog::info("Loading images from folder");
+    spdlog::info("Loading images from folder: {}", path.string());
     for (const auto& p : fs::recursive_directory_iterator(path))
     {
         if (p.is_regular_file())
@@ -72,7 +72,7 @@ void Images::fillImageFilesFromFolder(const fs::path& path)
 
 void Images::fillImageFilesFromFile(const fs::path& path)
 {
-    spdlog::info("Loading images from file");
+    spdlog::info("Loading images from file: {}", path.string());
     std::ifstream stream {path};
     std::string currLine;
     while (std::getline(stream, currLine))

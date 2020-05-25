@@ -28,6 +28,7 @@ std::ostream& operator<< (std::ostream& stream, const Preferences& prefs)
     stream << "--------------------\n";
     stream << "Transformation Settings: \n";
     stream << "Remove Motion: " << prefs.removeCamMotion << "\n";
+    stream << "Feature type: " << prefs.featureType << "\n";
     stream << "NN Ratio: " << prefs.nnRatio << "\n";
     stream << "Ransac Reproj: " << prefs.ranscacReproj << "\n";
     stream << "Num Features: " << prefs.numFeatures << "\n";

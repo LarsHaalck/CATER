@@ -38,7 +38,7 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>0</y>
+           <y>-60</y>
            <width>303</width>
            <height>919</height>
           </rect>
@@ -225,7 +225,10 @@
                 <item>
                  <widget class="QSlider" name="sliderOverlayUnaries">
                   <property name="maximum">
-                   <number>99</number>
+                   <number>100</number>
+                  </property>
+                  <property name="singleStep">
+                   <number>10</number>
                   </property>
                   <property name="value">
                    <number>0</number>
@@ -244,6 +247,12 @@
                 </item>
                 <item>
                  <widget class="QSlider" name="sliderOverlayTrackedPos">
+                  <property name="maximum">
+                   <number>100</number>
+                  </property>
+                  <property name="singleStep">
+                   <number>10</number>
+                  </property>
                   <property name="value">
                    <number>0</number>
                   </property>
@@ -261,6 +270,12 @@
                 </item>
                 <item>
                  <widget class="QSlider" name="sliderOverlayTrajectory">
+                  <property name="maximum">
+                   <number>100</number>
+                  </property>
+                  <property name="singleStep">
+                   <number>10</number>
+                  </property>
                   <property name="value">
                    <number>0</number>
                   </property>
@@ -274,12 +289,23 @@
              </item>
              <item>
               <widget class="QGroupBox" name="groupBox_3">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
                <property name="title">
                 <string>Processing</string>
                </property>
                <layout class="QGridLayout" name="gridLayout_2">
                 <item row="5" column="0">
                  <widget class="QFrame" name="framePano">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QFrame {
+border: 1px solid red;
+}</string>
+                  </property>
                   <property name="frameShape">
                    <enum>QFrame::StyledPanel</enum>
                   </property>
@@ -380,6 +406,14 @@ color: white;
                 </item>
                 <item row="2" column="0">
                  <widget class="QFrame" name="frameTracking">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QFrame {
+border: 1px solid red;
+}</string>
+                  </property>
                   <property name="frameShape">
                    <enum>QFrame::StyledPanel</enum>
                   </property>
@@ -573,6 +607,12 @@ color: white;
                <property name="enabled">
                 <bool>false</bool>
                </property>
+               <property name="minimum">
+                <number>0</number>
+               </property>
+               <property name="value">
+                <number>0</number>
+               </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -582,6 +622,12 @@ color: white;
               <widget class="QSpinBox" name="spinCurrentFrame">
                <property name="enabled">
                 <bool>false</bool>
+               </property>
+               <property name="minimum">
+                <number>0</number>
+               </property>
+               <property name="value">
+                <number>0</number>
                </property>
               </widget>
              </item>
@@ -629,20 +675,6 @@ color: white;
                </property>
                <property name="text">
                 <string notr="true">◀️◀️</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="buttonPlay">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="text">
-                <string notr="true">▶️</string>
-               </property>
-               <property name="icon">
-                <iconset theme="edit-undo">
-                 <normaloff>.</normaloff>.</iconset>
                </property>
               </widget>
              </item>
@@ -734,6 +766,9 @@ color: white;
     </property>
     <addaction name="actionPreferences"/>
     <addaction name="actionExpertMode"/>
+    <addaction name="separator"/>
+    <addaction name="actionPrev_Frame"/>
+    <addaction name="actionNext_Frame"/>
    </widget>
    <widget class="QMenu" name="menuExport">
     <property name="title">
@@ -748,15 +783,24 @@ color: white;
    <property name="text">
     <string>Open Image Folder...</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
   </action>
   <action name="actionOpenImgList">
    <property name="text">
     <string>Open Image List...</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
   </action>
   <action name="actionOpenResultsFile">
    <property name="text">
     <string>Open Results File...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
    </property>
   </action>
   <action name="actionPreferences">
@@ -773,6 +817,28 @@ color: white;
    </property>
    <property name="text">
     <string>Expert Mode</string>
+   </property>
+  </action>
+  <action name="actionNext_Frame">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Next Frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Right</string>
+   </property>
+  </action>
+  <action name="actionPrev_Frame">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Previous Frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Left</string>
    </property>
   </action>
  </widget>

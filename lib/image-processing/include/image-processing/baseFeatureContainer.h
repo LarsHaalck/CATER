@@ -17,6 +17,8 @@ enum class FeatureType
     SIFT
 };
 
+std::ostream& operator<<(std::ostream& os, const FeatureType& type);
+
 class BaseFeatureContainer
 {
 public:

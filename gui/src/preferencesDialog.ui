@@ -426,10 +426,10 @@
        <string>Transformation</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_6">
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_14">
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_15">
          <property name="text">
-          <string>Maximal Reprojection Error</string>
+          <string>Number Of Extracted Features</string>
          </property>
         </widget>
        </item>
@@ -440,21 +440,7 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_15">
-         <property name="text">
-          <string>Number Of Extracted Features</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="1">
-        <widget class="QDoubleSpinBox" name="maxReprojSpin">
-         <property name="maximum">
-          <double>100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
         <widget class="QDoubleSpinBox" name="nnRatioSpin">
          <property name="maximum">
           <double>10.000000000000000</double>
@@ -464,20 +450,10 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
-        <widget class="QSpinBox" name="numFeaturesSpin">
-         <property name="maximum">
-          <number>100000</number>
-         </property>
-         <property name="singleStep">
-          <number>100</number>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_13">
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_14">
          <property name="text">
-          <string>Minimal Nearest Neighbour Ratio</string>
+          <string>Maximal Reprojection Error</string>
          </property>
         </widget>
        </item>
@@ -494,7 +470,31 @@
          </property>
         </spacer>
        </item>
-       <item row="5" column="0" colspan="2">
+       <item row="5" column="1">
+        <widget class="QSpinBox" name="numFeaturesSpin">
+         <property name="maximum">
+          <number>100000</number>
+         </property>
+         <property name="singleStep">
+          <number>100</number>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>Minimal Nearest Neighbour Ratio</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="maxReprojSpin">
+         <property name="maximum">
+          <double>100.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0" colspan="2">
         <spacer name="verticalSpacer_12">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -506,6 +506,13 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="featureCombo">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

@@ -5,9 +5,9 @@ namespace gui
 {
 struct GuiPreferences
 {
-    int overlayUnaries = 50;
-    int overlayTrackedPos = 50;
-    int overlayTrajectory = 50;
+    int overlayUnaries = 0;
+    int overlayTrackedPos = 100;
+    int overlayTrajectory = 0;
 
     bool enableExpertView = true; // enables more buttons in the processing group
 };

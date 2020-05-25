@@ -8,6 +8,8 @@ set(SOURCES
     src/preferencesDialog.cpp
     src/trackerGraphicsView.cpp
     src/trackerScene.cpp
+    src/qtOpencvCore.cpp
+    src/progressStatusBar.cpp
 )
 
 set(GUI_HEADERS
@@ -33,4 +35,6 @@ target_link_libraries(${EXE_NAME}
     Qt5::Widgets
     OpenMP::OpenMP_CXX
     habitrack
+    spdlog::spdlog
+    progressbar
 )

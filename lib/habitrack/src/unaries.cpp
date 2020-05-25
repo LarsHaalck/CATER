@@ -44,7 +44,8 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
 
     auto cache = imgContainer.getPairwiseCache(cacheSize, pairs);
     spdlog::info("Computing unaries");
-    ProgressBar bar(cache.getNumChunks());
+    ProgressBar bar;
+    bar.setTotal(cache.getNumChunks());
     for (std::size_t i = 0; i < cache.getNumChunks(); i++)
     {
         auto chunk = cache.getChunk(i);
@@ -89,7 +90,9 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
             qualities.at(currPair.first) = quality;
         }
         writeChunk(imgContainer, unDir, cache.getChunkBounds(i), unaries, start);
+        bar.inc();
     }
+    bar.done();
     writeProperties(unDir, subsample);
 
     // sanity check

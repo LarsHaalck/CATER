@@ -1,7 +1,7 @@
-#include "image-processing//features.h"
+#include "image-processing/features.h"
 
 #include "featureIO.h"
-#include "image-processing//images.h"
+#include "image-processing/images.h"
 #include "matIO.h"
 #include "progressbar/progressBar.h"
 #include "unknownFeatureType.h"
@@ -28,7 +28,8 @@ Features::Features(
 }
 
 Features Features::compute(const Images& imgContainer, const std::filesystem::path& ftDir,
-    FeatureType type, std::size_t numFeatures, std::size_t cacheSize, const size_t_vec& ids)
+    FeatureType type, std::size_t numFeatures, std::size_t cacheSize, const size_t_vec& ids,
+    std::shared_ptr<BaseProgressBar> cb)
 {
     // make sure folder exits
     if (!fs::exists(ftDir) || !fs::is_directory(ftDir))
@@ -38,7 +39,10 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
     auto imgCache = imgContainer.getCache(cacheSize, ids);
 
     spdlog::info("Computing features");
-    ProgressBar bar(imgCache.getNumChunks());
+    if (!cb)
+        cb = std::make_shared<ProgressBar>();
+    cb->status("Computing Features");
+    cb->setTotal(imgCache.getNumChunks());
     for (std::size_t i = 0; i < imgCache.getNumChunks(); i++)
     {
         auto chunk = imgCache.getChunk(i);
@@ -54,10 +58,11 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
                 std::get<0>(imgCache.getChunkBounds(i)) + j, fts.size());
         }
 
-        ++bar;
-        bar.display();
+        cb->inc();
         writeChunk(imgContainer, ftDir, type, imgCache.getChunkBounds(i), fts, descs, ids);
     }
+    cb->status("Done");
+    cb->done();
 
     // sanity check
     if (isComputed(imgContainer, ftDir, type, ids))
@@ -69,14 +74,14 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
 
 Features Features::compute(const Images& imgContainer, const std::filesystem::path& ftDir,
     FeatureType type, std::size_t numFeatures, std::size_t start, std::size_t end,
-    std::size_t cacheSize)
+    std::size_t cacheSize, std::shared_ptr<BaseProgressBar> cb)
 {
     assert(end < imgContainer.size()
         && "start must be > 0 and end must be smaller than number of images in "
            "Features::compute()");
     size_t_vec ids(end - start);
     std::iota(std::begin(ids), std::end(ids), 0);
-    return compute(imgContainer, ftDir, type, numFeatures, cacheSize, ids);
+    return compute(imgContainer, ftDir, type, numFeatures, cacheSize, ids, cb);
 }
 
 bool Features::isComputed(const Images& imgContainer, const std::filesystem::path& ftDir,
@@ -119,6 +124,14 @@ bool Features::isComputed(const Images& imgContainer, const std::filesystem::pat
     }
 }
 
+bool Features::isComputed(const Images& imgContainer, const std::filesystem::path& ftDir,
+    FeatureType type, std::size_t start, std::size_t end)
+{
+    size_t_vec ids(end - start);
+    std::iota(std::begin(ids), std::end(ids), 0);
+    return isComputed(imgContainer, ftDir, type, ids);
+}
+
 Features Features::fromDir(const Images& imgContainer, const std::filesystem::path& ftDir,
     FeatureType type, const size_t_vec& ids)
 {
@@ -138,6 +151,13 @@ Features Features::fromDir(const Images& imgContainer, const std::filesystem::pa
     }
     spdlog::debug("{} feature files available in folder {}", ftStems.size(), ftDir.string());
     return Features {ftDir, type, imgContainer.getImgSize(), ftStems};
+}
+Features Features::fromDir(const Images& imgContainer, const fs::path& ftDir, FeatureType type,
+    std::size_t start, std::size_t end)
+{
+    size_t_vec ids(end - start);
+    std::iota(std::begin(ids), std::end(ids), 0);
+    return fromDir(imgContainer, ftDir, type, ids);
 }
 
 FeatureType Features::getTypeFromFile(const fs::path& file)

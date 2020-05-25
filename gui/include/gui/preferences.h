@@ -2,6 +2,8 @@
 #define GUI_PREFERENCES_H
 
 #include <ostream>
+#include "spdlog/fmt/ostr.h"
+#include "image-processing/baseFeatureContainer.h"
 
 namespace gui
 {
@@ -31,6 +33,7 @@ struct Preferences
 
     // transformation
     bool removeCamMotion = true;
+    ht::FeatureType featureType = ht::FeatureType::ORB;
     double nnRatio = 0.8;
     double ranscacReproj = 3.0;
     int numFeatures = 8000;

@@ -14,6 +14,7 @@
 namespace ht
 {
 class Images;
+class BaseProgressBar;
 }
 
 namespace ht
@@ -32,17 +33,20 @@ public:
 
     static Features compute(const Images& imgContainer, const std::filesystem::path& ftDir,
         FeatureType type, std::size_t numFeatures, std::size_t cacheSize = 0,
-        const size_t_vec& ids = size_t_vec());
-
+        const size_t_vec& ids = size_t_vec(), std::shared_ptr<BaseProgressBar> cb = {});
     static Features compute(const Images& imgContainer, const std::filesystem::path& ftDir,
         FeatureType type, std::size_t numFeatures, std::size_t start, std::size_t end,
-        std::size_t cacheSize = 0);
+        std::size_t cacheSize = 0, std::shared_ptr<BaseProgressBar> cb = {});
 
     static bool isComputed(const Images& imgContainer, const std::filesystem::path& ftDir,
         FeatureType type, const size_t_vec& ids = size_t_vec());
+    static bool isComputed(const Images& imgContainer, const std::filesystem::path& ftDir,
+        FeatureType type, std::size_t start, std::size_t end);
 
     static Features fromDir(const Images& imgContainer, const std::filesystem::path& ftDir,
         FeatureType type, const size_t_vec& ids = size_t_vec());
+    static Features fromDir(const Images& imgContainer, const std::filesystem::path& ftDir,
+        FeatureType type, std::size_t start, std::size_t end);
 
     std::vector<cv::KeyPoint> featureAt(std::size_t idx) const override;
     cv::Mat descriptorAt(std::size_t idx) const override;

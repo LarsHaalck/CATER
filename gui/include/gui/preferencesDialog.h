@@ -1,10 +1,12 @@
 #ifndef PREFERENCESDIALOG_H
 #define PREFERENCESDIALOG_H
 
-#include <QDialog>
 #include "gui/preferences.h"
+#include "image-processing/baseFeatureContainer.h"
+#include <QDialog>
 
-namespace Ui {
+namespace Ui
+{
 class PreferencesDialog;
 }
 
@@ -15,7 +17,7 @@ class PreferencesDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit PreferencesDialog(QWidget *parent, const Preferences& prefs = Preferences());
+    explicit PreferencesDialog(QWidget* parent, const Preferences& prefs = Preferences());
     ~PreferencesDialog();
     Preferences getPreferences() const;
 
@@ -28,16 +30,18 @@ private:
     void resetSmoothBearingTo(const Preferences& prefs);
     void resetTransformationTo(const Preferences& prefs);
 
+    ht::FeatureType stringToFeatureType(const QString& string) const;
+
 private slots:
-    void onResetClicked();
-    void onResetAllClicked();
+    void on_resetButton_clicked();
+    void on_resetAllButton_clicked();
 
-    void onEnableColourCorrection(bool value);
-    void onEnableSmoothBearing(bool value);
-
+    void on_enableColourCorrection_toggled(bool value);
+    void on_enableSmoothBearing_toggled(bool value);
+    void on_removeCamMotion_toggled(bool value);
 
 private:
-    Ui::PreferencesDialog *ui;
+    Ui::PreferencesDialog* ui;
     Preferences mPrefs;
     const Preferences mPrefsDefaults;
 };

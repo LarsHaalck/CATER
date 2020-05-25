@@ -10,8 +10,8 @@ TrackerScene::TrackerScene(QObject* parent)
 
 void TrackerScene::setPixmap(const QPixmap& img) { this->mImage->setPixmap(img); }
 
-/* void TrackerScene::keyPressEvent(QKeyEvent* event) */
-/* { */
-/*     QGraphicsScene::keyPressEvent(event); */
-/* } */
+void TrackerScene::keyPressEvent(QKeyEvent* event)
+{
+    QGraphicsScene::keyPressEvent(event);
+}
 } // namespace gui

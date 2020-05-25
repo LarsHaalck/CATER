@@ -1,81 +1,42 @@
 #ifndef PROGRESS_BAR_H
 #define PROGRESS_BAR_H
 
+#include "progressbar/baseProgressBar.h"
 #include <chrono>
-#include <iostream>
 
 namespace ht
 {
-class ProgressBar
+class ProgressBar : public BaseProgressBar
 {
 public:
-    ProgressBar(unsigned int total, unsigned int width)
-        : mTotalTicks(total)
-        , mBarWidth(width)
+    ProgressBar();
+
+    inline void setTotal(std::size_t total) override { mTotalTicks = total; }
+    inline void inc() override
     {
+        mTicks++;
+        display();
     }
 
-    ProgressBar(unsigned int total)
-        : mTotalTicks(total)
-    {
-    }
-
-    void operator++() { mTicks++; }
-
-    ProgressBar& operator+=(int inc)
+    inline void inc(std::size_t inc) override
     {
         mTicks += inc;
-        return *this;
+        display();
     }
 
-    void display() const
-    {
-        float progress;
-        if (mTotalTicks > 0)
-            progress = static_cast<float>(mTicks) / mTotalTicks;
-        else
-            progress = 1.0f;
-
-        auto pos = static_cast<unsigned int>(mBarWidth * progress);
-
-        std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-        auto time_elapsed
-            = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
-
-        std::cout << "[";
-
-        for (unsigned int i = 0; i < mBarWidth; ++i)
-        {
-            if (i < pos)
-                std::cout << mCompleteChar;
-            else if (i == pos)
-                std::cout << ">";
-            else
-                std::cout << mInCompleteChar;
-        }
-        std::cout << "] " << static_cast<int>(progress * 100.0) << "% "
-                  << static_cast<float>(time_elapsed) / 1000.0 << "s\r";
-        std::cout.flush();
-    }
+    void status(const std::string& state) override;
 
     ~ProgressBar() { done(); }
-
-    void done()
-    {
-        if (!mIsFinished)
-        {
-            mTicks += mTotalTicks - mTicks;
-            display();
-            std::cout << std::endl;
-            mIsFinished = true;
-        }
-    }
+    void done() override;
 
 private:
-    unsigned int mTicks = 0;
+    void display() const;
 
-    const unsigned int mTotalTicks;
-    const unsigned int mBarWidth = 60;
+private:
+    std::size_t mTicks = 0;
+
+    std::size_t mTotalTicks;
+    const std::size_t mBarWidth = 60;
     const char mCompleteChar = '=';
     const char mInCompleteChar = ' ';
     const std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();

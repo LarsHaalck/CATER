@@ -12,15 +12,7 @@ PreferencesDialog::PreferencesDialog(QWidget* parent, const Preferences& prefs)
 
 {
     ui->setupUi(this);
-
-    connect(ui->enableColourCorrection, SIGNAL(toggled(bool)), this,
-        SLOT(onEnableColourCorrection(bool)));
-    connect(ui->enableSmoothBearing, SIGNAL(toggled(bool)), this,
-        SLOT(onEnableSmoothBearing(bool)));
-
     initPreferences(prefs);
-    connect(ui->resetButton, SIGNAL(pressed()), this, SLOT(onResetClicked()));
-    connect(ui->resetAllButton, SIGNAL(pressed()), this, SLOT(onResetAllClicked()));
 }
 
 PreferencesDialog::~PreferencesDialog() { delete ui; }
@@ -63,9 +55,27 @@ void PreferencesDialog::resetSmoothBearingTo(const Preferences& prefs)
 void PreferencesDialog::resetTransformationTo(const Preferences& prefs)
 {
     ui->removeCamMotion->setChecked(prefs.removeCamMotion);
+    if (!ui->featureCombo->count())
+    {
+        ui->featureCombo->addItem("ORB");
+        ui->featureCombo->addItem("SIFT");
+    }
+    ui->featureCombo->setCurrentIndex(static_cast<int>(prefs.featureType));
+
     ui->nnRatioSpin->setValue(prefs.nnRatio);
     ui->maxReprojSpin->setValue(prefs.ranscacReproj);
     ui->numFeaturesSpin->setValue(prefs.numFeatures);
+}
+
+ht::FeatureType PreferencesDialog::stringToFeatureType(const QString& string) const
+{
+    if (string == "ORB")
+        return ht::FeatureType::ORB;
+    if (string == "SIFT")
+        return ht::FeatureType::SIFT;
+
+    // TODO: this should throw an exception
+    return ht::FeatureType::SIFT;
 }
 
 void PreferencesDialog::initPreferences(const Preferences& prefs)
@@ -78,7 +88,7 @@ void PreferencesDialog::initPreferences(const Preferences& prefs)
     resetTransformationTo(prefs);
 }
 
-void PreferencesDialog::onResetClicked()
+void PreferencesDialog::on_resetButton_clicked()
 {
     if (ui->tabWidget->currentWidget()->objectName() == "tabColour")
     {
@@ -112,7 +122,7 @@ void PreferencesDialog::onResetClicked()
     }
 }
 
-void PreferencesDialog::onResetAllClicked()
+void PreferencesDialog::on_resetAllButton_clicked()
 {
     resetColourTo(mPrefsDefaults);
     resetUnariesTo(mPrefsDefaults);
@@ -122,20 +132,26 @@ void PreferencesDialog::onResetAllClicked()
     resetTransformationTo(mPrefsDefaults);
 }
 
-void PreferencesDialog::onEnableColourCorrection(bool value)
+void PreferencesDialog::on_enableColourCorrection_toggled(bool value)
 {
-    ui->enableColourCorrection->setChecked(value);
+    /* ui->enableColourCorrection->setChecked(value); */
     ui->redSpin->setEnabled(value);
     ui->greenSpin->setEnabled(value);
     ui->blueSpin->setEnabled(value);
 }
 
-void PreferencesDialog::onEnableSmoothBearing(bool value)
+void PreferencesDialog::on_enableSmoothBearing_toggled(bool value)
 {
-    ui->enableSmoothBearing->setChecked(value);
+    /* ui->enableSmoothBearing->setChecked(value); */
     ui->smoothBearingWindowSpin->setEnabled(value);
     ui->smoothBearingOutlierTolSpin->setEnabled(value);
 }
+
+void PreferencesDialog::on_removeCamMotion_toggled(bool value)
+{
+    ui->featureCombo->setEnabled(value);
+}
+
 Preferences PreferencesDialog::getPreferences() const
 {
     Preferences p;
@@ -166,6 +182,7 @@ Preferences PreferencesDialog::getPreferences() const
 
     // trafo
     p.removeCamMotion = ui->removeCamMotion->isChecked();
+    p.featureType = stringToFeatureType(ui->featureCombo->currentText());
     p.nnRatio = ui->nnRatioSpin->value();
     p.ranscacReproj = ui->maxReprojSpin->value();
     p.numFeatures = ui->numFeaturesSpin->value();

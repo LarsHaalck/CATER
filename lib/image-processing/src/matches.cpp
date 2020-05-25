@@ -210,7 +210,8 @@ namespace detail
         auto descMatcher = getMatcher(fts.getFeatureType());
 
         spdlog::info("Computing putative matches");
-        ProgressBar bar(descCache.getNumChunks());
+        ProgressBar bar;
+        bar.setTotal(descCache.getNumChunks());
         PairwiseMatches matches;
         for (std::size_t i = 0; i < descCache.getNumChunks(); i++)
         {
@@ -241,9 +242,9 @@ namespace detail
                     matches.at(currPair) = std::move(currMatches);
                 }
             }
-            ++bar;
-            bar.display();
+            bar.inc();
         }
+        bar.done();
         filterEmptyPairwise(matches);
         writeMatches(matchDir, matches, Put);
         spdlog::debug("Found {} maches and wrote to {}", matches.size(), matchDir.string());
@@ -293,7 +294,8 @@ namespace detail
         // TODO: is inplace modify via at() thread-safe?
         // TODO: profile this and check if really faster
         spdlog::info("Computing geometric matches for {}", typeToString(geomType));
-        ProgressBar bar(featCache.getNumChunks());
+        ProgressBar bar;
+        bar.setTotal(featCache.getNumChunks());
         for (std::size_t i = 0; i < featCache.getNumChunks(); i++)
         {
             auto chunk = featCache.getChunk(i);
@@ -331,9 +333,9 @@ namespace detail
                     trafos.at(currPair) = currFilteredMatches.first;
                 }
             }
-            ++bar;
-            bar.display();
+            bar.inc();
         }
+        bar.done();
 
         filterEmptyPairwise(trafos);
         filterEmptyPairwise(filteredMatches);
