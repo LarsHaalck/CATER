@@ -9,6 +9,10 @@ namespace gui
 {
 struct Preferences
 {
+    // general
+    int cacheSize = 400;
+    int chunkSize = 100;
+
     // colour correction
     bool colourCorrection = false;
     int colourRed = 33;
@@ -36,8 +40,7 @@ struct Preferences
     ht::FeatureType featureType = ht::FeatureType::ORB;
     double nnRatio = 0.8;
     double ranscacReproj = 3.0;
-    int numFeatures = 8000;
-
+    int numFeatures = 500;
 };
 } // namespace gui
 

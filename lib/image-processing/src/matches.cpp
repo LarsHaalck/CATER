@@ -41,27 +41,31 @@ bool isComputed(const fs::path& matchDir, Gt geomType)
     {
         if (!detail::checkIfExists(matchDir, type))
         {
-            spdlog::debug("Missing matches file for type: {}", detail::typeToString(type));
+            spdlog::debug("Missing matches or trafo file for type: {}", detail::typeToString(type));
             isComputed = false;
             break;
         }
     }
 
+    spdlog::debug("Found matches and trafo files in {}", matchDir.string());
     return isComputed;
 }
 
 bool compute(const fs::path& matchDir, GeometricType geomType, const BaseFeatureContainer& fts,
     MatchType matchType, std::size_t window, double minCoverage,
-    std::unique_ptr<PairRecommender> recommender, std::size_t cacheSize, const size_t_vec& ids)
+    std::unique_ptr<PairRecommender> recommender, std::size_t cacheSize, const size_t_vec& ids,
+    std::shared_ptr<BaseProgressBar> cb)
 {
+    if (!cb)
+        cb = std::make_shared<ProgressBar>();
     if (matchType != MatchType::Manual && (!fs::exists(matchDir) || !fs::is_directory(matchDir)))
         fs::create_directories(matchDir);
     auto matches = detail::getPutativeMatches(
-        matchDir, fts, matchType, window, std::move(recommender), cacheSize, ids);
+        matchDir, fts, matchType, window, std::move(recommender), cacheSize, ids, cb);
     for (auto type : detail::getTypeList(geomType))
     {
         matches = detail::getGeomMatches(matchDir, fts, type, minCoverage,
-            fts.getImageSize().area(), cacheSize, std::move(matches));
+            fts.getImageSize().area(), cacheSize, std::move(matches), cb);
     }
 
     // sanit check
@@ -203,15 +207,15 @@ namespace detail
 
     PairwiseMatches getPutativeMatches(const fs::path& matchDir, const BaseFeatureContainer& fts,
         MatchType matchType, std::size_t window, std::unique_ptr<PairRecommender> recommender,
-        std::size_t cacheSize, const size_t_vec& ids)
+        std::size_t cacheSize, const size_t_vec& ids, std::shared_ptr<BaseProgressBar> cb)
     {
         auto pairList = getPairList(matchType, fts.size(), window, std::move(recommender), ids);
         auto descCache = fts.getPairwiseDescriptorCache(cacheSize, pairList);
         auto descMatcher = getMatcher(fts.getFeatureType());
 
         spdlog::info("Computing putative matches");
-        ProgressBar bar;
-        bar.setTotal(descCache.getNumChunks());
+        cb->status("Computing Putative Matches");
+        cb->setTotal(descCache.getNumChunks());
         PairwiseMatches matches;
         for (std::size_t i = 0; i < descCache.getNumChunks(); i++)
         {
@@ -242,9 +246,9 @@ namespace detail
                     matches.at(currPair) = std::move(currMatches);
                 }
             }
-            bar.inc();
+            cb->inc();
         }
-        bar.done();
+        cb->done();
         filterEmptyPairwise(matches);
         writeMatches(matchDir, matches, Put);
         spdlog::debug("Found {} maches and wrote to {}", matches.size(), matchDir.string());
@@ -283,7 +287,8 @@ namespace detail
     }
 
     PairwiseMatches getGeomMatches(const fs::path& matchDir, const BaseFeatureContainer& fts,
-        Gt geomType, double minCoverage, int area, std::size_t cacheSize, PairwiseMatches&& matches)
+        Gt geomType, double minCoverage, int area, std::size_t cacheSize, PairwiseMatches&& matches,
+        std::shared_ptr<BaseProgressBar> cb)
     {
         auto filteredMatches = std::move(matches);
         auto pairList = getKeyList(filteredMatches);
@@ -294,8 +299,9 @@ namespace detail
         // TODO: is inplace modify via at() thread-safe?
         // TODO: profile this and check if really faster
         spdlog::info("Computing geometric matches for {}", typeToString(geomType));
-        ProgressBar bar;
-        bar.setTotal(featCache.getNumChunks());
+
+        cb->status(std::string("Computing Geometric Matches for: ") + typeToString(geomType));
+        cb->setTotal(featCache.getNumChunks());
         for (std::size_t i = 0; i < featCache.getNumChunks(); i++)
         {
             auto chunk = featCache.getChunk(i);
@@ -333,9 +339,9 @@ namespace detail
                     trafos.at(currPair) = currFilteredMatches.first;
                 }
             }
-            bar.inc();
+            cb->inc();
         }
-        bar.done();
+        cb->done();
 
         filterEmptyPairwise(trafos);
         filterEmptyPairwise(filteredMatches);

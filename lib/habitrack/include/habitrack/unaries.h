@@ -21,7 +21,7 @@ public:
     static Unaries compute(const Images& imgContainer, const std::filesystem::path& unDir,
         std::size_t start = 0, std::size_t end = -1, bool removeLaser = false,
         double subsample = 0.8, const matches::PairwiseTrafos& trafos = {},
-        std::size_t cacheSize = 0);
+        std::size_t cacheSize = 0, std::shared_ptr<BaseProgressBar> cb = {});
 
     static bool isComputed(const Images& imgContainer, const std::filesystem::path& unDir,
         std::size_t start = 0, std::size_t end = -1);

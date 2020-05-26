@@ -57,16 +57,17 @@ target_link_libraries(${LIB_NAME}
     opencv_flann
     opencv_imgcodecs
     cache
+    progressbar
+    PRIVATE
+    spdlog::spdlog
+    mild::mild
+    cereal
+    io
 )
 
 if(${OpenMP_CXX_FOUND})
     target_link_libraries(${LIB_NAME}
         PRIVATE
         OpenMP::OpenMP_CXX
-        spdlog::spdlog
-        mild::mild
-        cereal
-        progressbar
-        io
     )
 endif()

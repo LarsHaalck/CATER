@@ -2,12 +2,12 @@
 
 #include "featureIO.h"
 #include "image-processing/images.h"
+#include "image-processing/util.h"
 #include "matIO.h"
 #include "progressbar/progressBar.h"
 #include "unknownFeatureType.h"
 #include <fstream>
 #include <iostream>
-#include <numeric>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/xfeatures2d.hpp>
 #include <spdlog/spdlog.h>
@@ -55,13 +55,13 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
         {
             ftPtr->detectAndCompute(chunk[j], cv::Mat(), fts[j], descs[j]);
             spdlog::debug("Features computed of image {} with size {}",
-                std::get<0>(imgCache.getChunkBounds(i)) + j, fts.size());
+                std::get<0>(imgCache.getChunkBounds(i)) + j, fts[j].size());
         }
 
         cb->inc();
         writeChunk(imgContainer, ftDir, type, imgCache.getChunkBounds(i), fts, descs, ids);
     }
-    cb->status("Done");
+    cb->status("Finished");
     cb->done();
 
     // sanity check
@@ -79,9 +79,8 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
     assert(end < imgContainer.size()
         && "start must be > 0 and end must be smaller than number of images in "
            "Features::compute()");
-    size_t_vec ids(end - start);
-    std::iota(std::begin(ids), std::end(ids), 0);
-    return compute(imgContainer, ftDir, type, numFeatures, cacheSize, ids, cb);
+    return compute(imgContainer, ftDir, type, numFeatures, cacheSize, getContinuousIds(start, end),
+        std::move(cb));
 }
 
 bool Features::isComputed(const Images& imgContainer, const std::filesystem::path& ftDir,
@@ -127,9 +126,7 @@ bool Features::isComputed(const Images& imgContainer, const std::filesystem::pat
 bool Features::isComputed(const Images& imgContainer, const std::filesystem::path& ftDir,
     FeatureType type, std::size_t start, std::size_t end)
 {
-    size_t_vec ids(end - start);
-    std::iota(std::begin(ids), std::end(ids), 0);
-    return isComputed(imgContainer, ftDir, type, ids);
+    return isComputed(imgContainer, ftDir, type, getContinuousIds(start, end));
 }
 
 Features Features::fromDir(const Images& imgContainer, const std::filesystem::path& ftDir,
@@ -155,9 +152,7 @@ Features Features::fromDir(const Images& imgContainer, const std::filesystem::pa
 Features Features::fromDir(const Images& imgContainer, const fs::path& ftDir, FeatureType type,
     std::size_t start, std::size_t end)
 {
-    size_t_vec ids(end - start);
-    std::iota(std::begin(ids), std::end(ids), 0);
-    return fromDir(imgContainer, ftDir, type, ids);
+    return fromDir(imgContainer, ftDir, type, getContinuousIds(start, end));
 }
 
 FeatureType Features::getTypeFromFile(const fs::path& file)

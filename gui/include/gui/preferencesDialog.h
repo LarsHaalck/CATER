@@ -23,6 +23,8 @@ public:
 
 private:
     void initPreferences(const Preferences& pefs);
+
+    void resetGeneralTo(const Preferences& prefs);
     void resetColourTo(const Preferences& prefs);
     void resetUnariesTo(const Preferences& prefs);
     void resetPairwiseTo(const Preferences& prefs);

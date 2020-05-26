@@ -4,6 +4,10 @@ using namespace gui;
 std::ostream& operator<< (std::ostream& stream, const Preferences& prefs)
 {
     stream << "Preferences: \n";
+    stream << "General: \n";
+    stream << "Cache size: " << prefs.cacheSize << "\n";
+    stream << "Chunk size: " << prefs.chunkSize << "\n";
+    stream << "--------------------\n";
     stream << "Colour Correction: \n";
     stream << "Enabled: " << prefs.colourCorrection << "\n";
     stream << "Red: " << prefs.colourRed << "\n";

@@ -8,12 +8,10 @@
 #include "gui/trackerScene.h"
 #include "image-processing/features.h"
 #include "image-processing/images.h"
+#include "image-processing/matches.h"
+#include "habitrack/unaries.h"
+#include "progressbar/baseProgressBar.h"
 #include <filesystem>
-
-namespace ht
-{
-    class BaseProgressBar;
-} // namespace ht
 
 namespace Ui
 {
@@ -61,11 +59,13 @@ private slots:
     void on_buttonEndFrame_clicked();
 
     void on_buttonExtractFeatures_clicked();
-
+    void on_buttonExtractTrafos_clicked();
+    void on_buttonExtractUnaries_clicked();
 
 private:
     Ui::HabiTrack* ui;
     QString mStartPath; // used for next QFileDialog
+
     std::shared_ptr<ht::BaseProgressBar> mBar;
 
     GuiPreferences mGuiPrefs;
@@ -73,7 +73,10 @@ private:
     Preferences mPrefs;
 
     std::filesystem::path mOutputPath;
+    std::filesystem::path mImgFolder;
     std::filesystem::path mFtFolder;
+    std::filesystem::path mMatchFolder;
+    std::filesystem::path mUnFolder;
 
     ht::Images mImages;
     std::size_t mCurrentFrameNumber;
@@ -82,6 +85,7 @@ private:
     TrackerScene* mScene;
 
     ht::Features mFeatures;
+    ht::Unaries mUnaries;
 
     // handles library related stuff
     // needs ui elements

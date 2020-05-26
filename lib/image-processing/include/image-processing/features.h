@@ -10,11 +10,11 @@
 #include "image-processing/featureCache.h"
 #include "image-processing/pairwiseDescriptorCache.h"
 #include "image-processing/pairwiseFeatureCache.h"
+#include "progressbar/baseProgressBar.h"
 
 namespace ht
 {
 class Images;
-class BaseProgressBar;
 }
 
 namespace ht

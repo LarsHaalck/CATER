@@ -12,10 +12,10 @@ class ProgressStatusBar : public ht::BaseProgressBar
 {
 public:
     ProgressStatusBar(QProgressBar* bar, QLabel* label);
-    void setTotal(std::size_t total) { mBar->setMaximum(total); }
+    void setTotal(std::size_t total) { mBar->setValue(0); mBar->setMaximum(total); }
     void inc() { mBar->setValue(mBar->value() + 1); }
     void inc(std::size_t inc) { mBar->setValue(mBar->value() + inc); }
-    void done() { mBar->setValue(mBar->maximum()); }
+    void done() { status("Finished"); mBar->setValue(mBar->maximum()); }
     void status(const std::string& state) { mLabel->setText(QString::fromStdString(state)); }
     ~ProgressStatusBar() { done(); }
 private:

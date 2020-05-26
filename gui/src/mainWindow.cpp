@@ -28,6 +28,8 @@ HabiTrack::HabiTrack(QWidget* parent)
     , mImages()
     , mCurrentFrameNumber(0)
     , mScene(nullptr)
+    , mFeatures()
+    , mUnaries()
 {
     ui->setupUi(this);
     populateGuiDefaults();
@@ -45,6 +47,12 @@ HabiTrack::~HabiTrack() { delete ui; }
 void HabiTrack::populateGuiDefaults()
 {
     spdlog::debug("GUI: Populating GUI defaults");
+
+    ui->unaryView->getUnaryScene()->setTotalImages(100);
+    ui->unaryView->getUnaryScene()->setFrame(0, UnaryColor::Critical);
+    ui->unaryView->getUnaryScene()->setFrame(1, UnaryColor::Poor);
+    ui->unaryView->getUnaryScene()->setFrame(99, UnaryColor::Critical);
+
     // set sliders
     resetToDefaults(ui->sliderOverlayUnaries);
     resetToDefaults(ui->sliderOverlayTrackedPos);
@@ -83,11 +91,7 @@ void HabiTrack::resetToDefaults(QObject* obj)
         ui->sliderOverlayTrajectory->setValue(mGuiPrefsDefaults.overlayTrajectory);
 
     if (obj == ui->actionExpertMode)
-    {
         ui->actionExpertMode->setChecked(mGuiPrefsDefaults.enableExpertView);
-        // TODO needed?
-        /* onToggleExpertMode(mGuiPrefsDefaults.enableExpertView); */
-    }
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -204,10 +208,12 @@ void HabiTrack::populatePaths(const fs::path& path)
 
     mOutputPath += "_output";
 
-    auto date = QDate::currentDate().toString("yyyy-MM-dd").toStdString();
-    auto time = QTime::currentTime().toString("hh-mm-ss").toStdString();
+    /* auto date = QDate::currentDate().toString("yyyy-MM-dd").toStdString(); */
+    /* auto time = QTime::currentTime().toString("hh-mm-ss").toStdString(); */
 
-    mOutputPath /= date + "_" + time;
+    mOutputPath /= "now";
+    /* mOutputPath /= date + "_" + time; */
+
     spdlog::debug("Generated output path: {}", mOutputPath.string());
 
     /* // results.yml */
@@ -218,15 +224,13 @@ void HabiTrack::populatePaths(const fs::path& path)
     mFtFolder = mOutputPath;
     mFtFolder /= "fts";
 
-    /* // transformations */
-    /* mTransformationsOutputPath = mAbsOutputPath; */
-    /* mTransformationsOutputPath.append("/").append("transformations"); */
-    /* mHomographiesPath = mTransformationsOutputPath;; */
-    /* mHomographiesPath.append("/").append("homographies").append(".yml"); */
+    // matches / trafos
+    mMatchFolder = mOutputPath;
+    mMatchFolder /= "matches";
 
-    /* // unaries/<num>.png */
-    /* mUnariesFolderPath = mAbsOutputPath; */
-    /* mUnariesFolderPath.append("/").append("unaries"); */
+    // unaries/<num>.png
+    mUnFolder = mOutputPath;
+    mUnFolder /= "unaries";
 
     /* // unaries.yml */
     /* mUnaiesOutputPath = mAbsOutputPath; */
@@ -248,6 +252,10 @@ void HabiTrack::showFrame(std::size_t frameNumber)
     spdlog::debug("GUI: Show frame {}", frameNumber);
     mCurrentFrameNumber = frameNumber;
     cv::Mat frame = mImages.at(frameNumber - 1); // zero indexed here
+
+    // set filename
+    ui->labelFileName->setText(
+        QString::fromStdString(mImages.getFileName(frameNumber - 1).string()));
 
     /* // get unary */
     /* int unarySlider = ui->horizontalSlider_unaries->value(); */
@@ -325,6 +333,7 @@ void HabiTrack::on_actionOpenImgFolder_triggered()
     if (imgFolderPath.isEmpty())
         return;
 
+    mImgFolder = fs::path(imgFolderPath.toStdString());
     mImages = Images(imgFolderPath.toStdString());
     auto numImgs = mImages.size();
 
@@ -406,16 +415,50 @@ void HabiTrack::on_buttonExtractFeatures_clicked()
 {
     spdlog::debug("GUI: Clicked Extract Features");
 
+    auto start = mStartFrameNumber - 1;
+    auto end = mEndFrameNumber;
     if (Features::isComputed(
-            mImages, mFtFolder, mPrefs.featureType, mStartFrameNumber - 1, mEndFrameNumber - 1))
+            mImages, mFtFolder, mPrefs.featureType, start, end))
     {
         mFeatures = Features::fromDir(
-            mImages, mFtFolder, mPrefs.featureType, mStartFrameNumber - 1, mEndFrameNumber - 1);
+            mImages, mFtFolder, mPrefs.featureType, start, end);
+        mBar->done();
         return;
     }
-    //TODO: parametrize cache size
     mFeatures = Features::compute(mImages, mFtFolder, mPrefs.featureType, mPrefs.numFeatures,
-        mStartFrameNumber - 1, mEndFrameNumber - 1, 10, mBar);
+        start, end, mPrefs.cacheSize, mBar);
 }
 
+void HabiTrack::on_buttonExtractTrafos_clicked()
+{
+    spdlog::debug("GUI: Clicked Extract Trafos");
+    if (matches::isComputed(mMatchFolder, GeometricType::Homography))
+    {
+        mBar->done();
+        return;
+    }
+    matches::compute(mMatchFolder, GeometricType::Homography, mFeatures,
+        matches::MatchType::Windowed, 2, 0.0, nullptr, mPrefs.cacheSize, size_t_vec(), mBar);
 }
+
+void HabiTrack::on_buttonExtractUnaries_clicked()
+{
+    spdlog::debug("GUI: Clicked Extract Unaries");
+
+    auto start = mStartFrameNumber - 1;
+    auto end = mEndFrameNumber;
+    if (Unaries::isComputed(mImgFolder, mUnFolder, start, end))
+    {
+        mUnaries
+            = Unaries::fromDir(mImgFolder, mUnFolder, start, end);
+        mBar->done();
+        return;
+    }
+    auto trafos = mPrefs.removeCamMotion
+        ? matches::getTrafos(mMatchFolder, GeometricType::Homography)
+        : matches::PairwiseTrafos();
+
+    mUnaries = Unaries::compute(mImgFolder, mUnFolder, start, end,
+        mPrefs.removeRedLasers, mPrefs.unarySubsample, trafos, mPrefs.cacheSize, mBar);
+}
+} // namespace gui

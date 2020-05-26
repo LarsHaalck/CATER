@@ -17,6 +17,12 @@ PreferencesDialog::PreferencesDialog(QWidget* parent, const Preferences& prefs)
 
 PreferencesDialog::~PreferencesDialog() { delete ui; }
 
+void PreferencesDialog::resetGeneralTo(const Preferences& prefs)
+{
+    ui->cacheSpin->setValue(prefs.cacheSize);
+    ui->chunkSpin->setValue(prefs.chunkSize);
+}
+
 void PreferencesDialog::resetColourTo(const Preferences& prefs)
 {
     ui->enableColourCorrection->setChecked(prefs.colourCorrection);
@@ -80,6 +86,7 @@ ht::FeatureType PreferencesDialog::stringToFeatureType(const QString& string) co
 
 void PreferencesDialog::initPreferences(const Preferences& prefs)
 {
+    resetGeneralTo(prefs);
     resetColourTo(prefs);
     resetUnariesTo(prefs);
     resetPairwiseTo(prefs);
@@ -90,6 +97,11 @@ void PreferencesDialog::initPreferences(const Preferences& prefs)
 
 void PreferencesDialog::on_resetButton_clicked()
 {
+    if (ui->tabWidget->currentWidget()->objectName() == "tabGeneral")
+    {
+        resetGeneralTo(mPrefsDefaults);
+        return;
+    }
     if (ui->tabWidget->currentWidget()->objectName() == "tabColour")
     {
         resetColourTo(mPrefsDefaults);
@@ -124,12 +136,7 @@ void PreferencesDialog::on_resetButton_clicked()
 
 void PreferencesDialog::on_resetAllButton_clicked()
 {
-    resetColourTo(mPrefsDefaults);
-    resetUnariesTo(mPrefsDefaults);
-    resetPairwiseTo(mPrefsDefaults);
-    resetPanoramaTo(mPrefsDefaults);
-    resetSmoothBearingTo(mPrefsDefaults);
-    resetTransformationTo(mPrefsDefaults);
+    initPreferences(mPrefsDefaults);
 }
 
 void PreferencesDialog::on_enableColourCorrection_toggled(bool value)
@@ -186,6 +193,9 @@ Preferences PreferencesDialog::getPreferences() const
     p.nnRatio = ui->nnRatioSpin->value();
     p.ranscacReproj = ui->maxReprojSpin->value();
     p.numFeatures = ui->numFeaturesSpin->value();
+
+    p.cacheSize = ui->cacheSpin->value();
+    p.chunkSize = ui->chunkSpin->value();
 
     return p;
 }

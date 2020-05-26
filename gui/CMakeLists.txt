@@ -6,8 +6,10 @@ set(SOURCES
     src/mainWindow.cpp
     src/preferences.cpp
     src/preferencesDialog.cpp
-    src/trackerGraphicsView.cpp
     src/trackerScene.cpp
+    src/trackerGraphicsView.cpp
+    src/unaryScene.cpp
+    src/unaryGraphicsView.cpp
     src/qtOpencvCore.cpp
     src/progressStatusBar.cpp
 )
@@ -15,8 +17,10 @@ set(SOURCES
 set(GUI_HEADERS
     include/gui/mainWindow.h
     include/gui/preferencesDialog.h
-    include/gui/trackerGraphicsView.h
     include/gui/trackerScene.h
+    include/gui/trackerGraphicsView.h
+    include/gui/unaryScene.h
+    include/gui/unaryGraphicsView.h
 )
 
 ###########################################################################
@@ -30,8 +34,8 @@ set_target_properties(${EXE_NAME} PROPERTIES AUTOMOC ON)
 set_target_properties(${EXE_NAME} PROPERTIES AUTOUIC ON)
 
 target_include_directories(${EXE_NAME} PUBLIC include)
-
 target_link_libraries(${EXE_NAME}
+    PUBLIC
     Qt5::Widgets
     OpenMP::OpenMP_CXX
     habitrack

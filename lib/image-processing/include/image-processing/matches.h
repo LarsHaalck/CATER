@@ -5,6 +5,7 @@
 #include "image-processing/geometricType.h"
 #include "image-processing/pairHash.h"
 #include "image-processing/pairRecommender.h"
+#include "progressbar/baseProgressBar.h"
 #include <filesystem>
 #include <opencv2/core.hpp>
 #include <opencv2/features2d.hpp>
@@ -43,7 +44,8 @@ bool isComputed(const std::filesystem::path& matchDir, GeometricType geomType);
 bool compute(const std::filesystem::path& matchDir, GeometricType geomType,
     const BaseFeatureContainer& features, MatchType matchType, std::size_t window = 0,
     double minCoverage = 0.0, std::unique_ptr<PairRecommender> recommender = nullptr,
-    std::size_t cacheSize = 0, const size_t_vec& ids = size_t_vec());
+    std::size_t cacheSize = 0, const size_t_vec& ids = size_t_vec(),
+    std::shared_ptr<BaseProgressBar> cb = {});
 
 // for "manual" matching, e.g. in KFS
 std::pair<Trafos, std::vector<Matches>> computePair(GeometricType geomType,
@@ -80,15 +82,17 @@ namespace detail
 
     PairwiseMatches getPutativeMatches(const std::filesystem::path& matchDir,
         const BaseFeatureContainer& fts, MatchType matchType, std::size_t window,
-        std::unique_ptr<PairRecommender> recommender, std::size_t cacheSize, const size_t_vec& ids);
+        std::unique_ptr<PairRecommender> recommender, std::size_t cacheSize, const size_t_vec& ids,
+        std::shared_ptr<BaseProgressBar> cb);
 
     PairwiseMatches getGeomMatches(const std::filesystem::path& matchDir,
         const BaseFeatureContainer& fts, GeometricType geomType, double minCoverage, int area,
-        std::size_t cacheSize, PairwiseMatches&& matches);
+        std::size_t cacheSize, PairwiseMatches&& matches, std::shared_ptr<BaseProgressBar> cb);
 
-    // helper function for different pair types
-    std::vector<std::pair<std::size_t, std::size_t>> getPairList(MatchType type, std::size_t size,
-        std::size_t window, std::unique_ptr<PairRecommender> recommender, const size_t_vec& ids);
+        // helper function for different pair types
+        std::vector<std::pair<std::size_t, std::size_t>> getPairList(MatchType type,
+            std::size_t size, std::size_t window, std::unique_ptr<PairRecommender> recommender,
+            const size_t_vec& ids);
     std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(
         std::size_t size, std::size_t window, const size_t_vec& ids);
     std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(

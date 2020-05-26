@@ -18,7 +18,7 @@ namespace fs = std::filesystem;
 
 Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std::size_t start,
     std::size_t end, bool removeLaser, double subsample, const matches::PairwiseTrafos& trafos,
-    std::size_t cacheSize)
+    std::size_t cacheSize, std::shared_ptr<BaseProgressBar> cb)
 {
     // make sure folder exits
     if (!fs::exists(unDir) || !fs::is_directory(unDir))
@@ -44,8 +44,11 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
 
     auto cache = imgContainer.getPairwiseCache(cacheSize, pairs);
     spdlog::info("Computing unaries");
-    ProgressBar bar;
-    bar.setTotal(cache.getNumChunks());
+
+    if (!cb)
+        cb = std::make_shared<ProgressBar>();
+    cb->status("Computing Unaries");
+    cb->setTotal(cache.getNumChunks());
     for (std::size_t i = 0; i < cache.getNumChunks(); i++)
     {
         auto chunk = cache.getChunk(i);
@@ -90,9 +93,9 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
             qualities.at(currPair.first) = quality;
         }
         writeChunk(imgContainer, unDir, cache.getChunkBounds(i), unaries, start);
-        bar.inc();
+        cb->inc();
     }
-    bar.done();
+    cb->done();
     writeProperties(unDir, subsample);
 
     // sanity check
