@@ -19,6 +19,7 @@ class UnaryScene : public QGraphicsScene
 public:
     UnaryScene(QObject* parent = 0);
     void setTotalImages(std::size_t numImages);
+    std::size_t getTotalImages() const { return mNumImages; }
     void setFrame(std::size_t id, UnaryColor color);
 private:
     QColor unaryColorToQColor(UnaryColor color);

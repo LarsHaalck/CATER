@@ -31,6 +31,17 @@ void PreferencesDialog::resetColourTo(const Preferences& prefs)
     ui->blueSpin->setValue(prefs.colourBlue);
 }
 
+void PreferencesDialog::resetFeaturesTo(const Preferences& prefs)
+{
+    if (!ui->featureCombo->count())
+    {
+        ui->featureCombo->addItem("ORB");
+        ui->featureCombo->addItem("SIFT");
+    }
+    ui->featureCombo->setCurrentIndex(static_cast<int>(prefs.featureType));
+    ui->numFeaturesSpin->setValue(prefs.numFeatures);
+}
+
 void PreferencesDialog::resetUnariesTo(const Preferences& prefs)
 {
     ui->subsampleSpin->setValue(prefs.unarySubsample);
@@ -61,16 +72,8 @@ void PreferencesDialog::resetSmoothBearingTo(const Preferences& prefs)
 void PreferencesDialog::resetTransformationTo(const Preferences& prefs)
 {
     ui->removeCamMotion->setChecked(prefs.removeCamMotion);
-    if (!ui->featureCombo->count())
-    {
-        ui->featureCombo->addItem("ORB");
-        ui->featureCombo->addItem("SIFT");
-    }
-    ui->featureCombo->setCurrentIndex(static_cast<int>(prefs.featureType));
-
     ui->nnRatioSpin->setValue(prefs.nnRatio);
     ui->maxReprojSpin->setValue(prefs.ranscacReproj);
-    ui->numFeaturesSpin->setValue(prefs.numFeatures);
 }
 
 ht::FeatureType PreferencesDialog::stringToFeatureType(const QString& string) const
@@ -88,6 +91,7 @@ void PreferencesDialog::initPreferences(const Preferences& prefs)
 {
     resetGeneralTo(prefs);
     resetColourTo(prefs);
+    resetFeaturesTo(prefs);
     resetUnariesTo(prefs);
     resetPairwiseTo(prefs);
     resetPanoramaTo(prefs);
@@ -105,6 +109,11 @@ void PreferencesDialog::on_resetButton_clicked()
     if (ui->tabWidget->currentWidget()->objectName() == "tabColour")
     {
         resetColourTo(mPrefsDefaults);
+        return;
+    }
+    if (ui->tabWidget->currentWidget()->objectName() == "tabFeatures")
+    {
+        resetFeaturesTo(mPrefsDefaults);
         return;
     }
     if (ui->tabWidget->currentWidget()->objectName() == "tabUnaries")
@@ -168,6 +177,10 @@ Preferences PreferencesDialog::getPreferences() const
     p.colourGreen = ui->greenSpin->value();
     p.colourBlue = ui->blueSpin->value();
 
+    // features
+    p.featureType = stringToFeatureType(ui->featureCombo->currentText());
+    p.numFeatures = ui->numFeaturesSpin->value();
+
     // unaries
     p.unarySubsample = ui->subsampleSpin->value();
     p.unarySigma = ui->unarySigmaSpin->value();
@@ -189,10 +202,8 @@ Preferences PreferencesDialog::getPreferences() const
 
     // trafo
     p.removeCamMotion = ui->removeCamMotion->isChecked();
-    p.featureType = stringToFeatureType(ui->featureCombo->currentText());
     p.nnRatio = ui->nnRatioSpin->value();
     p.ranscacReproj = ui->maxReprojSpin->value();
-    p.numFeatures = ui->numFeaturesSpin->value();
 
     p.cacheSize = ui->cacheSpin->value();
     p.chunkSize = ui->chunkSpin->value();

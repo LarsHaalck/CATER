@@ -175,4 +175,8 @@ PairwiseImageCache Images::getPairwiseCache(
 }
 
 cv::Size Images::getImgSize() const { return mImgSize; }
+cv::Point2f Images::getCenter() const
+{
+    return cv::Point2f(mImgSize.width / 2.0f, mImgSize.height / 2.0f);
+}
 } // namespace ht

@@ -33,6 +33,7 @@ public:
 
     cv::Mat at(std::size_t idx) const override;
     cv::Size getImgSize() const override;
+    cv::Point2f getCenter() const override;
     std::filesystem::path getFileName(std::size_t idx) const;
 
 private:

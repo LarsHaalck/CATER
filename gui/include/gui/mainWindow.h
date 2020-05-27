@@ -35,11 +35,12 @@ private:
     void showFrame(std::size_t frame);
     void refreshWindow();
     void populatePaths(const std::filesystem::path& stem);
+    void openImagesHelper();
 
 private slots:
-    void on_sliderOverlayUnaries_valueChanged(int value);
-    void on_sliderOverlayTrackedPos_valueChanged(int value);
-    void on_sliderOverlayTrajectory_valueChanged(int value);
+    void on_sliderOverlayUnaries_sliderReleased();
+    void on_sliderOverlayTrackedPos_sliderReleased();
+    void on_sliderOverlayTrajectory_sliderReleased();
     void on_actionExpertMode_toggled(bool value);
     void on_actionPreferences_triggered();
 
@@ -73,10 +74,12 @@ private:
     Preferences mPrefs;
 
     std::filesystem::path mOutputPath;
+    std::filesystem::path mResultsFile;
     std::filesystem::path mImgFolder;
     std::filesystem::path mFtFolder;
     std::filesystem::path mMatchFolder;
     std::filesystem::path mUnFolder;
+    std::filesystem::path mAntFile;
 
     ht::Images mImages;
     std::size_t mCurrentFrameNumber;

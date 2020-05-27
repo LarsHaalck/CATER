@@ -18,14 +18,20 @@ UnaryGraphicsView::UnaryGraphicsView(UnaryScene* scene, QWidget* parent)
 
 void UnaryGraphicsView::resizeEvent(QResizeEvent*)
 {
-    this->fitInView(this->sceneRect(), Qt::IgnoreAspectRatio);
+    this->fitInView(mScene->sceneRect(), Qt::IgnoreAspectRatio);
 }
 
 void UnaryGraphicsView::mousePressEvent(QMouseEvent* event)
 {
+    auto numImgs = this->mScene->getTotalImages();
+    if (numImgs == 0)
+        return;
+
     QPointF pos = this->mapToScene(event->pos());
-    auto num = static_cast<std::size_t>(std::floor(pos.x()));
+    auto num = static_cast<int>(std::floor((pos.x() / 100) * numImgs));
     spdlog::debug("GUI: mapped to unary {}", num);
+    if (num < 0)
+        return
     emit this->jumpedToUnary(num);
 }
 } // namespace gui

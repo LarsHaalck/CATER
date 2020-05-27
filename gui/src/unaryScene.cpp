@@ -11,6 +11,7 @@ namespace gui
 {
 UnaryScene::UnaryScene(QObject* parent)
     : QGraphicsScene(parent)
+    , mNumImages(0)
     , mPen()
 {
     mPen.setWidthF(size_width);
@@ -18,15 +19,14 @@ UnaryScene::UnaryScene(QObject* parent)
 
 void UnaryScene::setTotalImages(std::size_t numImages)
 {
-    this->setSceneRect(0, 0, numImages, size_height);
-    for (std::size_t i = 0; i < numImages; i++)
-        setFrame(i, UnaryColor::Good);
+    mNumImages = numImages;
+    this->setSceneRect(-0.1, 0, 100.2, size_height);
 }
 
 void UnaryScene::setFrame(std::size_t id, UnaryColor color)
 {
     assert(id < mNumImages && "Unary id must be smaller than number of frames in unary color");
-    auto start = (id + size_width / 2);
+    auto start = ((id + size_width / 2) / mNumImages) * 100;
     auto pen = mPen;
     pen.setColor(unaryColorToQColor(color));
     pen.setWidthF(size_width);

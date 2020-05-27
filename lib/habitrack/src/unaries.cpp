@@ -89,7 +89,7 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
             cv::resize(diff, resizedUnary, cv::Size(), subsample, subsample, cv::INTER_LINEAR);
             double quality = getUnaryQuality(resizedUnary);
             spdlog::debug("Unary computed of image {} with quality {}", currPair.first, quality);
-            unaries[k] = diff;
+            unaries[k] = resizedUnary;
             qualities.at(currPair.first) = quality;
         }
         writeChunk(imgContainer, unDir, cache.getChunkBounds(i), unaries, start);
@@ -150,10 +150,14 @@ cv::Mat Unaries::at(std::size_t idx) const
 {
     assert(mUnFiles.count(idx) && "idx out of range in Unaries::at()");
 
-    auto stem = mUnFiles.at(idx);
-    auto file = getFileName(mUnDir, stem);
+    auto file = mUnFiles.at(idx);
     cv::Mat unary = cv::imread(file.string(), cv::IMREAD_UNCHANGED);
     return unary;
+}
+
+bool Unaries::exists(std::size_t idx) const
+{
+    return mUnFiles.count(idx) > 0;
 }
 
 size_t_vec Unaries::getIDs() const

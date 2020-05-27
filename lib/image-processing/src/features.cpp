@@ -76,7 +76,7 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
     FeatureType type, std::size_t numFeatures, std::size_t start, std::size_t end,
     std::size_t cacheSize, std::shared_ptr<BaseProgressBar> cb)
 {
-    assert(end < imgContainer.size()
+    assert(end <= imgContainer.size()
         && "start must be > 0 and end must be smaller than number of images in "
            "Features::compute()");
     return compute(imgContainer, ftDir, type, numFeatures, cacheSize, getContinuousIds(start, end),

@@ -12,6 +12,8 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 
+#include "resultsIO.h"
+
 using namespace ht;
 namespace fs = std::filesystem;
 
@@ -47,11 +49,6 @@ HabiTrack::~HabiTrack() { delete ui; }
 void HabiTrack::populateGuiDefaults()
 {
     spdlog::debug("GUI: Populating GUI defaults");
-
-    ui->unaryView->getUnaryScene()->setTotalImages(100);
-    ui->unaryView->getUnaryScene()->setFrame(0, UnaryColor::Critical);
-    ui->unaryView->getUnaryScene()->setFrame(1, UnaryColor::Poor);
-    ui->unaryView->getUnaryScene()->setFrame(99, UnaryColor::Critical);
 
     // set sliders
     resetToDefaults(ui->sliderOverlayUnaries);
@@ -97,22 +94,28 @@ void HabiTrack::resetToDefaults(QObject* obj)
 //////////////////////////////////////////////////////////////////////
 // SLOTS
 //////////////////////////////////////////////////////////////////////
-void HabiTrack::on_sliderOverlayUnaries_valueChanged(int value)
+void HabiTrack::on_sliderOverlayUnaries_sliderReleased()
 {
     spdlog::debug("GUI: Slider overlay unaries changed");
+    auto value = ui->sliderOverlayUnaries->value();
     mGuiPrefs.overlayUnaries = value;
+    showFrame(mCurrentFrameNumber);
 }
 
-void HabiTrack::on_sliderOverlayTrackedPos_valueChanged(int value)
+void HabiTrack::on_sliderOverlayTrackedPos_sliderReleased()
 {
     spdlog::debug("GUI: Slider overlay tracked pos changed");
+    auto value = ui->sliderOverlayTrackedPos->value();
     mGuiPrefs.overlayTrackedPos = value;
+    showFrame(mCurrentFrameNumber);
 }
 
-void HabiTrack::on_sliderOverlayTrajectory_valueChanged(int value)
+void HabiTrack::on_sliderOverlayTrajectory_sliderReleased()
 {
     spdlog::debug("GUI: Slider overlay trajectory changed");
+    auto value = ui->sliderOverlayTrajectory->value();
     mGuiPrefs.overlayTrajectory = value;
+    showFrame(mCurrentFrameNumber);
 }
 
 void HabiTrack::on_actionExpertMode_toggled(bool value)
@@ -144,6 +147,7 @@ void HabiTrack::on_actionPreferences_triggered()
         // overwrite current settings if accepted, discard otherwise
         mPrefs = prefDialog.getPreferences();
         spdlog::debug("GUI: Changed Preferences to: {}", mPrefs);
+        saveResults(mOutputPath / "results.yml", mPrefs);
     }
 }
 
@@ -156,7 +160,7 @@ void HabiTrack::on_sliderFrame_sliderReleased()
 
 void HabiTrack::on_spinCurrentFrame_editingFinished()
 {
-    spdlog::debug("GUI: Changed frame spin");
+    spdlog::debug("GUI: Changed frame spin (edited)");
     int value = ui->spinCurrentFrame->value();
     showFrame(value);
 }
@@ -194,8 +198,16 @@ void HabiTrack::on_actionNext_Frame_triggered() { on_buttonNextFrame_clicked(); 
 void HabiTrack::refreshWindow()
 {
     spdlog::debug("GUI: Redraw window");
+
+    ui->sliderFrame->blockSignals(true);
+    ui->spinCurrentFrame->blockSignals(true);
+
     ui->sliderFrame->setValue(mCurrentFrameNumber);
     ui->spinCurrentFrame->setValue(mCurrentFrameNumber);
+
+    ui->sliderFrame->blockSignals(false);
+    ui->spinCurrentFrame->blockSignals(false);
+
     qApp->processEvents();
 }
 
@@ -208,47 +220,23 @@ void HabiTrack::populatePaths(const fs::path& path)
 
     mOutputPath += "_output";
 
-    /* auto date = QDate::currentDate().toString("yyyy-MM-dd").toStdString(); */
-    /* auto time = QTime::currentTime().toString("hh-mm-ss").toStdString(); */
+    auto date = QDate::currentDate().toString("yyyy-MM-dd").toStdString();
+    auto time = QTime::currentTime().toString("hh-mm-ss").toStdString();
 
     mOutputPath /= "now";
     /* mOutputPath /= date + "_" + time; */
 
     spdlog::debug("Generated output path: {}", mOutputPath.string());
 
-    /* // results.yml */
-    /* mResultsOutputPath = mAbsOutputPath; */
-    /* mResultsOutputPath.append("/").append("results").append(".yml"); */
-
-    // features
-    mFtFolder = mOutputPath;
-    mFtFolder /= "fts";
-
-    // matches / trafos
-    mMatchFolder = mOutputPath;
-    mMatchFolder /= "matches";
-
-    // unaries/<num>.png
-    mUnFolder = mOutputPath;
-    mUnFolder /= "unaries";
-
-    /* // unaries.yml */
-    /* mUnaiesOutputPath = mAbsOutputPath; */
-    /* mUnaiesOutputPath.append("/").append("unaries").append(".yml"); */
-
-    /* // ant.yml */
-    /* mAntOutputPath = mAbsOutputPath; */
-    /* mAntOutputPath.append("/").append("ant").append(".yml"); */
-
-    /* // gaussian.png */
-    /* mOverallGaussianMaskPath = mAbsOutputPath; */
-    /* mOverallGaussianMaskPath.append("/").append("gaussian_mask").append(".png"); */
+    mResultsFile = mOutputPath / "results.yml";
+    mFtFolder = mOutputPath / "fts";
+    mMatchFolder = mOutputPath / "matches";
+    mUnFolder = mOutputPath / "unaries";
+    mAntFile = mOutputPath / "ant.yml";
 }
 
 void HabiTrack::showFrame(std::size_t frameNumber)
 {
-    if (frameNumber == mCurrentFrameNumber)
-        return;
     spdlog::debug("GUI: Show frame {}", frameNumber);
     mCurrentFrameNumber = frameNumber;
     cv::Mat frame = mImages.at(frameNumber - 1); // zero indexed here
@@ -257,9 +245,27 @@ void HabiTrack::showFrame(std::size_t frameNumber)
     ui->labelFileName->setText(
         QString::fromStdString(mImages.getFileName(frameNumber - 1).string()));
 
-    /* // get unary */
-    /* int unarySlider = ui->horizontalSlider_unaries->value(); */
-    /* cv::Mat unary; */
+    // overlay unary
+    int unarySlider = ui->sliderOverlayUnaries->value();
+    if (unarySlider > 0 && mUnaries.exists(mCurrentFrameNumber - 1))
+    {
+        double alpha = static_cast<double>(unarySlider) / 100.0;
+        auto unary = mUnaries.at(mCurrentFrameNumber - 1);
+
+        // todo multiply with gaussian mask from tracker
+        /* auto mask */
+
+        cv::Mat unaryColor;
+        cv::cvtColor(unary, unaryColor, cv::COLOR_GRAY2BGR);
+        std::vector<cv::Mat> channels(3);
+        cv::split(unaryColor, channels);
+        channels[0] = cv::Mat::zeros(unary.size(), CV_8UC1);
+        cv::merge(channels, unaryColor);
+
+        cv::resize(unaryColor, unaryColor, frame.size());
+
+        cv::addWeighted(unaryColor, alpha, frame, (1 - alpha), 0.0, frame);
+    }
     /* if (unarySlider > 0 */
     /*     && mTrackingData.getPreviewUnaryAt(mCurrentFrameNumber, unary)) */
     /* { */
@@ -324,17 +330,8 @@ void HabiTrack::showFrame(std::size_t frameNumber)
     refreshWindow();
 }
 
-void HabiTrack::on_actionOpenImgFolder_triggered()
+void HabiTrack::openImagesHelper()
 {
-    spdlog::debug("GUI: Triggered Open image folder");
-    QString imgFolderPath = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
-        mStartPath, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    mStartPath = imgFolderPath;
-    if (imgFolderPath.isEmpty())
-        return;
-
-    mImgFolder = fs::path(imgFolderPath.toStdString());
-    mImages = Images(imgFolderPath.toStdString());
     auto numImgs = mImages.size();
 
     // set up gui elements
@@ -379,9 +376,37 @@ void HabiTrack::on_actionOpenImgFolder_triggered()
     populatePaths(fs::path(mStartPath.toStdString()));
 }
 
-void HabiTrack::on_actionOpenImgListtriggered() { }
+void HabiTrack::on_actionOpenImgFolder_triggered()
+{
+    spdlog::debug("GUI: Triggered Open image folder");
+    QString imgFolderPath = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
+        mStartPath, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if (imgFolderPath.isEmpty())
+        return;
+    mStartPath = imgFolderPath;
 
-void HabiTrack::on_actionOpenResultsFile_triggered() { }
+    mImgFolder = fs::path(imgFolderPath.toStdString());
+    mImages = Images(mImgFolder);
+    openImagesHelper();
+}
+
+void HabiTrack::on_actionOpenImgListtriggered()
+{
+    spdlog::debug("GUI: Triggered open image list file");
+    QString imgFilePath = QFileDialog::getOpenFileName(this, tr("Open Image File List"),
+        mStartPath, "Text (*.txt)");
+    if (imgFilePath.isEmpty())
+        return;
+    mStartPath = imgFilePath;
+
+    mImgFolder = fs::path(imgFilePath.toStdString());
+    mImages = Images(mImgFolder);
+    openImagesHelper();
+}
+
+void HabiTrack::on_actionOpenResultsFile_triggered()
+{
+}
 
 void HabiTrack::on_buttonStartFrame_clicked()
 {
@@ -417,20 +442,27 @@ void HabiTrack::on_buttonExtractFeatures_clicked()
 
     auto start = mStartFrameNumber - 1;
     auto end = mEndFrameNumber;
-    if (Features::isComputed(
-            mImages, mFtFolder, mPrefs.featureType, start, end))
+    if (Features::isComputed(mImages, mFtFolder, mPrefs.featureType, start, end))
     {
-        mFeatures = Features::fromDir(
-            mImages, mFtFolder, mPrefs.featureType, start, end);
+        mFeatures = Features::fromDir(mImages, mFtFolder, mPrefs.featureType, start, end);
         mBar->done();
         return;
     }
-    mFeatures = Features::compute(mImages, mFtFolder, mPrefs.featureType, mPrefs.numFeatures,
-        start, end, mPrefs.cacheSize, mBar);
+    mFeatures = Features::compute(mImages, mFtFolder, mPrefs.featureType, mPrefs.numFeatures, start,
+        end, mPrefs.cacheSize, mBar);
 }
 
 void HabiTrack::on_buttonExtractTrafos_clicked()
 {
+    auto start = mStartFrameNumber - 1;
+    auto end = mEndFrameNumber;
+    if (!Features::isComputed(mImages, mFtFolder, mPrefs.featureType, start, end))
+    {
+        QMessageBox::warning(this, "Warning", "Features need to be computed first");
+        return;
+    }
+
+
     spdlog::debug("GUI: Clicked Extract Trafos");
     if (matches::isComputed(mMatchFolder, GeometricType::Homography))
     {
@@ -444,13 +476,17 @@ void HabiTrack::on_buttonExtractTrafos_clicked()
 void HabiTrack::on_buttonExtractUnaries_clicked()
 {
     spdlog::debug("GUI: Clicked Extract Unaries");
+    if (!matches::isComputed(mMatchFolder, GeometricType::Homography))
+    {
+        QMessageBox::warning(this, "Warning", "Transformations need to be computed first");
+        return;
+    }
 
     auto start = mStartFrameNumber - 1;
     auto end = mEndFrameNumber;
     if (Unaries::isComputed(mImgFolder, mUnFolder, start, end))
     {
-        mUnaries
-            = Unaries::fromDir(mImgFolder, mUnFolder, start, end);
+        mUnaries = Unaries::fromDir(mImgFolder, mUnFolder, start, end);
         mBar->done();
         return;
     }
@@ -458,7 +494,9 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
         ? matches::getTrafos(mMatchFolder, GeometricType::Homography)
         : matches::PairwiseTrafos();
 
-    mUnaries = Unaries::compute(mImgFolder, mUnFolder, start, end,
-        mPrefs.removeRedLasers, mPrefs.unarySubsample, trafos, mPrefs.cacheSize, mBar);
+    mUnaries = Unaries::compute(mImgFolder, mUnFolder, start, end, mPrefs.removeRedLasers,
+        mPrefs.unarySubsample, trafos, mPrefs.cacheSize, mBar);
+
+    ui->unaryView->getUnaryScene()->setTotalImages(mImages.size());
 }
 } // namespace gui

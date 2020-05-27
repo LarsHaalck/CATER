@@ -160,7 +160,7 @@
           </size>
          </property>
          <property name="text">
-          <string>Set a fraction of the corresponding colour channels for a colour correction. This can be left untouched in most cases. </string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Warning: This feature is not yet implemented and has no effect!&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Set a fraction of the corresponding colour channels for a colour correction. This can be left untouched in most cases. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
@@ -269,15 +269,226 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tabFeatures">
+      <attribute name="title">
+       <string>Features</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_7">
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_22">
+         <property name="text">
+          <string>Number of Extracted Features</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_23">
+         <property name="text">
+          <string>Feature Type</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <spacer name="verticalSpacer_14">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="1" column="0">
+        <spacer name="verticalSpacer_13">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="3" column="2">
+        <widget class="QSpinBox" name="numFeaturesSpin">
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+         <property name="singleStep">
+          <number>100</number>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <spacer name="horizontalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="2" column="2">
+        <widget class="QComboBox" name="featureCombo"/>
+       </item>
+       <item row="0" column="0" colspan="3">
+        <widget class="QLabel" name="label_15">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Feature Settings:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Controls the feature computation. ORB is much faster but less acurate than SIFT. Setting the number of extracted feature points to zero implies unlimited feature points. This is the most accurate setting, albeit relatively slow. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabTransformation">
+      <attribute name="title">
+       <string>Transformation</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_6">
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_14">
+         <property name="text">
+          <string>Maximal Reprojection Error</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>Minimal Nearest Neighbour Ratio</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QDoubleSpinBox" name="maxReprojSpin">
+         <property name="maximum">
+          <double>100.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="nnRatioSpin">
+         <property name="maximum">
+          <double>10.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QCheckBox" name="removeCamMotion">
+         <property name="text">
+          <string>Remove Camera Motion</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <spacer name="verticalSpacer_11">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="6" column="0" colspan="2">
+        <spacer name="verticalSpacer_12">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="0" colspan="2">
+        <widget class="QLabel" name="label_24">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Transformation Settings:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;This controls the transformation settings needed to compensate camera motion. Usally only the flag &lt;span style=&quot; font-style:italic;&quot;&gt;Remove Camera Motion &lt;/span&gt;is needed depending on your scenario. If you have a stationary camera (e.g. on a tripod), you should uncheck the checkbox.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="tabUnaries">
       <attribute name="title">
        <string>Unaries</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="8" column="0" colspan="2">
-        <widget class="QCheckBox" name="removeRedLasersCheck">
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>Remove Red Lasers</string>
+          <string>Subsample</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="subsampleSpin">
+         <property name="decimals">
+          <number>2</number>
+         </property>
+         <property name="maximum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <widget class="QLabel" name="label_19">
+         <property name="text">
+          <string>Manual Tracking Multiplier</string>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0" colspan="2">
+        <spacer name="verticalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="7" column="1">
+        <widget class="QDoubleSpinBox" name="unarySigmaSpin">
+         <property name="maximum">
+          <double>999.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>Suppress</string>
          </property>
         </widget>
        </item>
@@ -294,82 +505,35 @@
          </property>
         </spacer>
        </item>
-       <item row="3" column="1">
-        <widget class="QDoubleSpinBox" name="subsampleSpin">
-         <property name="decimals">
-          <number>2</number>
-         </property>
-         <property name="maximum">
-          <double>1.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.100000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QDoubleSpinBox" name="unarySigmaSpin">
-         <property name="maximum">
-          <double>999.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="label_6">
          <property name="text">
           <string>Sigma</string>
          </property>
         </widget>
        </item>
-       <item row="12" column="0">
-        <widget class="QLabel" name="label_19">
-         <property name="text">
-          <string>Manual Tracking Multiplier</string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0" colspan="2">
-        <spacer name="verticalSpacer_4">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>Suppress</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>Subsample</string>
-         </property>
-        </widget>
-       </item>
        <item row="12" column="1">
-        <widget class="QDoubleSpinBox" name="manualMultiplierSpin">
-         <property name="maximum">
-          <double>99.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="1">
         <widget class="QDoubleSpinBox" name="suppressSpin">
          <property name="maximum">
           <double>99.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
+       <item row="9" column="0" colspan="2">
+        <widget class="QCheckBox" name="removeRedLasersCheck">
+         <property name="text">
+          <string>Remove Red Lasers</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="1">
+        <widget class="QDoubleSpinBox" name="manualMultiplierSpin">
+         <property name="maximum">
+          <double>99.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
         <spacer name="horizontalSpacer_3">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -386,7 +550,7 @@
      </widget>
      <widget class="QWidget" name="tabPairwise">
       <attribute name="title">
-       <string>Pairwise</string>
+       <string>Pairwise Potentials</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="4" column="0">
@@ -445,11 +609,6 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tabPano">
-      <attribute name="title">
-       <string>Panorama</string>
-      </attribute>
-     </widget>
      <widget class="QWidget" name="tabSmoothBearing">
       <attribute name="title">
        <string>Smooth Bearing</string>
@@ -458,7 +617,7 @@
        <item row="1" column="0" colspan="2">
         <widget class="QCheckBox" name="enableSmoothBearing">
          <property name="text">
-          <string>Enable Smooth Bearing</string>
+          <string>Enable Smooth Bearing Calculation</string>
          </property>
         </widget>
        </item>
@@ -518,100 +677,10 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tabTransformation">
+     <widget class="QWidget" name="tabPano">
       <attribute name="title">
-       <string>Transformation</string>
+       <string>Panorama</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_6">
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_15">
-         <property name="text">
-          <string>Number Of Extracted Features</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QCheckBox" name="removeCamMotion">
-         <property name="text">
-          <string>Remove Camera Motion</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QDoubleSpinBox" name="nnRatioSpin">
-         <property name="maximum">
-          <double>10.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.100000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_14">
-         <property name="text">
-          <string>Maximal Reprojection Error</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0" colspan="2">
-        <spacer name="verticalSpacer_11">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="5" column="1">
-        <widget class="QSpinBox" name="numFeaturesSpin">
-         <property name="maximum">
-          <number>100000</number>
-         </property>
-         <property name="singleStep">
-          <number>100</number>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_13">
-         <property name="text">
-          <string>Minimal Nearest Neighbour Ratio</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QDoubleSpinBox" name="maxReprojSpin">
-         <property name="maximum">
-          <double>100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0" colspan="2">
-        <spacer name="verticalSpacer_12">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="featureCombo">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
      </widget>
     </widget>
    </item>

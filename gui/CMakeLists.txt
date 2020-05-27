@@ -12,6 +12,7 @@ set(SOURCES
     src/unaryGraphicsView.cpp
     src/qtOpencvCore.cpp
     src/progressStatusBar.cpp
+    src/resultsIO.cpp
 )
 
 set(GUI_HEADERS
