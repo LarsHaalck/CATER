@@ -257,10 +257,6 @@ void Features::writeDescs(const fs::path& file, const cv::Mat& descs)
     }
 }
 
-FeatureType Features::getFeatureType() const { return mType; }
-cv::Size Features::getImageSize() const { return mImgSize; }
-std::size_t Features::size() const { return mFtStems.size(); }
-
 FeatureCache Features::getFeatureCache(std::size_t maxChunkSize, const size_t_vec& ids) const
 {
     assert(std::all_of(std::begin(ids), std::end(ids), [this](std::size_t i) {

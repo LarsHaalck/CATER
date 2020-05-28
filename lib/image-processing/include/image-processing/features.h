@@ -60,9 +60,9 @@ public:
     PairwiseFeatureCache getPairwiseFeatureCache(std::size_t maxChunkSize,
         const std::vector<std::pair<std::size_t, std::size_t>>& pairs) const override;
 
-    cv::Size getImageSize() const override;
-    FeatureType getFeatureType() const override;
-    std::size_t size() const override;
+    FeatureType getFeatureType() const override { return mType; }
+    cv::Size getImageSize() const override { return mImgSize; }
+    std::size_t size() const override { return mFtStems.size(); }
 
 private:
     Features(const std::filesystem::path& ftDir, FeatureType type, cv::Size imageSize,

@@ -71,9 +71,15 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
             {
                 auto trafo = invert(
                     trafos.at({currPair.first, currPair.second}), GeometricType::Homography);
-                cv::Mat next_warped;
+
+                cv::Mat next_mask(next.size(), CV_8UC1, cv::Scalar(255));
+
+                cv::Mat next_warped, next_warped_mask;
                 cv::warpPerspective(next_gray, next_warped, trafo, next.size());
+                cv::warpPerspective(next_mask, next_warped_mask, trafo, next.size());
+
                 diff = ref_gray - next_warped;
+                cv::bitwise_and(diff, next_warped_mask, diff);
             }
             else
                 diff = ref_gray - next_gray;

@@ -31,6 +31,9 @@ public:
     bool exists(std::size_t idx) const;
     size_t_vec getIDs() const;
 
+    std::size_t size() const { return mUnFiles.size(); }
+
+    static double getUnaryQuality(const cv::Mat& unary);
 private:
     Unaries(const std::filesystem::path& unDir,
         const std::unordered_map<std::size_t, std::filesystem::path> unFiles, double subsample);
@@ -41,7 +44,6 @@ private:
     static void writeProperties(const std::filesystem::path& unDir, double subsample);
     static double readProperties(const std::filesystem::path& unDir);
     static void writeUnary(const std::filesystem::path& file, const cv::Mat& unary);
-    static double getUnaryQuality(const cv::Mat& unary);
 
     static std::filesystem::path getFileName(
         const std::filesystem::path& unDir, const std::filesystem::path& stem);
