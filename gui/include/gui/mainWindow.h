@@ -36,6 +36,11 @@ private:
     void refreshWindow();
     void populatePaths(const std::filesystem::path& stem);
     void openImagesHelper();
+    void setUnaryScene(const std::vector<double>& qualities);
+
+    bool featureComputed() const;
+    bool matchesComputed() const;
+    bool unariesComputed() const;
 
 private slots:
     void on_sliderOverlayUnaries_sliderReleased();
@@ -62,6 +67,7 @@ private slots:
     void on_buttonExtractFeatures_clicked();
     void on_buttonExtractTrafos_clicked();
     void on_buttonExtractUnaries_clicked();
+
 
 private:
     Ui::HabiTrack* ui;

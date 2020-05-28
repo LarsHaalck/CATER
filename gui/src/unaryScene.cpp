@@ -20,7 +20,8 @@ UnaryScene::UnaryScene(QObject* parent)
 void UnaryScene::setTotalImages(std::size_t numImages)
 {
     mNumImages = numImages;
-    this->setSceneRect(-0.1, 0, 100.2, size_height);
+    /* this->setSceneRect(-0.1, 0, 100.2, size_height); */
+    this->setSceneRect(0, 0, 99 + size_width, size_height);
 }
 
 void UnaryScene::setFrame(std::size_t id, UnaryColor color)
@@ -38,13 +39,15 @@ QColor UnaryScene::unaryColorToQColor(UnaryColor color)
     switch(color)
     {
         case UnaryColor::Poor:
-            return QColor::fromRgb(255, 200, 0); // yellow/orange
+            return QColor::fromRgb(220, 150, 86); // yellow/orange
         case UnaryColor::Critical:
-            return Qt::red; //
+            return QColor::fromRgb(171, 70, 66); // red
         case UnaryColor::Good:
-            return Qt::green; //
+            return QColor::fromRgb(161, 181, 108); // green
+        case UnaryColor::Undefined:
+            return QColor::fromRgb(56, 56, 56); // dark gray
         default:
-            return QColor::fromRgb(255, 255, 255);
+            return QColor::fromRgb(186, 139, 175); // magenta
     }
 }
 } // namespace gui

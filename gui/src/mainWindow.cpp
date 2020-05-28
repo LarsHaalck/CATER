@@ -42,6 +42,9 @@ HabiTrack::HabiTrack(QWidget* parent)
     ui->sliderOverlayUnaries->installEventFilter(this);
     ui->sliderOverlayTrackedPos->installEventFilter(this);
     ui->sliderOverlayTrajectory->installEventFilter(this);
+
+    connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this,
+        [=](std::size_t num) { this->showFrame(num + 1); });
 }
 
 HabiTrack::~HabiTrack() { delete ui; }
@@ -89,6 +92,8 @@ void HabiTrack::resetToDefaults(QObject* obj)
 
     if (obj == ui->actionExpertMode)
         ui->actionExpertMode->setChecked(mGuiPrefsDefaults.enableExpertView);
+
+    showFrame(mCurrentFrameNumber);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -237,6 +242,9 @@ void HabiTrack::populatePaths(const fs::path& path)
 
 void HabiTrack::showFrame(std::size_t frameNumber)
 {
+    if (frameNumber == 0)
+        return;
+
     spdlog::debug("GUI: Show frame {}", frameNumber);
     mCurrentFrameNumber = frameNumber;
     cv::Mat frame = mImages.at(frameNumber - 1); // zero indexed here
@@ -376,6 +384,22 @@ void HabiTrack::openImagesHelper()
     populatePaths(fs::path(mStartPath.toStdString()));
 }
 
+bool HabiTrack::featureComputed() const
+{
+    return Features::isComputed(
+        mImages, mFtFolder, mPrefs.featureType, mStartFrameNumber - 1, mEndFrameNumber);
+}
+
+bool HabiTrack::matchesComputed() const
+{
+    return matches::isComputed(mMatchFolder, GeometricType::Homography);
+}
+
+bool HabiTrack::unariesComputed() const
+{
+    return Unaries::isComputed(mImgFolder, mUnFolder, mStartFrameNumber - 1, mEndFrameNumber);
+}
+
 void HabiTrack::on_actionOpenImgFolder_triggered()
 {
     spdlog::debug("GUI: Triggered Open image folder");
@@ -393,8 +417,8 @@ void HabiTrack::on_actionOpenImgFolder_triggered()
 void HabiTrack::on_actionOpenImgListtriggered()
 {
     spdlog::debug("GUI: Triggered open image list file");
-    QString imgFilePath = QFileDialog::getOpenFileName(this, tr("Open Image File List"),
-        mStartPath, "Text (*.txt)");
+    QString imgFilePath = QFileDialog::getOpenFileName(
+        this, tr("Open Image File List"), mStartPath, "Text (*.txt)");
     if (imgFilePath.isEmpty())
         return;
     mStartPath = imgFilePath;
@@ -404,9 +428,7 @@ void HabiTrack::on_actionOpenImgListtriggered()
     openImagesHelper();
 }
 
-void HabiTrack::on_actionOpenResultsFile_triggered()
-{
-}
+void HabiTrack::on_actionOpenResultsFile_triggered() { }
 
 void HabiTrack::on_buttonStartFrame_clicked()
 {
@@ -442,7 +464,7 @@ void HabiTrack::on_buttonExtractFeatures_clicked()
 
     auto start = mStartFrameNumber - 1;
     auto end = mEndFrameNumber;
-    if (Features::isComputed(mImages, mFtFolder, mPrefs.featureType, start, end))
+    if (featureComputed())
     {
         mFeatures = Features::fromDir(mImages, mFtFolder, mPrefs.featureType, start, end);
         mBar->done();
@@ -454,29 +476,30 @@ void HabiTrack::on_buttonExtractFeatures_clicked()
 
 void HabiTrack::on_buttonExtractTrafos_clicked()
 {
-    auto start = mStartFrameNumber - 1;
-    auto end = mEndFrameNumber;
-    if (!Features::isComputed(mImages, mFtFolder, mPrefs.featureType, start, end))
+    spdlog::debug("GUI: Clicked Extract Trafos");
+
+    if (!featureComputed())
     {
         QMessageBox::warning(this, "Warning", "Features need to be computed first");
         return;
     }
 
-
-    spdlog::debug("GUI: Clicked Extract Trafos");
-    if (matches::isComputed(mMatchFolder, GeometricType::Homography))
-    {
+    if (matchesComputed())
         mBar->done();
-        return;
+    else
+    {
+        matches::compute(mMatchFolder, GeometricType::Homography, mFeatures,
+            matches::MatchType::Windowed, 2, 0.0, nullptr, mPrefs.cacheSize, size_t_vec(), mBar);
     }
-    matches::compute(mMatchFolder, GeometricType::Homography, mFeatures,
-        matches::MatchType::Windowed, 2, 0.0, nullptr, mPrefs.cacheSize, size_t_vec(), mBar);
+
+    auto size = matches::getTrafos(mMatchFolder, GeometricType::Homography).size();
+    ui->labelNumTrafos->setText(QString::number(size));
 }
 
 void HabiTrack::on_buttonExtractUnaries_clicked()
 {
     spdlog::debug("GUI: Clicked Extract Unaries");
-    if (!matches::isComputed(mMatchFolder, GeometricType::Homography))
+    if (!matchesComputed())
     {
         QMessageBox::warning(this, "Warning", "Transformations need to be computed first");
         return;
@@ -484,19 +507,56 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
 
     auto start = mStartFrameNumber - 1;
     auto end = mEndFrameNumber;
-    if (Unaries::isComputed(mImgFolder, mUnFolder, start, end))
+    if (unariesComputed())
     {
         mUnaries = Unaries::fromDir(mImgFolder, mUnFolder, start, end);
         mBar->done();
-        return;
     }
-    auto trafos = mPrefs.removeCamMotion
-        ? matches::getTrafos(mMatchFolder, GeometricType::Homography)
-        : matches::PairwiseTrafos();
+    else
+    {
+        auto trafos = mPrefs.removeCamMotion
+            ? matches::getTrafos(mMatchFolder, GeometricType::Homography)
+            : matches::PairwiseTrafos();
 
-    mUnaries = Unaries::compute(mImgFolder, mUnFolder, start, end, mPrefs.removeRedLasers,
-        mPrefs.unarySubsample, trafos, mPrefs.cacheSize, mBar);
+        mUnaries = Unaries::compute(mImgFolder, mUnFolder, start, end, mPrefs.removeRedLasers,
+            mPrefs.unarySubsample, trafos, mPrefs.cacheSize, mBar);
+    }
+    std::vector<double> unaryQuality(mImages.size(), -1);
+    for (auto i = mStartFrameNumber - 1; i < mEndFrameNumber - 1; i++)
+        unaryQuality[i] = Unaries::getUnaryQuality(mUnaries.at(i));
+    setUnaryScene(unaryQuality);
 
-    ui->unaryView->getUnaryScene()->setTotalImages(mImages.size());
+    ui->labelNumUnaries->setText(QString::number(mUnaries.size()));
 }
+
+void HabiTrack::setUnaryScene(const std::vector<double>& qualities)
+{
+    auto start = mStartFrameNumber - 1;
+    auto end = mEndFrameNumber - 1;
+    ui->unaryView->getUnaryScene()->setTotalImages(mImages.size());
+    auto min = *std::min_element(std::begin(qualities) + start, std::begin(qualities) + end);
+    auto max = *std::max_element(std::begin(qualities) + start, std::begin(qualities) + end);
+
+    spdlog::debug("GUI: Unary scene min: {}, max: {}", min, max);
+
+    auto scene = ui->unaryView->getUnaryScene();
+    for (std::size_t i = 0; i < mImages.size(); i++)
+    {
+        if (i < start || i >= end)
+        {
+            scene->setFrame(i, UnaryColor::Undefined);
+            continue;
+        }
+
+        auto quality = (qualities[i] - min) / (max - min);
+        spdlog::debug("GUI: mapped {} to quality {}", i, quality);
+        if (quality < 0.3)
+            scene->setFrame(i, UnaryColor::Good);
+        else if (quality < 0.6)
+            scene->setFrame(i, UnaryColor::Poor);
+        else
+            scene->setFrame(i, UnaryColor::Critical);
+    }
+}
+
 } // namespace gui

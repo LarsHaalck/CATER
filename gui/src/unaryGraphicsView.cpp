@@ -24,14 +24,13 @@ void UnaryGraphicsView::resizeEvent(QResizeEvent*)
 void UnaryGraphicsView::mousePressEvent(QMouseEvent* event)
 {
     auto numImgs = this->mScene->getTotalImages();
-    if (numImgs == 0)
+    QPointF pos = this->mapToScene(event->pos());
+    if (numImgs == 0 || pos.x() < 0)
         return;
 
-    QPointF pos = this->mapToScene(event->pos());
     auto num = static_cast<int>(std::floor((pos.x() / 100) * numImgs));
+
     spdlog::debug("GUI: mapped to unary {}", num);
-    if (num < 0)
-        return
     emit this->jumpedToUnary(num);
 }
 } // namespace gui

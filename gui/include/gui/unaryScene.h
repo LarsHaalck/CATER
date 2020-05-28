@@ -10,7 +10,8 @@ enum class UnaryColor
 {
     Poor,
     Critical,
-    Good
+    Good,
+    Undefined,
 };
 
 class UnaryScene : public QGraphicsScene
