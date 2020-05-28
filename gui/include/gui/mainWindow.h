@@ -12,6 +12,7 @@
 #include "habitrack/unaries.h"
 #include "progressbar/baseProgressBar.h"
 #include <filesystem>
+#include "gui/unaryGraphicsView.h"
 
 namespace Ui
 {
@@ -36,7 +37,7 @@ private:
     void refreshWindow();
     void populatePaths(const std::filesystem::path& stem);
     void openImagesHelper();
-    void setUnaryScene(const std::vector<double>& qualities);
+    void setUnaryScene(std::vector<double> qualities);
 
     bool featureComputed() const;
     bool matchesComputed() const;
@@ -95,6 +96,7 @@ private:
 
     ht::Features mFeatures;
     ht::Unaries mUnaries;
+    std::vector<double> mUnaryQualities;
 
     // handles library related stuff
     // needs ui elements

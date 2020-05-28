@@ -40,7 +40,7 @@
            <x>0</x>
            <y>0</y>
            <width>303</width>
-           <height>919</height>
+           <height>951</height>
           </rect>
          </property>
          <property name="maximumSize">
@@ -86,80 +86,24 @@
                 <string>Status Box</string>
                </property>
                <layout class="QGridLayout" name="gridLayout">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_3">
-                  <property name="text">
-                   <string>File Name:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="8" column="1">
-                 <widget class="QLabel" name="labelNumTrackedPos">
-                  <property name="text">
-                   <string>&lt;num&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
+                <item row="3" column="0">
                  <widget class="QLabel" name="label_5">
                   <property name="text">
                    <string>Start Frame:</string>
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="labelStartFrame">
-                  <property name="text">
-                   <string>&lt;num&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="8" column="0">
-                 <widget class="QLabel" name="label_15">
-                  <property name="text">
-                   <string># Tracked Positions:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="0" colspan="2">
-                 <widget class="Line" name="line">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item row="7" column="1">
+                <item row="9" column="1">
                  <widget class="QLabel" name="labelNumUnaries">
                   <property name="text">
                    <string>&lt;num&gt;</string>
                   </property>
                  </widget>
                 </item>
-                <item row="6" column="1">
-                 <widget class="QLabel" name="labelNumTrafos">
+                <item row="10" column="1">
+                 <widget class="QLabel" name="labelNumTrackedPos">
                   <property name="text">
                    <string>&lt;num&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QLabel" name="labelEndFrame">
-                  <property name="text">
-                   <string>&lt;num&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="6" column="0">
-                 <widget class="QLabel" name="label_12">
-                  <property name="text">
-                   <string># Transformations:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="7" column="0">
-                 <widget class="QLabel" name="label_11">
-                  <property name="text">
-                   <string># Unaries:</string>
                   </property>
                  </widget>
                 </item>
@@ -170,10 +114,87 @@
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="0">
+                <item row="4" column="1">
+                 <widget class="QLabel" name="labelEndFrame">
+                  <property name="text">
+                   <string>&lt;num&gt;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="10" column="0">
+                 <widget class="QLabel" name="label_15">
+                  <property name="text">
+                   <string># Tracked Positions:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="8" column="1">
+                 <widget class="QLabel" name="labelNumTrafos">
+                  <property name="text">
+                   <string>&lt;num&gt;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
                  <widget class="QLabel" name="label_7">
                   <property name="text">
                    <string>End Frame:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label">
+                  <property name="text">
+                   <string>Unary Quality: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_3">
+                  <property name="text">
+                   <string>File Name:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QLabel" name="labelStartFrame">
+                  <property name="text">
+                   <string>&lt;num&gt;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="6" column="0" colspan="2">
+                 <widget class="Line" name="line">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item row="8" column="0">
+                 <widget class="QLabel" name="label_12">
+                  <property name="text">
+                   <string># Transformations:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="9" column="0">
+                 <widget class="QLabel" name="label_11">
+                  <property name="text">
+                   <string># Unaries:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QLabel" name="qualityLabel">
+                  <property name="text">
+                   <string>&lt;quality&gt;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="2">
+                 <widget class="Line" name="line_2">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
                   </property>
                  </widget>
                 </item>

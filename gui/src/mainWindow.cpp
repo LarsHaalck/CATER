@@ -13,6 +13,8 @@
 #include <spdlog/spdlog.h>
 
 #include "resultsIO.h"
+#include <algorithm>
+#include <fstream>
 
 using namespace ht;
 namespace fs = std::filesystem;
@@ -35,6 +37,8 @@ HabiTrack::HabiTrack(QWidget* parent)
 {
     ui->setupUi(this);
     populateGuiDefaults();
+
+    // needs to be done after setupUi
     mScene = ui->graphicsView->getTrackerScene();
     mBar = std::make_shared<ProgressStatusBar>(ui->progressBar, ui->labelProgress);
 
@@ -43,8 +47,10 @@ HabiTrack::HabiTrack(QWidget* parent)
     ui->sliderOverlayTrackedPos->installEventFilter(this);
     ui->sliderOverlayTrajectory->installEventFilter(this);
 
-    connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this,
-        [=](std::size_t num) { this->showFrame(num + 1); });
+    connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this, [=](std::size_t num) {
+        spdlog::warn("quality: {}", mUnaryQualities[num]);
+        this->showFrame(num + 1);
+    });
 }
 
 HabiTrack::~HabiTrack() { delete ui; }
@@ -252,6 +258,21 @@ void HabiTrack::showFrame(std::size_t frameNumber)
     // set filename
     ui->labelFileName->setText(
         QString::fromStdString(mImages.getFileName(frameNumber - 1).string()));
+
+    if (mUnaries.size())
+    {
+        auto scene = ui->unaryView->getUnaryScene();
+        auto color = scene->getUnaryColor(frameNumber - 1);
+        auto quality = unaryQualityToString(scene->getUnaryQuality(frameNumber - 1));
+        ui->qualityLabel->setStyleSheet(
+                QString("color: white; background-color: " + color.name() + ";"));
+        ui->qualityLabel->setText(quality.c_str());
+    }
+    else
+    {
+        ui->qualityLabel->setStyleSheet(QString(""));
+        ui->qualityLabel->setText("<quality>");
+    }
 
     // overlay unary
     int unarySlider = ui->sliderOverlayUnaries->value();
@@ -526,36 +547,52 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
         unaryQuality[i] = Unaries::getUnaryQuality(mUnaries.at(i));
     setUnaryScene(unaryQuality);
 
+    /* std::ofstream f("qual.csv"); */
+    /* for (auto un : unaryQuality) */
+    /*     f << un << ","; */
+    /* mUnaryQualities = std::move(unaryQuality); */
+
     ui->labelNumUnaries->setText(QString::number(mUnaries.size()));
 }
 
-void HabiTrack::setUnaryScene(const std::vector<double>& qualities)
+void HabiTrack::setUnaryScene(std::vector<double> qualities)
 {
-    auto start = mStartFrameNumber - 1;
-    auto end = mEndFrameNumber - 1;
-    ui->unaryView->getUnaryScene()->setTotalImages(mImages.size());
-    auto min = *std::min_element(std::begin(qualities) + start, std::begin(qualities) + end);
-    auto max = *std::max_element(std::begin(qualities) + start, std::begin(qualities) + end);
+    mUnaryQualities = qualities;
 
-    spdlog::debug("GUI: Unary scene min: {}, max: {}", min, max);
-
+    auto num = mImages.size();
     auto scene = ui->unaryView->getUnaryScene();
-    for (std::size_t i = 0; i < mImages.size(); i++)
-    {
-        if (i < start || i >= end)
-        {
-            scene->setFrame(i, UnaryColor::Undefined);
-            continue;
-        }
+    scene->setTotalImages(num);
 
-        auto quality = (qualities[i] - min) / (max - min);
-        spdlog::debug("GUI: mapped {} to quality {}", i, quality);
-        if (quality < 0.3)
-            scene->setFrame(i, UnaryColor::Good);
-        else if (quality < 0.6)
-            scene->setFrame(i, UnaryColor::Poor);
-        else
-            scene->setFrame(i, UnaryColor::Critical);
+    auto offset = mStartFrameNumber - 1;
+    num = mEndFrameNumber - mStartFrameNumber;
+    std::size_t chunkSize = 100;
+    for (std::size_t i = 0; i < std::ceil(static_cast<double>(num) / chunkSize); i++)
+    {
+        auto start = i * chunkSize + offset;
+        auto end = std::min((i + 1) * chunkSize, num) + offset;
+        auto mid = start + (end - start) / 2;
+        std::nth_element(std::begin(qualities) + start, std::begin(qualities) + mid,
+            std::begin(qualities) + end);
+        auto median = qualities[mid];
+
+        std::vector<double> dists;
+        dists.reserve(end - start);
+        for (std::size_t j = start; j < end; j++)
+            dists.push_back(std::abs(mUnaryQualities[j] - median));
+
+        std::nth_element(std::begin(dists), std::begin(dists) + dists.size() / 2, std::end(dists));
+        auto medianDist = dists[dists.size() / 2];
+        spdlog::critical("Low {}", median + 2.0 * medianDist);
+        spdlog::critical("Med {}", median + 4.0 * medianDist);
+        for (std::size_t j = start; j < end; j++)
+        {
+            if (mUnaryQualities[j] < (median + 2.0 * medianDist))
+                scene->setUnaryQuality(j, UnaryQuality::Good);
+            else if (mUnaryQualities[j] < (median + 4.0 * medianDist))
+                scene->setUnaryQuality(j, UnaryQuality::Poor);
+            else
+                scene->setUnaryQuality(j, UnaryQuality::Critical);
+        }
     }
 }
 

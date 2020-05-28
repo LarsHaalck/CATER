@@ -6,13 +6,15 @@
 
 namespace gui
 {
-enum class UnaryColor
+enum class UnaryQuality
 {
+    Good,
     Poor,
     Critical,
-    Good,
     Undefined,
 };
+
+std::string unaryQualityToString(UnaryQuality quality);
 
 class UnaryScene : public QGraphicsScene
 {
@@ -21,11 +23,15 @@ public:
     UnaryScene(QObject* parent = 0);
     void setTotalImages(std::size_t numImages);
     std::size_t getTotalImages() const { return mNumImages; }
-    void setFrame(std::size_t id, UnaryColor color);
+    void setUnaryQuality(std::size_t id, UnaryQuality color);
+
+    UnaryQuality getUnaryQuality(std::size_t id);
+    QColor getUnaryColor(std::size_t id);
 private:
-    QColor unaryColorToQColor(UnaryColor color);
+    QColor unaryColorToQColor(UnaryQuality quality);
 private:
     std::size_t mNumImages;
+    std::vector<UnaryQuality> mUnaryColors;
     QPen mPen;
 };
 } // namespace gui
