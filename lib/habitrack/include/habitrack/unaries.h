@@ -27,10 +27,10 @@ public:
         std::size_t start = 0, std::size_t end = -1);
     static Unaries fromDir(const Images& imgContainer, const std::filesystem::path& unDir,
         std::size_t start = 0, std::size_t end = -1);
+
     cv::Mat at(std::size_t idx) const;
     bool exists(std::size_t idx) const;
     size_t_vec getIDs() const;
-
     std::size_t size() const { return mUnFiles.size(); }
 
     static double getUnaryQuality(const cv::Mat& unary);

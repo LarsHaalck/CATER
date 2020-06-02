@@ -10,6 +10,7 @@
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
 #include "habitrack/unaries.h"
+#include "habitrack/manualUnaries.h"
 #include "progressbar/baseProgressBar.h"
 #include <filesystem>
 #include "gui/unaryGraphicsView.h"
@@ -54,7 +55,7 @@ private slots:
     void on_actionOpenImgListtriggered();
     void on_actionOpenResultsFile_triggered();
 
-    void on_sliderFrame_sliderReleased();
+    void on_sliderFrame_valueChanged(int value);
     void on_spinCurrentFrame_editingFinished();
     void on_spinCurrentFrame_valueChanged(int value);
     void on_buttonPrevFrame_clicked();
@@ -68,6 +69,11 @@ private slots:
     void on_buttonExtractFeatures_clicked();
     void on_buttonExtractTrafos_clicked();
     void on_buttonExtractUnaries_clicked();
+
+    void onPositionChanged(QPointF position);
+    void onBearingChanged(QPointF position);
+    void onPositionCleared();
+    void onBearingCleared();
 
 
 private:
@@ -96,6 +102,7 @@ private:
 
     ht::Features mFeatures;
     ht::Unaries mUnaries;
+    ht::ManualUnaries mManualUnaries;
     std::vector<double> mUnaryQualities;
 
     // handles library related stuff

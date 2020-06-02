@@ -14,7 +14,7 @@
 
 #include "resultsIO.h"
 #include <algorithm>
-#include <fstream>
+#include <QStatusBar>
 
 using namespace ht;
 namespace fs = std::filesystem;
@@ -34,6 +34,7 @@ HabiTrack::HabiTrack(QWidget* parent)
     , mScene(nullptr)
     , mFeatures()
     , mUnaries()
+    , mManualUnaries()
 {
     ui->setupUi(this);
     populateGuiDefaults();
@@ -47,10 +48,17 @@ HabiTrack::HabiTrack(QWidget* parent)
     ui->sliderOverlayTrackedPos->installEventFilter(this);
     ui->sliderOverlayTrajectory->installEventFilter(this);
 
-    connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this, [=](std::size_t num) {
-        spdlog::warn("quality: {}", mUnaryQualities[num]);
-        this->showFrame(num + 1);
-    });
+    connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this,
+        [=](std::size_t num) { this->showFrame(num + 1); });
+
+    connect(this->ui->graphicsView, SIGNAL(positionChanged(QPointF)), this,
+        SLOT(onPositionChanged(QPointF)));
+    connect(this->ui->graphicsView, SIGNAL(bearingChanged(QPointF)), this,
+        SLOT(onBearingChanged(QPointF)));
+    connect(this->ui->graphicsView, SIGNAL(positionCleared()), this,
+        SLOT(onPositionCleared()));
+    connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this,
+        SLOT(onBearingCleared()));
 }
 
 HabiTrack::~HabiTrack() { delete ui; }
@@ -162,10 +170,9 @@ void HabiTrack::on_actionPreferences_triggered()
     }
 }
 
-void HabiTrack::on_sliderFrame_sliderReleased()
+void HabiTrack::on_sliderFrame_valueChanged(int value)
 {
     spdlog::debug("GUI: Changed slider frame");
-    int value = ui->sliderFrame->value();
     showFrame(value);
 }
 
@@ -251,21 +258,23 @@ void HabiTrack::showFrame(std::size_t frameNumber)
     if (frameNumber == 0)
         return;
 
-    spdlog::debug("GUI: Show frame {}", frameNumber);
+    auto idx = frameNumber - 1;
+
+    spdlog::debug("GUI: Show frame {}", idx);
     mCurrentFrameNumber = frameNumber;
-    cv::Mat frame = mImages.at(frameNumber - 1); // zero indexed here
+    cv::Mat frame = mImages.at(idx); // zero indexed here
 
     // set filename
     ui->labelFileName->setText(
-        QString::fromStdString(mImages.getFileName(frameNumber - 1).string()));
+        QString::fromStdString(mImages.getFileName(idx).string()));
 
     if (mUnaries.size())
     {
         auto scene = ui->unaryView->getUnaryScene();
-        auto color = scene->getUnaryColor(frameNumber - 1);
-        auto quality = unaryQualityToString(scene->getUnaryQuality(frameNumber - 1));
+        auto color = scene->getUnaryColor(idx);
+        auto quality = unaryQualityToString(scene->getUnaryQuality(idx));
         ui->qualityLabel->setStyleSheet(
-                QString("color: white; background-color: " + color.name() + ";"));
+            QString("color: white; background-color: " + color.name() + ";"));
         ui->qualityLabel->setText(quality.c_str());
     }
     else
@@ -276,13 +285,23 @@ void HabiTrack::showFrame(std::size_t frameNumber)
 
     // overlay unary
     int unarySlider = ui->sliderOverlayUnaries->value();
-    if (unarySlider > 0 && mUnaries.exists(mCurrentFrameNumber - 1))
+    if (unarySlider > 0 && mUnaries.exists(idx))
     {
         double alpha = static_cast<double>(unarySlider) / 100.0;
-        auto unary = mUnaries.at(mCurrentFrameNumber - 1);
 
-        // todo multiply with gaussian mask from tracker
-        /* auto mask */
+        cv::Mat unary;
+        if (mManualUnaries.exists(idx))
+        {
+            unary = mManualUnaries.unaryAt(idx);
+            unary.convertTo(unary, CV_8U);
+        }
+        else
+        {
+            unary = mUnaries.at(idx);
+            // TODO multiply with gaussian mask from tracker
+            /* auto mask */
+        }
+
 
         cv::Mat unaryColor;
         cv::cvtColor(unary, unaryColor, cv::COLOR_GRAY2BGR);
@@ -459,7 +478,7 @@ void HabiTrack::on_buttonStartFrame_clicked()
             this, "Warning", "Start frame cannot be equal or greater than end frame");
         return;
     }
-    spdlog::debug("GUI: changed start frame to {}", mCurrentFrameNumber);
+    spdlog::debug("GUI: changed start frame to {}", mCurrentFrameNumber - 1);
     // TODO: some data structures are no longer valid and should be computed again
     mStartFrameNumber = mCurrentFrameNumber;
     ui->labelStartFrame->setText(QString::number(mStartFrameNumber));
@@ -473,7 +492,7 @@ void HabiTrack::on_buttonEndFrame_clicked()
             this, "Warning", "End frame cannot be equal or smaller than start frame");
         return;
     }
-    spdlog::debug("GUI: changed end frame to {}", mCurrentFrameNumber);
+    spdlog::debug("GUI: changed end frame to {}", mCurrentFrameNumber - 1);
     // TODO: some data structures are no longer valid and should be computed again
     mEndFrameNumber = mCurrentFrameNumber;
     ui->labelEndFrame->setText(QString::number(mEndFrameNumber));
@@ -547,12 +566,46 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
         unaryQuality[i] = Unaries::getUnaryQuality(mUnaries.at(i));
     setUnaryScene(unaryQuality);
 
-    /* std::ofstream f("qual.csv"); */
-    /* for (auto un : unaryQuality) */
-    /*     f << un << ","; */
-    /* mUnaryQualities = std::move(unaryQuality); */
-
     ui->labelNumUnaries->setText(QString::number(mUnaries.size()));
+    mManualUnaries = ManualUnaries::fromDir(mUnFolder, mPrefs.unarySubsample, mImages.getImgSize());
+}
+
+void HabiTrack::onPositionChanged(QPointF position)
+{
+    if (!mUnaries.size())
+        return;
+
+    spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(),
+        position.y(), mCurrentFrameNumber - 1);
+
+    mManualUnaries.insert(mCurrentFrameNumber - 1, QtOpencvCore::qpoint2point(position));
+    showFrame(mCurrentFrameNumber);
+    statusBar()->showMessage("Manually added unary", 1000);
+}
+
+void HabiTrack::onBearingChanged(QPointF position)
+{
+    /* spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(), */
+    /*     position.y(), mCurrentFrameNumber - 1); */
+    // TODO: implement
+}
+
+void HabiTrack::onPositionCleared()
+{
+    if (!mUnaries.size())
+        return;
+    spdlog::debug("GUI: manual position cleared on frame {}", mCurrentFrameNumber - 1);
+    mManualUnaries.clear(mCurrentFrameNumber - 1);
+    showFrame(mCurrentFrameNumber);
+    statusBar()->showMessage("Unary cleared", 1000);
+}
+
+void HabiTrack::onBearingCleared()
+{
+    /* if (!mImages.size()) */
+    /*     return; */
+    /* spdlog::debug("GUI: manual bearing cleared on frame {}", mCurrentFrameNumber - 1); */
+    // TODO: implement
 }
 
 void HabiTrack::setUnaryScene(std::vector<double> qualities)
@@ -582,8 +635,8 @@ void HabiTrack::setUnaryScene(std::vector<double> qualities)
 
         std::nth_element(std::begin(dists), std::begin(dists) + dists.size() / 2, std::end(dists));
         auto medianDist = dists[dists.size() / 2];
-        spdlog::critical("Low {}", median + 2.0 * medianDist);
-        spdlog::critical("Med {}", median + 4.0 * medianDist);
+        spdlog::debug("GUI: Unary low threshold {}", median + 2.0 * medianDist);
+        spdlog::debug("GUI: Unary high threshold {}", median + 4.0 * medianDist);
         for (std::size_t j = start; j < end; j++)
         {
             if (mUnaryQualities[j] < (median + 2.0 * medianDist))

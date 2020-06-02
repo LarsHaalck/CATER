@@ -178,7 +178,7 @@ size_t_vec Unaries::getIDs() const
 double Unaries::readProperties(const fs::path& unDir)
 {
     auto file = unDir / "unaries.json";
-    std::ifstream stream(file.string(), std::ios::out);
+    std::ifstream stream(file.string(), std::ios::in);
     io::checkStream(stream, file);
     double subsample;
     {

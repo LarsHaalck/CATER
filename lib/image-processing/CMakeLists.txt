@@ -32,6 +32,8 @@ set(SOURCES
     src/isometry.cpp
     src/transformation.cpp
     # src/mildRecommender.cpp
+
+    src/util.cpp
 )
 
 ###########################################################################

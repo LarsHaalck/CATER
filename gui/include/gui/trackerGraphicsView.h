@@ -33,6 +33,8 @@ private:
 signals:
     void positionChanged(QPointF position);
     void bearingChanged(QPointF position);
+    void positionCleared();
+    void bearingCleared();
 };
 } // namespace gui
 #endif // TRACKERGRAPHICSVIEW_H
