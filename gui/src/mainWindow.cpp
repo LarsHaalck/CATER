@@ -311,48 +311,32 @@ void HabiTrack::showFrame(std::size_t frameNumber)
 
         cv::addWeighted(unaryColor, alpha, frame, (1 - alpha), 0.0, frame);
     }
-    /* if (unarySlider > 0 */
-    /*     && mTrackingData.getPreviewUnaryAt(mCurrentFrameNumber, unary)) */
-    /* { */
-    /*     double alpha = static_cast<double>(unarySlider) / 100.0; */
 
-    /*     std::vector<cv::Mat> channels(3); */
-    /*     cv::split(unary, channels); */
-    /*     channels[0] = cv::Mat::zeros(unary.size(), CV_8UC1); */
-    /*     cv::merge(channels, unary); */
-    /*     cv::resize(unary, unary, mCurrentFrame.size()); */
+    // get ant position
+    int trackedPositionSlider = ui->sliderOverlayTrackedPos->value();
+    cv::Point position;
+    if (trackedPositionSlider > 0 && mDetections.exists(idx))
+    {
+        auto antPosition = mDetections.at(idx).position;
+        /* double theta; */
+        /* mTrackingData.getAntThetaAt(mCurrentFrameNumber, theta); */
+        /* double thetaQuality; */
+        /* mTrackingData.getAntThetaQualityAt(mCurrentFrameNumber, thetaQuality); */
+        /* cv::Point dirIndicator = utils::rotatePointAroundPoint(antPosition, theta); */
 
-    /*     cv::addWeighted( */
-    /*         unary, alpha, mCurrentFrame, (1 - alpha), 0.0, mCurrentFrame); */
-    /* } */
-
-    /* // get ant position */
-    /* int antPositionSlider = ui->horizontalSlider_ant_positions->value(); */
-    /* cv::Point antPosition; */
-    /* if (antPositionSlider > 0 */
-    /*     && mTrackingData.getAntPositionAt(mCurrentFrameNumber, antPosition)) */
-    /* { */
-    /*     double theta; */
-    /*     mTrackingData.getAntThetaAt(mCurrentFrameNumber, theta); */
-
-    /*     double thetaQuality; */
-    /*     mTrackingData.getAntThetaQualityAt(mCurrentFrameNumber, thetaQuality); */
-
-    /*     cv::Point dirIndicator = utils::rotatePointAroundPoint(antPosition, theta); */
-
-    /*     int red = antPositionSlider * 255 / 100; */
-    /*     int blue = antPositionSlider * 100 / 100; */
-    /*     int green = antPositionSlider * 100 / 100; */
-    /*     int circleThickness = 1; */
-    /*     if (antPositionSlider == 100) */
-    /*     { */
-    /*         circleThickness = 2; */
-    /*         cv::line(mCurrentFrame, antPosition, dirIndicator, */
-    /*             cv::Scalar(0, 255, 0), 1); */
-    /*     } */
-    /*     cv::Scalar color(blue, green, red); */
-    /*     cv::circle(mCurrentFrame, antPosition, 20, color, circleThickness); */
-    /* } */
+        int red = trackedPositionSlider * 255 / 100;
+        int blue = trackedPositionSlider * 100 / 100;
+        int green = trackedPositionSlider * 100 / 100;
+        int circleThickness = 1;
+        /* if (trackedPositionSlider == 100) */
+        /* { */
+        /*     circleThickness = 2; */
+        /*     cv::line(mCurrentFrame, antPosition, dirIndicator, */
+        /*         cv::Scalar(0, 255, 0), 1); */
+        /* } */
+        cv::Scalar color(blue, green, red);
+        cv::circle(frame, antPosition, 20, color, circleThickness);
+    }
 
     /* // get trajectory */
     /* int trajectorySlider = ui->horizontalSlide_draw_trajectory->value(); */
@@ -586,7 +570,9 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
     bearingSettings.calculate = mPrefs.smoothBearing;
     bearingSettings.windowSize = mPrefs.smoothBearingWindowSize;
     bearingSettings.outlierTolerance = mPrefs.smoothBearingOutlierTol;
-    Tracker::track(mUnaries, mManualUnaries, unarySettings, bearingSettings, mPrefs.chunkSize);
+    mDetections = Tracker::track(
+        mUnaries, mManualUnaries, unarySettings, bearingSettings, mPrefs.chunkSize);
+    return;
 }
 
 void HabiTrack::onPositionChanged(QPointF position)

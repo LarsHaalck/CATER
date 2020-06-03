@@ -6,14 +6,15 @@
 #include "gui/guiPreferences.h"
 #include "gui/preferences.h"
 #include "gui/trackerScene.h"
+#include "gui/unaryGraphicsView.h"
+#include "habitrack/detections.h"
+#include "habitrack/manualUnaries.h"
+#include "habitrack/unaries.h"
 #include "image-processing/features.h"
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
-#include "habitrack/unaries.h"
-#include "habitrack/manualUnaries.h"
 #include "progressbar/baseProgressBar.h"
 #include <filesystem>
-#include "gui/unaryGraphicsView.h"
 
 namespace Ui
 {
@@ -77,7 +78,6 @@ private slots:
     void onPositionCleared();
     void onBearingCleared();
 
-
 private:
     Ui::HabiTrack* ui;
     QString mStartPath; // used for next QFileDialog
@@ -106,6 +106,8 @@ private:
     ht::Unaries mUnaries;
     ht::ManualUnaries mManualUnaries;
     std::vector<double> mUnaryQualities;
+
+    ht::Detections mDetections;
 
     // handles library related stuff
     // needs ui elements

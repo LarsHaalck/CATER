@@ -2,6 +2,7 @@
 #define HABITRACK_TRACKER_H
 
 #include <opencv2/core.hpp>
+#include "habitrack/detections.h"
 
 namespace ht
 {
@@ -30,13 +31,13 @@ public:
     };
 
 public:
-    static void track(const Unaries& unaries, const ManualUnaries& manualUnaries,
+    static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
         UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings,
         std::size_t chunkSize);
 
 private:
     static cv::Mat getPairwiseKernel(int size, double sigma);
-    static void truncatedMaxSum(std::size_t start, std::size_t end,
+    static cv::Mat truncatedMaxSum(std::size_t start, std::size_t end,
         const std::vector<std::size_t>& ids, const Unaries& unaries,
         const ManualUnaries& manualUnaries, UnarySettings unarySettings,
         const cv::Mat& pairwiseKernel);
