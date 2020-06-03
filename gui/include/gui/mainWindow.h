@@ -49,6 +49,7 @@ private slots:
     void on_sliderOverlayTrackedPos_sliderReleased();
     void on_sliderOverlayTrajectory_sliderReleased();
     void on_actionExpertMode_toggled(bool value);
+    void on_actionSave_Results_triggered();
     void on_actionPreferences_triggered();
 
     void on_actionOpenImgFolder_triggered();
@@ -69,6 +70,7 @@ private slots:
     void on_buttonExtractFeatures_clicked();
     void on_buttonExtractTrafos_clicked();
     void on_buttonExtractUnaries_clicked();
+    void on_buttonOptimizeUnaries_clicked();
 
     void onPositionChanged(QPointF position);
     void onBearingChanged(QPointF position);

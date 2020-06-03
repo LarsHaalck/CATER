@@ -5,7 +5,7 @@
 
 namespace ht
 {
-
+namespace fs = std::filesystem;
 ManualUnaries::ManualUnaries()
     : mSubsample(0)
     , mImgSize()
@@ -40,7 +40,7 @@ ManualUnaries ManualUnaries::fromDir(
     const std::filesystem::path& unDir, double subsample, cv::Size imgSize)
 {
     auto file = unDir / "manual_unaries.json";
-    if (!fileExists(file))
+    if (!fs::is_regular_file(file))
         return ManualUnaries(subsample, imgSize);
     std::ifstream stream(file.string(), std::ios::in);
     io::checkStream(stream, file);
@@ -68,7 +68,19 @@ void ManualUnaries::save(const std::filesystem::path& unDir)
 cv::Mat ManualUnaries::unaryAt(std::size_t id) const
 {
     assert(mUnaries.count(id) && "Unary id does not exist in unaryAt()");
-    return mUnaries.at(id);
+    cv::Mat unary = mUnaries.at(id);
+    unary.convertTo(unary, CV_32FC1);
+    unary /= 255.0f;
+    unary += 0.0001f;
+    return unary;
+}
+
+cv::Mat ManualUnaries::previewUnaryAt(std::size_t id) const
+{
+    assert(mUnaries.count(id) && "Unary id does not exist in previewUnaryAt()");
+    cv::Mat unary = mUnaries.at(id);
+    unary.convertTo(unary, CV_8UC1);
+    return unary;
 }
 
 cv::Point2f ManualUnaries::unaryPointAt(std::size_t id) const

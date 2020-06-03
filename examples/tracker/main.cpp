@@ -67,7 +67,7 @@ int main()
         uns = ht::Unaries::fromDir(imgs, un_folder);
     }
     else
-        uns = ht::Unaries::compute(imgs, un_folder, 0, -1, true, 0.8, trafos, cache_size);
+        uns = ht::Unaries::compute(imgs, un_folder, 0, -1, true, 0.8, 200.0, trafos, cache_size);
 
 
     return 0;

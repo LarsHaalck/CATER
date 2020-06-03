@@ -2,6 +2,7 @@
 
 #include "image-processing/images.h"
 #include "image-processing/transformation.h"
+#include "image-processing/util.h"
 #include "progressbar/progressBar.h"
 #include "unaryIO.h"
 #include <algorithm>
@@ -17,8 +18,9 @@ using namespace transformation;
 namespace fs = std::filesystem;
 
 Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std::size_t start,
-    std::size_t end, bool removeLaser, double subsample, const matches::PairwiseTrafos& trafos,
-    std::size_t cacheSize, std::shared_ptr<BaseProgressBar> cb)
+    std::size_t end, bool removeLaser, double subsample, double sigma,
+    const matches::PairwiseTrafos& trafos, std::size_t cacheSize,
+    std::shared_ptr<BaseProgressBar> cb)
 {
     // make sure folder exits
     if (!fs::exists(unDir) || !fs::is_directory(unDir))
@@ -28,18 +30,12 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
 
     auto numImgs = end - start;
 
-    // reserve space for quality computation
-    std::unordered_map<std::size_t, double> qualities;
-    qualities.reserve(numImgs - 1);
-
     // get pairs for consecutive frames
     std::vector<std::pair<std::size_t, std::size_t>> pairs;
     pairs.reserve(numImgs - 1);
     for (std::size_t i = start; i < end - 1; i++)
     {
         pairs.push_back({i, i + 1});
-        // placeholder for multi-threaded access
-        qualities.insert({i, 0.0});
     }
 
     auto cache = imgContainer.getPairwiseCache(cacheSize, pairs);
@@ -93,23 +89,21 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
             }
             cv::Mat resizedUnary;
             cv::resize(diff, resizedUnary, cv::Size(), subsample, subsample, cv::INTER_LINEAR);
-            double quality = getUnaryQuality(resizedUnary);
-            spdlog::debug("Unary computed of image {} with quality {}", currPair.first, quality);
+            spdlog::debug("Unary computed of image {}", currPair.first);
             unaries[k] = resizedUnary;
-            qualities.at(currPair.first) = quality;
         }
         writeChunk(imgContainer, unDir, cache.getChunkBounds(i), unaries, start);
         cb->inc();
     }
     cb->done();
-    writeProperties(unDir, subsample);
+    writeProperties(unDir, subsample, sigma, !trafos.empty());
 
     // sanity check
     if (isComputed(imgContainer, unDir, start, end))
         return Unaries::fromDir(imgContainer, unDir, start, end);
 
     spdlog::warn("Unaries were not computed sucessfully");
-    return Unaries {unDir, {}, 0.0};
+    return Unaries{};
 }
 
 bool Unaries::isComputed(
@@ -131,6 +125,7 @@ bool Unaries::isComputed(
             break;
         }
     }
+    isComputed &= fs::is_regular_file(unDir / "unaries.json");
     return isComputed;
 }
 
@@ -145,11 +140,16 @@ Unaries Unaries::fromDir(
     for (std::size_t i = start; i < end - 1; i++)
         files.insert({i, getFileName(unDir, imgContainer.getFileName(i).stem())});
 
-    auto subsample = readProperties(unDir);
+    auto [subsample, sigma, removeCameraMotion] = readProperties(unDir);
 
     spdlog::debug("{} unary files with subsample {} available in folder {}", files.size(),
         subsample, unDir.string());
-    return Unaries {unDir, files, subsample};
+
+    auto center = imgContainer.getCenter();
+    auto size = imgContainer.getImgSize();
+    cv::Mat gaussian = scaledGauss2D(center.x, center.y, sigma, sigma, 1.0, size);
+    cv::resize(gaussian, gaussian, cv::Size(), subsample, subsample, cv::INTER_LINEAR);
+    return Unaries {unDir, files, subsample, sigma, removeCameraMotion, gaussian};
 }
 
 cv::Mat Unaries::at(std::size_t idx) const
@@ -158,13 +158,28 @@ cv::Mat Unaries::at(std::size_t idx) const
 
     auto file = mUnFiles.at(idx);
     cv::Mat unary = cv::imread(file.string(), cv::IMREAD_UNCHANGED);
+    unary.convertTo(unary, CV_32FC1);
+    if (mRemoveCamMotion)
+        cv::multiply(unary, mGaussian, unary);
+
+    unary /= 255.0f;
+    unary += 0.0001f;
     return unary;
 }
 
-bool Unaries::exists(std::size_t idx) const
+cv::Mat Unaries::previewAt(std::size_t idx) const
 {
-    return mUnFiles.count(idx) > 0;
+    assert(mUnFiles.count(idx) && "idx out of range in Unaries::previewAt()");
+
+    auto file = mUnFiles.at(idx);
+    cv::Mat unary = cv::imread(file.string(), cv::IMREAD_UNCHANGED);
+    unary.convertTo(unary, CV_32FC1);
+    cv::multiply(unary, mGaussian, unary);
+    unary.convertTo(unary, CV_8UC1);
+    return unary;
 }
+
+bool Unaries::exists(std::size_t idx) const { return mUnFiles.count(idx) > 0; }
 
 size_t_vec Unaries::getIDs() const
 {
@@ -175,25 +190,28 @@ size_t_vec Unaries::getIDs() const
     return vec;
 }
 
-double Unaries::readProperties(const fs::path& unDir)
+std::tuple<double, double, bool> Unaries::readProperties(const fs::path& unDir)
 {
     auto file = unDir / "unaries.json";
     std::ifstream stream(file.string(), std::ios::in);
     io::checkStream(stream, file);
-    double subsample;
+    double subsample, sigma;
+    bool removeCameraMotion;
     {
         cereal::JSONInputArchive archive(stream);
-        /* archive(CEREAL_NVP(subsample), CEREAL_NVP(qualities)); */
-        archive(CEREAL_NVP(subsample));
+        archive(CEREAL_NVP(subsample), CEREAL_NVP(sigma), CEREAL_NVP(removeCameraMotion));
     }
-    return subsample;
+    return {subsample, sigma, removeCameraMotion};
 }
 
 Unaries::Unaries(const fs::path& unDir, const std::unordered_map<std::size_t, fs::path> unFiles,
-    double subsample)
+    double subsample, double sigma, bool removeCameraMotion, const cv::Mat& gaussian)
     : mUnDir(unDir)
     , mUnFiles(unFiles)
     , mSubsample(subsample)
+    , mSigma(sigma)
+    , mRemoveCamMotion(removeCameraMotion)
+    , mGaussian(gaussian)
 {
 }
 
@@ -211,16 +229,15 @@ void Unaries::writeChunk(const Images& imgContainer, const fs::path& unDir,
     }
 }
 
-void Unaries::writeProperties(const fs::path& unDir, double subsample)
-/* const std::unordered_map<std::size_t, double>& qualities) */
+void Unaries::writeProperties(
+    const fs::path& unDir, double subsample, double sigma, bool removeCameraMotion)
 {
     auto file = unDir / "unaries.json";
     std::ofstream stream(file.string(), std::ios::out);
     io::checkStream(stream, file);
     {
         cereal::JSONOutputArchive archive(stream);
-        /* archive(CEREAL_NVP(subsample), CEREAL_NVP(qualities)); */
-        archive(CEREAL_NVP(subsample));
+        archive(CEREAL_NVP(subsample), CEREAL_NVP(sigma), CEREAL_NVP(removeCameraMotion));
     }
 }
 
@@ -233,8 +250,7 @@ double Unaries::getUnaryQuality(const cv::Mat& unary)
 {
     cv::Scalar meanChannels = cv::mean(unary);
     double meanValue = meanChannels[0];
-    double quality = meanValue / 255.0;
-    return quality;
+    return meanValue;
 }
 
 fs::path Unaries::getFileName(const fs::path& unDir, const fs::path& stem)

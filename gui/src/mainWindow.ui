@@ -803,6 +803,7 @@ color: white;
     <addaction name="actionOpenImgList"/>
     <addaction name="separator"/>
     <addaction name="actionOpenResultsFile"/>
+    <addaction name="actionSave_Results"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -883,6 +884,14 @@ color: white;
    </property>
    <property name="shortcut">
     <string>Left</string>
+   </property>
+  </action>
+  <action name="actionSave_Results">
+   <property name="text">
+    <string>Save Results</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
  </widget>

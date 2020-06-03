@@ -1,20 +1,20 @@
 #include "gui/mainWindow.h"
+#include "ui_mainWindow.h"
 
 #include "gui/preferencesDialog.h"
 #include "gui/progressStatusBar.h"
 #include "gui/qtOpencvCore.h"
-#include "ui_mainWindow.h"
+#include "habitrack/tracker.h"
+#include "resultsIO.h"
 #include <QDate>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QStatusBar>
 #include <QTime>
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <spdlog/spdlog.h>
-
-#include "resultsIO.h"
-#include <algorithm>
-#include <QStatusBar>
 
 using namespace ht;
 namespace fs = std::filesystem;
@@ -55,10 +55,8 @@ HabiTrack::HabiTrack(QWidget* parent)
         SLOT(onPositionChanged(QPointF)));
     connect(this->ui->graphicsView, SIGNAL(bearingChanged(QPointF)), this,
         SLOT(onBearingChanged(QPointF)));
-    connect(this->ui->graphicsView, SIGNAL(positionCleared()), this,
-        SLOT(onPositionCleared()));
-    connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this,
-        SLOT(onBearingCleared()));
+    connect(this->ui->graphicsView, SIGNAL(positionCleared()), this, SLOT(onPositionCleared()));
+    connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this, SLOT(onBearingCleared()));
 }
 
 HabiTrack::~HabiTrack() { delete ui; }
@@ -157,6 +155,14 @@ void HabiTrack::on_actionExpertMode_toggled(bool value)
     ui->labelExpertMode->setVisible(value);
 }
 
+void HabiTrack::on_actionSave_Results_triggered()
+{
+    spdlog::debug("GUI: Save Results triggered");
+    saveResults(mOutputPath / "results.yml", mPrefs);
+
+    if (mUnaries.size())
+        mManualUnaries.save(mUnFolder);
+}
 void HabiTrack::on_actionPreferences_triggered()
 {
     PreferencesDialog prefDialog(this, mPrefs);
@@ -265,8 +271,7 @@ void HabiTrack::showFrame(std::size_t frameNumber)
     cv::Mat frame = mImages.at(idx); // zero indexed here
 
     // set filename
-    ui->labelFileName->setText(
-        QString::fromStdString(mImages.getFileName(idx).string()));
+    ui->labelFileName->setText(QString::fromStdString(mImages.getFileName(idx).string()));
 
     if (mUnaries.size())
     {
@@ -291,17 +296,9 @@ void HabiTrack::showFrame(std::size_t frameNumber)
 
         cv::Mat unary;
         if (mManualUnaries.exists(idx))
-        {
-            unary = mManualUnaries.unaryAt(idx);
-            unary.convertTo(unary, CV_8U);
-        }
+            unary = mManualUnaries.previewUnaryAt(idx);
         else
-        {
-            unary = mUnaries.at(idx);
-            // TODO multiply with gaussian mask from tracker
-            /* auto mask */
-        }
-
+            unary = mUnaries.previewAt(idx);
 
         cv::Mat unaryColor;
         cv::cvtColor(unary, unaryColor, cv::COLOR_GRAY2BGR);
@@ -559,7 +556,7 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
             : matches::PairwiseTrafos();
 
         mUnaries = Unaries::compute(mImgFolder, mUnFolder, start, end, mPrefs.removeRedLasers,
-            mPrefs.unarySubsample, trafos, mPrefs.cacheSize, mBar);
+            mPrefs.unarySubsample, mPrefs.unarySigma, trafos, mPrefs.cacheSize, mBar);
     }
     std::vector<double> unaryQuality(mImages.size(), -1);
     for (auto i = mStartFrameNumber - 1; i < mEndFrameNumber - 1; i++)
@@ -568,6 +565,28 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
 
     ui->labelNumUnaries->setText(QString::number(mUnaries.size()));
     mManualUnaries = ManualUnaries::fromDir(mUnFolder, mPrefs.unarySubsample, mImages.getImgSize());
+}
+
+void HabiTrack::on_buttonOptimizeUnaries_clicked()
+{
+    spdlog::debug("GUI: Clicked Optimize Unaries");
+    if (!unariesComputed())
+    {
+        QMessageBox::warning(this, "Warning", "Unaries need to be computed first");
+        return;
+    }
+
+    Tracker::UnarySettings unarySettings;
+    unarySettings.subsample = mPrefs.unarySubsample;
+    unarySettings.pairwiseSize = mPrefs.pairwiseSize;
+    unarySettings.pairwiseSigma = mPrefs.pairwiseSigma;
+    unarySettings.manualMultiplier = mPrefs.unaryMultiplier;
+
+    Tracker::SmoothBearingSettings bearingSettings;
+    bearingSettings.calculate = mPrefs.smoothBearing;
+    bearingSettings.windowSize = mPrefs.smoothBearingWindowSize;
+    bearingSettings.outlierTolerance = mPrefs.smoothBearingOutlierTol;
+    Tracker::track(mUnaries, mManualUnaries, unarySettings, bearingSettings, mPrefs.chunkSize);
 }
 
 void HabiTrack::onPositionChanged(QPointF position)
@@ -639,9 +658,9 @@ void HabiTrack::setUnaryScene(std::vector<double> qualities)
         spdlog::debug("GUI: Unary high threshold {}", median + 4.0 * medianDist);
         for (std::size_t j = start; j < end; j++)
         {
-            if (mUnaryQualities[j] < (median + 2.0 * medianDist))
+            if (mUnaryQualities[j] < (median + 1.5 * medianDist))
                 scene->setUnaryQuality(j, UnaryQuality::Good);
-            else if (mUnaryQualities[j] < (median + 4.0 * medianDist))
+            else if (mUnaryQualities[j] < (median + 3.0 * medianDist))
                 scene->setUnaryQuality(j, UnaryQuality::Poor);
             else
                 scene->setUnaryQuality(j, UnaryQuality::Critical);

@@ -16,11 +16,6 @@ inline std::vector<std::size_t> getContinuousIds(std::size_t start, std::size_t 
     return ids;
 }
 
-inline bool fileExists(const std::filesystem::path& file)
-{
-    return std::filesystem::is_regular_file(file);
-}
-
 float scaledGauss2DPDF(
     float meanX, float meanY, float sigmaX, float sigmaY, float scale, float x, float y);
 

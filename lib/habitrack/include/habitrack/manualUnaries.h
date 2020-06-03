@@ -7,7 +7,6 @@
 
 namespace ht
 {
-// subsample needed, rest is constexpr?, image size?
 class ManualUnaries
 {
 public:
@@ -17,7 +16,9 @@ public:
     static ManualUnaries fromDir(
         const std::filesystem::path& file, double subsample, cv::Size imgSize);
     void save(const std::filesystem::path& file);
+
     cv::Mat unaryAt(std::size_t id) const;
+    cv::Mat previewUnaryAt(std::size_t id) const;
     cv::Point2f unaryPointAt(std::size_t id) const;
 
     void insert(std::size_t id, cv::Point2f pt);

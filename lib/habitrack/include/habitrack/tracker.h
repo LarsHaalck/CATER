@@ -6,6 +6,7 @@
 namespace ht
 {
 class Unaries;
+class ManualUnaries;
 } // namespace ht
 
 namespace ht
@@ -29,9 +30,21 @@ public:
     };
 
 public:
-    static void track(const Unaries& unaries, UnarySettings unarySettings,
-        SmoothBearingSettings smoothBearingSettings);
-    static cv::Mat get2DGaussianKernel(int size, double sigma);
+    static void track(const Unaries& unaries, const ManualUnaries& manualUnaries,
+        UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings,
+        std::size_t chunkSize);
+
+private:
+    static cv::Mat getPairwiseKernel(int size, double sigma);
+    static void truncatedMaxSum(std::size_t start, std::size_t end,
+        const std::vector<std::size_t>& ids, const Unaries& unaries,
+        const ManualUnaries& manualUnaries, UnarySettings unarySettings,
+        const cv::Mat& pairwiseKernel);
+
+    static void passMessageToNode(const cv::Mat& previousMessageToFactor,
+        const cv::Mat& logPairwisePotential, cv::Mat& messageToNode, cv::Mat& phi);
+    static void passMessageToFactor(const cv::Mat& previousMessageToNode,
+        const cv::Mat& unaryPotential, cv::Mat& messageToFactor);
 };
 } // namespace habitrack
 #endif // HABITRACK_TRACKER_H
