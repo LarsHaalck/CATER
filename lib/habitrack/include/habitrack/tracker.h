@@ -33,7 +33,7 @@ public:
 public:
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
         UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings,
-        std::size_t chunkSize);
+        std::size_t chunkSize = 0);
 
 private:
     static cv::Mat getPairwiseKernel(int size, double sigma);

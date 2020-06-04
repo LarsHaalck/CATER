@@ -26,6 +26,9 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     auto ids = unaries.getIDs();
     auto numUnaries = unaries.size();
 
+    if (chunkSize == 0)
+        chunkSize = numUnaries;
+
     spdlog::debug("Number of unaries for tracking: {}", numUnaries);
     auto numChunks = std::max(numUnaries / chunkSize, static_cast<std::size_t>(1));
     spdlog::debug("Number of chunks for (parallel) tracking: {}", numChunks);
