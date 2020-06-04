@@ -1,5 +1,7 @@
 #include "habitrack/manualUnaries.h"
+
 #include "image-processing/util.h"
+#include <opencv2/imgproc.hpp>
 
 #include "unaryIO.h"
 
@@ -18,11 +20,10 @@ ManualUnaries::ManualUnaries(double subsample, cv::Size imgSize)
     , mPoints()
     , mUnaries()
 {
-
 }
 
-ManualUnaries::ManualUnaries(double subsample, cv::Size imgSize,
-    const std::unordered_map<std::size_t, cv::Point2f>& points)
+ManualUnaries::ManualUnaries(
+    double subsample, cv::Size imgSize, const std::unordered_map<std::size_t, cv::Point2f>& points)
     : mSubsample(subsample)
     , mImgSize(imgSize)
     , mPoints(points)
@@ -32,6 +33,7 @@ ManualUnaries::ManualUnaries(double subsample, cv::Size imgSize,
     for (const auto& [id, pt] : mPoints)
     {
         cv::Mat gaussian = scaledGauss2D(pt.x, pt.y, 5.0, 5.0, 255.0, mImgSize);
+        cv::resize(gaussian, gaussian, cv::Size(), mSubsample, mSubsample, cv::INTER_LINEAR);
         mUnaries.insert({id, gaussian});
     }
 }
@@ -93,6 +95,7 @@ void ManualUnaries::insert(std::size_t id, cv::Point2f pt)
 {
     mPoints.insert_or_assign(id, pt);
     cv::Mat gaussian = scaledGauss2D(pt.x, pt.y, 5.0, 5.0, 255.0, mImgSize);
+    cv::resize(gaussian, gaussian, cv::Size(), mSubsample, mSubsample, cv::INTER_LINEAR);
     mUnaries.insert_or_assign(id, gaussian);
 }
 
@@ -102,8 +105,5 @@ void ManualUnaries::clear(std::size_t id)
     mUnaries.erase(id);
 }
 
-bool ManualUnaries::exists(std::size_t id) const
-{
-    return mPoints.count(id);
-}
+bool ManualUnaries::exists(std::size_t id) const { return mPoints.count(id); }
 } // namespace ht

@@ -10,6 +10,7 @@ set(SOURCES
     src/manualUnaries.cpp
     src/tracker.cpp
     src/detections.cpp
+    src/threadPool.cpp
 )
 
 ###########################################################################

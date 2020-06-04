@@ -584,8 +584,8 @@ void HabiTrack::onPositionChanged(QPointF position)
         position.y(), mCurrentFrameNumber - 1);
 
     mManualUnaries.insert(mCurrentFrameNumber - 1, QtOpencvCore::qpoint2point(position));
-    showFrame(mCurrentFrameNumber);
     statusBar()->showMessage("Manually added unary", 1000);
+    on_buttonNextFrame_clicked();
 }
 
 void HabiTrack::onBearingChanged(QPointF position)

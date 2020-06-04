@@ -7,11 +7,16 @@
 #include <iostream>
 #include <limits>
 #include <opencv2/imgproc.hpp>
+#include "habitrack/threadPool.h"
 
-constexpr int perThread = 100;
+#include <chrono>
+
 
 namespace ht
 {
+using Task = std::packaged_task<cv::Mat(std::size_t, std::size_t, const std::vector<std::size_t>&,
+    const Unaries&, const ManualUnaries&, Tracker::UnarySettings unarySettings, const cv::Mat&)>;
+
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
     UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings, std::size_t chunkSize)
 {
@@ -26,6 +31,12 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     spdlog::debug("Number of chunks for (parallel) tracking: {}", numChunks);
 
     std::vector<cv::Mat> states;
+    std::vector<std::future<cv::Mat>> futureStates;
+
+    auto maxThreads = std::thread::hardware_concurrency();
+    ThreadPool pool(maxThreads);
+
+    auto start = std::chrono::system_clock::now();
     for (std::size_t i = 0; i < numChunks; i++)
     {
         std::size_t end;
@@ -34,12 +45,20 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
         else
             end = std::min(numUnaries, (i + 1) * chunkSize);
 
-        auto localStates = truncatedMaxSum(
-            i * chunkSize, end, ids, unaries, manualUnaries, unarySettings, pairwiseKernel);
-        states.push_back(localStates);
+        auto future = pool.enqueue(truncatedMaxSum, i * chunkSize, end, ids, unaries, manualUnaries,
+            unarySettings, pairwiseKernel);
+        futureStates.push_back(std::move(future));
     }
 
-    // wait for all futures
+    // wait for all threads so futures are avaiable
+    pool.join();
+    for (auto& f : futureStates)
+        states.push_back(f.get());
+
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    spdlog::critical("Elapsed: {}", elapsed.count());
+
     cv::Mat bestStates;
     cv::vconcat(states.data(), states.size(), bestStates);
 
