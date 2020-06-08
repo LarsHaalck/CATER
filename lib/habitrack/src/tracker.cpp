@@ -14,8 +14,36 @@
 
 namespace ht
 {
-using Task = std::packaged_task<cv::Mat(std::size_t, std::size_t, const std::vector<std::size_t>&,
-    const Unaries&, const ManualUnaries&, Tracker::UnarySettings unarySettings, const cv::Mat&)>;
+Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
+    UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings, std::size_t chunk,
+    std::size_t chunkSize)
+{
+    auto pairwiseKernel
+        = getPairwiseKernel(unarySettings.pairwiseSize, unarySettings.pairwiseSigma);
+    cv::log(pairwiseKernel, pairwiseKernel);
+    auto ids = unaries.getIDs();
+    auto numUnaries = unaries.size();
+
+    if (chunkSize == 0)
+        chunkSize = numUnaries;
+
+    auto numChunks = std::max(numUnaries / chunkSize, static_cast<std::size_t>(1));
+    spdlog::debug("Single chunk tracking of chunk {}", chunk);
+
+    auto start = std::chrono::system_clock::now();
+    std::size_t boundary;
+    if (chunk == numChunks - 1)
+        boundary = numUnaries;
+    else
+        boundary = std::min(numUnaries, (chunk + 1) * chunkSize);
+
+    auto states = truncatedMaxSum(chunk * chunkSize, boundary, ids, unaries, manualUnaries,
+        unarySettings, pairwiseKernel);
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    spdlog::debug("Elapsed time for chunk {} tracking: {}", chunk, elapsed.count());
+    return extractFromStates(states, ids, unarySettings.subsample);
+}
 
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
     UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings, std::size_t chunkSize)
@@ -29,14 +57,15 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     if (chunkSize == 0)
         chunkSize = numUnaries;
 
-    spdlog::debug("Number of unaries for tracking: {}", numUnaries);
     auto numChunks = std::max(numUnaries / chunkSize, static_cast<std::size_t>(1));
+    spdlog::debug("Number of unaries for tracking: {}", numUnaries);
     spdlog::debug("Number of chunks for (parallel) tracking: {}", numChunks);
 
     std::vector<cv::Mat> states;
     std::vector<std::future<cv::Mat>> futureStates;
 
     auto maxThreads = std::thread::hardware_concurrency();
+    maxThreads = (numChunks < maxThreads) ? numChunks : maxThreads;
     ThreadPool pool(maxThreads);
 
     auto start = std::chrono::system_clock::now();
@@ -64,34 +93,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 
     cv::Mat bestStates;
     cv::vconcat(states.data(), states.size(), bestStates);
-
-    Detections detections;
-    for (int row = 0; row < bestStates.rows; ++row)
-    {
-        // get best x and y position
-        int best_state_x = bestStates.at<int>(row, 1);
-        int best_state_y = bestStates.at<int>(row, 0);
-
-        // resample x and y position (due to downsampling)
-        double up_sampling_factor = 1.0 / unarySettings.subsample;
-        best_state_x *= up_sampling_factor;
-        best_state_y *= up_sampling_factor;
-
-        std::size_t idx = ids[row];
-
-        // resultant ant position
-        cv::Point antPosition(best_state_x, best_state_y);
-
-        // TODO: implement
-        double theta = 0;
-        double thetaQuality = 0;
-        /* calcBearingAndQuality(trackingData, idx, antPosition, theta, thetaQuality); */
-        spdlog::debug("extracted detection {}/{}, theta {} with quality {}", row,
-            bestStates.rows - 1, theta, thetaQuality);
-
-        detections.insert(idx, {antPosition, theta, thetaQuality});
-    }
-    return detections;
+    return extractFromStates(bestStates, ids, unarySettings.subsample);
 }
 
 cv::Mat Tracker::getPairwiseKernel(int size, double sigma)
@@ -257,5 +259,37 @@ void Tracker::passMessageToFactor(
 {
     cv::log(unaryPotential, messageToFactor);
     cv::add(previousMessageToNode, messageToFactor, messageToFactor);
+}
+
+Detections Tracker::extractFromStates(
+    const cv::Mat& states, const std::vector<std::size_t>& ids, double subsample)
+{
+    Detections detections;
+    for (int row = 0; row < states.rows; ++row)
+    {
+        // get best x and y position
+        int best_state_x = states.at<int>(row, 1);
+        int best_state_y = states.at<int>(row, 0);
+
+        // resample x and y position (due to downsampling)
+        double up_sampling_factor = 1.0 / subsample;
+        best_state_x *= up_sampling_factor;
+        best_state_y *= up_sampling_factor;
+
+        std::size_t idx = ids[row];
+
+        // resultant ant position
+        cv::Point antPosition(best_state_x, best_state_y);
+
+        // TODO: implement
+        double theta = 0;
+        double thetaQuality = 0;
+        /* calcBearingAndQuality(trackingData, idx, antPosition, theta, thetaQuality); */
+        spdlog::debug("extracted detection {}/{}, theta {} with quality {}", row, states.rows - 1,
+            theta, thetaQuality);
+
+        detections.insert(idx, {antPosition, theta, thetaQuality});
+    }
+    return detections;
 }
 } // namespace ht

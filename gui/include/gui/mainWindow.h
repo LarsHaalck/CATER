@@ -14,6 +14,8 @@
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
 #include "progressbar/baseProgressBar.h"
+#include <QFutureWatcher>
+#include <deque>
 #include <filesystem>
 
 namespace Ui
@@ -33,8 +35,6 @@ public:
 
 private:
     void populateGuiDefaults();
-    bool eventFilter(QObject* obj, QEvent* event);
-    void resetToDefaults(QObject* obj);
     void showFrame(std::size_t frame);
     void refreshWindow();
     void populatePaths(const std::filesystem::path& stem);
@@ -47,8 +47,10 @@ private:
 
 private slots:
     void on_sliderOverlayUnaries_sliderReleased();
-    void on_sliderOverlayTrackedPos_sliderReleased();
-    void on_sliderOverlayTrajectory_sliderReleased();
+    void on_overlayTrackedPosition_toggled(bool value);
+    void on_overlayTrajectory_toggled(bool value);
+    void on_trajectorySpin_valueChanged(int value);
+
     void on_actionExpertMode_toggled(bool value);
     void on_actionSave_Results_triggered();
     void on_actionPreferences_triggered();
@@ -78,6 +80,8 @@ private slots:
     void onPositionCleared();
     void onBearingCleared();
 
+    void onDetectionsAvailable(int chunkId);
+
 private:
     Ui::HabiTrack* ui;
     QString mStartPath; // used for next QFileDialog
@@ -85,7 +89,6 @@ private:
     std::shared_ptr<ht::BaseProgressBar> mBar;
 
     GuiPreferences mGuiPrefs;
-    const GuiPreferences mGuiPrefsDefaults;
     Preferences mPrefs;
 
     std::filesystem::path mOutputPath;
@@ -108,10 +111,8 @@ private:
     std::vector<double> mUnaryQualities;
 
     ht::Detections mDetections;
-
-    // handles library related stuff
-    // needs ui elements
-    /* TrackerController mController; */
+    std::unordered_map<int, std::unique_ptr<QFutureWatcher<ht::Detections>>> mDetectionsWatchers;
+    std::deque<int> mDetectionsQueue;
 };
 } // namespace gui
 #endif // MAINWINDOW_H

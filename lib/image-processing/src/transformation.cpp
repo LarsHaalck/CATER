@@ -88,8 +88,6 @@ cv::Mat invertAffine(const cv::Mat& matrix, bool full)
 
 cv::Mat invert(const cv::Mat& matrix, GeometricType type, bool full)
 {
-    /* assert(matrix.type() == CV_64F && "Matrix type not CV_64F in invert"); */
-
     switch (type)
     {
     case GeometricType::Isometry:
@@ -136,20 +134,51 @@ cv::Mat getScaleMat(double scale, bool full)
     mat.at<double>(0, 0) = mat.at<double>(1, 1) = scale;
     return mat;
 }
-cv::Mat concatFromTo(std::size_t from, std::size_t to, const matches::PairwiseTrafos& trafos,
-    GeometricType type, bool full)
-{
-    auto trafo = makeFull(trafos.at({from, from + 1}));
-    for (std::size_t i = from + 1; i < to; i++)
-    {
-        auto currTrafo = makeFull(trafos.at({i, i + 1}));
-        trafo = trafo * currTrafo;
-    }
 
-    if (type == GeometricType::Homography || full)
-        return trafo;
-    cv::Mat upper = trafo(cv::Rect(0, 0, 3, 2));
-    return upper;
+std::vector<cv::Point2d> transformPoints(
+    const std::vector<cv::Point2d>& points, const cv::Mat& H, GeometricType type)
+{
+    std::vector<cv::Point2d> inPts;
+    std::vector<cv::Point2d> outPts;
+
+    std::transform(points.begin(), points.end(), std::back_inserter(inPts),
+        [](cv::Point pt) -> cv::Point2d { return pt; });
+
+    if (type == GeometricType::Homography)
+        cv::perspectiveTransform(inPts, outPts, H);
+    else
+    {
+        auto HFull = makeFull(H);
+        cv::perspectiveTransform(inPts, outPts, H);
+    }
+    return outPts;
 }
 
+cv::Point2d transformPoint(const cv::Point2d& refPosition, const cv::Mat& H, GeometricType type)
+{
+    return transformPoints({refPosition}, H, type)[0];
+}
+/* cv::Mat concatTo(std::size_t from, std::size_t to, const matches::PairwiseTrafos& trafos, */
+/*     GeometricType type, bool full) */
+/* { */
+/*     assert(from < to && "from should be smaller than to in concatTo()"); */
+/*     auto trafo = makeFull(trafos.at({from, from + 1})); */
+/*     for (std::size_t i = from + 1; i < to; i++) */
+/*     { */
+/*         auto currTrafo = makeFull(trafos.at({i, i + 1})); */
+/*         trafo = trafo * currTrafo; */
+/*     } */
+
+/*     if (type == GeometricType::Homography || full) */
+/*         return trafo; */
+/*     cv::Mat upper = trafo(cv::Rect(0, 0, 3, 2)); */
+/*     return upper; */
+/* } */
+
+/* cv::Mat concatFrom(std::size_t from, std::size_t to, const matches::PairwiseTrafos& trafos, */
+/*     GeometricType type, bool full) */
+/* { */
+/*     assert(from < to && "from should be smaller than to in concatFrom()"); */
+/*     return invert(concatTo(from, to, trafos, type, true), type, full); */
+/* } */
 } // namespace ht

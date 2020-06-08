@@ -1,3 +1,5 @@
+find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Concurrent REQUIRED)
 ###########################################################################
 #                                FILES                                    #
 ###########################################################################
@@ -38,6 +40,7 @@ target_include_directories(${EXE_NAME} PUBLIC include)
 target_link_libraries(${EXE_NAME}
     PUBLIC
     Qt5::Widgets
+    Qt5::Concurrent
     OpenMP::OpenMP_CXX
     habitrack
     spdlog::spdlog

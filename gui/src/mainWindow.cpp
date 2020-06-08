@@ -11,6 +11,7 @@
 #include <QMessageBox>
 #include <QStatusBar>
 #include <QTime>
+#include <QtConcurrent>
 #include <algorithm>
 #include <chrono>
 #include <iostream>
@@ -27,7 +28,6 @@ HabiTrack::HabiTrack(QWidget* parent)
     , mStartPath()
     , mBar(nullptr)
     , mGuiPrefs()
-    , mGuiPrefsDefaults()
     , mPrefs()
     , mImages()
     , mCurrentFrameNumber(0)
@@ -35,6 +35,9 @@ HabiTrack::HabiTrack(QWidget* parent)
     , mFeatures()
     , mUnaries()
     , mManualUnaries()
+    , mDetections()
+    , mDetectionsWatchers()
+    , mDetectionsQueue()
 {
     ui->setupUi(this);
     populateGuiDefaults();
@@ -42,11 +45,6 @@ HabiTrack::HabiTrack(QWidget* parent)
     // needs to be done after setupUi
     mScene = ui->graphicsView->getTrackerScene();
     mBar = std::make_shared<ProgressStatusBar>(ui->progressBar, ui->labelProgress);
-
-    // install filters for "resettable" sliders
-    ui->sliderOverlayUnaries->installEventFilter(this);
-    ui->sliderOverlayTrackedPos->installEventFilter(this);
-    ui->sliderOverlayTrajectory->installEventFilter(this);
 
     connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this,
         [=](std::size_t num) { this->showFrame(num + 1); });
@@ -64,48 +62,10 @@ HabiTrack::~HabiTrack() { delete ui; }
 void HabiTrack::populateGuiDefaults()
 {
     spdlog::debug("GUI: Populating GUI defaults");
-
-    // set sliders
-    resetToDefaults(ui->sliderOverlayUnaries);
-    resetToDefaults(ui->sliderOverlayTrackedPos);
-    resetToDefaults(ui->sliderOverlayTrajectory);
-
-    // set buttons
-    resetToDefaults(ui->actionExpertMode);
-}
-
-bool HabiTrack::eventFilter(QObject* obj, QEvent* event)
-{
-    if (event->type() == QEvent::MouseButtonRelease)
-    {
-        // static_cast is safe because it is a QMouseEvent
-        auto mouseEvent = static_cast<QMouseEvent*>(event);
-        if (mouseEvent->button() == Qt::RightButton
-            && mouseEvent->modifiers() == Qt::ControlModifier)
-        {
-            spdlog::debug("GUI: Captured event filter to reset gui element");
-            resetToDefaults(obj);
-            return true;
-        }
-    }
-    return false;
-}
-
-void HabiTrack::resetToDefaults(QObject* obj)
-{
-    if (obj == ui->sliderOverlayUnaries)
-        ui->sliderOverlayUnaries->setValue(mGuiPrefsDefaults.overlayUnaries);
-
-    if (obj == ui->sliderOverlayTrackedPos)
-        ui->sliderOverlayTrackedPos->setValue(mGuiPrefsDefaults.overlayTrackedPos);
-
-    if (obj == ui->sliderOverlayTrajectory)
-        ui->sliderOverlayTrajectory->setValue(mGuiPrefsDefaults.overlayTrajectory);
-
-    if (obj == ui->actionExpertMode)
-        ui->actionExpertMode->setChecked(mGuiPrefsDefaults.enableExpertView);
-
-    showFrame(mCurrentFrameNumber);
+    ui->sliderOverlayUnaries->setValue(mGuiPrefs.overlayUnaries);
+    ui->overlayTrackedPosition->setChecked(mGuiPrefs.overlayTrackedPos);
+    ui->overlayTrajectory->setChecked(mGuiPrefs.overlayTrajectory);
+    ui->trajectorySpin->setValue(mGuiPrefs.overlayTrajectoryWindow);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -113,45 +73,36 @@ void HabiTrack::resetToDefaults(QObject* obj)
 //////////////////////////////////////////////////////////////////////
 void HabiTrack::on_sliderOverlayUnaries_sliderReleased()
 {
-    spdlog::debug("GUI: Slider overlay unaries changed");
     auto value = ui->sliderOverlayUnaries->value();
+    spdlog::debug("GUI: Slider overlay unaries changed: {}", value);
     mGuiPrefs.overlayUnaries = value;
     showFrame(mCurrentFrameNumber);
 }
 
-void HabiTrack::on_sliderOverlayTrackedPos_sliderReleased()
+void HabiTrack::on_overlayTrackedPosition_toggled(bool value)
 {
-    spdlog::debug("GUI: Slider overlay tracked pos changed");
-    auto value = ui->sliderOverlayTrackedPos->value();
-    mGuiPrefs.overlayTrackedPos = value;
+    spdlog::debug("GUI: Overlay tracked pos changed: {}", value);
     showFrame(mCurrentFrameNumber);
 }
 
-void HabiTrack::on_sliderOverlayTrajectory_sliderReleased()
+void HabiTrack::on_overlayTrajectory_toggled(bool value)
 {
-    spdlog::debug("GUI: Slider overlay trajectory changed");
-    auto value = ui->sliderOverlayTrajectory->value();
-    mGuiPrefs.overlayTrajectory = value;
+    spdlog::debug("GUI: Overlay trajectory changed: {}", value);
+    showFrame(mCurrentFrameNumber);
+}
+
+void HabiTrack::on_trajectorySpin_valueChanged(int value)
+{
+    spdlog::debug("GUI: Spin Overlay trajectory changed: {}", value);
     showFrame(mCurrentFrameNumber);
 }
 
 void HabiTrack::on_actionExpertMode_toggled(bool value)
 {
     spdlog::debug("GUI: Toggled expert mode");
+    ui->frameUnary->setVisible(value);
     ui->frameTracking->setVisible(value);
-    // implicitly hidden by hiding the frame
-    /* ui->buttonExtractFeatures->setVisible(value); */
-    /* ui->buttonExtractTrafos->setVisible(value); */
-    /* ui->buttonExtractUnaries->setVisible(value); */
-    /* ui->buttonOptimizeUnaries->setVisible(value); */
-
     ui->framePano->setVisible(value);
-    // implicitly hidden by hiding the frame
-    /* ui->buttonKeyFrameSelection->setVisible(value); */
-    /* ui->buttonOptimizeKeyFrames->setVisible(value); */
-    /* ui->buttonReintegrateFrames->setVisible(value); */
-    /* ui->buttonOptimizeAllFrames->setVisible(value); */
-
     ui->labelExpertMode->setVisible(value);
 }
 
@@ -313,9 +264,8 @@ void HabiTrack::showFrame(std::size_t frameNumber)
     }
 
     // get ant position
-    int trackedPositionSlider = ui->sliderOverlayTrackedPos->value();
     cv::Point position;
-    if (trackedPositionSlider > 0 && mDetections.exists(idx))
+    if (ui->overlayTrackedPosition->isChecked() > 0 && mDetections.exists(idx))
     {
         auto antPosition = mDetections.at(idx).position;
         /* double theta; */
@@ -324,34 +274,45 @@ void HabiTrack::showFrame(std::size_t frameNumber)
         /* mTrackingData.getAntThetaQualityAt(mCurrentFrameNumber, thetaQuality); */
         /* cv::Point dirIndicator = utils::rotatePointAroundPoint(antPosition, theta); */
 
-        int red = trackedPositionSlider * 255 / 100;
-        int blue = trackedPositionSlider * 100 / 100;
-        int green = trackedPositionSlider * 100 / 100;
-        int circleThickness = 1;
+        int circleThickness = 2;
         /* if (trackedPositionSlider == 100) */
         /* { */
         /*     circleThickness = 2; */
         /*     cv::line(mCurrentFrame, antPosition, dirIndicator, */
         /*         cv::Scalar(0, 255, 0), 1); */
         /* } */
-        cv::Scalar color(blue, green, red);
+        cv::Scalar color(100, 100, 255);
         cv::circle(frame, antPosition, 20, color, circleThickness);
     }
 
-    /* // get trajectory */
-    /* int trajectorySlider = ui->horizontalSlide_draw_trajectory->value(); */
-    /* std::vector<cv::Point> track; */
-    /* if (trajectorySlider > 0 */
-    /*     && mTrackingData.getAntTrajectoryAt( */
-    /*            mCurrentFrameNumber, trajectorySlider, track)) */
-    /* { */
-    /*     for (unsigned int i = 1; i < track.size(); ++i) */
-    /*     { */
-    /*         cv::Point pre = track.at(i - 1); */
-    /*         cv::Point cur = track.at(i); */
-    /*         cv::line(mCurrentFrame, pre, cur, cv::Scalar(0, 255, 255), 2); */
-    /*     } */
-    /* } */
+    // get trajectory
+    std::size_t win = ui->trajectorySpin->value();
+    if (ui->overlayTrajectory->isChecked() && win > 0 && mDetections.exists(idx))
+    {
+        std::size_t start = 0;
+        if (idx > win)
+            start = idx - win;
+
+        auto track = mDetections.projectTo(start, idx,
+            ht::matches::getTrafos(mMatchFolder, GeometricType::Homography),
+            GeometricType::Homography);
+        for (std::size_t i = 1; i < track.size(); ++i)
+        {
+            cv::Point pre = track.at(i - 1);
+            cv::Point cur = track.at(i);
+            cv::line(frame, pre, cur, cv::Scalar(0, 127, 255), 2);
+        }
+
+        track = mDetections.projectFrom(idx, idx + win,
+            ht::matches::getTrafos(mMatchFolder, GeometricType::Homography),
+            GeometricType::Homography);
+        for (std::size_t i = 1; i < track.size(); ++i)
+        {
+            cv::Point pre = track.at(i - 1);
+            cv::Point cur = track.at(i);
+            cv::line(frame, pre, cur, cv::Scalar(0, 255, 255), 2);
+        }
+    }
 
     // set combined image and redraw
     auto pixMap = QPixmap::fromImage(QtOpencvCore::img2qimgRaw(frame));
@@ -570,9 +531,30 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
     bearingSettings.calculate = mPrefs.smoothBearing;
     bearingSettings.windowSize = mPrefs.smoothBearingWindowSize;
     bearingSettings.outlierTolerance = mPrefs.smoothBearingOutlierTol;
-    mDetections = Tracker::track(
-        mUnaries, mManualUnaries, unarySettings, bearingSettings, mPrefs.chunkSize);
-    return;
+
+    QFuture<Detections> detectionFuture = QtConcurrent::run(
+        Tracker::track, mUnaries, mManualUnaries, unarySettings, bearingSettings, mPrefs.chunkSize);
+
+    auto watcher = std::make_unique<QFutureWatcher<Detections>>();
+    watcher->setFuture(detectionFuture);
+
+    // cancel if running already
+    if (mDetectionsWatchers.count(-1))
+    {
+        mDetectionsWatchers.at(-1)->cancel();
+        mDetectionsWatchers.erase(-1);
+    }
+
+    connect(watcher.get(), &QFutureWatcher<Detections>::finished, this,
+        [this]() { this->onDetectionsAvailable(-1); });
+    mDetectionsWatchers[-1] = std::move(watcher);
+}
+
+void HabiTrack::onDetectionsAvailable(int chunkId)
+{
+    auto detections = mDetectionsWatchers.at(chunkId)->result();
+    spdlog::critical("yes: {}", detections.size());
+    mDetectionsWatchers.erase(chunkId);
 }
 
 void HabiTrack::onPositionChanged(QPointF position)
@@ -580,8 +562,25 @@ void HabiTrack::onPositionChanged(QPointF position)
     if (!mUnaries.size())
         return;
 
-    spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(),
-        position.y(), mCurrentFrameNumber - 1);
+    std::size_t chunk = 0;
+    if (mPrefs.chunkSize)
+    {
+        chunk = (mCurrentFrameNumber - 1) / mPrefs.chunkSize;
+        spdlog::debug("GUI: manual position changed to ({}, {}) on frame {} [chunk {}]",
+            position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
+
+    }
+    else
+    {
+        spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(),
+                position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
+    }
+
+    if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk)
+        != std::end(mDetectionsQueue))
+    {
+        mDetectionsQueue.push_back(chunk);
+    }
 
     mManualUnaries.insert(mCurrentFrameNumber - 1, QtOpencvCore::qpoint2point(position));
     statusBar()->showMessage("Manually added unary", 1000);

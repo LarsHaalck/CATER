@@ -40,7 +40,7 @@
            <x>0</x>
            <y>0</y>
            <width>303</width>
-           <height>951</height>
+           <height>944</height>
           </rect>
          </property>
          <property name="maximumSize">
@@ -238,74 +238,85 @@
                <property name="title">
                 <string>Overlay Settings</string>
                </property>
-               <layout class="QVBoxLayout" name="verticalLayout_6">
-                <item>
-                 <widget class="QLabel" name="label_17">
-                  <property name="text">
-                   <string>Overlay Unaries</string>
+               <layout class="QGridLayout" name="gridLayout_4">
+                <item row="3" column="1">
+                 <widget class="QSpinBox" name="trajectorySpin">
+                  <property name="enabled">
+                   <bool>false</bool>
                   </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QSlider" name="sliderOverlayUnaries">
                   <property name="maximum">
                    <number>100</number>
-                  </property>
-                  <property name="singleStep">
-                   <number>10</number>
                   </property>
                   <property name="value">
                    <number>0</number>
                   </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
                  </widget>
                 </item>
-                <item>
-                 <widget class="QLabel" name="label_18">
-                  <property name="text">
-                   <string>Overlay Tracked Positions</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QSlider" name="sliderOverlayTrackedPos">
-                  <property name="maximum">
-                   <number>100</number>
-                  </property>
-                  <property name="singleStep">
-                   <number>10</number>
-                  </property>
-                  <property name="value">
-                   <number>0</number>
-                  </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_19">
+                <item row="3" column="0">
+                 <widget class="QCheckBox" name="overlayTrajectory">
                   <property name="text">
                    <string>Overlay Trajectory</string>
                   </property>
+                  <property name="checked">
+                   <bool>false</bool>
+                  </property>
                  </widget>
                 </item>
-                <item>
-                 <widget class="QSlider" name="sliderOverlayTrajectory">
-                  <property name="maximum">
-                   <number>100</number>
+                <item row="2" column="0">
+                 <widget class="QCheckBox" name="overlayTrackedPosition">
+                  <property name="enabled">
+                   <bool>true</bool>
                   </property>
-                  <property name="singleStep">
-                   <number>10</number>
+                  <property name="text">
+                   <string>Overlay Tracked Positions</string>
                   </property>
-                  <property name="value">
-                   <number>0</number>
+                  <property name="checked">
+                   <bool>true</bool>
                   </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
+                 </widget>
+                </item>
+                <item row="0" column="0" colspan="2">
+                 <widget class="QFrame" name="frameUnary">
+                  <property name="styleSheet">
+                   <string notr="true">.QFrame {
+border: 1px solid red;
+}</string>
                   </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_6">
+                   <item>
+                    <widget class="QLabel" name="label_17">
+                     <property name="text">
+                      <string>Overlay Unaries</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QSlider" name="sliderOverlayUnaries">
+                     <property name="styleSheet">
+                      <string notr="true">
+</string>
+                     </property>
+                     <property name="maximum">
+                      <number>100</number>
+                     </property>
+                     <property name="singleStep">
+                      <number>10</number>
+                     </property>
+                     <property name="value">
+                      <number>0</number>
+                     </property>
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
                  </widget>
                 </item>
                </layout>
@@ -909,5 +920,22 @@ color: white;
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>overlayTrajectory</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>trajectorySpin</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>130</x>
+     <y>465</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>262</x>
+     <y>465</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

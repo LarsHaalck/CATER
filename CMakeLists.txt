@@ -74,7 +74,6 @@ if(${BUILD_EXAMPLES})
 endif()
 
 if(${BUILD_GUI})
-    find_package(Qt5Widgets REQUIRED)
     add_subdirectory(gui)
 endif()
 

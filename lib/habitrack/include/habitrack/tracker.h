@@ -33,6 +33,9 @@ public:
 public:
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
         UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings,
+        std::size_t chunk, std::size_t chunkSize);
+    static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
+        UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings,
         std::size_t chunkSize = 0);
 
 private:
@@ -46,6 +49,9 @@ private:
         const cv::Mat& logPairwisePotential, cv::Mat& messageToNode, cv::Mat& phi);
     static void passMessageToFactor(const cv::Mat& previousMessageToNode,
         const cv::Mat& unaryPotential, cv::Mat& messageToFactor);
+
+    static Detections extractFromStates(
+        const cv::Mat& states, const std::vector<std::size_t>& ids, double subsample);
 };
 } // namespace habitrack
 #endif // HABITRACK_TRACKER_H

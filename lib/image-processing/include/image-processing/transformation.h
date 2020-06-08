@@ -19,8 +19,14 @@ cv::Mat getIdentity(bool full = false);
 cv::Mat getTranslationMat(double tx, double ty, bool full = false);
 cv::Mat getScaleMat(double s, bool full = false);
 
-cv::Mat concatFromTo(std::size_t from, std::size_t to, const matches::PairwiseTrafos& trafos,
-    GeometricType type, bool full = false);
+/* cv::Mat concatTo(std::size_t from, std::size_t to, const matches::PairwiseTrafos& trafos, */
+/*     GeometricType type, bool full = false); */
+/* cv::Mat concatFrom(std::size_t from, std::size_t to, const matches::PairwiseTrafos& trafos, */
+/*     GeometricType type, bool full = false); */
+
+std::vector<cv::Point2d> transformPoints(
+    const std::vector<cv::Point2d>& points, const cv::Mat& H, GeometricType type);
+cv::Point2d transformPoint(const cv::Point2d& refPosition, const cv::Mat& H, GeometricType type);
 
 namespace detail
 {
