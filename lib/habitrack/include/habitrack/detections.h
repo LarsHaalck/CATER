@@ -28,6 +28,8 @@ public:
     std::vector<cv::Point2d> projectFrom(std::size_t from, std::size_t to,
         const matches::PairwiseTrafos& trafos, GeometricType type) const;
 
+    std::unordered_map<std::size_t, Detection>& data() { return mDetections; }
+
 private:
     std::unordered_map<std::size_t, Detection> mDetections;
 };

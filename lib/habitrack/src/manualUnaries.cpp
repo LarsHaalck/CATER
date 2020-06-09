@@ -70,7 +70,8 @@ void ManualUnaries::save(const std::filesystem::path& unDir)
 cv::Mat ManualUnaries::unaryAt(std::size_t id) const
 {
     assert(mUnaries.count(id) && "Unary id does not exist in unaryAt()");
-    cv::Mat unary = mUnaries.at(id);
+    // ALWAYS clone because the mat is modified inplace otherwise
+    cv::Mat unary = mUnaries.at(id).clone();
     unary.convertTo(unary, CV_32FC1);
     unary /= 255.0f;
     unary += 0.0001f;
@@ -80,7 +81,8 @@ cv::Mat ManualUnaries::unaryAt(std::size_t id) const
 cv::Mat ManualUnaries::previewUnaryAt(std::size_t id) const
 {
     assert(mUnaries.count(id) && "Unary id does not exist in previewUnaryAt()");
-    cv::Mat unary = mUnaries.at(id);
+    // ALWAYS clone because the mat is modified inplace otherwise
+    cv::Mat unary = mUnaries.at(id).clone();
     unary.convertTo(unary, CV_8UC1);
     return unary;
 }

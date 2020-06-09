@@ -20,6 +20,7 @@ public:
     cv::Mat unaryAt(std::size_t id) const;
     cv::Mat previewUnaryAt(std::size_t id) const;
     cv::Point2f unaryPointAt(std::size_t id) const;
+    std::size_t size() const { return mUnaries.size(); }
 
     void insert(std::size_t id, cv::Point2f pt);
     void clear(std::size_t id);

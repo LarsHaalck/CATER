@@ -113,6 +113,7 @@ private:
     ht::Detections mDetections;
     std::unordered_map<int, std::unique_ptr<QFutureWatcher<ht::Detections>>> mDetectionsWatchers;
     std::deque<int> mDetectionsQueue;
+    QMutex mMutex;
 };
 } // namespace gui
 #endif // MAINWINDOW_H

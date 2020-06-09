@@ -15,34 +15,28 @@ namespace ht
 class Tracker
 {
 public:
-    struct UnarySettings
+    struct Settings
     {
         double subsample;
         int pairwiseSize;
         double pairwiseSigma;
         double manualMultiplier;
-    };
-
-    struct SmoothBearingSettings
-    {
-        bool calculate;
+        bool calculateBearing;
         int windowSize;
         int outlierTolerance;
     };
 
 public:
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-        UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings,
-        std::size_t chunk, std::size_t chunkSize);
+        const Settings& settings, std::size_t chunk, std::size_t chunkSize);
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-        UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings,
-        std::size_t chunkSize = 0);
+        const Settings& settings, std::size_t chunkSize = 0);
 
 private:
     static cv::Mat getPairwiseKernel(int size, double sigma);
     static cv::Mat truncatedMaxSum(std::size_t start, std::size_t end,
         const std::vector<std::size_t>& ids, const Unaries& unaries,
-        const ManualUnaries& manualUnaries, UnarySettings unarySettings,
+        const ManualUnaries& manualUnaries, const Settings& settings,
         const cv::Mat& pairwiseKernel);
 
     static void passMessageToNode(const cv::Mat& previousMessageToFactor,

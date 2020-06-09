@@ -111,7 +111,7 @@ void HabiTrack::on_actionSave_Results_triggered()
     spdlog::debug("GUI: Save Results triggered");
     saveResults(mOutputPath / "results.yml", mPrefs);
 
-    if (mUnaries.size())
+    if (mManualUnaries.size())
         mManualUnaries.save(mUnFolder);
 }
 void HabiTrack::on_actionPreferences_triggered()
@@ -514,6 +514,7 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
 
 void HabiTrack::on_buttonOptimizeUnaries_clicked()
 {
+    mMutex.lock();
     spdlog::debug("GUI: Clicked Optimize Unaries");
     if (!unariesComputed())
     {
@@ -521,40 +522,80 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
         return;
     }
 
-    Tracker::UnarySettings unarySettings;
-    unarySettings.subsample = mPrefs.unarySubsample;
-    unarySettings.pairwiseSize = mPrefs.pairwiseSize;
-    unarySettings.pairwiseSigma = mPrefs.pairwiseSigma;
-    unarySettings.manualMultiplier = mPrefs.unaryMultiplier;
+    // check queue
+    // if mDetections empty, then remove all elements form queue and to -1
+    int chunk;
+    if (!mDetections.size())
+    {
+        mDetectionsQueue.clear();
+        chunk = -1;
+    }
+    else if (mDetectionsQueue.empty())
+    {
+        spdlog::debug("GUI: Optimize Unaries Queue is empty");
+        return;
+    }
+    else
+    {
+        chunk = mDetectionsQueue.front();
+        mDetectionsQueue.pop_front();
+    }
 
-    Tracker::SmoothBearingSettings bearingSettings;
-    bearingSettings.calculate = mPrefs.smoothBearing;
-    bearingSettings.windowSize = mPrefs.smoothBearingWindowSize;
-    bearingSettings.outlierTolerance = mPrefs.smoothBearingOutlierTol;
+    // cancel if running already
+    if (mDetectionsWatchers.count(chunk))
+    {
+        mDetectionsWatchers.at(chunk)->cancel();
+        mDetectionsWatchers.erase(chunk);
+    }
 
-    QFuture<Detections> detectionFuture = QtConcurrent::run(
-        Tracker::track, mUnaries, mManualUnaries, unarySettings, bearingSettings, mPrefs.chunkSize);
+    Tracker::Settings settings;
+    settings.subsample = mPrefs.unarySubsample;
+    settings.pairwiseSize = mPrefs.pairwiseSize;
+    settings.pairwiseSigma = mPrefs.pairwiseSigma;
+    settings.manualMultiplier = mPrefs.unaryMultiplier;
+    settings.calculateBearing = mPrefs.smoothBearing;
+    settings.windowSize = mPrefs.smoothBearingWindowSize;
+    settings.outlierTolerance = mPrefs.smoothBearingOutlierTol;
+
+    QFuture<Detections> detectionFuture;
+    if (chunk == -1)
+    {
+        detectionFuture = QtConcurrent::run(
+            Tracker::track, mUnaries, mManualUnaries, settings, mPrefs.chunkSize);
+    }
+    else
+    {
+        detectionFuture = QtConcurrent::run(
+            Tracker::track, mUnaries, mManualUnaries, settings, chunk, mPrefs.chunkSize);
+    }
 
     auto watcher = std::make_unique<QFutureWatcher<Detections>>();
     watcher->setFuture(detectionFuture);
 
-    // cancel if running already
-    if (mDetectionsWatchers.count(-1))
-    {
-        mDetectionsWatchers.at(-1)->cancel();
-        mDetectionsWatchers.erase(-1);
-    }
 
     connect(watcher.get(), &QFutureWatcher<Detections>::finished, this,
-        [this]() { this->onDetectionsAvailable(-1); });
-    mDetectionsWatchers[-1] = std::move(watcher);
+        [this, chunk]() { this->onDetectionsAvailable(chunk); });
+    mDetectionsWatchers[chunk] = std::move(watcher);
+
+    mMutex.unlock();
+
+    if (!mDetectionsQueue.empty())
+        on_buttonOptimizeUnaries_clicked();
 }
 
 void HabiTrack::onDetectionsAvailable(int chunkId)
 {
-    auto detections = mDetectionsWatchers.at(chunkId)->result();
-    spdlog::critical("yes: {}", detections.size());
+    // TODO: is the mutex needed?
+    mMutex.lock();
+    auto newDetections = mDetectionsWatchers.at(chunkId)->result();
+    spdlog::debug(
+        "GUI: detections avaiable for chunk {} with size {}", chunkId, newDetections.size());
     mDetectionsWatchers.erase(chunkId);
+
+    auto& dd = mDetections.data();
+    for (auto&& d : newDetections.data())
+        dd.insert_or_assign(d.first, std::move(d.second));
+    mMutex.unlock();
 }
 
 void HabiTrack::onPositionChanged(QPointF position)
@@ -576,9 +617,11 @@ void HabiTrack::onPositionChanged(QPointF position)
                 position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
     }
 
+    // put it in queue if it does not exist
     if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk)
-        != std::end(mDetectionsQueue))
+        == std::end(mDetectionsQueue))
     {
+        spdlog::debug("GUI: added chunk {} to queue", chunk);
         mDetectionsQueue.push_back(chunk);
     }
 

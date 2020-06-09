@@ -15,11 +15,10 @@
 namespace ht
 {
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-    UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings, std::size_t chunk,
-    std::size_t chunkSize)
+    const Settings& settings, std::size_t chunk, std::size_t chunkSize)
 {
     auto pairwiseKernel
-        = getPairwiseKernel(unarySettings.pairwiseSize, unarySettings.pairwiseSigma);
+        = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
     cv::log(pairwiseKernel, pairwiseKernel);
     auto ids = unaries.getIDs();
     auto numUnaries = unaries.size();
@@ -38,18 +37,18 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
         boundary = std::min(numUnaries, (chunk + 1) * chunkSize);
 
     auto states = truncatedMaxSum(chunk * chunkSize, boundary, ids, unaries, manualUnaries,
-        unarySettings, pairwiseKernel);
+        settings, pairwiseKernel);
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     spdlog::debug("Elapsed time for chunk {} tracking: {}", chunk, elapsed.count());
-    return extractFromStates(states, ids, unarySettings.subsample);
+    return extractFromStates(states, ids, settings.subsample);
 }
 
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-    UnarySettings unarySettings, SmoothBearingSettings smoothBearingSettings, std::size_t chunkSize)
+    const Settings& settings, std::size_t chunkSize)
 {
     auto pairwiseKernel
-        = getPairwiseKernel(unarySettings.pairwiseSize, unarySettings.pairwiseSigma);
+        = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
     cv::log(pairwiseKernel, pairwiseKernel);
     auto ids = unaries.getIDs();
     auto numUnaries = unaries.size();
@@ -78,7 +77,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
             end = std::min(numUnaries, (i + 1) * chunkSize);
 
         auto future = pool.enqueue(truncatedMaxSum, i * chunkSize, end, ids, unaries, manualUnaries,
-            unarySettings, pairwiseKernel);
+            settings, pairwiseKernel);
         futureStates.push_back(std::move(future));
     }
 
@@ -93,7 +92,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 
     cv::Mat bestStates;
     cv::vconcat(states.data(), states.size(), bestStates);
-    return extractFromStates(bestStates, ids, unarySettings.subsample);
+    return extractFromStates(bestStates, ids, settings.subsample);
 }
 
 cv::Mat Tracker::getPairwiseKernel(int size, double sigma)
@@ -105,7 +104,7 @@ cv::Mat Tracker::getPairwiseKernel(int size, double sigma)
 
 cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     const std::vector<std::size_t>& ids, const Unaries& unaries, const ManualUnaries& manualUnaries,
-    UnarySettings unarySettings, const cv::Mat& pairwiseKernel)
+    const Settings& settings, const cv::Mat& pairwiseKernel)
 {
     spdlog::debug("Running tracking on boundaries: [{}, {})", start, end);
     spdlog::debug("Running tracking on boundaries (id-space): [{}, {}]", ids[start], ids[end - 1]);
@@ -162,7 +161,7 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
             double tempMin, tempMax;
             cv::minMaxLoc(tempU, &tempMin, &tempMax);
             tempU += cv::abs(tempMin);
-            double multiplier = unarySettings.manualMultiplier;
+            double multiplier = settings.manualMultiplier;
             tempU *= multiplier;
             tempU -= cv::abs(tempMin);
         }
