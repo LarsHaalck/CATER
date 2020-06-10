@@ -44,8 +44,8 @@ private:
     static void passMessageToFactor(const cv::Mat& previousMessageToNode,
         const cv::Mat& unaryPotential, cv::Mat& messageToFactor);
 
-    static Detections extractFromStates(
-        const cv::Mat& states, const std::vector<std::size_t>& ids, double subsample);
+    static Detections extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
+        std::size_t offset, double subsample);
 };
 } // namespace habitrack
 #endif // HABITRACK_TRACKER_H

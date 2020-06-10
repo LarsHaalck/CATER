@@ -16,6 +16,8 @@
 #include <chrono>
 #include <iostream>
 #include <spdlog/spdlog.h>
+#include "image-processing/util.h"
+
 
 using namespace ht;
 namespace fs = std::filesystem;
@@ -476,6 +478,19 @@ void HabiTrack::on_buttonExtractTrafos_clicked()
 
     auto size = matches::getTrafos(mMatchFolder, GeometricType::Homography).size();
     ui->labelNumTrafos->setText(QString::number(size));
+
+    auto types
+        = ht::matches::getConnectedTypes(mMatchFolder, ht::GeometricType::Homography,
+            getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber));
+    if (static_cast<unsigned int>(types & ht::GeometricType::Homography))
+        spdlog::info("Transformations usable for unary extraction.");
+    else
+    {
+        spdlog::warn(
+            "Exracted Transformations not a continous chain, Consider increasing feature points.");
+        QMessageBox::warning(this, "Warning",
+            "Exracted Transformations not a continous chain, Consider increasing feature points.");
+    }
 }
 
 void HabiTrack::on_buttonExtractUnaries_clicked()
@@ -641,7 +656,24 @@ void HabiTrack::onPositionCleared()
 {
     if (!mUnaries.size())
         return;
-    spdlog::debug("GUI: manual position cleared on frame {}", mCurrentFrameNumber - 1);
+    std::size_t chunk = 0;
+    if (mPrefs.chunkSize)
+    {
+        chunk = (mCurrentFrameNumber - 1) / mPrefs.chunkSize;
+        spdlog::debug(
+            "GUI: manual position cleard on frame {} [chunk {}]", mCurrentFrameNumber - 1, chunk);
+    }
+    else
+        spdlog::debug("GUI: manual position cleard on frame {}", mCurrentFrameNumber - 1);
+
+    // put it in queue if it does not exist
+    if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk)
+        == std::end(mDetectionsQueue))
+    {
+        spdlog::debug("GUI: added chunk {} to queue", chunk);
+        mDetectionsQueue.push_back(chunk);
+    }
+
     mManualUnaries.clear(mCurrentFrameNumber - 1);
     showFrame(mCurrentFrameNumber);
     statusBar()->showMessage("Unary cleared", 1000);

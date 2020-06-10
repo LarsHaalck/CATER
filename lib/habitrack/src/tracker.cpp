@@ -41,7 +41,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     spdlog::debug("Elapsed time for chunk {} tracking: {}", chunk, elapsed.count());
-    return extractFromStates(states, ids, settings.subsample);
+    return extractFromStates(states, ids, chunk * chunkSize, settings.subsample);
 }
 
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
@@ -92,7 +92,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 
     cv::Mat bestStates;
     cv::vconcat(states.data(), states.size(), bestStates);
-    return extractFromStates(bestStates, ids, settings.subsample);
+    return extractFromStates(bestStates, ids, 0, settings.subsample);
 }
 
 cv::Mat Tracker::getPairwiseKernel(int size, double sigma)
@@ -260,8 +260,8 @@ void Tracker::passMessageToFactor(
     cv::add(previousMessageToNode, messageToFactor, messageToFactor);
 }
 
-Detections Tracker::extractFromStates(
-    const cv::Mat& states, const std::vector<std::size_t>& ids, double subsample)
+Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
+    std::size_t offset, double subsample)
 {
     Detections detections;
     for (int row = 0; row < states.rows; ++row)
@@ -275,7 +275,7 @@ Detections Tracker::extractFromStates(
         best_state_x *= up_sampling_factor;
         best_state_y *= up_sampling_factor;
 
-        std::size_t idx = ids[row];
+        std::size_t idx = ids[row + offset];
 
         // resultant ant position
         cv::Point antPosition(best_state_x, best_state_y);
