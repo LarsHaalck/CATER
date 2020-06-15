@@ -96,7 +96,7 @@ QColor UnaryScene::unaryQualityToQColor(UnaryQuality quality) const
     case UnaryQuality::Undefined:
         return darkgray;
     case UnaryQuality::Excellent:
-        return magenta;
+        return blue;
     default:
         return Qt::black;
     }

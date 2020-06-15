@@ -5,6 +5,7 @@
 #include "gui/progressStatusBar.h"
 #include "gui/qtOpencvCore.h"
 #include "habitrack/tracker.h"
+#include "image-processing/util.h"
 #include "resultsIO.h"
 #include <QDate>
 #include <QFileDialog>
@@ -16,8 +17,6 @@
 #include <chrono>
 #include <iostream>
 #include <spdlog/spdlog.h>
-#include "image-processing/util.h"
-
 
 using namespace ht;
 namespace fs = std::filesystem;
@@ -481,9 +480,8 @@ void HabiTrack::on_buttonExtractTrafos_clicked()
     auto size = matches::getTrafos(mMatchFolder, GeometricType::Homography).size();
     ui->labelNumTrafos->setText(QString::number(size));
 
-    auto types
-        = ht::matches::getConnectedTypes(mMatchFolder, ht::GeometricType::Homography,
-            getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber));
+    auto types = ht::matches::getConnectedTypes(mMatchFolder, ht::GeometricType::Homography,
+        getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber));
     if (static_cast<unsigned int>(types & ht::GeometricType::Homography))
         spdlog::info("Transformations usable for unary extraction.");
     else
@@ -531,76 +529,75 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
 
 void HabiTrack::on_buttonOptimizeUnaries_clicked()
 {
-
-    spdlog::debug("GUI: Clicked Optimize Unaries");
-    if (!unariesComputed())
     {
-        QMessageBox::warning(this, "Warning", "Unaries need to be computed first");
-        return;
+        QMutexLocker locker(&mMutex);
+        spdlog::debug("GUI: Clicked Optimize Unaries");
+        if (!unariesComputed())
+        {
+            QMessageBox::warning(this, "Warning", "Unaries need to be computed first");
+            return;
+        }
+
+        // check queue
+        // if mDetections empty, then remove all elements form queue and to -1
+        int chunk;
+        if (!mDetections.size())
+        {
+            mDetectionsQueue.clear();
+            chunk = -1;
+        }
+        else if (mDetectionsQueue.empty())
+        {
+            spdlog::debug("GUI: Optimize Unaries Queue is empty");
+            QMessageBox::information(
+                this, "Information", "No new manual unaries supplied. Nothing to do.");
+            return;
+        }
+        else
+        {
+            chunk = mDetectionsQueue.front();
+            mDetectionsQueue.pop_front();
+        }
+
+        toggleChunkUnaryScene(chunk, true);
+
+        // cancel if running already
+        /* if (mDetectionsWatchers.count(chunk)) */
+        /* { */
+        /*     mDetectionsWatchers.at(chunk)->cancel(); */
+        /*     mDetectionsWatchers.at(chunk)->waitForFinished(); */
+        /*     spdlog::critical("Running {}", mDetectionsWatchers.at(chunk)->isRunning()); */
+        /*     mDetectionsWatchers.erase(chunk); */
+        /* } */
+
+        Tracker::Settings settings;
+        settings.subsample = mPrefs.unarySubsample;
+        settings.pairwiseSize = mPrefs.pairwiseSize;
+        settings.pairwiseSigma = mPrefs.pairwiseSigma;
+        settings.manualMultiplier = mPrefs.unaryMultiplier;
+        settings.calculateBearing = mPrefs.smoothBearing;
+        settings.windowSize = mPrefs.smoothBearingWindowSize;
+        settings.outlierTolerance = mPrefs.smoothBearingOutlierTol;
+
+        QFuture<Detections> detectionFuture;
+        if (chunk == -1)
+        {
+            detectionFuture = QtConcurrent::run(
+                Tracker::track, mUnaries, mManualUnaries, settings, mPrefs.chunkSize);
+        }
+        else
+        {
+            detectionFuture = QtConcurrent::run(
+                Tracker::track, mUnaries, mManualUnaries, settings, chunk, mPrefs.chunkSize);
+        }
+
+        auto watcher = std::make_unique<QFutureWatcher<Detections>>();
+        watcher->setFuture(detectionFuture);
+
+        connect(watcher.get(), &QFutureWatcher<Detections>::finished, this,
+            [this, chunk]() { this->onDetectionsAvailable(chunk); });
+        mDetectionsWatchers[chunk] = std::move(watcher);
     }
-
-    // check queue
-    // if mDetections empty, then remove all elements form queue and to -1
-    int chunk;
-    if (!mDetections.size())
-    {
-        mDetectionsQueue.clear();
-        chunk = -1;
-    }
-    else if (mDetectionsQueue.empty())
-    {
-        spdlog::debug("GUI: Optimize Unaries Queue is empty");
-        QMessageBox::information(
-            this, "Information", "No new manual unaries supplied. Nothing to do.");
-        return;
-    }
-    else
-    {
-        chunk = mDetectionsQueue.front();
-        mDetectionsQueue.pop_front();
-    }
-
-    toggleChunkUnaryScene(chunk, true);
-
-    // cancel if running already
-    if (mDetectionsWatchers.count(chunk))
-    {
-        mDetectionsWatchers.at(chunk)->cancel();
-        mDetectionsWatchers.at(chunk)->waitForFinished();
-        spdlog::critical("Running {}", mDetectionsWatchers.at(chunk)->isRunning());
-        mDetectionsWatchers.erase(chunk);
-    }
-
-    QMutexLocker locker(&mMutex);
-    Tracker::Settings settings;
-    settings.subsample = mPrefs.unarySubsample;
-    settings.pairwiseSize = mPrefs.pairwiseSize;
-    settings.pairwiseSigma = mPrefs.pairwiseSigma;
-    settings.manualMultiplier = mPrefs.unaryMultiplier;
-    settings.calculateBearing = mPrefs.smoothBearing;
-    settings.windowSize = mPrefs.smoothBearingWindowSize;
-    settings.outlierTolerance = mPrefs.smoothBearingOutlierTol;
-
-    QFuture<Detections> detectionFuture;
-    if (chunk == -1)
-    {
-        detectionFuture = QtConcurrent::run(
-            Tracker::track, mUnaries, mManualUnaries, settings, mPrefs.chunkSize);
-    }
-    else
-    {
-        detectionFuture = QtConcurrent::run(
-            Tracker::track, mUnaries, mManualUnaries, settings, chunk, mPrefs.chunkSize);
-    }
-
-    auto watcher = std::make_unique<QFutureWatcher<Detections>>();
-    watcher->setFuture(detectionFuture);
-
-
-    connect(watcher.get(), &QFutureWatcher<Detections>::finished, this,
-        [this, chunk]() { this->onDetectionsAvailable(chunk); });
-    mDetectionsWatchers[chunk] = std::move(watcher);
-
 
     if (!mDetectionsQueue.empty())
         on_buttonOptimizeUnaries_clicked();
@@ -633,12 +630,11 @@ void HabiTrack::onPositionChanged(QPointF position)
         chunk = (mCurrentFrameNumber - mStartFrameNumber) / mPrefs.chunkSize;
         spdlog::debug("GUI: manual position changed to ({}, {}) on frame {} [chunk {}]",
             position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
-
     }
     else
     {
         spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(),
-                position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
+            position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
     }
 
     // put it in queue if it does not exist
@@ -716,6 +712,7 @@ void HabiTrack::setupUnaryScene(std::vector<double> qualities)
     auto offset = mStartFrameNumber - 1;
     num = mEndFrameNumber - mStartFrameNumber;
     std::size_t medSize = 100;
+    mBar->setTotal(num);
     for (std::size_t i = 0; i < std::ceil(static_cast<double>(num) / medSize); i++)
     {
         auto start = i * medSize + offset;
@@ -746,13 +743,14 @@ void HabiTrack::setupUnaryScene(std::vector<double> qualities)
 
             scene->setUnaryQuality(j, qual);
             mUnaryQualityValues[j] = qual;
+            mBar->inc();
         }
     }
+    mBar->done();
 
     // this only works for continous unaries (which should always be the case when using the gui)
     // set all cunks on not-computing
     toggleChunkUnaryScene(-1, false);
-
 }
 void HabiTrack::toggleChunkUnaryScene(int chunkId, bool computing)
 {
@@ -784,6 +782,5 @@ void HabiTrack::toggleChunkUnaryScene(int chunkId, bool computing)
 
     ui->unaryView->getUnaryScene()->update();
 }
-
 
 } // namespace gui
