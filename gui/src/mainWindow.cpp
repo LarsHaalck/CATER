@@ -42,10 +42,12 @@ HabiTrack::HabiTrack(QWidget* parent)
     , mDetectionsQueue()
 {
     ui->setupUi(this);
+    statusBar()->showMessage("", 1000);
     populateGuiDefaults();
 
     // needs to be done after setupUi
     mScene = ui->graphicsView->getTrackerScene();
+    ui->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
     mBar = std::make_shared<ProgressStatusBar>(ui->progressBar, ui->labelProgress);
 
     connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this,
@@ -230,7 +232,7 @@ void HabiTrack::showFrame(std::size_t frameNumber)
     {
         auto scene = ui->unaryView->getUnaryScene();
         auto color = scene->getUnaryColor(idx);
-        auto quality = unaryQualityToString(scene->getUnaryQuality(idx));
+        auto quality = UnaryScene::unaryQualityToString(scene->getUnaryQuality(idx));
         ui->qualityLabel->setStyleSheet(
             QString("color: white; background-color: " + color.name() + ";"));
         ui->qualityLabel->setText(quality.c_str());
@@ -521,7 +523,7 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
     std::vector<double> unaryQuality(mImages.size(), -1);
     for (auto i = mStartFrameNumber - 1; i < mEndFrameNumber - 1; i++)
         unaryQuality[i] = Unaries::getUnaryQuality(mUnaries.at(i));
-    setUnaryScene(unaryQuality);
+    setupUnaryScene(unaryQuality);
 
     ui->labelNumUnaries->setText(QString::number(mUnaries.size()));
     mManualUnaries = ManualUnaries::fromDir(mUnFolder, mPrefs.unarySubsample, mImages.getImgSize());
@@ -529,7 +531,7 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
 
 void HabiTrack::on_buttonOptimizeUnaries_clicked()
 {
-    mMutex.lock();
+
     spdlog::debug("GUI: Clicked Optimize Unaries");
     if (!unariesComputed())
     {
@@ -548,6 +550,8 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
     else if (mDetectionsQueue.empty())
     {
         spdlog::debug("GUI: Optimize Unaries Queue is empty");
+        QMessageBox::information(
+            this, "Information", "No new manual unaries supplied. Nothing to do.");
         return;
     }
     else
@@ -556,13 +560,18 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
         mDetectionsQueue.pop_front();
     }
 
+    toggleChunkUnaryScene(chunk, true);
+
     // cancel if running already
     if (mDetectionsWatchers.count(chunk))
     {
         mDetectionsWatchers.at(chunk)->cancel();
+        mDetectionsWatchers.at(chunk)->waitForFinished();
+        spdlog::critical("Running {}", mDetectionsWatchers.at(chunk)->isRunning());
         mDetectionsWatchers.erase(chunk);
     }
 
+    QMutexLocker locker(&mMutex);
     Tracker::Settings settings;
     settings.subsample = mPrefs.unarySubsample;
     settings.pairwiseSize = mPrefs.pairwiseSize;
@@ -592,7 +601,6 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
         [this, chunk]() { this->onDetectionsAvailable(chunk); });
     mDetectionsWatchers[chunk] = std::move(watcher);
 
-    mMutex.unlock();
 
     if (!mDetectionsQueue.empty())
         on_buttonOptimizeUnaries_clicked();
@@ -601,7 +609,9 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
 void HabiTrack::onDetectionsAvailable(int chunkId)
 {
     // TODO: is the mutex needed?
-    mMutex.lock();
+    QMutexLocker locker(&mMutex);
+
+    toggleChunkUnaryScene(chunkId, false);
     auto newDetections = mDetectionsWatchers.at(chunkId)->result();
     spdlog::debug(
         "GUI: detections avaiable for chunk {} with size {}", chunkId, newDetections.size());
@@ -610,7 +620,6 @@ void HabiTrack::onDetectionsAvailable(int chunkId)
     auto& dd = mDetections.data();
     for (auto&& d : newDetections.data())
         dd.insert_or_assign(d.first, std::move(d.second));
-    mMutex.unlock();
 }
 
 void HabiTrack::onPositionChanged(QPointF position)
@@ -621,7 +630,7 @@ void HabiTrack::onPositionChanged(QPointF position)
     std::size_t chunk = 0;
     if (mPrefs.chunkSize)
     {
-        chunk = (mCurrentFrameNumber - 1) / mPrefs.chunkSize;
+        chunk = (mCurrentFrameNumber - mStartFrameNumber) / mPrefs.chunkSize;
         spdlog::debug("GUI: manual position changed to ({}, {}) on frame {} [chunk {}]",
             position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
 
@@ -641,6 +650,10 @@ void HabiTrack::onPositionChanged(QPointF position)
     }
 
     mManualUnaries.insert(mCurrentFrameNumber - 1, QtOpencvCore::qpoint2point(position));
+
+    ui->unaryView->getUnaryScene()->setUnaryQuality(
+        mCurrentFrameNumber - 1, UnaryQuality::Excellent);
+    ui->unaryView->getUnaryScene()->update();
     statusBar()->showMessage("Manually added unary", 1000);
     on_buttonNextFrame_clicked();
 }
@@ -659,7 +672,7 @@ void HabiTrack::onPositionCleared()
     std::size_t chunk = 0;
     if (mPrefs.chunkSize)
     {
-        chunk = (mCurrentFrameNumber - 1) / mPrefs.chunkSize;
+        chunk = (mCurrentFrameNumber - mStartFrameNumber) / mPrefs.chunkSize;
         spdlog::debug(
             "GUI: manual position cleard on frame {} [chunk {}]", mCurrentFrameNumber - 1, chunk);
     }
@@ -677,6 +690,10 @@ void HabiTrack::onPositionCleared()
     mManualUnaries.clear(mCurrentFrameNumber - 1);
     showFrame(mCurrentFrameNumber);
     statusBar()->showMessage("Unary cleared", 1000);
+
+    ui->unaryView->getUnaryScene()->setUnaryQuality(
+        mCurrentFrameNumber - 1, mUnaryQualityValues[mCurrentFrameNumber - 1]);
+    ui->unaryView->getUnaryScene()->update();
 }
 
 void HabiTrack::onBearingCleared()
@@ -687,7 +704,8 @@ void HabiTrack::onBearingCleared()
     // TODO: implement
 }
 
-void HabiTrack::setUnaryScene(std::vector<double> qualities)
+// this is by value by choice, because it needs to be copied and modifed in-place
+void HabiTrack::setupUnaryScene(std::vector<double> qualities)
 {
     mUnaryQualities = qualities;
 
@@ -697,11 +715,11 @@ void HabiTrack::setUnaryScene(std::vector<double> qualities)
 
     auto offset = mStartFrameNumber - 1;
     num = mEndFrameNumber - mStartFrameNumber;
-    std::size_t chunkSize = 100;
-    for (std::size_t i = 0; i < std::ceil(static_cast<double>(num) / chunkSize); i++)
+    std::size_t medSize = 100;
+    for (std::size_t i = 0; i < std::ceil(static_cast<double>(num) / medSize); i++)
     {
-        auto start = i * chunkSize + offset;
-        auto end = std::min((i + 1) * chunkSize, num) + offset;
+        auto start = i * medSize + offset;
+        auto end = std::min((i + 1) * medSize, num) + offset;
         auto mid = start + (end - start) / 2;
         std::nth_element(std::begin(qualities) + start, std::begin(qualities) + mid,
             std::begin(qualities) + end);
@@ -718,14 +736,54 @@ void HabiTrack::setUnaryScene(std::vector<double> qualities)
         spdlog::debug("GUI: Unary high threshold {}", median + 4.0 * medianDist);
         for (std::size_t j = start; j < end; j++)
         {
+            UnaryQuality qual;
             if (mUnaryQualities[j] < (median + 1.5 * medianDist))
-                scene->setUnaryQuality(j, UnaryQuality::Good);
+                qual = UnaryQuality::Good;
             else if (mUnaryQualities[j] < (median + 3.0 * medianDist))
-                scene->setUnaryQuality(j, UnaryQuality::Poor);
+                qual = UnaryQuality::Poor;
             else
-                scene->setUnaryQuality(j, UnaryQuality::Critical);
+                qual = UnaryQuality::Critical;
+
+            scene->setUnaryQuality(j, qual);
+            mUnaryQualityValues[j] = qual;
         }
     }
+
+    // this only works for continous unaries (which should always be the case when using the gui)
+    // set all cunks on not-computing
+    toggleChunkUnaryScene(-1, false);
+
 }
+void HabiTrack::toggleChunkUnaryScene(int chunkId, bool computing)
+{
+    auto numUnaries = mUnaries.size();
+    auto chunkSize = mPrefs.chunkSize;
+    auto numChunks = Tracker::getNumChunks(numUnaries, chunkSize);
+
+    std::vector<int> chunks;
+    if (chunkId == -1)
+    {
+        chunks.resize(numChunks);
+        std::iota(std::begin(chunks), std::end(chunks), 0);
+    }
+    else
+        chunks = {chunkId};
+
+    for (auto chunk : chunks)
+    {
+        UnaryState state;
+        if (computing)
+            state = (chunk % 2) ? UnaryState::ComputingAlt : UnaryState::Computing;
+        else
+            state = (chunk % 2) ? UnaryState::DefaultAlt : UnaryState::Default;
+
+        auto end = Tracker::getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
+        for (std::size_t j = chunk * chunkSize; j < end; j++)
+            ui->unaryView->getUnaryScene()->setUnaryState(j + mStartFrameNumber - 1, state);
+    }
+
+    ui->unaryView->getUnaryScene()->update();
+}
+
 
 } // namespace gui

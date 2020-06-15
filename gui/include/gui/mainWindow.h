@@ -39,7 +39,8 @@ private:
     void refreshWindow();
     void populatePaths(const std::filesystem::path& stem);
     void openImagesHelper();
-    void setUnaryScene(std::vector<double> qualities);
+    void setupUnaryScene(std::vector<double> qualities);
+    void toggleChunkUnaryScene(int chunk, bool computing);
 
     bool featureComputed() const;
     bool matchesComputed() const;
@@ -109,6 +110,7 @@ private:
     ht::Unaries mUnaries;
     ht::ManualUnaries mManualUnaries;
     std::vector<double> mUnaryQualities;
+    std::unordered_map<std::size_t, UnaryQuality> mUnaryQualityValues;
 
     ht::Detections mDetections;
     std::unordered_map<int, std::unique_ptr<QFutureWatcher<ht::Detections>>> mDetectionsWatchers;
