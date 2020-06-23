@@ -5,6 +5,7 @@
 
 namespace gui
 {
+namespace fs = std::filesystem;
 namespace detail
 {
     void savePreferences(cv::FileStorage& fs, const Preferences& prefs)
@@ -91,76 +92,30 @@ namespace detail
         return prefs;
     }
 } // namespace detail
-void saveResults(const std::filesystem::path& resultFile, const Preferences& prefs)
+
+void saveResults(const fs::path& resultFile, const Preferences& prefs, const fs::path& imgFolder,
+    std::size_t startFrame, std::size_t endFrame)
 {
-
-    spdlog::debug("Save results file to: {}", resultFile.string());
+    spdlog::info("Save results file to: {}", resultFile.string());
     cv::FileStorage fs(resultFile.string(), cv::FileStorage::WRITE);
+
+    fs << "img_folder" << imgFolder.string();
+    fs << "start_frame" << static_cast<int>(startFrame);
+    fs << "end_frame" << static_cast<int>(endFrame);
     detail::savePreferences(fs, prefs);
+}
 
-    /*fs << "video_path" << QtOpencvCore::qstr2str(trackingData.getVideoPath());*/
-    /*fs << "abs_path" << QtOpencvCore::qstr2str(trackingData.getAbsPath());*/
-    /*fs << "file_name" << QtOpencvCore::qstr2str(trackingData.getFileName());*/
-    /*fs << "file_format" << QtOpencvCore::qstr2str(trackingData.getFileFormat());*/
-    /*fs << "image_folder_used" << trackingData.getIsImageFolderUsed();*/
+std::tuple<Preferences, std::filesystem::path, std::size_t, std::size_t> loadResults(
+    const std::filesystem::path& resultFile)
+{
+    spdlog::info("Save results file to: {}", resultFile.string());
+    cv::FileStorage fs(resultFile.string(), cv::FileStorage::READ);
 
-    /*fs << "abs_output_path"*/
-    /*   << QtOpencvCore::qstr2str(trackingData.getAbsOutputPath());*/
-    /*fs << "results_output_path"*/
-    /*   << QtOpencvCore::qstr2str(trackingData.getResultsOutputPath());*/
-
-    /*fs << "date" << QtOpencvCore::qstr2str(trackingData.getDate());*/
-    /*fs << "time" << QtOpencvCore::qstr2str(trackingData.getTime());*/
-
-    /*int numOfFrames = trackingData.getNumberOfFrames();*/
-    /*fs << "num_of_frames" << numOfFrames;*/
-    /*int firstFrameUsed = trackingData.getFirstFrameUsedNum();*/
-    /*fs << "first_used_frame_num" << firstFrameUsed;*/
-    /*int lastFrameUsed = trackingData.getLastFrameUsedNum();*/
-    /*fs << "last_used_frame_num" << lastFrameUsed;*/
-    /*int numOfFramesUsed = lastFrameUsed - firstFrameUsed;*/
-    /*fs << "num_of_frames_used" << numOfFramesUsed;*/
-
-    /*fs << "has_features" << trackingData.hasFeaturesExtracted();*/
-    /*fs << "features_path"*/
-    /*   << QtOpencvCore::qstr2str(trackingData.getFeaturesOutputPath());*/
-
-    /*fs << "has_transformations" << trackingData.hasTransformationsCalculated();*/
-    /*fs << "transformations_path"*/
-    /*   << QtOpencvCore::qstr2str(trackingData.getTransformationsOutputPath());*/
-
-    /*fs << "has_homographies" << trackingData.hasHomographiesCalculated();*/
-    /*fs << "homography_file"*/
-    /*   << QtOpencvCore::qstr2str(trackingData.getHomographiesOutputPath());*/
-
-    /*fs << "has_unaries" << trackingData.hasUnariesCalculated();*/
-    /*fs << "unaries_path"*/
-    /*   << QtOpencvCore::qstr2str(trackingData.getUnariesFolderPath());*/
-    /*fs << "unaries_file"*/
-    /*   << QtOpencvCore::qstr2str(trackingData.getUnariesOutputPath());*/
-    /*fs << "overall_gaussian_mask"*/
-    /*   << QtOpencvCore::qstr2str(trackingData.getOverallGaussianMaskOutputPath());*/
-    /*fs << "has_ant_positions" << trackingData.hasAntPositionsCalculated();*/
-    /*fs << "ant_position_path"*/
-    /*   << QtOpencvCore::qstr2str(trackingData.getAntOutputPath());*/
-
-    /*// save preferences*/
-    /*fs << "preferences"*/
-    /*   << "{";*/
-    /*fs << "center_x" << trackingData.getCenterX();*/
-    /*fs << "center_y" << trackingData.getCenterY();*/
-    /*fs << "num_rows" << trackingData.getNumRows();*/
-    /*fs << "num_cols" << trackingData.getNumCols();*/
-
-    /*// save used frame numbers*/
-    /*std::vector<int> frameNumbers = trackingData.getFrameNumberVector();*/
-    /*fs << "frame_no"*/
-    /*   << "[";*/
-    /*for (auto it = frameNumbers.begin(); it != frameNumbers.end(); ++it)*/
-    /*{*/
-    /*    fs << *it;*/
-    /*}*/
-    /*fs << "]";*/
+    auto imgFolder = static_cast<fs::path>(fs["img_folder"]);
+    auto startFrame = static_cast<std::size_t>(static_cast<int>(fs["start_frame"]));
+    auto endFrame = static_cast<std::size_t>(static_cast<int>(fs["end_frame"]));
+    auto prefs = detail::loadPreferences(fs);
+    return {prefs, imgFolder, startFrame, endFrame};
 }
 
 } // namespace gui

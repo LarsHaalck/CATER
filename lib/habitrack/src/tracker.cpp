@@ -8,14 +8,18 @@
 #include <limits>
 #include <opencv2/imgproc.hpp>
 #include "habitrack/threadPool.h"
-
+#include "image-processing/util.h"
+#include "image-processing/transformation.h"
 #include <chrono>
 
 
 namespace ht
 {
+using namespace matches;
+using namespace transformation;
+
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-    const Settings& settings, std::size_t chunk, std::size_t chunkSize)
+    const Settings& settings, std::size_t chunk, const matches::PairwiseTrafos& trafos)
 {
     auto pairwiseKernel
         = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
@@ -23,6 +27,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     auto ids = unaries.getIDs();
     auto numUnaries = unaries.size();
 
+    auto chunkSize = settings.chunkSize;
     if (chunkSize == 0)
         chunkSize = numUnaries;
 
@@ -36,11 +41,11 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     spdlog::debug("Elapsed time for chunk {} tracking: {}", chunk, elapsed.count());
-    return extractFromStates(states, ids, chunk * chunkSize, settings.subsample);
+    return extractFromStates(states, ids, chunk * chunkSize, settings.subsample, trafos);
 }
 
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-    const Settings& settings, std::size_t chunkSize)
+    const Settings& settings, const matches::PairwiseTrafos& trafos)
 {
     auto pairwiseKernel
         = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
@@ -48,6 +53,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     auto ids = unaries.getIDs();
     auto numUnaries = unaries.size();
 
+    auto chunkSize = settings.chunkSize;
     if (chunkSize == 0)
         chunkSize = numUnaries;
 
@@ -82,7 +88,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 
     cv::Mat bestStates;
     cv::vconcat(states.data(), states.size(), bestStates);
-    return extractFromStates(bestStates, ids, 0, settings.subsample);
+    return extractFromStates(bestStates, ids, 0, settings.subsample, trafos);
 }
 
 std::size_t Tracker::getNumChunks(std::size_t numUnaries, std::size_t chunkSize)
@@ -271,9 +277,12 @@ void Tracker::passMessageToFactor(
 }
 
 Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
-    std::size_t offset, double subsample)
+    std::size_t offset, double subsample, const PairwiseTrafos& trafos)
 {
     Detections detections;
+
+    std::size_t lastIdx;
+    cv::Point lastPos;
     for (int row = 0; row < states.rows; ++row)
     {
         // get best x and y position
@@ -287,18 +296,36 @@ Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<s
 
         std::size_t idx = ids[row + offset];
 
-        // resultant ant position
-        cv::Point antPosition(best_state_x, best_state_y);
+        // resultant position
+        cv::Point position(best_state_x, best_state_y);
 
-        // TODO: implement
-        double theta = 0;
-        double thetaQuality = 0;
-        /* calcBearingAndQuality(trackingData, idx, antPosition, theta, thetaQuality); */
+        double theta = -1;
+        double thetaQuality = -1;
+        if (row > 0)
+        {
+            auto [theta_, thetaQuality_] = calcBearingAndQuality(lastIdx, idx,
+                    lastPos, position, trafos);
+            theta = theta_;
+            thetaQuality = thetaQuality_;
+        }
+
         spdlog::debug("extracted detection {}/{}, theta {} with quality {}", row, states.rows - 1,
             theta, thetaQuality);
 
-        detections.insert(idx, {antPosition, theta, thetaQuality});
+        lastIdx = idx;
+        lastPos = position;
+        detections.insert(idx, {position, theta, thetaQuality});
     }
     return detections;
+}
+
+std::pair<double, double> Tracker::calcBearingAndQuality(std::size_t lastIdx,
+        std::size_t idx, cv::Point lastPos, cv::Point pos, const PairwiseTrafos& trafos)
+{
+    auto transLastPos = transformPoint(lastPos, trafos.at({lastIdx, idx}),
+            GeometricType::Homography);
+    auto theta = calcAngle(transLastPos, pos);
+    auto thetaQuality = euclidianDist<double>(transLastPos, pos);
+    return {theta, thetaQuality};
 }
 } // namespace ht

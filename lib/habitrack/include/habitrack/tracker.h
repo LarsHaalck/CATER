@@ -10,6 +10,7 @@ class Unaries;
 class ManualUnaries;
 } // namespace ht
 
+// TODO: replace with namespace and detail
 namespace ht
 {
 class Tracker
@@ -24,13 +25,14 @@ public:
         bool calculateBearing;
         int windowSize;
         int outlierTolerance;
+        std::size_t chunkSize;
     };
 
 public:
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-        const Settings& settings, std::size_t chunk, std::size_t chunkSize);
+        const Settings& settings, std::size_t chunk, const matches::PairwiseTrafos& trafos);
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-        const Settings& settings, std::size_t chunkSize = 0);
+        const Settings& settings, const matches::PairwiseTrafos& trafos);
     static std::size_t getNumChunks(std::size_t numUnaries, std::size_t chunkSize);
     static std::size_t getChunkEnd(
         std::size_t chunk, std::size_t numChunks, std::size_t chunkSize, std::size_t numUnaries);
@@ -48,7 +50,11 @@ private:
         const cv::Mat& unaryPotential, cv::Mat& messageToFactor);
 
     static Detections extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
-        std::size_t offset, double subsample);
+        std::size_t offset, double subsample, const matches::PairwiseTrafos& trafos);
+
+    static std::pair<double, double> calcBearingAndQuality(std::size_t lastIdx,
+            std::size_t idx, cv::Point lastPos, cv::Point pos, const
+            matches::PairwiseTrafos& trafos);
 };
 } // namespace habitrack
 #endif // HABITRACK_TRACKER_H

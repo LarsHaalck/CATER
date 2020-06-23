@@ -21,5 +21,20 @@ float scaledGauss2DPDF(
 
 cv::Mat scaledGauss2D(
     float meanX, float meanY, float sigmaX, float sigmaY, float scale, cv::Size size);
+
+double calcAngle(const cv::Point& p, const cv::Point& p2);
+cv::Point rotatePointAroundPoint(cv::Point centerPoint, double angle);
+
+template <class T>
+T normL2(cv::Point_<T> const& pt)
+{
+    return std::sqrt(std::pow(pt.x, 2) + std::pow(pt.y, 2));
+}
+
+template <class T>
+T euclidianDist(const cv::Point_<T>& pt0, const cv::Point_<T>& pt1)
+{
+    return std::sqrt(std::pow(pt0.x - pt1.x, 2) + std::pow(pt0.y - pt1.y, 2));
+}
 } // namespace ht
 #endif // HABITRACK_UTIL_H

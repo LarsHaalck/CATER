@@ -44,6 +44,9 @@ HabiTrack::HabiTrack(QWidget* parent)
     statusBar()->showMessage("", 1000);
     populateGuiDefaults();
 
+    ui->unaryView->setOptimizationFlags(QGraphicsView::DontSavePainterState
+        | QGraphicsView::DontAdjustForAntialiasing | QGraphicsView::IndirectPainting);
+
     // needs to be done after setupUi
     mScene = ui->graphicsView->getTrackerScene();
     ui->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
@@ -67,6 +70,7 @@ void HabiTrack::populateGuiDefaults()
     spdlog::debug("GUI: Populating GUI defaults");
     ui->sliderOverlayUnaries->setValue(mGuiPrefs.overlayUnaries);
     ui->overlayTrackedPosition->setChecked(mGuiPrefs.overlayTrackedPos);
+    ui->overlayBearings->setChecked(mGuiPrefs.overlayBearing);
     ui->overlayTrajectory->setChecked(mGuiPrefs.overlayTrajectory);
     ui->trajectorySpin->setValue(mGuiPrefs.overlayTrajectoryWindow);
 }
@@ -85,6 +89,12 @@ void HabiTrack::on_sliderOverlayUnaries_sliderReleased()
 void HabiTrack::on_overlayTrackedPosition_toggled(bool value)
 {
     spdlog::debug("GUI: Overlay tracked pos changed: {}", value);
+    showFrame(mCurrentFrameNumber);
+}
+
+void HabiTrack::on_overlayBearings_toggled(bool value)
+{
+    spdlog::debug("GUI: Overlay bearing changed: {}", value);
     showFrame(mCurrentFrameNumber);
 }
 
@@ -112,10 +122,12 @@ void HabiTrack::on_actionExpertMode_toggled(bool value)
 void HabiTrack::on_actionSave_Results_triggered()
 {
     spdlog::debug("GUI: Save Results triggered");
-    saveResults(mOutputPath / "results.yml", mPrefs);
 
-    if (mManualUnaries.size())
-        mManualUnaries.save(mUnFolder);
+    saveResults(mResultsFile, mPrefs, mImgFolder, mStartFrameNumber, mEndFrameNumber);
+    mManualUnaries.save(mUnFolder);
+    //mManualBearing.save(mOutputPath);
+
+    statusBar()->showMessage("Saved results.", 1000);
 }
 void HabiTrack::on_actionPreferences_triggered()
 {
@@ -126,7 +138,9 @@ void HabiTrack::on_actionPreferences_triggered()
         // overwrite current settings if accepted, discard otherwise
         mPrefs = prefDialog.getPreferences();
         spdlog::debug("GUI: Changed Preferences to: {}", mPrefs);
-        saveResults(mOutputPath / "results.yml", mPrefs);
+
+        // TODO: should this be saved implicitly?
+        saveResults(mResultsFile, mPrefs, mImgFolder, mStartFrameNumber, mEndFrameNumber);
     }
 }
 
@@ -189,28 +203,15 @@ void HabiTrack::refreshWindow()
     qApp->processEvents();
 }
 
-void HabiTrack::populatePaths(const fs::path& path)
+void HabiTrack::populatePaths()
 {
-    if (fs::is_directory(path))
-        mOutputPath = path;
-    else
-        mOutputPath = path.filename();
-
-    mOutputPath += "_output";
-
-    auto date = QDate::currentDate().toString("yyyy-MM-dd").toStdString();
-    auto time = QTime::currentTime().toString("hh-mm-ss").toStdString();
-
-    mOutputPath /= "now";
-    /* mOutputPath /= date + "_" + time; */
-
     spdlog::debug("Generated output path: {}", mOutputPath.string());
 
     mResultsFile = mOutputPath / "results.yml";
     mFtFolder = mOutputPath / "fts";
     mMatchFolder = mOutputPath / "matches";
     mUnFolder = mOutputPath / "unaries";
-    mAntFile = mOutputPath / "ant.yml";
+    mDetectionsFile = mOutputPath / "detections.yml";
 }
 
 void HabiTrack::showFrame(std::size_t frameNumber)
@@ -266,26 +267,19 @@ void HabiTrack::showFrame(std::size_t frameNumber)
         cv::addWeighted(unaryColor, alpha, frame, (1 - alpha), 0.0, frame);
     }
 
-    // get ant position
-    cv::Point position;
+    // get position
     if (ui->overlayTrackedPosition->isChecked() > 0 && mDetections.exists(idx))
     {
-        auto antPosition = mDetections.at(idx).position;
-        /* double theta; */
-        /* mTrackingData.getAntThetaAt(mCurrentFrameNumber, theta); */
-        /* double thetaQuality; */
-        /* mTrackingData.getAntThetaQualityAt(mCurrentFrameNumber, thetaQuality); */
-        /* cv::Point dirIndicator = utils::rotatePointAroundPoint(antPosition, theta); */
+        auto detection = mDetections.at(idx);
+        auto position = detection.position;
+        auto theta = detection.theta;
+        auto dirIndicator = rotatePointAroundPoint(position, theta);
 
-        int circleThickness = 2;
-        /* if (trackedPositionSlider == 100) */
-        /* { */
-        /*     circleThickness = 2; */
-        /*     cv::line(mCurrentFrame, antPosition, dirIndicator, */
-        /*         cv::Scalar(0, 255, 0), 1); */
-        /* } */
+        if (ui->overlayBearings->isChecked())
+            cv::line(frame, position, dirIndicator, cv::Scalar(0, 255, 0), 1);
+
         cv::Scalar color(100, 100, 255);
-        cv::circle(frame, antPosition, 20, color, circleThickness);
+        cv::circle(frame, position, 20, color, 2);
     }
 
     // get trajectory
@@ -323,7 +317,7 @@ void HabiTrack::showFrame(std::size_t frameNumber)
     refreshWindow();
 }
 
-void HabiTrack::openImagesHelper()
+void HabiTrack::openImagesHelper(const fs::path& path)
 {
     auto numImgs = mImages.size();
 
@@ -340,11 +334,11 @@ void HabiTrack::openImagesHelper()
     ui->spinCurrentFrame->setEnabled(true);
 
     ui->labelFileName->setText(QString::fromStdString(mImages.getFileName(0).string()));
-    ui->labelStartFrame->setText(QString::number(1));
-    ui->labelEndFrame->setText(QString::number(numImgs));
+
     mStartFrameNumber = 1;
     mEndFrameNumber = numImgs;
-
+    ui->labelStartFrame->setText(QString::number(mStartFrameNumber));
+    ui->labelEndFrame->setText(QString::number(mEndFrameNumber));
     ui->labelNumTrafos->setText(QString::number(0));
     ui->labelNumUnaries->setText(QString::number(0));
     ui->labelNumTrackedPos->setText(QString::number(0));
@@ -366,7 +360,25 @@ void HabiTrack::openImagesHelper()
     mCurrentFrameNumber = 1;
     showFrame(1);
 
-    populatePaths(fs::path(mStartPath.toStdString()));
+    if (path.empty())
+    {
+        auto tempPath = fs::path(mStartPath.toStdString());
+        if (fs::is_directory(tempPath))
+            mOutputPath = tempPath;
+        else
+            mOutputPath = tempPath.filename();
+
+        mOutputPath += "_output";
+        auto date = QDate::currentDate().toString("yyyy-MM-dd").toStdString();
+        auto time = QTime::currentTime().toString("hh-mm-ss").toStdString();
+
+        mOutputPath /= "now";
+        /* mOutputPath /= date + "_" + time; */
+    }
+    else
+        mOutputPath = path;
+
+    populatePaths();
 }
 
 bool HabiTrack::featureComputed() const
@@ -399,21 +411,46 @@ void HabiTrack::on_actionOpenImgFolder_triggered()
     openImagesHelper();
 }
 
-void HabiTrack::on_actionOpenImgListtriggered()
+void HabiTrack::on_actionOpenImgList_triggered()
 {
-    spdlog::debug("GUI: Triggered open image list file");
-    QString imgFilePath = QFileDialog::getOpenFileName(
-        this, tr("Open Image File List"), mStartPath, "Text (*.txt)");
-    if (imgFilePath.isEmpty())
-        return;
-    mStartPath = imgFilePath;
+    QMessageBox::warning(
+        this, "Warning", "Not implemented yet");
+    return;
 
-    mImgFolder = fs::path(imgFilePath.toStdString());
-    mImages = Images(mImgFolder);
-    openImagesHelper();
+    /* spdlog::debug("GUI: Triggered open image list file"); */
+    /* QString imgFilePath = QFileDialog::getOpenFileName( */
+    /*     this, tr("Open Image File List"), mStartPath, "Text (*.txt)"); */
+    /* if (imgFilePath.isEmpty()) */
+    /*     return; */
+    /* auto parentPath = fs::path(imgFilePath.toStdString()).parent_path(); */
+    /* mStartPath = QString::fromStdString(parentPath.string()); */
+
+    /* mImgFolder = fs::path(imgFilePath.toStdString()); */
+    /* mImages = Images(mImgFolder); */
+    /* openImagesHelper(); */
 }
 
-void HabiTrack::on_actionOpenResultsFile_triggered() { }
+void HabiTrack::on_actionOpenResultsFile_triggered()
+{
+    spdlog::debug("GUI: Triggered Open results file");
+    QString resultFile = QFileDialog::getOpenFileName(
+        this, tr("Open Image File List"), mStartPath, "YAML (*.yml)");
+    if (resultFile.isEmpty())
+        return;
+
+    auto parentPath = fs::path(resultFile.toStdString()).parent_path();
+    mStartPath = QString::fromStdString(parentPath.string());
+
+    spdlog::critical("new start path: {}", mStartPath.toStdString());
+    auto [prefs_, imgFolder_, start_, end_] = loadResults(resultFile.toStdString());
+    mPrefs = prefs_;
+    mImgFolder = imgFolder_;
+    mStartFrameNumber = start_;
+    mEndFrameNumber = end_;
+
+    mImages = Images(mImgFolder);
+    openImagesHelper(parentPath);
+}
 
 void HabiTrack::on_buttonStartFrame_clicked()
 {
@@ -521,16 +558,23 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
     std::vector<double> unaryQuality(mImages.size(), -1);
     for (auto i = mStartFrameNumber - 1; i < mEndFrameNumber - 1; i++)
         unaryQuality[i] = Unaries::getUnaryQuality(mUnaries.at(i));
-    setupUnaryScene(unaryQuality);
 
-    ui->labelNumUnaries->setText(QString::number(mUnaries.size()));
+    // zero init if existent
     mManualUnaries = ManualUnaries::fromDir(mUnFolder, mPrefs.unarySubsample, mImages.getImgSize());
+
+    setupUnaryScene(unaryQuality);
+    ui->labelNumUnaries->setText(QString::number(mUnaries.size()));
 }
 
 void HabiTrack::on_buttonOptimizeUnaries_clicked()
 {
     {
         QMutexLocker locker(&mMutex);
+
+        // save manual unaries if existent
+        if (mManualUnaries.size())
+            mManualUnaries.save(mUnFolder);
+
         spdlog::debug("GUI: Clicked Optimize Unaries");
         if (!unariesComputed())
         {
@@ -561,6 +605,7 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
 
         toggleChunkUnaryScene(chunk, true);
 
+        // TODO: doesn't work because QtConcurrent::run cannot be cancelled
         // cancel if running already
         /* if (mDetectionsWatchers.count(chunk)) */
         /* { */
@@ -578,17 +623,19 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
         settings.calculateBearing = mPrefs.smoothBearing;
         settings.windowSize = mPrefs.smoothBearingWindowSize;
         settings.outlierTolerance = mPrefs.smoothBearingOutlierTol;
+        settings.chunkSize = mPrefs.chunkSize;
 
         QFuture<Detections> detectionFuture;
+        auto trafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography);
         if (chunk == -1)
         {
             detectionFuture = QtConcurrent::run(
-                Tracker::track, mUnaries, mManualUnaries, settings, mPrefs.chunkSize);
+                Tracker::track, mUnaries, mManualUnaries, settings, trafos);
         }
         else
         {
             detectionFuture = QtConcurrent::run(
-                Tracker::track, mUnaries, mManualUnaries, settings, chunk, mPrefs.chunkSize);
+                Tracker::track, mUnaries, mManualUnaries, settings, chunk, trafos);
         }
 
         auto watcher = std::make_unique<QFutureWatcher<Detections>>();
@@ -617,6 +664,9 @@ void HabiTrack::onDetectionsAvailable(int chunkId)
     auto& dd = mDetections.data();
     for (auto&& d : newDetections.data())
         dd.insert_or_assign(d.first, std::move(d.second));
+
+    // save detections
+    mDetections.save(mDetectionsFile);
 }
 
 void HabiTrack::onPositionChanged(QPointF position)
@@ -649,7 +699,7 @@ void HabiTrack::onPositionChanged(QPointF position)
 
     ui->unaryView->getUnaryScene()->setUnaryQuality(
         mCurrentFrameNumber - 1, UnaryQuality::Excellent);
-    ui->unaryView->getUnaryScene()->update();
+    /* ui->unaryView->getUnaryScene()->update(); */
     statusBar()->showMessage("Manually added unary", 1000);
     on_buttonNextFrame_clicked();
 }
@@ -665,6 +715,7 @@ void HabiTrack::onPositionCleared()
 {
     if (!mUnaries.size())
         return;
+
     std::size_t chunk = 0;
     if (mPrefs.chunkSize)
     {
@@ -685,7 +736,7 @@ void HabiTrack::onPositionCleared()
 
     mManualUnaries.clear(mCurrentFrameNumber - 1);
     showFrame(mCurrentFrameNumber);
-    statusBar()->showMessage("Unary cleared", 1000);
+    statusBar()->showMessage("Manual unary cleared", 1000);
 
     ui->unaryView->getUnaryScene()->setUnaryQuality(
         mCurrentFrameNumber - 1, mUnaryQualityValues[mCurrentFrameNumber - 1]);
@@ -751,7 +802,12 @@ void HabiTrack::setupUnaryScene(std::vector<double> qualities)
     // this only works for continous unaries (which should always be the case when using the gui)
     // set all cunks on not-computing
     toggleChunkUnaryScene(-1, false);
+
+    for (const auto& manualUnary : std::as_const(mManualUnaries))
+        scene->setUnaryQuality(manualUnary.first, UnaryQuality::Excellent);
+
 }
+
 void HabiTrack::toggleChunkUnaryScene(int chunkId, bool computing)
 {
     auto numUnaries = mUnaries.size();

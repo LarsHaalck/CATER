@@ -37,8 +37,8 @@ private:
     void populateGuiDefaults();
     void showFrame(std::size_t frame);
     void refreshWindow();
-    void populatePaths(const std::filesystem::path& stem);
-    void openImagesHelper();
+    void populatePaths();
+    void openImagesHelper(const std::filesystem::path& path = {});
     void setupUnaryScene(std::vector<double> qualities);
     void toggleChunkUnaryScene(int chunk, bool computing);
 
@@ -49,6 +49,7 @@ private:
 private slots:
     void on_sliderOverlayUnaries_sliderReleased();
     void on_overlayTrackedPosition_toggled(bool value);
+    void on_overlayBearings_toggled(bool value);
     void on_overlayTrajectory_toggled(bool value);
     void on_trajectorySpin_valueChanged(int value);
 
@@ -57,7 +58,7 @@ private slots:
     void on_actionPreferences_triggered();
 
     void on_actionOpenImgFolder_triggered();
-    void on_actionOpenImgListtriggered();
+    void on_actionOpenImgList_triggered();
     void on_actionOpenResultsFile_triggered();
 
     void on_sliderFrame_valueChanged(int value);
@@ -98,7 +99,7 @@ private:
     std::filesystem::path mFtFolder;
     std::filesystem::path mMatchFolder;
     std::filesystem::path mUnFolder;
-    std::filesystem::path mAntFile;
+    std::filesystem::path mDetectionsFile;
 
     ht::Images mImages;
     std::size_t mCurrentFrameNumber;

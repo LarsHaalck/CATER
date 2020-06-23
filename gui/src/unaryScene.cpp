@@ -5,7 +5,7 @@
 #include <QLinearGradient>
 #include <ostream>
 
-constexpr double size_width = 0.7;
+constexpr double size_width = 1.0;
 constexpr double size_height = 100;
 
 namespace gui
@@ -24,7 +24,14 @@ UnaryScene::UnaryScene(QObject* parent)
 void UnaryScene::setTotalImages(std::size_t numImages)
 {
     mNumImages = numImages;
-    this->setSceneRect(0, 0, 99 + size_width, size_height);
+    /* this->setSceneRect(0, 0, 99 + size_width, size_height); */
+
+    this->setSceneRect(0, 0, 100, size_height);
+    mPen.setWidthF(1.0 / mNumImages * 100);
+
+    /* this->setSceneRect(0, 0, mNumImages, size_height); */
+    /* mPen.setWidthF(1.0); */
+
     this->clear();
     this->mUnaryColors.clear();
     this->mUnaryStates.clear();
@@ -34,34 +41,39 @@ void UnaryScene::setUnaryQuality(std::size_t id, UnaryQuality quality)
 {
     assert(id < mNumImages && "Unary id must be smaller than number of frames in setUnaryQuality");
     mUnaryColors[id] = quality;
+
+    auto start = idToX(id);
+    auto pen = getPen(unaryQualityToQColor(mUnaryColors[id]));
+    this->addLine(start, size_height / 3, start, size_height, pen);
 }
 
 void UnaryScene::setUnaryState(std::size_t id, UnaryState state)
 {
     assert(id < mNumImages && "Unary id must be smaller than number of frames in setUnaryQuality");
-    mUnaryStates[id] = state;
+    auto start = idToX(id);
+    auto pen = getPen(unaryStateToQColor(state));
+    this->addLine(start, 0, start, size_height / 3, pen);
 }
 
 void UnaryScene::update()
 {
-    /* for (std::size_t i = 0; i < mUnaryColors.size(); i++) */
-    for (const auto& elem : mUnaryColors)
-    {
-        auto i = elem.first;
-        auto start = idToX(i);
-        auto pen = getPen(unaryQualityToQColor(mUnaryColors[i]));
-        this->addLine(start, size_height / 3, start, size_height, pen);
+    /* for (const auto& elem : mUnaryColors) */
+    /* { */
+    /*     auto i = elem.first; */
+    /*     auto start = idToX(i); */
+    /*     auto pen = getPen(unaryQualityToQColor(mUnaryColors[i])); */
+    /*     this->addLine(start, size_height / 3, start, size_height, pen); */
 
-        pen = getPen(unaryStateToQColor(mUnaryStates[i]));
-        this->addLine(start, 0, start, size_height / 3, pen);
-    }
+    /*     pen = getPen(unaryStateToQColor(mUnaryStates[i])); */
+    /*     this->addLine(start, 0, start, size_height / 3, pen); */
+    /* } */
 }
 
 QPen UnaryScene::getPen(const QColor& color) const
 {
     auto pen = mPen;
     pen.setColor(color);
-    pen.setWidthF(size_width);
+    /* pen.setWidthF(size_width); */
     return pen;
 }
 
@@ -126,11 +138,11 @@ QColor UnaryScene::unaryStateToQColor(UnaryState state) const
     switch (state)
     {
     case UnaryState::Default:
-        return blue;
+        return magenta;
     case UnaryState::DefaultAlt:
         return darkgray;
     case UnaryState::Computing:
-        return cyan;
+        return lightmagenta;
     case UnaryState::ComputingAlt:
         return lightgray;
     default:

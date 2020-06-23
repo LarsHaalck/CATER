@@ -87,11 +87,11 @@ cv::Mat ManualUnaries::previewUnaryAt(std::size_t id) const
     return unary;
 }
 
-cv::Point2f ManualUnaries::unaryPointAt(std::size_t id) const
-{
-    assert(mPoints.count(id) && "Unary id does not exist in unaryAt()");
-    return mPoints.at(id);
-}
+/* cv::Point2f ManualUnaries::unaryPointAt(std::size_t id) const */
+/* { */
+/*     assert(mPoints.count(id) && "Unary id does not exist in unaryAt()"); */
+/*     return mPoints.at(id); */
+/* } */
 
 void ManualUnaries::insert(std::size_t id, cv::Point2f pt)
 {

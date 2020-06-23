@@ -7,6 +7,7 @@ struct GuiPreferences
 {
     int overlayUnaries = 0;
     bool overlayTrackedPos = true;
+    bool overlayBearing = false;
     bool overlayTrajectory = false;
     int overlayTrajectoryWindow = 10;
 

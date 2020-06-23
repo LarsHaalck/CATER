@@ -5,11 +5,14 @@
 #include <unordered_map>
 #include "image-processing/matches.h"
 
+// TODO: replace member with typedef to make data() function oboslete
 namespace ht
 {
 struct Detection
 {
     cv::Point position;
+    // position quality might be added here
+    // double positionQuality;
     double theta;
     double thetaQuality;
 };
@@ -29,6 +32,9 @@ public:
         const matches::PairwiseTrafos& trafos, GeometricType type) const;
 
     std::unordered_map<std::size_t, Detection>& data() { return mDetections; }
+
+    void save(const std::filesystem::path& detectionsFile);
+    static Detections fromDir(const std::filesystem::path& detectionsFile);
 
 private:
     std::unordered_map<std::size_t, Detection> mDetections;
