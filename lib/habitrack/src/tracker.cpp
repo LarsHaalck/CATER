@@ -11,6 +11,7 @@
 #include "image-processing/util.h"
 #include "image-processing/transformation.h"
 #include <chrono>
+#include "image-processing/util.h"
 
 
 namespace ht
@@ -41,7 +42,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     spdlog::debug("Elapsed time for chunk {} tracking: {}", chunk, elapsed.count());
-    return extractFromStates(states, ids, chunk * chunkSize, settings.subsample, trafos);
+    return extractFromStates(states, ids, chunk * chunkSize, settings, trafos);
 }
 
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
@@ -88,7 +89,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 
     cv::Mat bestStates;
     cv::vconcat(states.data(), states.size(), bestStates);
-    return extractFromStates(bestStates, ids, 0, settings.subsample, trafos);
+    return extractFromStates(bestStates, ids, 0, settings, trafos);
 }
 
 std::size_t Tracker::getNumChunks(std::size_t numUnaries, std::size_t chunkSize)
@@ -277,7 +278,7 @@ void Tracker::passMessageToFactor(
 }
 
 Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
-    std::size_t offset, double subsample, const PairwiseTrafos& trafos)
+    std::size_t offset, const Settings& settings, const PairwiseTrafos& trafos)
 {
     Detections detections;
 
@@ -290,7 +291,7 @@ Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<s
         int best_state_y = states.at<int>(row, 0);
 
         // resample x and y position (due to downsampling)
-        double up_sampling_factor = 1.0 / subsample;
+        double up_sampling_factor = 1.0 / settings.subsample;
         best_state_x *= up_sampling_factor;
         best_state_y *= up_sampling_factor;
 
@@ -316,6 +317,9 @@ Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<s
         lastPos = position;
         detections.insert(idx, {position, theta, thetaQuality});
     }
+    if (settings.smoothBearing)
+        smoothBearing(detections, settings);
+
     return detections;
 }
 
@@ -327,5 +331,132 @@ std::pair<double, double> Tracker::calcBearingAndQuality(std::size_t lastIdx,
     auto theta = calcAngle(transLastPos, pos);
     auto thetaQuality = euclidianDist<double>(transLastPos, pos);
     return {theta, thetaQuality};
+}
+
+void Tracker::smoothBearing(Detections& detections, const Settings& settings)
+{
+    auto& data = detections.data();
+    std::vector<double> anglesVec;
+    anglesVec.reserve(data.size());
+
+    std::vector<std::size_t> idx;
+    idx.reserve(data.size());
+
+    for (const auto& elem : data)
+    {
+        anglesVec.push_back(elem.second.theta);
+        idx.push_back(elem.first);
+    }
+
+    std::vector<double> normalisedWeights
+        = filterAndNormaliseLengthVec(detections, settings.outlierTolerance);
+
+    std::vector<std::vector<double>> angleWindows = getWindows(anglesVec, settings.windowSize);
+    spdlog::debug("angles vec windows size: {}", angleWindows.size());
+
+    std::vector<std::vector<double>> weightWindows
+        = getWindows(normalisedWeights, settings.windowSize);
+    spdlog::debug("weights vec windows size: {}", weightWindows.size());
+
+    std::vector<double> smoothedAnglesVec;
+    for (std::size_t i = 0; i < angleWindows.size(); ++i)
+    {
+        smoothedAnglesVec.push_back(
+            calcWeightedCircularMean(weightWindows.at(i), angleWindows.at(i)));
+    }
+
+    for (std::size_t i = 0; i < smoothedAnglesVec.size(); ++i)
+    {
+        double smoothedAngle = smoothedAnglesVec.at(i);
+        auto& elem = data[idx[i]];
+        elem.theta = smoothedAngle;
+    }
+}
+
+std::vector<double> Tracker::filterAndNormaliseLengthVec(
+    const Detections& detections, int outlierTolerance)
+{
+    // get all length values and max length value
+    std::vector<double> lengthVec;
+    lengthVec.reserve(detections.size());
+    double maxVal = 0;
+    for (const auto& elem : detections.cdata())
+    {
+        double length = elem.second.thetaQuality;
+        lengthVec.push_back(length);
+        if (length >= maxVal)
+            maxVal = length;
+    }
+
+    // set the outlier threshold to 3*STD
+    double meanVec = mean(std::begin(lengthVec), std::end(lengthVec));
+    double stdev = std_dev(std::begin(lengthVec), std::end(lengthVec));
+    double maxThresh = meanVec + (outlierTolerance * stdev);
+
+    // remove outliers and normalise so that it is in [0,1]
+    for (auto it = lengthVec.begin(); it != lengthVec.end(); ++it)
+    {
+        if (*it >= maxThresh)
+        {
+            *it = 0;
+        }
+        *it /= maxVal;
+    }
+
+    // TODO: implement
+    /* // set all manually set bearings to 1 (highest probability) */
+    /* int vecCounter = 0; */
+    /* for (int i = firstFrameUsed; i <= lastFrameUsed; ++i) */
+    /* { */
+    /*     cv::Point manualBearingPoint; */
+    /*     if (trackingData.getManuallySetBearingDirectionPoint(i, manualBearingPoint)) */
+    /*     { */
+    /*         lengthVec.at(vecCounter) = 1.0; */
+    /*     } */
+    /*     vecCounter++; */
+    /* } */
+
+    return lengthVec;
+}
+
+std::vector<std::vector<double>> Tracker::getWindows(
+    const std::vector<double>& vec, std::size_t windowSize)
+{
+    std::vector<std::vector<double>> windows;
+    if (vec.size() > windowSize)
+    {
+        for (std::size_t globalCounter = 0; globalCounter < vec.size() - windowSize;
+             ++globalCounter)
+        {
+            std::vector<double> tmpWindow;
+            for (std::size_t innerCounter = globalCounter;
+                 innerCounter < globalCounter + windowSize; ++innerCounter)
+            {
+                tmpWindow.push_back(vec.at(innerCounter));
+            }
+            windows.push_back(tmpWindow);
+        }
+    }
+    return windows;
+}
+
+double Tracker::calcWeightedCircularMean(
+    const std::vector<double>& weightsWindow, const std::vector<double>& anglesWindow)
+{
+    double x = 0.0;
+    double y = 0.0;
+
+    for (std::size_t i = 0; i < weightsWindow.size(); ++i)
+    {
+        double weight = weightsWindow.at(i);
+        double angle = anglesWindow.at(i);
+        double radianAngle = degree2Radian(angle);
+
+        x += std::cos(radianAngle) * weight;
+        y += std::sin(radianAngle) * weight;
+    }
+
+    double tmp = std::atan2(y, x);
+    return radian2Degree(tmp);
 }
 } // namespace ht

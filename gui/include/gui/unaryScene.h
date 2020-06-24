@@ -48,8 +48,14 @@ private:
     inline double idToX(std::size_t idx) const;
 private:
     std::size_t mNumImages;
-    std::map<std::size_t, UnaryQuality> mUnaryColors;
-    std::map<std::size_t, UnaryState> mUnaryStates;
+
+    // use map is drawing orders matters (when width is not setup up correctly)
+    /* std::map<std::size_t, UnaryQuality> mUnaryColors; */
+    /* std::map<std::size_t, UnaryState> mUnaryStates; */
+
+    // use unordered_map otherwise
+    std::unordered_map<std::size_t, UnaryQuality> mUnaryColors;
+    /* std::unordered_map<std::size_t, UnaryState> mUnaryStates; */
     QPen mPen;
 };
 } // namespace gui

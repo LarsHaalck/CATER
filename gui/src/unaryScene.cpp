@@ -15,7 +15,7 @@ UnaryScene::UnaryScene(QObject* parent)
     : QGraphicsScene(parent)
     , mNumImages(0)
     , mUnaryColors()
-    , mUnaryStates()
+    /* , mUnaryStates() */
     , mPen()
 {
     mPen.setWidthF(size_width);
@@ -34,7 +34,8 @@ void UnaryScene::setTotalImages(std::size_t numImages)
 
     this->clear();
     this->mUnaryColors.clear();
-    this->mUnaryStates.clear();
+    /* this->mUnaryStates.clear(); */
+    this->mUnaryColors.reserve(numImages);
 }
 
 void UnaryScene::setUnaryQuality(std::size_t id, UnaryQuality quality)

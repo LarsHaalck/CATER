@@ -2,7 +2,7 @@
 #define HABITRACK_DETECTIONS_H
 
 #include <opencv2/core.hpp>
-#include <unordered_map>
+#include <map>
 #include "image-processing/matches.h"
 
 // TODO: replace member with typedef to make data() function oboslete
@@ -31,13 +31,14 @@ public:
     std::vector<cv::Point2d> projectFrom(std::size_t from, std::size_t to,
         const matches::PairwiseTrafos& trafos, GeometricType type) const;
 
-    std::unordered_map<std::size_t, Detection>& data() { return mDetections; }
+    std::map<std::size_t, Detection>& data() { return mDetections; }
+    const std::map<std::size_t, Detection>& cdata() const { return mDetections; }
 
     void save(const std::filesystem::path& detectionsFile);
     static Detections fromDir(const std::filesystem::path& detectionsFile);
 
 private:
-    std::unordered_map<std::size_t, Detection> mDetections;
+    std::map<std::size_t, Detection> mDetections;
 };
 } // namespace ht
 #endif // HABITRACK_DETECTIONS_H

@@ -14,16 +14,16 @@ void Detections::save(const std::filesystem::path& detectionsFile)
         cv::FileStorage::WRITE);
     spdlog::info("Writing detections file to {}", detectionsFile.string());
 
-    std::vector<std::pair<std::size_t, Detection>> elems(
-        std::begin(mDetections), std::end(mDetections));
-
-    std::sort(std::begin(elems), std::end(elems),
-        [](const auto& p1, const auto& p2) { return p1.first < p2.first; });
+    // only needed when using unordered_map
+    /* std::vector<std::pair<std::size_t, Detection>> elems( */
+    /*     std::begin(mDetections), std::end(mDetections)); */
+    /* std::sort(std::begin(elems), std::end(elems), */
+    /*     [](const auto& p1, const auto& p2) { return p1.first < p2.first; }); */
 
     fs << "detections"
        << "[";
 
-    for (const auto& elem : elems)
+    for (const auto& elem : mDetections)
     {
             auto d = elem.second;
             fs << "{";

@@ -620,7 +620,7 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
         settings.pairwiseSize = mPrefs.pairwiseSize;
         settings.pairwiseSigma = mPrefs.pairwiseSigma;
         settings.manualMultiplier = mPrefs.unaryMultiplier;
-        settings.calculateBearing = mPrefs.smoothBearing;
+        settings.smoothBearing = mPrefs.smoothBearing;
         settings.windowSize = mPrefs.smoothBearingWindowSize;
         settings.outlierTolerance = mPrefs.smoothBearingOutlierTol;
         settings.chunkSize = mPrefs.chunkSize;

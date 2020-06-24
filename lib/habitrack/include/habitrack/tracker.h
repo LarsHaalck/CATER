@@ -22,7 +22,7 @@ public:
         int pairwiseSize;
         double pairwiseSigma;
         double manualMultiplier;
-        bool calculateBearing;
+        bool smoothBearing;
         int windowSize;
         int outlierTolerance;
         std::size_t chunkSize;
@@ -50,11 +50,19 @@ private:
         const cv::Mat& unaryPotential, cv::Mat& messageToFactor);
 
     static Detections extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
-        std::size_t offset, double subsample, const matches::PairwiseTrafos& trafos);
+        std::size_t offset, const Settings& settings, const matches::PairwiseTrafos& trafos);
 
     static std::pair<double, double> calcBearingAndQuality(std::size_t lastIdx,
             std::size_t idx, cv::Point lastPos, cv::Point pos, const
             matches::PairwiseTrafos& trafos);
+
+    static void smoothBearing(Detections& detections, const Settings& settings);
+    static std::vector<double> filterAndNormaliseLengthVec(
+        const Detections& detections, int outlierTolerance);
+    static std::vector<std::vector<double>> getWindows(
+        const std::vector<double>& vec, std::size_t windowSize);
+    static double calcWeightedCircularMean(
+        const std::vector<double>& weightsWindow, const std::vector<double>& anglesWindow);
 };
 } // namespace habitrack
 #endif // HABITRACK_TRACKER_H
