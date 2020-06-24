@@ -18,6 +18,8 @@
 #include <iostream>
 #include <QSound>
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 using namespace ht;
 namespace fs = std::filesystem;
@@ -215,6 +217,26 @@ void HabiTrack::populatePaths()
     mMatchFolder = mOutputPath / "matches";
     mUnFolder = mOutputPath / "unaries";
     mDetectionsFile = mOutputPath / "detections.yml";
+
+    try
+    {
+        auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+        console_sink->set_level(spdlog::level::info);
+
+        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+            (mOutputPath / "logs.txt").string(), false);
+        file_sink->set_level(spdlog::level::debug);
+
+        auto logger = std::make_shared<spdlog::logger>(
+            "multi_sink", spdlog::sinks_init_list({console_sink, file_sink}));
+        logger->set_level(spdlog::level::debug);
+        spdlog::flush_every(std::chrono::seconds(3));
+        spdlog::set_default_logger(logger);
+     }
+    catch (const spdlog::spdlog_ex& ex)
+    {
+        std::cout << "Log initialization failed: " << ex.what() << std::endl;
+    }
 }
 
 void HabiTrack::showFrame(std::size_t frameNumber)
@@ -449,7 +471,7 @@ void HabiTrack::on_actionOpenResultsFile_triggered()
     auto parentPath = fs::path(resultFile.toStdString()).parent_path();
     mStartPath = QString::fromStdString(parentPath.string());
 
-    spdlog::critical("new start path: {}", mStartPath.toStdString());
+    spdlog::debug("new start path: {}", mStartPath.toStdString());
     auto [prefs_, imgFolder_, start_, end_] = loadResults(resultFile.toStdString());
     mPrefs = prefs_;
     mImgFolder = imgFolder_;
@@ -641,7 +663,7 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
         /* { */
         /*     mDetectionsWatchers.at(chunk)->cancel(); */
         /*     mDetectionsWatchers.at(chunk)->waitForFinished(); */
-        /*     spdlog::critical("Running {}", mDetectionsWatchers.at(chunk)->isRunning()); */
+        /*     spdlog::debug("Running {}", mDetectionsWatchers.at(chunk)->isRunning()); */
         /*     mDetectionsWatchers.erase(chunk); */
         /* } */
 
@@ -736,7 +758,7 @@ void HabiTrack::onPositionChanged(QPointF position)
     on_buttonNextFrame_clicked();
 }
 
-void HabiTrack::onBearingChanged(QPointF position)
+void HabiTrack::onBearingChanged(QPointF)
 {
     /* spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(), */
     /*     position.y(), mCurrentFrameNumber - 1); */

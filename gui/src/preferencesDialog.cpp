@@ -57,9 +57,9 @@ void PreferencesDialog::resetPairwiseTo(const Preferences& prefs)
     ui->pairwiseSizeSpin->setValue(prefs.pairwiseSize);
 }
 
-void PreferencesDialog::resetPanoramaTo(const Preferences& prefs)
+void PreferencesDialog::resetPanoramaTo(const Preferences&)
 {
-    // TODO:
+    // TODO: implement panorama
 }
 
 void PreferencesDialog::resetSmoothBearingTo(const Preferences& prefs)

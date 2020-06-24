@@ -85,7 +85,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    spdlog::critical("Elapsed: {}", elapsed.count());
+    spdlog::info("Elapsed time for tracking: {}", elapsed.count());
 
     cv::Mat bestStates;
     cv::vconcat(states.data(), states.size(), bestStates);
@@ -157,10 +157,7 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
 
         cv::Mat currentUnary;
         if (manualUnaries.exists(idx))
-        {
-            spdlog::critical("Manual exists for {}", idx);
             currentUnary = manualUnaries.unaryAt(idx);
-        }
         else
             currentUnary = unaries.at(idx);
 
