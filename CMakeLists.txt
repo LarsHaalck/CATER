@@ -35,7 +35,7 @@ else()
         "-Wredundant-decls"
         "-Wshadow"
         "-Wsign-promo"
-        "-Wstrict-overflow=5"
+        "-Wstrict-overflow"
         "-Wswitch-default"
         "-Wundef"
         "$<$<CONFIG:RELEASE>:-O3>")
