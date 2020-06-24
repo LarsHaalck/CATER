@@ -10,15 +10,8 @@ using namespace transformation;
 
 void Detections::save(const std::filesystem::path& detectionsFile)
 {
-    cv::FileStorage fs(detectionsFile.string(),
-        cv::FileStorage::WRITE);
+    cv::FileStorage fs(detectionsFile.string(), cv::FileStorage::WRITE);
     spdlog::info("Writing detections file to {}", detectionsFile.string());
-
-    // only needed when using unordered_map
-    /* std::vector<std::pair<std::size_t, Detection>> elems( */
-    /*     std::begin(mDetections), std::end(mDetections)); */
-    /* std::sort(std::begin(elems), std::end(elems), */
-    /*     [](const auto& p1, const auto& p2) { return p1.first < p2.first; }); */
 
     fs << "detections"
        << "[";
@@ -32,7 +25,8 @@ void Detections::save(const std::filesystem::path& detectionsFile)
             fs << "theta" << d.theta;
             fs << "theta_quality" << d.thetaQuality;
 
-            cv::Point manualThetaPosition;
+            // TODO: needed when implementing manual bearing corrections
+            /* cv::Point manualThetaPosition; */
             /* if (trackingData.getManuallySetBearingDirectionPoint( */
             /*         *it, manualThetaPosition)) */
             /* { */
@@ -41,7 +35,7 @@ void Detections::save(const std::filesystem::path& detectionsFile)
             /* } */
             /* else */
             /* { */
-            /*     fs << "manually_set" << false; */
+            fs << "manually_set" << false;
             /* } */
             fs << "}";
     }
@@ -49,9 +43,37 @@ void Detections::save(const std::filesystem::path& detectionsFile)
     fs.release();
 }
 
-static Detections fromDir(const std::filesystem::path& detectionsFile)
+Detections Detections::fromDir(const std::filesystem::path& detectionsFile)
 {
-    return Detections();
+    cv::FileStorage fs(detectionsFile.string(), cv::FileStorage::READ);
+    spdlog::info("Reading detections file from {}", detectionsFile.string());
+
+    Detections detections;
+    cv::FileNode node = fs["detections"];
+    for (cv::FileNodeIterator it = node.begin(); it != node.end(); ++it)
+    {
+        int frameNo = (*it)["frame_no"];
+        cv::Point position;
+        (*it)["position"] >> position;
+        double theta;
+        (*it)["theta"] >> theta;
+        double thetaQuality;
+        (*it)["theta_quality"] >> thetaQuality;
+
+        /* int iManuallySet = (*it)["manually_set"]; */
+        /* bool manuallySet = (iManuallySet == 1) ? true : false; */
+
+        /* if (manuallySet) */
+        /* { */
+        /*     cv::Point thetaDirectionPoint; */
+        /*     (*it)["manual_direction_point"] >> thetaDirectionPoint; */
+        /*     retTrackingData.addManuallySetBearingDirectionPoint( */
+        /*         frameNo, QtOpencvCore::point2qpoint(thetaDirectionPoint)); */
+        /* } */
+
+        detections.insert(frameNo, {position, theta, thetaQuality});
+    }
+    return detections;
 }
 
 void Detections::insert(std::size_t idx, const Detection& detection)

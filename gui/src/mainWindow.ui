@@ -40,7 +40,7 @@
            <x>0</x>
            <y>0</y>
            <width>303</width>
-           <height>950</height>
+           <height>981</height>
           </rect>
          </property>
          <property name="maximumSize">
@@ -426,6 +426,25 @@ color: white;
                      </property>
                      <property name="text">
                       <string>Extract Unaries</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QPushButton" name="mikeButton">
+                     <property name="styleSheet">
+                      <string notr="true">QPushButton:disabled {
+background-color: rgb(0, 209, 0);
+color: darkgray;
+}
+QPushButton {
+background-color: rgb(0, 255, 0);
+color: black;
+}
+
+</string>
+                     </property>
+                     <property name="text">
+                      <string>Mikes Super Button</string>
                      </property>
                     </widget>
                    </item>

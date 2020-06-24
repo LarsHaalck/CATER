@@ -56,38 +56,38 @@ namespace detail
 
         // general
         prefs.cacheSize = node["cache_size"];
-        prefs.chunkSize = node["cache_size"];
+        prefs.chunkSize = node["chunk_size"];
 
         // colour correction
-        prefs.colourCorrection = static_cast<bool>(static_cast<int>(node["cache_size"]));
-        prefs.colourRed = node["cache_size"];
-        prefs.colourGreen = node["cache_size"];
-        prefs.colourBlue = node["cache_size"];
+        prefs.colourCorrection = static_cast<bool>(static_cast<int>(node["colour_correction"]));
+        prefs.colourRed = node["colour_red"];
+        prefs.colourGreen = node["colour_green"];
+        prefs.colourBlue = node["colour_blue"];
 
         // features
-        prefs.featureType = static_cast<ht::FeatureType>(static_cast<int>(node["cache_size"]));
-        prefs.numFeatures = node["cache_size"];
+        prefs.featureType = static_cast<ht::FeatureType>(static_cast<int>(node["feature_type"]));
+        prefs.numFeatures = node["num_features"];
 
         // unaries, unary recompute needed
-        prefs.unarySubsample = node["cache_size"];
-        prefs.unarySigma = node["cache_size"];
-        prefs.removeRedLasers = static_cast<bool>(static_cast<int>(node["cache_size"]));
-        prefs.unarySuppress = node["cache_size"];
-        prefs.unaryMultiplier = node["cache_size"];
+        prefs.unarySubsample = node["unary_subsample"];
+        prefs.unarySigma = node["unary_sigma"];
+        prefs.removeRedLasers = static_cast<bool>(static_cast<int>(node["unary_remove_lasers"]));
+        prefs.unarySuppress = node["unary_suppress"];
+        prefs.unaryMultiplier = node["unary_multiplier"];
 
         // pairwise, tracking recompute needed
-        prefs.pairwiseSize = node["cache_size"];
-        prefs.pairwiseSigma = node["cache_size"];
+        prefs.pairwiseSize = node["pairwise_size"];
+        prefs.pairwiseSigma = node["pairwise_sigma"];
 
         // smooth bearing, tracking recompute needed
-        prefs.smoothBearing = static_cast<bool>(static_cast<int>(node["cache_size"]));
-        prefs.smoothBearingWindowSize = node["cache_size"];
-        prefs.smoothBearingOutlierTol = node["cache_size"];
+        prefs.smoothBearing = static_cast<bool>(static_cast<int>(node["smooth_bearing"]));
+        prefs.smoothBearingWindowSize = node["smooth_bearing_window_size"];
+        prefs.smoothBearingOutlierTol = node["smooth_bearing_outlier_tolerance"];
 
         // transformation
-        prefs.removeCamMotion = static_cast<bool>(static_cast<int>(node["cache_size"]));
-        prefs.nnRatio = node["cache_size"];
-        prefs.ranscacReproj = node["cache_size"];
+        prefs.removeCamMotion = static_cast<bool>(static_cast<int>(node["remove_camera_motion"]));
+        prefs.nnRatio = node["nn_ratio"];
+        prefs.ranscacReproj = node["ransac_reproj"];
 
         return prefs;
     }

@@ -115,6 +115,7 @@ bool Features::isComputed(const Images& imgContainer, const std::filesystem::pat
             auto ftFile = getFileName(ftDir, type, stem, FtDesc::Feature);
             if (!fs::is_regular_file(ftFile) || getTypeFromFile(ftFile) != type)
             {
+                spdlog::debug("Missing feature file or wrong type: {}", ftFile.string());
                 isComputed = false;
                 break;
             }

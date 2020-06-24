@@ -16,10 +16,13 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <QSound>
 #include <spdlog/spdlog.h>
 
 using namespace ht;
 namespace fs = std::filesystem;
+
+constexpr int statusDelay = 2000; // used
 
 namespace gui
 {
@@ -41,7 +44,7 @@ HabiTrack::HabiTrack(QWidget* parent)
     , mDetectionsQueue()
 {
     ui->setupUi(this);
-    statusBar()->showMessage("", 1000);
+    statusBar()->showMessage("", statusDelay);
     populateGuiDefaults();
 
     ui->unaryView->setOptimizationFlags(QGraphicsView::DontSavePainterState
@@ -127,7 +130,7 @@ void HabiTrack::on_actionSave_Results_triggered()
     mManualUnaries.save(mUnFolder);
     //mManualBearing.save(mOutputPath);
 
-    statusBar()->showMessage("Saved results.", 1000);
+    statusBar()->showMessage("Saved results.", statusDelay);
 }
 void HabiTrack::on_actionPreferences_triggered()
 {
@@ -397,6 +400,11 @@ bool HabiTrack::unariesComputed() const
     return Unaries::isComputed(mImgFolder, mUnFolder, mStartFrameNumber - 1, mEndFrameNumber);
 }
 
+bool HabiTrack::detectsComputed() const
+{
+    return fs::is_regular_file(mDetectionsFile);
+}
+
 void HabiTrack::on_actionOpenImgFolder_triggered()
 {
     spdlog::debug("GUI: Triggered Open image folder");
@@ -450,6 +458,21 @@ void HabiTrack::on_actionOpenResultsFile_triggered()
 
     mImages = Images(mImgFolder);
     openImagesHelper(parentPath);
+
+    if (featureComputed())
+    {
+        on_buttonExtractFeatures_clicked();
+        if (matchesComputed())
+        {
+            on_buttonExtractTrafos_clicked();
+            if (unariesComputed())
+            {
+                on_buttonExtractUnaries_clicked();
+                if (detectsComputed())
+                    mDetections = Detections::fromDir(mDetectionsFile);
+            }
+        }
+    }
 }
 
 void HabiTrack::on_buttonStartFrame_clicked()
@@ -478,6 +501,13 @@ void HabiTrack::on_buttonEndFrame_clicked()
     // TODO: some data structures are no longer valid and should be computed again
     mEndFrameNumber = mCurrentFrameNumber;
     ui->labelEndFrame->setText(QString::number(mEndFrameNumber));
+}
+
+void HabiTrack::on_mikeButton_clicked()
+{
+    on_buttonExtractFeatures_clicked();
+    on_buttonExtractTrafos_clicked();
+    on_buttonExtractUnaries_clicked();
 }
 
 void HabiTrack::on_buttonExtractFeatures_clicked()
@@ -654,6 +684,8 @@ void HabiTrack::onDetectionsAvailable(int chunkId)
 {
     // TODO: is the mutex needed?
     QMutexLocker locker(&mMutex);
+    QSound::play("qrc:///sounds/notification.wav");
+    statusBar()->showMessage("New detections available", statusDelay);
 
     toggleChunkUnaryScene(chunkId, false);
     auto newDetections = mDetectionsWatchers.at(chunkId)->result();
@@ -700,7 +732,7 @@ void HabiTrack::onPositionChanged(QPointF position)
     ui->unaryView->getUnaryScene()->setUnaryQuality(
         mCurrentFrameNumber - 1, UnaryQuality::Excellent);
     /* ui->unaryView->getUnaryScene()->update(); */
-    statusBar()->showMessage("Manually added unary", 1000);
+    statusBar()->showMessage("Manually added unary", statusDelay);
     on_buttonNextFrame_clicked();
 }
 
@@ -736,7 +768,7 @@ void HabiTrack::onPositionCleared()
 
     mManualUnaries.clear(mCurrentFrameNumber - 1);
     showFrame(mCurrentFrameNumber);
-    statusBar()->showMessage("Manual unary cleared", 1000);
+    statusBar()->showMessage("Manual unary cleared", statusDelay);
 
     ui->unaryView->getUnaryScene()->setUnaryQuality(
         mCurrentFrameNumber - 1, mUnaryQualityValues[mCurrentFrameNumber - 1]);

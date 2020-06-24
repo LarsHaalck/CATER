@@ -35,6 +35,7 @@ public:
     const std::map<std::size_t, Detection>& cdata() const { return mDetections; }
 
     void save(const std::filesystem::path& detectionsFile);
+
     static Detections fromDir(const std::filesystem::path& detectionsFile);
 
 private:

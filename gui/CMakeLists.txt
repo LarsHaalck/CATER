@@ -1,5 +1,10 @@
+###########################################################################
+#                              DEPENDENCIES                               #
+###########################################################################
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Concurrent REQUIRED)
+find_package(Qt5Multimedia REQUIRED)
+
 ###########################################################################
 #                                FILES                                    #
 ###########################################################################
@@ -15,6 +20,7 @@ set(SOURCES
     src/qtOpencvCore.cpp
     src/progressStatusBar.cpp
     src/resultsIO.cpp
+    resources/resources.qrc
 )
 
 set(GUI_HEADERS
@@ -35,12 +41,14 @@ set(EXE_NAME habitrack-gui)
 add_executable(${EXE_NAME} ${SOURCES} ${GUI_HEADERS})
 set_target_properties(${EXE_NAME} PROPERTIES AUTOMOC ON)
 set_target_properties(${EXE_NAME} PROPERTIES AUTOUIC ON)
+set_target_properties(${EXE_NAME} PROPERTIES AUTORCC ON)
 
 target_include_directories(${EXE_NAME} PUBLIC include)
 target_link_libraries(${EXE_NAME}
     PUBLIC
     Qt5::Widgets
     Qt5::Concurrent
+    Qt5::Multimedia
     OpenMP::OpenMP_CXX
     habitrack
     spdlog::spdlog

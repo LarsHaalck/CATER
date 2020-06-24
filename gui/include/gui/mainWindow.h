@@ -45,6 +45,7 @@ private:
     bool featureComputed() const;
     bool matchesComputed() const;
     bool unariesComputed() const;
+    bool detectsComputed() const;
 
 private slots:
     void on_sliderOverlayUnaries_sliderReleased();
@@ -72,6 +73,7 @@ private slots:
     void on_buttonStartFrame_clicked();
     void on_buttonEndFrame_clicked();
 
+    void on_mikeButton_clicked();
     void on_buttonExtractFeatures_clicked();
     void on_buttonExtractTrafos_clicked();
     void on_buttonExtractUnaries_clicked();
