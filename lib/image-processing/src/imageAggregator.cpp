@@ -8,12 +8,11 @@ ImageAggregator::ImageAggregator(
     , mNumImgs()
     , mNumImgsVec()
 {
-    auto size = mImgContainers[0].get().getImgSize();
-    for (auto& c : mImgContainers)
-    {
-        assert(c.get().getImgSize() == size
-            && "Image sizes of containers in ImageAggregator do not match");
-    }
+    [[maybe_unused]] auto size = mImgContainers[0].get().getImgSize();
+    assert(std::all_of(std::begin(mImgContainers), std::end(mImgContainers), [size](const auto& c) {
+        return (c.get().getImgSize() == size);
+    }) && "Image sizes of containers in ImageAggregator do not match");
+
 
     auto [total, sizeVec] = sumNumImgs();
     mNumImgs = total;
