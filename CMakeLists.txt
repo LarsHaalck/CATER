@@ -1,4 +1,4 @@
-project(Habitrack)
+project(habitrack)
 cmake_minimum_required(VERSION 3.5)
 
 ###########################################################################
@@ -76,6 +76,13 @@ endif()
 if(${BUILD_GUI})
     add_subdirectory(gui)
 endif()
+
+include(GNUInstallDirs)
+install(EXPORT habitrack-targets
+    FILE habitrackTargets.cmake
+    NAMESPACE habitrack::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/habitrack
+)
 
 # add_subdirectory(tracker)
 # add_subdirectory(singleVideo)

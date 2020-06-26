@@ -21,9 +21,10 @@ add_library(${LIB_NAME} ${SOURCES})
 
 target_include_directories(${LIB_NAME}
     PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_link_libraries(${LIB_NAME}
@@ -41,3 +42,10 @@ if(${OpenMP_CXX_FOUND})
         io
     )
 endif()
+
+install(TARGETS ${LIB_NAME}
+    EXPORT habitrack-targets
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION include)

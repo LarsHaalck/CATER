@@ -54,3 +54,11 @@ target_link_libraries(${EXE_NAME}
     spdlog::spdlog
     progressbar
 )
+
+install(TARGETS ${EXE_NAME}
+    DESTINATION bin
+)
+
+install(FILES resources/habitrack-gui.desktop DESTINATION share/applications)
+install(FILES resources/habitrack-gui.png
+    DESTINATION share/icons/hicolor/128x128/apps)
