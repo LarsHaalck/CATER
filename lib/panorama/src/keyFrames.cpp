@@ -1,7 +1,7 @@
-#include "habitrack/keyFrameSelector.h"
-#include "progressBar.h"
+#include "panorama/keyFrames.h"
 
 #include <opencv2/core.hpp>
+#include <spdlog/spdlog.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -11,44 +11,57 @@
 #endif // _OPENMP
 
 namespace fs = std::filesystem;
-namespace ht
+namespace ht::KeyFrames
 {
-KeyFrameSelector::KeyFrameSelector(std::shared_ptr<BaseFeatureContainer> ftContainer,
-    GeometricType type, const fs::path& file, double minCoverage)
-    : mFtContainer(std::move(ftContainer))
-    , mType(type)
-    , mFile(file)
-    , mMatchesContainer(std::make_unique<MatchesContainer>(
-          mFtContainer, "", MatchType::Manual, 0, mType, minCoverage))
-    , mImgSize(mFtContainer->getImgSize())
-    , mArea(mImgSize.area())
-    , mIsComputed(true)
+/* KeyFrameSelector::KeyFrameSelector(std::shared_ptr<BaseFeatureContainer> ftContainer, */
+/*     GeometricType type, const fs::path& file, double minCoverage) */
+/*     : mFtContainer(std::move(ftContainer)) */
+/*     , mType(type) */
+/*     , mFile(file) */
+/*     , mMatchesContainer(std::make_unique<MatchesContainer>( */
+/*           mFtContainer, "", MatchType::Manual, 0, mType, minCoverage)) */
+/*     , mImgSize(mFtContainer->getImgSize()) */
+/*     , mArea(mImgSize.area()) */
+/*     , mIsComputed(true) */
+/* { */
+/*     if (!fs::is_regular_file(mFile)) */
+/*         mIsComputed = false; */
+/* } */
+
+bool isComputed(const std::filesystem::path& file)
 {
-    if (!fs::is_regular_file(mFile))
-        mIsComputed = false;
+    return fs::is_regular_file(file);
 }
 
-std::vector<std::size_t> KeyFrameSelector::compute(
-    float relLow, float relHigh, ComputeBehavior behavior)
+std::vector<std::size_t> fromDir(const std::filesystem::path& file)
 {
-    if (mIsComputed && behavior == ComputeBehavior::Keep)
-    {
-        std::cout << "Skipping Key Frame Selection..." << std::endl;
-        return loadFromFile();
-    }
+    spdlog::info("Reading Keyframes from disk");
+    auto kf = detail::loadFromFile(file);
 
-    const auto [low, high] = getRealLowHigh(relLow, relHigh);
+    spdlog::debug("Loaded keyframe file {} with size {}", file.string(), kf.size());
+    return kf;
+}
+
+std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, GeometricType type,
+    const std::filesystem::path& file, float relLow, float relHigh,
+    std::shared_ptr<BaseProgressBar> cb)
+{
+    const auto [low, high] = detail::getRealLowHigh(ftContainer.getImageSize(), relLow, relHigh);
     std::vector<std::size_t> keyFrames {};
 
     std::size_t currView = 0;
     keyFrames.push_back(currView);
 
-    std::cout << "Selecting key frames..." << std::endl;
-    ProgressBar bar(mFtContainer->getNumImgs());
+    spdlog::info("Computing Keyframes");
+    if (!cb)
+        cb = std::make_shared<ProgressBar>();
+    cb->status("Computing Keyframes");
+    cb->setTotal(ftContainer.size());
+
     // find next keyframe until all framges have been processed
-    while (currView < mFtContainer->getNumImgs())
+    while (currView < ftContainer.size())
     {
-        std::size_t remainImgs = mFtContainer->getNumImgs() - currView - 1;
+        std::size_t remainImgs = ftContainer.size() - currView - 1;
         std::vector<std::pair<float, std::size_t>> distOverlapVec;
         distOverlapVec.reserve(remainImgs);
 
@@ -58,13 +71,16 @@ std::vector<std::size_t> KeyFrameSelector::compute(
         {
             std::vector<std::pair<float, std::size_t>> currDistOverlapVec(omp_get_max_threads());
 
-#pragma omp parallel
+            #pragma omp parallel
             {
                 std::size_t currThread = omp_get_thread_num();
                 std::size_t nextView = currView + 1 + (k + currThread);
 
-                if (nextView < mFtContainer->getNumImgs())
-                    currDistOverlapVec[currThread] = getMedianDistanceShift(currView, nextView);
+                if (nextView < ftContainer.size())
+                {
+                    currDistOverlapVec[currThread]
+                        = detail::getMedianDistanceShift(currView, nextView, ftContainer, type);
+                }
             }
 
             // investigate tuples, break if shift is to high or no feature points
@@ -102,37 +118,33 @@ std::vector<std::size_t> KeyFrameSelector::compute(
         if (distOverlapVec.empty())
             break;
 
-        std::size_t offset = filterViews(distOverlapVec, low, high);
+        std::size_t offset = detail::filterViews(distOverlapVec, low, high);
 
         // + 1 because ids in overlap vec are relative to first neighbor
         currView += +offset + 1;
         keyFrames.push_back(currView);
 
-        bar += offset + 1;
-        bar.display();
+        cb->inc(offset + 1);
     }
     // always add last frame, so we don't need to extrapolate in the reintergration step
-    if (keyFrames[keyFrames.size() - 1] != mFtContainer->getNumImgs() - 1)
-    {
-        keyFrames.push_back(mFtContainer->getNumImgs() - 1);
-    }
+    if (keyFrames[keyFrames.size() - 1] != ftContainer.size() - 1)
+        keyFrames.push_back(ftContainer.size() - 1);
 
-    bar.done();
+    spdlog::info("Keeping: {} / {} files", keyFrames.size(), ftContainer.size());
+    cb->status("Finished");
+    cb->done();
 
-    std::cout << "Keeping: " << keyFrames.size() << " of " << mFtContainer->getNumImgs()
-              << " files. " << std::endl;
-
-    writeToFile(keyFrames);
-    mIsComputed = true;
-
+    detail::writeToFile(file, keyFrames);
     return keyFrames;
 }
 
-std::pair<float, float> KeyFrameSelector::getRealLowHigh(float low, float high) const
+namespace detail
+{
+std::pair<float, float> getRealLowHigh(cv::Size imgSize, float low, float high)
 {
     // get image sizes (in this setup all images have the same width and height
-    auto width = mImgSize.width;
-    auto height = mImgSize.height;
+    auto width = imgSize.width;
+    auto height = imgSize.height;
     std::size_t minWH = std::min(width, height);
     float realLow = (low * minWH) * (low * minWH);
     float realHigh;
@@ -144,12 +156,12 @@ std::pair<float, float> KeyFrameSelector::getRealLowHigh(float low, float high) 
     return std::make_pair(realLow, realHigh);
 }
 
-std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
-    std::size_t idI, std::size_t idJ)
+std::pair<float, std::size_t> getMedianDistanceShift(
+    std::size_t idI, std::size_t idJ, const BaseFeatureContainer& fts, GeometricType type)
 {
-    auto ftsI = mFtContainer->featureAt(idI);
-    auto ftsJ = mFtContainer->featureAt(idJ);
-    auto [trafos, matches] = mMatchesContainer->computePair(idI, idJ);
+    auto ftsI = fts.featureAt(idI);
+    auto ftsJ = fts.featureAt(idJ);
+    auto [trafos, matches] = matches::computePair(type, fts, idI, idJ);
 
     // skip putative matches and empty trafo
     auto trafo = trafos[1];
@@ -171,17 +183,11 @@ std::pair<float, std::size_t> KeyFrameSelector::getMedianDistanceShift(
     if (srcFiltered.size() < 10)
         return std::make_pair(0.0f, 0);
 
-    auto pair = std::make_pair(idI, idJ);
-    if (!mMatches.count(pair))
-    {
-#pragma omp critical
-        mMatches.insert(std::make_pair(pair, geomMatches));
-    }
     return std::make_pair(getMedian(distances), distances.size());
 }
 
-double KeyFrameSelector::calcReprojError(const std::vector<cv::Point2f>& ptsSrc,
-    std::vector<cv::Point2f>& ptsDst, const cv::Mat& trafo) const
+double calcReprojError(const std::vector<cv::Point2f>& ptsSrc,
+    std::vector<cv::Point2f>& ptsDst, const cv::Mat& trafo)
 {
     cv::Mat transTrafo;
     if (trafo.rows == 2)
@@ -202,7 +208,7 @@ double KeyFrameSelector::calcReprojError(const std::vector<cv::Point2f>& ptsSrc,
     return error / ptsSrc.size();
 }
 
-std::size_t KeyFrameSelector::filterViews(
+std::size_t filterViews(
     const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low, float high)
 {
     auto maxView = std::max_element(std::begin(distOverlapVec), std::end(distOverlapVec),
@@ -211,8 +217,8 @@ std::size_t KeyFrameSelector::filterViews(
     return static_cast<std::size_t>(std::distance(std::begin(distOverlapVec), maxView));
 }
 
-bool KeyFrameSelector::compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
-    const std::pair<float, std::size_t>& rhs, float low, float high) const
+bool compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
+    const std::pair<float, std::size_t>& rhs, float low, float high)
 {
     auto isInRange = [low, high](const auto& pair) -> bool {
         return ((pair.first >= low) && (pair.first <= high));
@@ -231,13 +237,13 @@ bool KeyFrameSelector::compareMaxOverlap(const std::pair<float, std::size_t>& lh
     return true;
 }
 
-void KeyFrameSelector::writeToFile(const std::vector<std::size_t>& keyFrames)
+void writeToFile(const fs::path& file, const std::vector<std::size_t>& keyFrames)
 {
-    cv::FileStorage fs(mFile.string(), cv::FileStorage::WRITE);
+    cv::FileStorage fs(file.string(), cv::FileStorage::WRITE);
     if (!fs.isOpened())
     {
         throw std::filesystem::filesystem_error(
-            "Error opening key frame file", mFile, std::make_error_code(std::errc::io_error));
+            "Error opening key frame file", file, std::make_error_code(std::errc::io_error));
     }
 
     std::vector<int> keyFramesInt(std::begin(keyFrames), std::end(keyFrames));
@@ -245,28 +251,20 @@ void KeyFrameSelector::writeToFile(const std::vector<std::size_t>& keyFrames)
     fs.release();
 }
 
-std::vector<std::size_t> KeyFrameSelector::loadFromFile()
+std::vector<std::size_t> loadFromFile(const fs::path& file)
 {
-    cv::FileStorage fs(mFile.string(), cv::FileStorage::READ);
+    cv::FileStorage fs(file.string(), cv::FileStorage::READ);
     if (!fs.isOpened())
     {
         throw std::filesystem::filesystem_error(
-            "Error opening key frame file", mFile, std::make_error_code(std::errc::io_error));
+            "Error opening key frame file", file, std::make_error_code(std::errc::io_error));
     }
 
     std::vector<int> keyFramesInt;
     fs["key_frames"] >> keyFramesInt;
 
     std::vector<std::size_t> keyFrames(std::begin(keyFramesInt), std::end(keyFramesInt));
-    /* auto keyFrameNode = fs["key_frames"]; */
-    /* for (auto it = std::begin(keyFrameNode); it != std::end(keyFrameNode); ++it) */
-    /*     keyFramesInt.push_back(static_cast<int>(*it)); */
-
-    /* std::vector<std::size_t> keyFrames; */
-    /* keyFrames.reserve(keyFramesInt.size()); */
-
-    /* keyFrames.insert(std::end(keyFrames), std::begin(keyFramesInt), std::end(keyFramesInt)); */
     return keyFrames;
 }
-
+} // namespace detail
 } // namespace ht

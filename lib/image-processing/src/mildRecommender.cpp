@@ -1,37 +1,39 @@
 #include "image-processing/mildRecommender.h"
-#include "image-processing/featureAggregator.h"
-#include "image-processing/matchesContainer.h"
 
+/* #include "image-processing/featureAggregator.h" */
+#include "image-processing/matches.h"
 #include "MILD/BayesianFilter.hpp"
 #include "MILD/loop_closure_detector.h"
+#include <spdlog/spdlog.h>
 
-#include "progressBar.h"
 
 namespace ht
 {
-MildRecommender::MildRecommender(std::shared_ptr<BaseFeatureContainer> ftContainer)
-    : mFtContainer(std::move(ftContainer))
+MildRecommender::MildRecommender(
+    const BaseFeatureContainer& ftContainer, int dilation, bool addDiagonal)
+    : mFtContainer(ftContainer)
     , mBlockList()
+    , mDilation(dilation / 2)
+    , mDiag(addDiagonal)
 {
-    assert(mFtContainer->getFtType() == FeatureType::ORB
+    assert(mFtContainer.getFeatureType() == FeatureType::ORB
         && "FeatureType must be ORB for MILD Recommender");
 }
 
-MildRecommender::MildRecommender(std::vector<std::shared_ptr<FeatureContainer>> ftContainers)
-    : MildRecommender(std::make_shared<FeatureAggregator>(ftContainers))
-{
-    for (const auto& ftContainer : ftContainers)
-        mBlockList.push_back(ftContainer->getNumImgs());
-}
+/* MildRecommender::MildRecommender(std::vector<std::shared_ptr<FeatureContainer>> ftContainers) */
+/*     : MildRecommender(std::make_shared<FeatureAggregator>(ftContainers)) */
+/* { */
+/*     for (const auto& ftContainer : ftContainers) */
+/*         mBlockList.push_back(ftContainer->getNumImgs()); */
+/* } */
 
 std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
     std::size_t, std::size_t window, const std::vector<std::size_t>& ids)
 {
-    // make orb feature container (sift does not work)
-    /* std::cout << "Computing Features for MILD Recommender" << std::endl; */
-    /* mFtContainer->compute(1000, ComputeBehavior::Keep, ids); */
-
+    // these parameters should not be changed
     MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0);
+
+    // prob thes, non loop closure thresh, min shared thresh, min distance
     MILD::BayesianFilter filter(0.3, 4, 4, window);
 
     Eigen::VectorXf prevVisitProb(1);
@@ -43,12 +45,11 @@ std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
 
     auto transId = [&ids](std::size_t i) { return ids.empty() ? i : ids[i]; };
 
-    std::size_t numImgs = ids.empty() ? mFtContainer->getNumImgs() : ids.size();
-    std::cout << "Using MILD to get possible image pairs" << std::endl;
-    ProgressBar bar(numImgs);
+    std::size_t numImgs = ids.empty() ? mFtContainer.size() : ids.size();
+    spdlog::info("Using MILD to get possible image pairs");
     for (std::size_t k = 0; k < numImgs; k++)
     {
-        auto desc = mFtContainer->descriptorAt(transId(k));
+        auto desc = mFtContainer.descriptorAt(transId(k));
 
         std::vector<float> simScore;
         simScore.clear();
@@ -62,8 +63,6 @@ std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
                 scores[std::make_pair(i, k)] = prevVisitFlag[prevVisitFlag.size() - 1][i];
             }
         }
-        ++bar;
-        bar.display();
     }
 
     if (prevVisitFlag.size() >= 4)
@@ -79,6 +78,9 @@ std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
     }
 
     dilatePairList(scores, numImgs, window);
+    if (mDiag)
+        addDiagonal(scores, numImgs, window);
+
     std::vector<std::pair<std::size_t, std::size_t>> pairs;
     for (const auto& [pair, score] : scores)
     {
@@ -94,23 +96,42 @@ void MildRecommender::dilatePairList(
     std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list, std::size_t size,
     std::size_t window) const
 {
-    auto pairs = MatchesContainer::getKeyList(list);
-    for (const auto [i, j] : pairs)
+    auto w = mDilation;
+    auto pairs = matches::getKeyList(list);
+    for (const auto& [i, j] : pairs)
     {
-        for (int n = -5; n <= 5; n++)
+        if (list.at({i, j}) > 0)
         {
-            for (int m = -5; m <= 5; m++)
+            for (int n = -w; n <= w; n++)
             {
-                auto iShift = i + n;
-                auto jShift = j + m;
-                auto pairShift = std::make_pair(iShift, jShift);
-                // check boundary conditions and if the key already exists, otherwise insert
-                if (iShift < size && jShift < size && jShift > iShift + window
-                    && !list.count(pairShift))
+                for (int m = -w; m <= w; m++)
                 {
-                    list.insert(std::make_pair(pairShift, 1.0));
+                    auto iShift = i + n;
+                    auto jShift = j + m;
+                    auto pairShift = std::make_pair(iShift, jShift);
+                    // check boundary conditions and if the key already exists, otherwise insert
+                    if (iShift < size && jShift < size && jShift > iShift + window
+                            && !list.count(pairShift))
+                    {
+                        list.insert(std::make_pair(pairShift, 1.0));
+                    }
                 }
             }
+        }
+    }
+}
+
+void MildRecommender::addDiagonal(
+    std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list, std::size_t size,
+    std::size_t window) const
+{
+    for (std::size_t i = 0; i < size; i++)
+    {
+        for (std::size_t j = i + 1; (j < i + window) && (j < size); j++)
+        {
+            auto pair = std::make_pair(i, j);
+            if (!list.count(pair))
+                list.insert(std::make_pair(pair, 1.0));
         }
     }
 }

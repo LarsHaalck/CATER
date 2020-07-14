@@ -1,40 +1,40 @@
-#include "habitrack/panoramaStitcher.h"
+#include "panorama/panoramaStitcher.h"
 
+#include "affinityGlobalOptimizer.h"
+#include "homographyGlobalOptimizer.h"
+#include "image-processing/isometry.h"
+#include "io/io.h"
+#include "io/matIO.h"
+#include "isometryGlobalOptimizer.h"
+#include "panorama/idTranslator.h"
+#include "progressbar/progressBar.h"
+#include "similarityGlobalOptimizer.h"
+#include <Eigen/Dense>
+#include <ceres/ceres.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <queue>
-
 #include <opencv2/calib3d.hpp>
+#include <opencv2/core/eigen.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/stitching.hpp>
-
-#include <Eigen/Dense>
-#include <opencv2/core/eigen.hpp>
+#include <queue>
 #include <unsupported/Eigen/MatrixFunctions>
-
-#include <ceres/ceres.h>
-
-#include "affinityGlobalOptimizer.h"
-#include "habitrack/idTranslator.h"
-#include "habitrack/isometry.h"
-#include "homographyGlobalOptimizer.h"
-#include "io.h"
-#include "isometryGlobalOptimizer.h"
-#include "matIO.h"
-#include "progressBar.h"
-#include "similarityGlobalOptimizer.h"
 
 namespace fs = std::filesystem;
 using Gt = ht::GeometricType;
+using namespace ht::matches;
+using namespace ht::transformation;
+using namespace ht::io;
+
 namespace ht
 {
-PanoramaStitcher::PanoramaStitcher(std::shared_ptr<BaseImageContainer> imgContainer,
-    std::shared_ptr<BaseFeatureContainer> ftContainer, const PairwiseMatches& matches,
+PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
+    const BaseFeatureContainer& fts, const PairwiseMatches& matches,
     const PairwiseTrafos& trafos, const std::vector<size_t>& keyFrames, GeometricType type,
     Blending blend, const cv::Mat& camMat, const cv::Mat& distCoeffs)
-    : mImgContainer(std::move(imgContainer))
-    , mFtContainer(std::move(ftContainer))
+    : mImages(images)
+    , mFts(fts)
     , mMatches(matches)
     , mTrafos(trafos)
     , mKeyFrames(keyFrames)
@@ -44,12 +44,12 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<BaseImageContainer> imgContai
     , mCamMat(camMat)
     , mCamMatInv()
     , mDistCoeffs(distCoeffs)
-    , mOptimizedTrafos(mImgContainer->getNumImgs(), cv::Mat())
+    , mOptimizedTrafos(mImages.size(), cv::Mat())
 {
     if (mCamMat.empty())
     {
         mCamMat = cv::Mat::eye(3, 3, CV_64F);
-        /* auto imgSize = mImgContainer->getImgSize(); */
+        /* auto imgSize = mImages.getImgSize(); */
         /* mCamMat.at<double>(0, 0) = mCamMat.at<double>(1, 1) */
         /*     = 1.2 * std::max(imgSize.width, imgSize.height); */
         /* mCamMat.at<double>(0, 2) = imgSize.width / 2; */
@@ -61,20 +61,12 @@ PanoramaStitcher::PanoramaStitcher(std::shared_ptr<BaseImageContainer> imgContai
     cv::invert(mCamMat, mCamMatInv);
 }
 
-PanoramaStitcher::PanoramaStitcher(std::shared_ptr<BaseImageContainer> imgContainer,
-    std::shared_ptr<BaseFeatureContainer> ftContainer,
-    std::shared_ptr<MatchesContainer> matchesContainer, const std::vector<size_t>& keyFrames,
-    GeometricType type, Blending blend, const cv::Mat& camMat, const cv::Mat& distCoeffs)
-    : PanoramaStitcher(imgContainer, ftContainer, matchesContainer->getMatches(type),
-        matchesContainer->getTrafos(type), keyFrames, type, blend, camMat, distCoeffs)
-{
-}
 
 // TODO: better init with num-fts-weighted loop graph
 void PanoramaStitcher::initTrafos()
 {
     for (std::size_t i = 0; i < mKeyFrames.size(); i++)
-        mOptimizedTrafos[mKeyFrames[i]] = getIdentity();
+        mOptimizedTrafos[mKeyFrames[i]] = getIdentity(true);
 
     for (std::size_t i = 1; i < mKeyFrames.size(); i++)
     {
@@ -85,7 +77,7 @@ void PanoramaStitcher::initTrafos()
         auto trafo = mTrafos.at(std::make_pair(prevId, currId));
 
         // chain transforamtion with previous to get trafo relative to first frame
-        trafo = invertSpecial(trafo, mType);
+        trafo = invert(trafo, mType, true);
         trafo = mOptimizedTrafos[prevId] * trafo;
         mOptimizedTrafos[currId] = trafo;
     }
@@ -110,7 +102,7 @@ void PanoramaStitcher::initTrafosFromMultipleVideos(const std::vector<std::size_
         std::pair<std::size_t, std::size_t>>& optimalTransitions)
 {
     std::queue<std::pair<std::size_t, cv::Mat>> queue;
-    queue.push(std::make_pair(0, getIdentity()));
+    queue.push(std::make_pair(0, getIdentity(true)));
 
     std::unordered_set<std::size_t> marked;
     Translator translator(sizes);
@@ -125,7 +117,7 @@ void PanoramaStitcher::initTrafosFromMultipleVideos(const std::vector<std::size_
         {
             if (transBlock.first == currBlock && !marked.count(transBlock.second))
             {
-                cv::Mat pairTrans = invertSpecial(mTrafos.at(transFrame), mType);
+                cv::Mat pairTrans = invert(mTrafos.at(transFrame), mType, true);
 
                 auto localId = translator.globalToLocal(transFrame.second).second;
                 cv::Mat preMult = localOptimalTrafos[transBlock.second][localId];
@@ -155,7 +147,7 @@ void PanoramaStitcher::initTrafosFromMultipleVideos(const std::vector<std::size_
 
 cv::Mat PanoramaStitcher::transformBoundingRect(const cv::Mat& trafo) const
 {
-    auto size = mImgContainer->getImgSize();
+    auto size = mImages.getImgSize();
     cv::Mat corners = (cv::Mat_<double>(4, 2) << 0.0, 0.0, size.width - 1, 0.0, 0.0,
         size.height - 1, size.width - 1, size.height - 1);
 
@@ -207,8 +199,8 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     if (rect.height > targetSize.height)
         scale = std::min(targetSize.height / rect.height, scale);
 
-    cv::Mat scaleMat = getScaleMat(scale);
-    cv::Mat transMat = getTranslationMat(-rect.x, -rect.y);
+    cv::Mat scaleMat = getScaleMat(scale, true);
+    cv::Mat transMat = getTranslationMat(-rect.x, -rect.y, true);
     cv::Size newSize(scale * rect.width, scale * rect.height);
 
     std::cout << "Target size: " << newSize << std::endl;
@@ -223,7 +215,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     for (size_t i = 0; i < mKeyFrames.size(); i++)
     {
         auto currId = mKeyFrames[i];
-        cv::Mat currImg = mImgContainer->at(mKeyFrames[i]);
+        cv::Mat currImg = mImages.at(mKeyFrames[i]);
 
         /* if (currId == 0 || currId == 7589) */
         /*     highlightImg(currImg); */
@@ -316,7 +308,7 @@ void PanoramaStitcher::globalOptimizeKeyFrames(std::size_t limitTo)
 
 void PanoramaStitcher::refineNonKeyFrames(const PairwiseMatches& matches, std::size_t limitTo)
 {
-    auto pairs = MatchesContainer::getKeyList(matches);
+    auto pairs = getKeyList(matches);
 
     std::size_t currMatchId = 0;
     for (std::size_t i = 1; i < mKeyFrames.size(); i++)
@@ -373,7 +365,7 @@ void PanoramaStitcher::globalOptimizeHelper(
     if (mType == GeometricType::Isometry)
     {
         params = std::vector<std::vector<double>>(
-            mImgContainer->getNumImgs(), std::vector<double>(3, -11));
+            mImages.size(), std::vector<double>(3, -11));
     }
 
     ceres::Problem problem;
@@ -383,7 +375,8 @@ void PanoramaStitcher::globalOptimizeHelper(
     options.minimizer_progress_to_stdout = true;
 
     std::cout << "Building Optimization Problem..." << std::endl;
-    ProgressBar bar(matches.size());
+    // TODO: progress
+    /* ProgressBar bar(matches.size()); */
     for (const auto& [pair, match] : matches)
     {
         auto [idI, idJ] = pair;
@@ -418,10 +411,10 @@ void PanoramaStitcher::globalOptimizeHelper(
         if (framesMode == FramesMode::AllFrames && isKeyFrame(idJ))
             problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
 
-        ++bar;
-        bar.display();
+        /* ++bar; */
+        /* bar.display(); */
     }
-    bar.done();
+    /* bar.done(); */
     std::cout << "Optimizing Problem..." << std::endl;
 
     // TODO: is this even needed anymore?
@@ -472,8 +465,8 @@ PanoramaStitcher::getCorrespondingPoints(
     dst.reserve(matches.size());
     for (const auto& match : matches)
     {
-        src.push_back(mFtContainer->featureAt(pair.first)[match.queryIdx]);
-        dst.push_back(mFtContainer->featureAt(pair.second)[match.trainIdx]);
+        src.push_back(mFts.featureAt(pair.first)[match.queryIdx]);
+        dst.push_back(mFts.featureAt(pair.second)[match.trainIdx]);
     }
 
     return std::make_pair(src, dst);
@@ -580,7 +573,7 @@ void PanoramaStitcher::repairTrafos(
     {
     case GeometricType::Isometry:
         // rebuild matrix from params vector
-        for (std::size_t i = 0; i < mImgContainer->getNumImgs(); i++)
+        for (std::size_t i = 0; i < mImages.size(); i++)
         {
             if ((framesMode == FramesMode::AllFrames && !isKeyFrame(i))
                 || (framesMode == FramesMode::KeyFramesOnly && isKeyFrame(i)))
@@ -597,7 +590,7 @@ void PanoramaStitcher::repairTrafos(
         break;
     case GeometricType::Similarity:
         // ensure similarity property
-        for (std::size_t i = 0; i < mImgContainer->getNumImgs(); i++)
+        for (std::size_t i = 0; i < mImages.size(); i++)
         {
             if ((framesMode == FramesMode::AllFrames && !isKeyFrame(i))
                 || (framesMode == FramesMode::KeyFramesOnly && isKeyFrame(i)))
@@ -619,7 +612,7 @@ void PanoramaStitcher::repairTrafos(
 
 cv::Rect2d PanoramaStitcher::generateBoundingRect() const
 {
-    auto imgSize = mImgContainer->getImgSize();
+    auto imgSize = mImages.getImgSize();
     cv::Rect2d boundingRect(0, 0, imgSize.width, imgSize.height);
 
     // store trafos relative to first frame
@@ -713,7 +706,7 @@ void PanoramaStitcher::repairIntriniscs(
 cv::Mat PanoramaStitcher::draw(const cv::Mat& trafo, size_t idI, size_t idJ)
 {
     auto pair = std::make_pair(idI, idJ);
-    auto imgJ = mImgContainer->at(idJ);
+    auto imgJ = mImages.at(idJ);
     auto matches = mMatches[pair];
     auto [ftsI, ftsJ] = getCorrespondingPoints(pair, matches);
 
@@ -755,8 +748,8 @@ std::vector<cv::Mat> PanoramaStitcher::loadTrafos(const fs::path& file)
 void PanoramaStitcher::writeTrafos(const fs::path& file, WriteType writeType)
 {
     std::vector<cv::Mat> trafos;
-    trafos.reserve(mImgContainer->getNumImgs());
-    for (std::size_t i = 0; i < mImgContainer->getNumImgs(); i++)
+    trafos.reserve(mImages.size());
+    for (std::size_t i = 0; i < mImages.size(); i++)
         trafos.push_back(mOptimizedTrafos[i]);
 
     if (writeType == WriteType::Binary)

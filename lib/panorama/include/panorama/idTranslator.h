@@ -1,7 +1,7 @@
 #ifndef HABITRACK_ID_TRANSLATOR_H
 #define HABITRACK_ID_TRANSLATOR_H
 
-#include "habitrack/matches.h"
+#include "image-processing/matches.h"
 #include <vector>
 
 namespace ht

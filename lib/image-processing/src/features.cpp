@@ -3,7 +3,7 @@
 #include "featureIO.h"
 #include "image-processing/images.h"
 #include "image-processing/util.h"
-#include "matIO.h"
+#include "io/matIO.h"
 #include "progressbar/progressBar.h"
 #include "unknownFeatureType.h"
 #include <fstream>

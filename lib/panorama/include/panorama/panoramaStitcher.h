@@ -1,15 +1,13 @@
 #ifndef HABITRACK_PANORAMA_STITCHER_H
 #define HABITRACK_PANORAMA_STITCHER_H
 
-#include "habitrack/baseFeatureContainer.h"
-#include "habitrack/baseImageContainer.h"
-
-#include "habitrack/geometricType.h"
-#include "habitrack/matchesContainer.h"
-#include "habitrack/transformation.h"
+#include "image-processing/baseFeatureContainer.h"
+#include "image-processing/baseImageContainer.h"
+#include "image-processing/geometricType.h"
+#include "image-processing/matches.h"
+#include "image-processing/transformation.h"
 
 #include <opencv2/core.hpp>
-
 #include <unordered_set>
 
 namespace ceres
@@ -43,16 +41,10 @@ namespace ht
 class PanoramaStitcher
 {
 public:
-    PanoramaStitcher(std::shared_ptr<BaseImageContainer> imgContainer,
-        std::shared_ptr<BaseFeatureContainer> ftContainer, const PairwiseMatches& matches,
-        const PairwiseTrafos& trafos, const std::vector<size_t>& keyFrames, GeometricType type,
-        Blending blend, const cv::Mat& camMat = cv::Mat(), const cv::Mat& distCoeffs = cv::Mat());
-
-    PanoramaStitcher(std::shared_ptr<BaseImageContainer> imgContainer,
-        std::shared_ptr<BaseFeatureContainer> ftContainer,
-        std::shared_ptr<MatchesContainer> matchContainer, const std::vector<size_t>& keyFrames,
-        GeometricType type, Blending blend, const cv::Mat& camMat = cv::Mat(),
-        const cv::Mat& distCoeffs = cv::Mat());
+    PanoramaStitcher(const BaseImageContainer& images, const BaseFeatureContainer& fts,
+        const matches::PairwiseMatches& matches, const matches::PairwiseTrafos& trafos,
+        const std::vector<size_t>& keyFrames, GeometricType type, Blending blend,
+        const cv::Mat& camMat = cv::Mat(), const cv::Mat& distCoeffs = cv::Mat());
 
     void initTrafos();
     void initTrafosFromMultipleVideos(const std::vector<std::size_t> sizes,
@@ -64,7 +56,7 @@ public:
     std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool drawCenters = false);
 
     void globalOptimizeKeyFrames(std::size_t limitTo = 0);
-    void refineNonKeyFrames(const PairwiseMatches& matches, std::size_t limitTo = 0);
+    void refineNonKeyFrames(const matches::PairwiseMatches& matches, std::size_t limitTo = 0);
     void reintegrate();
 
     static std::vector<cv::Mat> loadTrafos(const std::filesystem::path& file);
@@ -77,7 +69,7 @@ private:
     std::vector<cv::KeyPoint> permute(
         const std::vector<cv::KeyPoint>& fts, const std::vector<std::size_t>& p);
     void globalOptimizeHelper(
-        const PairwiseMatches& matches, FramesMode keyFramesMode, std::size_t limitTo);
+        const matches::PairwiseMatches& matches, FramesMode keyFramesMode, std::size_t limitTo);
     cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
         const cv::Mat& trafo, cv::Rect2d currRect = cv::Rect2d()) const;
@@ -95,7 +87,7 @@ private:
         const std::vector<double>& camParams, const std::vector<double>& distParams);
 
     std::pair<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>> getCorrespondingPoints(
-        std::pair<std::size_t, std::size_t> pair, const Matches& matches);
+        std::pair<std::size_t, std::size_t> pair, const matches::Matches& matches);
     cv::Point getCenter(const cv::Mat& trafo);
 
     cv::Mat transformBoundingRect(const cv::Mat& trafo) const;
@@ -104,10 +96,10 @@ private:
     inline bool isKeyFrame(std::size_t idx) { return mKeyFramesSet.count(idx); };
 
 private:
-    std::shared_ptr<BaseImageContainer> mImgContainer;
-    std::shared_ptr<BaseFeatureContainer> mFtContainer;
-    PairwiseMatches mMatches;
-    PairwiseTrafos mTrafos;
+    const BaseImageContainer& mImages;
+    const BaseFeatureContainer& mFts;
+    matches::PairwiseMatches mMatches;
+    matches::PairwiseTrafos mTrafos;
     std::vector<std::size_t> mKeyFrames;
     std::unordered_set<std::size_t> mKeyFramesSet;
     GeometricType mType;

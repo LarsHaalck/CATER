@@ -1,19 +1,21 @@
-#include <iostream>
 #include <filesystem>
+#include <iostream>
 #include <memory>
 
-#include "habitrack/featureContainer.h"
-#include "habitrack/imageContainer.h"
-#include "habitrack/keyFrameRecommender.h"
-#include "habitrack/keyFrameSelector.h"
-#include "habitrack/matchesContainer.h"
-#include "habitrack/mildRecommender.h"
-#include "habitrack/panoramaStitcher.h"
+#include <spdlog/spdlog.h>
+
+#include "image-processing/features.h"
+#include "image-processing/images.h"
+#include "image-processing/mildRecommender.h"
+#include "image-processing/matches.h"
+#include "panorama/keyFrames.h"
+#include "panorama/keyFrameRecommender.h"
+#include "panorama/panoramaStitcher.h"
 
 #include "cxxopts.hpp"
-
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+
 
 void drawImg(const cv::Mat& img)
 {
@@ -29,26 +31,31 @@ using namespace ht;
 namespace fs = std::filesystem;
 int main(int argc, char** argv)
 {
+    /* spdlog::set_level(spdlog::level::debug); */
+
     fs::path basePath;
     bool showResults = false;
+    bool force = false;
     int stage = 0;
-    std::size_t cacheSize = 20;
+    std::size_t cacheSize = 200;
 
     int cols = 2 * 1920;
     int rows = 2 * 1080;
 
     double minCoverage = 0.0;
 
+    /* auto geomType = GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity */
+    /*     | GeometricType::Isometry; */
+    auto geomType = GeometricType::Similarity;
+
     cxxopts::Options options("single", "");
-    options.add_options()
-        ("i,in", "base path containing imgs dir", cxxopts::value(basePath))
-        ("v", "show results", cxxopts::value(showResults))
-        ("c", "cache", cxxopts::value(cacheSize))
-        ("k, cols", "cols", cxxopts::value(cols))
-        ("l, rows", "rows", cxxopts::value(rows))
-        ("m, min_coverage", "min coverage", cxxopts::value(minCoverage))
-        ("s,stage", "0: fts, 1: kfs: 2: matches, 3: init, 4: global, 5: reint; 6: global",
-            cxxopts::value(stage));
+    options.add_options()("i,in", "base path containing imgs dir", cxxopts::value(basePath))(
+        "v", "show results", cxxopts::value(showResults))("c", "cache", cxxopts::value(cacheSize))(
+        "f", "force", cxxopts::value(force))("k, cols", "cols", cxxopts::value(cols))(
+        "l, rows", "rows", cxxopts::value(rows))(
+        "m, min_coverage", "min coverage", cxxopts::value(minCoverage))("s,stage",
+        "0: fts, 1: kfs: 2: matches, 3: init, 4: global, 5: reint; 6: global",
+        cxxopts::value(stage));
 
     auto result = options.parse(argc, argv);
     if (result.count("in") != 1)
@@ -67,42 +74,51 @@ int main(int argc, char** argv)
     std::cout << "s: " << stage << std::endl;
 
     // load images
-    auto imgContainer = std::make_shared<ImageContainer>(basePath / "imgs");
+    auto images = Images(basePath / "imgs");
 
     // calc features
-    auto ftContainer
-        = std::make_shared<FeatureContainer>(imgContainer, basePath / "fts", FeatureType::SIFT, 10000);
-    ftContainer->compute(cacheSize, ComputeBehavior::Keep);
+    auto ftPath = basePath / "fts";
+    auto ftType = FeatureType::ORB;
+    auto features = Features();
+    if (Features::isComputed(images, ftPath, ftType) && !force)
+        features = Features::fromDir(images, ftPath, ftType);
+    else
+        features = Features::compute(images, ftPath, ftType, 1000, cacheSize);
 
     if (stage < 1)
         return 0;
 
     // select key frames
-    auto keyFrameSelector = KeyFrameSelector(
-        ftContainer, GeometricType::Similarity, basePath / "key_frames.yml", minCoverage);
-    auto keyFrames = keyFrameSelector.compute(0.3, 0.5, ComputeBehavior::Keep);
+    auto kfPath = basePath / "key_frames.yml";
+    std::vector<std::size_t> keyFrames;
+    if (KeyFrames::isComputed(kfPath) && !force)
+        keyFrames = KeyFrames::fromDir(kfPath);
+    else
+        keyFrames = KeyFrames::compute(features, GeometricType::Similarity, kfPath, 0.3, 0.5);
 
     if (stage < 2)
         return 0;
 
     // calculate matches between images between keyframes via KeyFrameRecommender
-    auto keyFrameRecommender = std::make_unique<KeyFrameRecommender>(keyFrames);
-    auto matchIntraContainer = std::make_shared<MatchesContainer>(ftContainer,
-        basePath / "kfs/matches_intra", MatchType::Strategy, 0,
-        GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
-            | GeometricType::Isometry,
-        0, std::move(keyFrameRecommender));
-    /* matchIntraContainer->compute(5000, ComputeBehavior::Keep); */
+    auto kfIntraPath = basePath / "kfs/maches_intra";
+    auto kfRecommender = std::make_unique<KeyFrameRecommender>(keyFrames);
+    if (!matches::isComputed(kfIntraPath, geomType) || force)
+    {
+        matches::compute(kfIntraPath, geomType, features, matches::MatchType::Strategy, 0, 0.0,
+            std::move(kfRecommender), cacheSize);
+    }
 
     // calculate matches between keyframes via exhaustive matching
-    auto matchInterContainer = std::make_shared<MatchesContainer>(ftContainer,
-        basePath / "kfs/matches_inter", MatchType::Exhaustive, 0,
-        GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity
-            | GeometricType::Isometry, minCoverage);
-    matchInterContainer->compute(5000, ComputeBehavior::Keep, keyFrames);
+    auto kfInterPath = basePath / "kfs/maches_inter";
+    auto mildRecommender = std::make_unique<MildRecommender>(features, 0, true);
+    if (!matches::isComputed(kfInterPath, geomType) || force)
+    {
+        matches::compute(kfInterPath, geomType, features, matches::MatchType::Strategy, 3, 0.0,
+            std::move(mildRecommender), cacheSize, keyFrames);
+    }
 
     // panoramas can only be calculated from theses Types
-    GeometricType useableTypes = matchInterContainer->getUsableTypes(keyFrames);
+    GeometricType useableTypes = matches::getConnectedTypes(kfInterPath, geomType, keyFrames);
     auto typeList = typeToTypeList(useableTypes);
     std::cout << "Usable types for PanoramaStitcher:" << std::endl;
     for (auto type : typeList)
@@ -112,14 +128,16 @@ int main(int argc, char** argv)
         return 0;
 
     // do pano stitching for some wanted type
-    auto stitcher = std::make_unique<PanoramaStitcher>(imgContainer, ftContainer,
-        matchInterContainer, keyFrames, GeometricType::Similarity, Blending::NoBlend);
+    auto geomPano = GeometricType::Similarity;
+    auto stitcher = PanoramaStitcher(images, features, matches::getMatches(kfInterPath, geomPano),
+        matches::getTrafos(kfInterPath, geomPano), keyFrames, GeometricType::Similarity,
+        Blending::NoBlend);
 
     // init trafos of keyframes by concatenating them
-    stitcher->initTrafos();
+    stitcher.initTrafos();
     if (showResults)
     {
-        auto pano = std::get<0>(stitcher->stitchPano(cv::Size(cols, rows)));
+        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
         cv::imwrite((basePath / "pano0.png").string(), pano);
         /* drawImg(pano); */
     }
@@ -128,11 +146,11 @@ int main(int argc, char** argv)
         return 0;
 
     // globally optimized these keyframe tranformations and write them for later IVLC
-    stitcher->globalOptimizeKeyFrames();
-    stitcher->writeTrafos(basePath / "kfs/opt_trafos.bin");
+    stitcher.globalOptimizeKeyFrames();
+    stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
     if (showResults)
     {
-        auto pano = std::get<0>(stitcher->stitchPano(cv::Size(cols, rows)));
+        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
         cv::imwrite((basePath / "pano1.png").string(), pano);
         /* drawImg(pano); */
     }
@@ -141,10 +159,10 @@ int main(int argc, char** argv)
         return 0;
 
     // reintegrate by geodesic interpolation of frames between keyframes
-    stitcher->reintegrate();
+    stitcher.reintegrate();
     if (showResults)
     {
-        auto pano = std::get<0>(stitcher->stitchPano(cv::Size(cols, rows), true));
+        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), true));
         cv::imwrite((basePath / "pano2.png").string(), pano);
         /* drawImg(pano); */
     }
@@ -153,15 +171,15 @@ int main(int argc, char** argv)
         return 0;
 
     // refine all keyframes
-    stitcher->refineNonKeyFrames(matchIntraContainer->getMatches(GeometricType::Similarity), 50);
-    stitcher->writeTrafos(basePath / "opt_trafos.bin");
+    stitcher.refineNonKeyFrames(matches::getMatches(kfIntraPath, geomPano), 50);
+    stitcher.writeTrafos(basePath / "opt_trafos.bin");
     if (showResults)
     {
-        auto pano = std::get<0>(stitcher->stitchPano(cv::Size(cols, rows), true));
+        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), true));
         cv::imwrite((basePath / "pano3.png").string(), pano);
         /* drawImg(pano); */
     }
 
-    stitcher->writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
+    stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
     return 0;
 }

@@ -1,7 +1,7 @@
 #ifndef HABITRACK_KEYFRAME_RECOMMENDER_H
 #define HABITRACK_KEYFRAME_RECOMMENDER_H
 
-#include "habitrack/pairRecommender.h"
+#include "image-processing/pairRecommender.h"
 
 #include <memory>
 #include <unordered_map>

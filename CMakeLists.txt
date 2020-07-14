@@ -83,7 +83,3 @@ install(EXPORT habitrack-targets
     NAMESPACE habitrack::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/habitrack
 )
-
-# add_subdirectory(tracker)
-# add_subdirectory(singleVideo)
-# add_subdirectory(multiVideo)

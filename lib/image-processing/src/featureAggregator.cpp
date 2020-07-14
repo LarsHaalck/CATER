@@ -3,7 +3,7 @@
 namespace ht
 {
 FeatureAggregator::FeatureAggregator(
-    const std::vector<std::shared_ptr<FeatureContainer>>& ftContainers)
+    const std::vector<const Features&>& ftContainers)
     : mFtContainers(ftContainers)
     , mNumImgs()
     , mNumImgsVec()
@@ -23,19 +23,19 @@ FeatureAggregator::FeatureAggregator(
     mNumImgsVec = std::move(sizeVec);
 }
 
-FeatureAggregator::FeatureAggregator(std::shared_ptr<FeatureContainer> imgContainer)
-    : FeatureAggregator(std::vector<std::shared_ptr<FeatureContainer>> {imgContainer})
+FeatureAggregator::FeatureAggregator(const Features& fts)
+    : FeatureAggregator(std::vector<const Features&> {fts})
 {
 }
 
 std::pair<std::size_t, std::vector<std::size_t>> FeatureAggregator::sumNumImgs(
-    const std::vector<std::shared_ptr<FeatureContainer>>& imgContainers) const
+    const std::vector<const Features&>& fts) const
 {
     std::vector<std::size_t> numVec;
     std::size_t total = 0;
-    for (auto& c : imgContainers)
+    for (const auto& c : fts)
     {
-        auto currSize = c->getNumImgs();
+        auto currSize = c.size();
         numVec.push_back(currSize);
         total += currSize;
     }
@@ -68,34 +68,34 @@ cv::Mat FeatureAggregator::descriptorAt(std::size_t idx) const
     return cv::Mat();
 }
 
-std::unique_ptr<FeatureCache> FeatureAggregator::getFeatureCache(
+FeatureCache FeatureAggregator::getFeatureCache(
+    std::size_t maxChunkSize, const size_t_vec& ids)
+{
+    auto numElems = size();
+    return FeatureCache(*this, numElems, maxChunkSize, ids);
+}
+
+DescriptorCache FeatureAggregator::getDescriptorCache(
     std::size_t maxChunkSize, const ImgIds& ids)
 {
-    auto numElems = getNumImgs();
-    return std::make_unique<FeatureCache>(shared_from_this(), numElems, maxChunkSize, ids);
+    auto numElems = size();
+    return DescriptorCache(*this, numElems, maxChunkSize, ids);
 }
 
-std::unique_ptr<DescriptorCache> FeatureAggregator::getDescriptorCache(
-    std::size_t maxChunkSize, const ImgIds& ids)
-{
-    auto numElems = getNumImgs();
-    return std::make_unique<DescriptorCache>(shared_from_this(), numElems, maxChunkSize, ids);
-}
-
-std::unique_ptr<PairwiseDescriptorCache> FeatureAggregator::getPairwiseDescriptorCache(
+PairwiseDescriptorCache FeatureAggregator::getPairwiseDescriptorCache(
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
 {
-    return std::make_unique<PairwiseDescriptorCache>(shared_from_this(), maxChunkSize, pairs);
+    return PairwiseDescriptorCache(*this, maxChunkSize, pairs);
 }
 
-std::unique_ptr<PairwiseFeatureCache> FeatureAggregator::getPairwiseFeatureCache(
+PairwiseFeatureCache FeatureAggregator::getPairwiseFeatureCache(
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
 {
-    return std::make_unique<PairwiseFeatureCache>(shared_from_this(), maxChunkSize, pairs);
+    return PairwiseFeatureCache(*this, maxChunkSize, pairs);
 }
 
-std::size_t FeatureAggregator::getNumImgs() const { return mNumImgs; }
-cv::Size FeatureAggregator::getImgSize() const { return mFtContainers[0]->getImgSize(); }
-FeatureType FeatureAggregator::getFtType() const { return mFtContainers[0]->getFtType(); }
+std::size_t FeatureAggregator::size() const { return mNumImgs; }
+cv::Size FeatureAggregator::getImageSize() const { return mFtContainers[0]->getImgSize(); }
+FeatureType FeatureAggregator::getFeatureType() const { return mFtContainers[0]->getFtType(); }
 
 } // namespace ht

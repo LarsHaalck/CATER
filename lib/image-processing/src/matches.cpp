@@ -1,7 +1,7 @@
 #include "image-processing/matches.h"
 
 #include "image-processing/isometry.h"
-#include "matIO.h"
+#include "io/matIO.h"
 #include "matchesIO.h"
 #include "progressbar/progressBar.h"
 #include "unknownFeatureType.h"
@@ -62,6 +62,7 @@ bool compute(const fs::path& matchDir, GeometricType geomType, const BaseFeature
         fs::create_directories(matchDir);
     auto matches = detail::getPutativeMatches(
         matchDir, fts, matchType, window, std::move(recommender), cacheSize, ids, cb);
+
     for (auto type : detail::getTypeList(geomType))
     {
         matches = detail::getGeomMatches(matchDir, fts, type, minCoverage,
