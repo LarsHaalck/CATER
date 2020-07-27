@@ -76,14 +76,14 @@ int main(int argc, char** argv)
     // load images
     auto images = Images(basePath / "imgs");
 
-    // calc features
+    // calc features for all frames
     auto ftPath = basePath / "fts";
     auto ftType = FeatureType::ORB;
     auto features = Features();
     if (Features::isComputed(images, ftPath, ftType) && !force)
         features = Features::fromDir(images, ftPath, ftType);
     else
-        features = Features::compute(images, ftPath, ftType, 1000, cacheSize);
+        features = Features::compute(images, ftPath, ftType, 500, cacheSize);
 
     if (stage < 1)
         return 0;
@@ -110,11 +110,23 @@ int main(int argc, char** argv)
 
     // calculate matches between keyframes via exhaustive matching
     auto kfInterPath = basePath / "kfs/maches_inter";
-    auto mildRecommender = std::make_unique<MildRecommender>(features, 0, true);
+
+    auto kfInterFtPath = kfInterPath / "fts";
+    auto featuresDense = Features();
+    if (Features::isComputed(images, kfInterFtPath, ftType) && !force)
+        featuresDense = Features::fromDir(images, kfInterFtPath, ftType, keyFrames);
+    else
+        featuresDense = Features::compute(images, kfInterFtPath, ftType, 2000, cacheSize, keyFrames);
+
+    // pass low features here
+    auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
+
+    // and more_features here
     if (!matches::isComputed(kfInterPath, geomType) || force)
     {
-        matches::compute(kfInterPath, geomType, features, matches::MatchType::Strategy, 3, 0.0,
-            std::move(mildRecommender), cacheSize, keyFrames);
+        matches::compute(kfInterPath, geomType, featuresDense,
+                matches::MatchType::Strategy, 3, 0.0,
+                std::move(mildRecommender), cacheSize, keyFrames);
     }
 
     // panoramas can only be calculated from theses Types
@@ -129,9 +141,10 @@ int main(int argc, char** argv)
 
     // do pano stitching for some wanted type
     auto geomPano = GeometricType::Similarity;
-    auto stitcher = PanoramaStitcher(images, features, matches::getMatches(kfInterPath, geomPano),
-        matches::getTrafos(kfInterPath, geomPano), keyFrames, GeometricType::Similarity,
-        Blending::NoBlend);
+    auto stitcher = PanoramaStitcher(images, featuresDense,
+            matches::getMatches(kfInterPath, geomPano),
+            matches::getTrafos(kfInterPath, geomPano), keyFrames,
+            GeometricType::Similarity, Blending::NoBlend);
 
     // init trafos of keyframes by concatenating them
     stitcher.initTrafos();
@@ -166,20 +179,21 @@ int main(int argc, char** argv)
         cv::imwrite((basePath / "pano2.png").string(), pano);
         /* drawImg(pano); */
     }
-
-    if (stage < 6)
-        return 0;
-
-    // refine all keyframes
-    stitcher.refineNonKeyFrames(matches::getMatches(kfIntraPath, geomPano), 50);
-    stitcher.writeTrafos(basePath / "opt_trafos.bin");
-    if (showResults)
-    {
-        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), true));
-        cv::imwrite((basePath / "pano3.png").string(), pano);
-        /* drawImg(pano); */
-    }
-
     stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
-    return 0;
+
+    /* if (stage < 6) */
+    /*     return 0; */
+
+    /* // refine all keyframes */
+    /* stitcher.refineNonKeyFrames(matches::getMatches(kfIntraPath, geomPano), 50); */
+    /* stitcher.writeTrafos(basePath / "opt_trafos.bin"); */
+    /* if (showResults) */
+    /* { */
+    /*     auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), true)); */
+    /*     cv::imwrite((basePath / "pano3.png").string(), pano); */
+    /*     /1* drawImg(pano); *1/ */
+    /* } */
+
+    /* stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable); */
+    /* return 0; */
 }

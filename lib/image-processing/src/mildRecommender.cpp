@@ -34,7 +34,7 @@ std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
     MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0);
 
     // prob thes, non loop closure thresh, min shared thresh, min distance
-    MILD::BayesianFilter filter(0.3, 4, 4, window);
+    MILD::BayesianFilter filter(0.7, 2, 2, window);
 
     Eigen::VectorXf prevVisitProb(1);
     prevVisitProb << 0.1;

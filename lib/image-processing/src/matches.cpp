@@ -25,15 +25,13 @@ auto Iso = Gt::Isometry;
 
 bool isComputed(const fs::path& matchDir, Gt geomType)
 {
-    bool isComputed = true;
-
     if (static_cast<unsigned int>(geomType & Put))
     {
         auto matchFile = getFileName(matchDir, detail::MatchTrafo::Match, Put);
         if (!fs::is_regular_file(matchFile))
         {
             spdlog::debug("Missing matches file: {}", matchFile.string());
-            isComputed = false;
+            return false;
         }
     }
 
@@ -42,13 +40,12 @@ bool isComputed(const fs::path& matchDir, Gt geomType)
         if (!detail::checkIfExists(matchDir, type))
         {
             spdlog::debug("Missing matches or trafo file for type: {}", detail::typeToString(type));
-            isComputed = false;
-            break;
+            return false;
         }
     }
 
     spdlog::info("Found matches and trafo files in {}", matchDir.string());
-    return isComputed;
+    return true;
 }
 
 bool compute(const fs::path& matchDir, GeometricType geomType, const BaseFeatureContainer& fts,
