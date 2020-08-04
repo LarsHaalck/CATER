@@ -9,7 +9,6 @@
 #include <fstream>
 #include <iostream>
 #include <opencv2/imgproc.hpp>
-#include <opencv2/xfeatures2d.hpp>
 #include <spdlog/spdlog.h>
 
 namespace fs = std::filesystem;
@@ -206,7 +205,7 @@ cv::Ptr<cv::Feature2D> Features::getFtPtr(FeatureType type, std::size_t numFeatu
     case FeatureType::ORB:
         return cv::ORB::create(numFeatures);
     case FeatureType::SIFT:
-        return cv::xfeatures2d::SIFT::create(numFeatures);
+        return cv::SIFT::create(numFeatures);
     default:
         throw UnknownFeatureType();
     }
