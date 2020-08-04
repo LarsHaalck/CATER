@@ -73,6 +73,9 @@ GeometricType getConnectedTypes(
 PairwiseMatches getMatches(const std::filesystem::path& matchDir, GeometricType geomType);
 PairwiseTrafos getTrafos(const std::filesystem::path& matchDir, GeometricType geomType);
 
+PairwiseMatches getMatches(const std::filesystem::path& matchFile);
+PairwiseTrafos getTrafos(const std::filesystem::path& trafoFile);
+
 namespace detail
 {
     std::vector<GeometricType> getTypeList(GeometricType type);
@@ -139,7 +142,10 @@ namespace detail
         const std::filesystem::path& machDir, const PairwiseTrafos& matches, GeometricType type);
 
     PairwiseMatches loadMatches(const std::filesystem::path& matchDir, GeometricType type);
+    PairwiseMatches loadMatches(const std::filesystem::path& matchFile);
+
     PairwiseTrafos loadTrafos(const std::filesystem::path& matchDir, GeometricType type);
+    PairwiseTrafos loadTrafos(const std::filesystem::path& trafoFile);
 
     inline size_t getInlierCount(const std::vector<uchar>& mask)
     {

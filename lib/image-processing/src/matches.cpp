@@ -139,9 +139,19 @@ PairwiseMatches getMatches(const fs::path& matchDir, GeometricType geomType)
     return detail::loadMatches(matchDir, geomType);
 }
 
+PairwiseMatches getMatches(const fs::path& matchFile)
+{
+    return detail::loadMatches(matchFile);
+}
+
 PairwiseTrafos getTrafos(const fs::path& matchDir, GeometricType geomType)
 {
     return detail::loadTrafos(matchDir, geomType);
+}
+
+PairwiseTrafos getTrafos(const fs::path& trafoFile)
+{
+    return detail::loadTrafos(trafoFile);
 }
 
 namespace detail
@@ -538,30 +548,38 @@ namespace detail
     PairwiseMatches loadMatches(const fs::path& matchDir, Gt type)
     {
         auto file = getFileName(matchDir, detail::MatchTrafo::Match, type);
-        std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
-        io::checkStream(stream, file);
+        return loadMatches(file);
+    }
+
+    PairwiseMatches loadMatches(const fs::path& matchFile)
+    {
+        std::ifstream stream(matchFile.string(), std::ios::in | std::ios::binary);
+        io::checkStream(stream, matchFile);
         PairwiseMatches matches;
         {
             cereal::PortableBinaryInputArchive archive(stream);
             archive(matches);
         }
-        spdlog::debug("Retrieved {} matches for {} from {}", matches.size(),
-            detail::typeToString(type), matchDir.string());
+        spdlog::debug("Retrieved {} matches from {}", matches.size(), matchFile.string());
         return matches;
     }
 
     PairwiseTrafos loadTrafos(const fs::path& matchDir, Gt type)
     {
         auto file = getFileName(matchDir, detail::MatchTrafo::Trafo, type);
-        std::ifstream stream(file.string(), std::ios::in | std::ios::binary);
-        io::checkStream(stream, file);
+        return loadTrafos(file);
+    }
+
+    PairwiseTrafos loadTrafos(const fs::path& trafoFile)
+    {
+        std::ifstream stream(trafoFile.string(), std::ios::in | std::ios::binary);
+        io::checkStream(stream, trafoFile);
         PairwiseTrafos trafos;
         {
             cereal::PortableBinaryInputArchive archive(stream);
             archive(trafos);
         }
-        spdlog::debug("Retrieved {} trafos for {} from {}", trafos.size(),
-            detail::typeToString(type), matchDir.string());
+        spdlog::debug("Retrieved {} trafos from {}", trafos.size(), trafoFile.string());
         return trafos;
     }
 
