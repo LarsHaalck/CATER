@@ -17,12 +17,6 @@ class Problem;
 
 namespace ht
 {
-enum class Blending : bool
-{
-    NoBlend,
-    Blend
-};
-
 enum class FramesMode : bool
 {
     KeyFramesOnly,
@@ -41,22 +35,24 @@ namespace ht
 class PanoramaStitcher
 {
 public:
-    PanoramaStitcher(const BaseImageContainer& images, const BaseFeatureContainer& fts,
-        const matches::PairwiseMatches& matches, const matches::PairwiseTrafos& trafos,
-        const std::vector<size_t>& keyFrames, GeometricType type, Blending blend,
-        const cv::Mat& camMat = cv::Mat(), const cv::Mat& distCoeffs = cv::Mat());
+    PanoramaStitcher(const BaseImageContainer& images, const std::vector<size_t>& keyFrames,
+        GeometricType type, const cv::Mat& camMat = cv::Mat(),
+        const cv::Mat& distCoeffs = cv::Mat());
 
-    void initTrafos();
-    void initTrafosFromMultipleVideos(const std::vector<std::size_t> sizes,
-        const std::vector<std::vector<cv::Mat>>& localOptimalTrafos,
-        const std::unordered_map<std::pair<std::size_t, std::size_t>,
-            std::pair<std::size_t, std::size_t>>& optimalTransitions);
-    void initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
-        const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes);
-    std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool drawCenters = false);
+    void initTrafos(const matches::PairwiseTrafos& trafos);
+    /* void initTrafosFromMultipleVideos(const std::vector<std::size_t> sizes, */
+    /*     const std::vector<std::vector<cv::Mat>>& localOptimalTrafos, */
+    /*     const std::unordered_map<std::pair<std::size_t, std::size_t>, */
+    /*         std::pair<std::size_t, std::size_t>>& optimalTransitions); */
+    /* void initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo, */
+    /*     const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes); */
+    std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(
+        cv::Size targetSize, bool blend = false, bool drawCenters = false);
 
-    void globalOptimizeKeyFrames(std::size_t limitTo = 0);
-    void refineNonKeyFrames(const matches::PairwiseMatches& matches, std::size_t limitTo = 0);
+    void globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
+        const matches::PairwiseMatches& matches, std::size_t limitTo = 0);
+    void refineNonKeyFrames(const BaseFeatureContainer& fts,
+        const matches::PairwiseMatches& matches, std::size_t limitTo = 0);
     void reintegrate();
 
     static std::vector<cv::Mat> loadTrafos(const std::filesystem::path& file);
@@ -68,12 +64,12 @@ private:
         const std::vector<cv::KeyPoint>& ftsI, const std::vector<cv::KeyPoint>& ftsJ);
     std::vector<cv::KeyPoint> permute(
         const std::vector<cv::KeyPoint>& fts, const std::vector<std::size_t>& p);
-    void globalOptimizeHelper(
+    void globalOptimizeHelper(const BaseFeatureContainer& fts,
         const matches::PairwiseMatches& matches, FramesMode keyFramesMode, std::size_t limitTo);
     cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
         const cv::Mat& trafo, cv::Rect2d currRect = cv::Rect2d()) const;
-    cv::Mat draw(const cv::Mat& trafo, std::size_t idI, std::size_t idJ);
+    /* cv::Mat draw(const cv::Mat& trafo, std::size_t idI, std::size_t idJ); */
 
     void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, const cv::Point2f& ptJ,
         cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
@@ -87,7 +83,8 @@ private:
         const std::vector<double>& camParams, const std::vector<double>& distParams);
 
     std::pair<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>> getCorrespondingPoints(
-        std::pair<std::size_t, std::size_t> pair, const matches::Matches& matches);
+        std::pair<std::size_t, std::size_t> pair, const matches::Matches& matches,
+        const BaseFeatureContainer& fts);
     cv::Point getCenter(const cv::Mat& trafo);
 
     cv::Mat transformBoundingRect(const cv::Mat& trafo) const;
@@ -97,13 +94,9 @@ private:
 
 private:
     const BaseImageContainer& mImages;
-    const BaseFeatureContainer& mFts;
-    matches::PairwiseMatches mMatches;
-    matches::PairwiseTrafos mTrafos;
     std::vector<std::size_t> mKeyFrames;
     std::unordered_set<std::size_t> mKeyFramesSet;
     GeometricType mType;
-    bool mBlend;
 
     cv::Mat mCamMat;
     cv::Mat mCamMatInv;

@@ -30,17 +30,12 @@ using namespace ht::io;
 namespace ht
 {
 PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
-    const BaseFeatureContainer& fts, const PairwiseMatches& matches,
-    const PairwiseTrafos& trafos, const std::vector<size_t>& keyFrames, GeometricType type,
-    Blending blend, const cv::Mat& camMat, const cv::Mat& distCoeffs)
+    const std::vector<size_t>& keyFrames, GeometricType type, const cv::Mat& camMat,
+    const cv::Mat& distCoeffs)
     : mImages(images)
-    , mFts(fts)
-    , mMatches(matches)
-    , mTrafos(trafos)
     , mKeyFrames(keyFrames)
     , mKeyFramesSet(std::begin(keyFrames), std::end(keyFrames))
     , mType(type)
-    , mBlend(blend == Blending::Blend ? true : false)
     , mCamMat(camMat)
     , mCamMatInv()
     , mDistCoeffs(distCoeffs)
@@ -61,9 +56,8 @@ PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
     cv::invert(mCamMat, mCamMatInv);
 }
 
-
 // TODO: better init with num-fts-weighted loop graph
-void PanoramaStitcher::initTrafos()
+void PanoramaStitcher::initTrafos(const PairwiseTrafos& trafos)
 {
     for (std::size_t i = 0; i < mKeyFrames.size(); i++)
         mOptimizedTrafos[mKeyFrames[i]] = getIdentity(true);
@@ -74,7 +68,7 @@ void PanoramaStitcher::initTrafos()
         auto currId = mKeyFrames[i];
 
         // get trafo to previous image
-        auto trafo = mTrafos.at(std::make_pair(prevId, currId));
+        auto trafo = trafos.at(std::make_pair(prevId, currId));
 
         // chain transforamtion with previous to get trafo relative to first frame
         trafo = invert(trafo, mType, true);
@@ -83,67 +77,67 @@ void PanoramaStitcher::initTrafos()
     }
 }
 
-void PanoramaStitcher::initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
-    const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes)
-{
-    Translator translator(sizes);
-    auto lower = translator.localToGlobal(std::make_pair(currBlock, static_cast<std::size_t>(0)));
-    auto upper = lower + sizes[currBlock];
-    for (std::size_t i = lower; i < upper; i++)
-    {
-        if (isKeyFrame(i))
-            mOptimizedTrafos[i] = currTrafo * localOptimalTrafos[i - lower];
-    }
-}
+/* void PanoramaStitcher::initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo, */
+/*     const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes) */
+/* { */
+/*     Translator translator(sizes); */
+/*     auto lower = translator.localToGlobal(std::make_pair(currBlock, static_cast<std::size_t>(0))); */
+/*     auto upper = lower + sizes[currBlock]; */
+/*     for (std::size_t i = lower; i < upper; i++) */
+/*     { */
+/*         if (isKeyFrame(i)) */
+/*             mOptimizedTrafos[i] = currTrafo * localOptimalTrafos[i - lower]; */
+/*     } */
+/* } */
 
-void PanoramaStitcher::initTrafosFromMultipleVideos(const std::vector<std::size_t> sizes,
-    const std::vector<std::vector<cv::Mat>>& localOptimalTrafos,
-    const std::unordered_map<std::pair<std::size_t, std::size_t>,
-        std::pair<std::size_t, std::size_t>>& optimalTransitions)
-{
-    std::queue<std::pair<std::size_t, cv::Mat>> queue;
-    queue.push(std::make_pair(0, getIdentity(true)));
+/* void PanoramaStitcher::initTrafosFromMultipleVideos(const std::vector<std::size_t> sizes, */
+/*     const std::vector<std::vector<cv::Mat>>& localOptimalTrafos, */
+/*     const std::unordered_map<std::pair<std::size_t, std::size_t>, */
+/*         std::pair<std::size_t, std::size_t>>& optimalTransitions) */
+/* { */
+/*     std::queue<std::pair<std::size_t, cv::Mat>> queue; */
+/*     queue.push(std::make_pair(0, getIdentity(true))); */
 
-    std::unordered_set<std::size_t> marked;
-    Translator translator(sizes);
-    while (!queue.empty())
-    {
-        // find all descendants of current node
-        auto [currBlock, currTrafo] = queue.front();
-        initTrafosMultipleHelper(currBlock, currTrafo, localOptimalTrafos[currBlock], sizes);
-        queue.pop();
-        marked.insert(currBlock);
-        for (const auto& [transBlock, transFrame] : optimalTransitions)
-        {
-            if (transBlock.first == currBlock && !marked.count(transBlock.second))
-            {
-                cv::Mat pairTrans = invert(mTrafos.at(transFrame), mType, true);
+/*     std::unordered_set<std::size_t> marked; */
+/*     Translator translator(sizes); */
+/*     while (!queue.empty()) */
+/*     { */
+/*         // find all descendants of current node */
+/*         auto [currBlock, currTrafo] = queue.front(); */
+/*         initTrafosMultipleHelper(currBlock, currTrafo, localOptimalTrafos[currBlock], sizes); */
+/*         queue.pop(); */
+/*         marked.insert(currBlock); */
+/*         for (const auto& [transBlock, transFrame] : optimalTransitions) */
+/*         { */
+/*             if (transBlock.first == currBlock && !marked.count(transBlock.second)) */
+/*             { */
+/*                 cv::Mat pairTrans = invert(mTrafos.at(transFrame), mType, true); */
 
-                auto localId = translator.globalToLocal(transFrame.second).second;
-                cv::Mat preMult = localOptimalTrafos[transBlock.second][localId];
-                cv::Mat postMult = mOptimizedTrafos[transFrame.first];
+/*                 auto localId = translator.globalToLocal(transFrame.second).second; */
+/*                 cv::Mat preMult = localOptimalTrafos[transBlock.second][localId]; */
+/*                 cv::Mat postMult = mOptimizedTrafos[transFrame.first]; */
 
-                cv::Mat invertPreMult;
-                cv::invert(preMult, invertPreMult);
-                cv::Mat newTrans = pairTrans * postMult * invertPreMult;
-                queue.push(std::make_pair(transBlock.second, newTrans));
-            }
-            else if (transBlock.second == currBlock && !marked.count(transBlock.first))
-            {
-                cv::Mat pairTrans = makeFull(mTrafos.at(transFrame));
+/*                 cv::Mat invertPreMult; */
+/*                 cv::invert(preMult, invertPreMult); */
+/*                 cv::Mat newTrans = pairTrans * postMult * invertPreMult; */
+/*                 queue.push(std::make_pair(transBlock.second, newTrans)); */
+/*             } */
+/*             else if (transBlock.second == currBlock && !marked.count(transBlock.first)) */
+/*             { */
+/*                 cv::Mat pairTrans = makeFull(mTrafos.at(transFrame)); */
 
-                auto localId = translator.globalToLocal(transFrame.first).second;
-                cv::Mat preMult = localOptimalTrafos[transBlock.first][localId];
-                cv::Mat postMult = mOptimizedTrafos[transFrame.second];
+/*                 auto localId = translator.globalToLocal(transFrame.first).second; */
+/*                 cv::Mat preMult = localOptimalTrafos[transBlock.first][localId]; */
+/*                 cv::Mat postMult = mOptimizedTrafos[transFrame.second]; */
 
-                cv::Mat invertPreMult;
-                cv::invert(preMult, invertPreMult);
-                cv::Mat newTrans = pairTrans * postMult * invertPreMult;
-                queue.push(std::make_pair(transBlock.first, newTrans));
-            }
-        }
-    }
-}
+/*                 cv::Mat invertPreMult; */
+/*                 cv::invert(preMult, invertPreMult); */
+/*                 cv::Mat newTrans = pairTrans * postMult * invertPreMult; */
+/*                 queue.push(std::make_pair(transBlock.first, newTrans)); */
+/*             } */
+/*         } */
+/*     } */
+/* } */
 
 cv::Mat PanoramaStitcher::transformBoundingRect(const cv::Mat& trafo) const
 {
@@ -187,7 +181,7 @@ void PanoramaStitcher::highlightImg(cv::Mat& img)
 }
 
 std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
-    cv::Size targetSize, bool drawCenters)
+    cv::Size targetSize, bool blend, bool drawCenters)
 {
     auto rect = generateBoundingRect();
     rect.width = rect.width - rect.x;
@@ -217,8 +211,6 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
         auto currId = mKeyFrames[i];
         cv::Mat currImg = mImages.at(mKeyFrames[i]);
 
-        /* if (currId == 0 || currId == 7589) */
-        /*     highlightImg(currImg); */
         cv::Mat mask(currImg.size(), CV_8UC1, cv::Scalar(255));
 
         cv::Mat undistImg;
@@ -248,7 +240,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
         }
         // DEBUG
 
-        if (mBlend)
+        if (blend)
             blender.feed(warped, warpedMask, cv::Point(0, 0));
         else
         {
@@ -267,7 +259,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     }
 
     cv::Mat pano;
-    if (mBlend)
+    if (blend)
     {
         cv::Mat res, resMask;
         blender.blend(res, resMask);
@@ -301,12 +293,14 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     return std::make_tuple(pano, scaleMat, transMat);
 }
 
-void PanoramaStitcher::globalOptimizeKeyFrames(std::size_t limitTo)
+void PanoramaStitcher::globalOptimizeKeyFrames(
+    const BaseFeatureContainer& fts, const matches::PairwiseMatches& matches, std::size_t limitTo)
 {
-    globalOptimizeHelper(mMatches, FramesMode::KeyFramesOnly, limitTo);
+    globalOptimizeHelper(fts, matches, FramesMode::KeyFramesOnly, limitTo);
 }
 
-void PanoramaStitcher::refineNonKeyFrames(const PairwiseMatches& matches, std::size_t limitTo)
+void PanoramaStitcher::refineNonKeyFrames(
+    const BaseFeatureContainer& fts, const PairwiseMatches& matches, std::size_t limitTo)
 {
     auto pairs = getKeyList(matches);
 
@@ -328,7 +322,7 @@ void PanoramaStitcher::refineNonKeyFrames(const PairwiseMatches& matches, std::s
         }
 
         if (!currMatches.empty())
-            globalOptimizeHelper(currMatches, FramesMode::AllFrames, limitTo);
+            globalOptimizeHelper(fts, currMatches, FramesMode::AllFrames, limitTo);
     }
 }
 
@@ -353,7 +347,7 @@ std::vector<cv::KeyPoint> PanoramaStitcher::permute(
     return sorted;
 }
 
-void PanoramaStitcher::globalOptimizeHelper(
+void PanoramaStitcher::globalOptimizeHelper(const BaseFeatureContainer& fts,
     const PairwiseMatches& matches, FramesMode framesMode, std::size_t limitTo)
 {
     auto camParams = getCamParameterization();
@@ -364,8 +358,7 @@ void PanoramaStitcher::globalOptimizeHelper(
     std::vector<std::vector<double>> params;
     if (mType == GeometricType::Isometry)
     {
-        params = std::vector<std::vector<double>>(
-            mImages.size(), std::vector<double>(3, -11));
+        params = std::vector<std::vector<double>>(mImages.size(), std::vector<double>(3, -11));
     }
 
     ceres::Problem problem;
@@ -383,13 +376,7 @@ void PanoramaStitcher::globalOptimizeHelper(
         cv::Mat* trafoI = &mOptimizedTrafos[idI];
         cv::Mat* trafoJ = &mOptimizedTrafos[idJ];
 
-        /* if (framesMode == FramesMode::KeyFramesOnly && (!isKeyFrame(idI) || !isKeyFrame(idJ))) */
-        /* { */
-        /*     ++bar; */
-        /*     continue; */
-        /* } */
-
-        auto [ftsI, ftsJ] = getCorrespondingPoints(pair, match);
+        auto [ftsI, ftsJ] = getCorrespondingPoints(pair, match, fts);
 
         auto numFunctors = ftsI.size();
         if (limitTo)
@@ -399,10 +386,9 @@ void PanoramaStitcher::globalOptimizeHelper(
             ftsJ = permute(ftsJ, p);
             numFunctors = std::min(limitTo, numFunctors);
         }
+
         for (size_t k = 0; k < numFunctors; k++)
         {
-            /* if (limitTo) */
-            /*     std::cout << ftsI[k].response * ftsJ[k].response << std::endl; */
             addFunctor(problem, ftsI[k].pt, ftsJ[k].pt, trafoI, trafoJ, camParams.data(),
                 distParams.data(), &params[idI], &params[idJ], ftsI[k].response * ftsJ[k].response);
         }
@@ -457,16 +443,16 @@ void PanoramaStitcher::reintegrate()
 }
 
 std::pair<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>>
-PanoramaStitcher::getCorrespondingPoints(
-    std::pair<std::size_t, std::size_t> pair, const Matches& matches)
+PanoramaStitcher::getCorrespondingPoints(std::pair<std::size_t, std::size_t> pair,
+    const Matches& matches, const BaseFeatureContainer& fts)
 {
     std::vector<cv::KeyPoint> src, dst;
     src.reserve(matches.size());
     dst.reserve(matches.size());
     for (const auto& match : matches)
     {
-        src.push_back(mFts.featureAt(pair.first)[match.queryIdx]);
-        dst.push_back(mFts.featureAt(pair.second)[match.trainIdx]);
+        src.push_back(fts.featureAt(pair.first)[match.queryIdx]);
+        dst.push_back(fts.featureAt(pair.second)[match.trainIdx]);
     }
 
     return std::make_pair(src, dst);
@@ -703,35 +689,35 @@ void PanoramaStitcher::repairIntriniscs(
     mDistCoeffs.at<double>(4, 0) = invertedDistParams[4];
 }
 
-cv::Mat PanoramaStitcher::draw(const cv::Mat& trafo, size_t idI, size_t idJ)
-{
-    auto pair = std::make_pair(idI, idJ);
-    auto imgJ = mImages.at(idJ);
-    auto matches = mMatches[pair];
-    auto [ftsI, ftsJ] = getCorrespondingPoints(pair, matches);
+/* cv::Mat PanoramaStitcher::draw(const cv::Mat& trafo, size_t idI, size_t idJ) */
+/* { */
+/*     auto pair = std::make_pair(idI, idJ); */
+/*     auto imgJ = mImages.at(idJ); */
+/*     auto matches = mMatches[pair]; */
+/*     auto [ftsI, ftsJ] = getCorrespondingPoints(pair, matches); */
 
-    std::vector<cv::Point2f> ptsI, ptsITrans;
-    ptsI.reserve(ftsI.size());
-    for (const auto& kp : ftsI)
-        ptsI.push_back(kp.pt);
+/*     std::vector<cv::Point2f> ptsI, ptsITrans; */
+/*     ptsI.reserve(ftsI.size()); */
+/*     for (const auto& kp : ftsI) */
+/*         ptsI.push_back(kp.pt); */
 
-    cv::perspectiveTransform(ptsI, ptsITrans, trafo);
+/*     cv::perspectiveTransform(ptsI, ptsITrans, trafo); */
 
-    for (size_t i = 0; i < ptsI.size(); i++)
-    {
-        cv::drawMarker(imgJ, ftsJ[i].pt, cv::Scalar(0, 255, 0));
-        cv::drawMarker(imgJ, ptsITrans[i], cv::Scalar(0, 0, 255));
-        cv::line(imgJ, ftsJ[i].pt, ptsITrans[i], cv::Scalar(0, 255, 255));
-    }
+/*     for (size_t i = 0; i < ptsI.size(); i++) */
+/*     { */
+/*         cv::drawMarker(imgJ, ftsJ[i].pt, cv::Scalar(0, 255, 0)); */
+/*         cv::drawMarker(imgJ, ptsITrans[i], cv::Scalar(0, 0, 255)); */
+/*         cv::line(imgJ, ftsJ[i].pt, ptsITrans[i], cv::Scalar(0, 255, 255)); */
+/*     } */
 
-    cv::putText(imgJ, std::to_string(idI) + " to " + std::to_string(idJ), cv::Point(200, 200),
-        cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0));
+/*     cv::putText(imgJ, std::to_string(idI) + " to " + std::to_string(idJ), cv::Point(200, 200), */
+/*         cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0)); */
 
-    cv::imshow("bla", imgJ);
-    while (cv::waitKey(0) != 27) { }
+/*     cv::imshow("bla", imgJ); */
+/*     while (cv::waitKey(0) != 27) { } */
 
-    return imgJ;
-}
+/*     return imgJ; */
+/* } */
 
 std::vector<cv::Mat> PanoramaStitcher::loadTrafos(const fs::path& file)
 {

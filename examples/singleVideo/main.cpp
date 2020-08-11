@@ -141,13 +141,13 @@ int main(int argc, char** argv)
 
     // do pano stitching for some wanted type
     auto geomPano = GeometricType::Similarity;
-    auto stitcher = PanoramaStitcher(images, featuresDense,
-            matches::getMatches(kfInterPath, geomPano),
-            matches::getTrafos(kfInterPath, geomPano), keyFrames,
-            GeometricType::Similarity, Blending::NoBlend);
+    auto stitcher
+        = PanoramaStitcher(images, keyFrames, geomPano);
+        /* = PanoramaStitcher(images, featuresDense, matches::getMatches(kfInterPath, geomPano), */
+        /*     matches::getTrafos(kfInterPath, geomPano), keyFrames, geomPano, Blending::NoBlend); */
 
     // init trafos of keyframes by concatenating them
-    stitcher.initTrafos();
+    stitcher.initTrafos(matches::getTrafos(kfInterPath, geomPano));
     if (showResults)
     {
         auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
@@ -159,7 +159,7 @@ int main(int argc, char** argv)
         return 0;
 
     // globally optimized these keyframe tranformations and write them for later IVLC
-    stitcher.globalOptimizeKeyFrames();
+    stitcher.globalOptimizeKeyFrames(featuresDense, matches::getMatches(kfInterPath, geomPano));
     stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
     if (showResults)
     {
@@ -175,25 +175,25 @@ int main(int argc, char** argv)
     stitcher.reintegrate();
     if (showResults)
     {
-        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), true));
+        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), false, true));
         cv::imwrite((basePath / "pano2.png").string(), pano);
         /* drawImg(pano); */
     }
     stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
 
-    /* if (stage < 6) */
-    /*     return 0; */
+    if (stage < 6)
+        return 0;
 
-    /* // refine all keyframes */
-    /* stitcher.refineNonKeyFrames(matches::getMatches(kfIntraPath, geomPano), 50); */
-    /* stitcher.writeTrafos(basePath / "opt_trafos.bin"); */
-    /* if (showResults) */
-    /* { */
-    /*     auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), true)); */
-    /*     cv::imwrite((basePath / "pano3.png").string(), pano); */
-    /*     /1* drawImg(pano); *1/ */
-    /* } */
+    // refine all keyframes
+    stitcher.refineNonKeyFrames(features, matches::getMatches(kfIntraPath, geomPano), 50);
+    stitcher.writeTrafos(basePath / "opt_trafos.bin");
+    if (showResults)
+    {
+        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), false, true));
+        cv::imwrite((basePath / "pano3.png").string(), pano);
+        /* drawImg(pano); */
+    }
 
-    /* stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable); */
-    /* return 0; */
+    stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
+    return 0;
 }
