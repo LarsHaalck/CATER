@@ -13,7 +13,6 @@ ImageAggregator::ImageAggregator(
         return (c.get().getImgSize() == size);
     }) && "Image sizes of containers in ImageAggregator do not match");
 
-
     auto [total, sizeVec] = sumNumImgs();
     mNumImgs = total;
     mNumImgsVec = std::move(sizeVec);

@@ -97,11 +97,9 @@ cv::Point rotatePointAroundPoint(cv::Point center_point, double angle)
     double radian_angle = angle - 180;
     radian_angle *= CV_PI / 180; // 3)
 
-    double new_x = center_point.x
-        + (rotation_point.x - center_point.x) * cos(radian_angle)
+    double new_x = center_point.x + (rotation_point.x - center_point.x) * cos(radian_angle)
         - (rotation_point.y - center_point.y) * sin(radian_angle);
-    double new_y = center_point.y
-        + (rotation_point.x - center_point.x) * sin(radian_angle)
+    double new_y = center_point.y + (rotation_point.x - center_point.x) * sin(radian_angle)
         + (rotation_point.y - center_point.y) * cos(radian_angle);
 
     return cv::Point(static_cast<int>(new_x), static_cast<int>(new_y));

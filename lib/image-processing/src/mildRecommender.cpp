@@ -1,11 +1,10 @@
 #include "image-processing/mildRecommender.h"
 
 /* #include "image-processing/featureAggregator.h" */
-#include "image-processing/matches.h"
 #include "MILD/BayesianFilter.hpp"
 #include "MILD/loop_closure_detector.h"
+#include "image-processing/matches.h"
 #include <spdlog/spdlog.h>
-
 
 namespace ht
 {
@@ -111,7 +110,7 @@ void MildRecommender::dilatePairList(
                     auto pairShift = std::make_pair(iShift, jShift);
                     // check boundary conditions and if the key already exists, otherwise insert
                     if (iShift < size && jShift < size && jShift > iShift + window
-                            && !list.count(pairShift))
+                        && !list.count(pairShift))
                     {
                         list.insert(std::make_pair(pairShift, 1.0));
                     }

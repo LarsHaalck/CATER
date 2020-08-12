@@ -139,20 +139,14 @@ PairwiseMatches getMatches(const fs::path& matchDir, GeometricType geomType)
     return detail::loadMatches(matchDir, geomType);
 }
 
-PairwiseMatches getMatches(const fs::path& matchFile)
-{
-    return detail::loadMatches(matchFile);
-}
+PairwiseMatches getMatches(const fs::path& matchFile) { return detail::loadMatches(matchFile); }
 
 PairwiseTrafos getTrafos(const fs::path& matchDir, GeometricType geomType)
 {
     return detail::loadTrafos(matchDir, geomType);
 }
 
-PairwiseTrafos getTrafos(const fs::path& trafoFile)
-{
-    return detail::loadTrafos(trafoFile);
-}
+PairwiseTrafos getTrafos(const fs::path& trafoFile) { return detail::loadTrafos(trafoFile); }
 
 namespace detail
 {

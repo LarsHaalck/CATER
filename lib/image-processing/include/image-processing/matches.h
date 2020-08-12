@@ -92,10 +92,9 @@ namespace detail
         const BaseFeatureContainer& fts, GeometricType geomType, double minCoverage, int area,
         std::size_t cacheSize, PairwiseMatches&& matches, std::shared_ptr<BaseProgressBar> cb);
 
-        // helper function for different pair types
-        std::vector<std::pair<std::size_t, std::size_t>> getPairList(MatchType type,
-            std::size_t size, std::size_t window, std::unique_ptr<PairRecommender> recommender,
-            const size_t_vec& ids);
+    // helper function for different pair types
+    std::vector<std::pair<std::size_t, std::size_t>> getPairList(MatchType type, std::size_t size,
+        std::size_t window, std::unique_ptr<PairRecommender> recommender, const size_t_vec& ids);
     std::vector<std::pair<std::size_t, std::size_t>> getWindowPairList(
         std::size_t size, std::size_t window, const size_t_vec& ids);
     std::vector<std::pair<std::size_t, std::size_t>> getExhaustivePairList(

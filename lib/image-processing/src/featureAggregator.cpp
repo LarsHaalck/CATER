@@ -2,8 +2,7 @@
 
 namespace ht
 {
-FeatureAggregator::FeatureAggregator(
-    const std::vector<const Features&>& ftContainers)
+FeatureAggregator::FeatureAggregator(const std::vector<const Features&>& ftContainers)
     : mFtContainers(ftContainers)
     , mNumImgs()
     , mNumImgsVec()
@@ -68,15 +67,13 @@ cv::Mat FeatureAggregator::descriptorAt(std::size_t idx) const
     return cv::Mat();
 }
 
-FeatureCache FeatureAggregator::getFeatureCache(
-    std::size_t maxChunkSize, const size_t_vec& ids)
+FeatureCache FeatureAggregator::getFeatureCache(std::size_t maxChunkSize, const size_t_vec& ids)
 {
     auto numElems = size();
     return FeatureCache(*this, numElems, maxChunkSize, ids);
 }
 
-DescriptorCache FeatureAggregator::getDescriptorCache(
-    std::size_t maxChunkSize, const ImgIds& ids)
+DescriptorCache FeatureAggregator::getDescriptorCache(std::size_t maxChunkSize, const ImgIds& ids)
 {
     auto numElems = size();
     return DescriptorCache(*this, numElems, maxChunkSize, ids);
