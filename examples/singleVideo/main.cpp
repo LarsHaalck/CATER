@@ -6,16 +6,15 @@
 
 #include "image-processing/features.h"
 #include "image-processing/images.h"
-#include "image-processing/mildRecommender.h"
 #include "image-processing/matches.h"
-#include "panorama/keyFrames.h"
+#include "image-processing/mildRecommender.h"
 #include "panorama/keyFrameRecommender.h"
+#include "panorama/keyFrames.h"
 #include "panorama/panoramaStitcher.h"
 
 #include "cxxopts.hpp"
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
-
 
 void drawImg(const cv::Mat& img)
 {
@@ -42,6 +41,8 @@ int main(int argc, char** argv)
     int cols = 2 * 1920;
     int rows = 2 * 1080;
 
+    int numFts = 500;
+
     double minCoverage = 0.0;
 
     /* auto geomType = GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity */
@@ -52,7 +53,7 @@ int main(int argc, char** argv)
     options.add_options()("i,in", "base path containing imgs dir", cxxopts::value(basePath))(
         "v", "show results", cxxopts::value(showResults))("c", "cache", cxxopts::value(cacheSize))(
         "f", "force", cxxopts::value(force))("k, cols", "cols", cxxopts::value(cols))(
-        "l, rows", "rows", cxxopts::value(rows))(
+        "l, rows", "rows", cxxopts::value(rows))("n,num_fts", "num", cxxopts::value(numFts))(
         "m, min_coverage", "min coverage", cxxopts::value(minCoverage))("s,stage",
         "0: fts, 1: kfs: 2: matches, 3: init, 4: global, 5: reint; 6: global",
         cxxopts::value(stage));
@@ -70,6 +71,7 @@ int main(int argc, char** argv)
     std::cout << "c: " << cacheSize << std::endl;
     std::cout << "k: " << cols << std::endl;
     std::cout << "k: " << rows << std::endl;
+    std::cout << "n: " << numFts << std::endl;
     std::cout << "m: " << minCoverage << std::endl;
     std::cout << "s: " << stage << std::endl;
 
@@ -83,7 +85,7 @@ int main(int argc, char** argv)
     if (Features::isComputed(images, ftPath, ftType) && !force)
         features = Features::fromDir(images, ftPath, ftType);
     else
-        features = Features::compute(images, ftPath, ftType, 500, cacheSize);
+        features = Features::compute(images, ftPath, ftType, numFts, cacheSize);
 
     if (stage < 1)
         return 0;
@@ -116,14 +118,14 @@ int main(int argc, char** argv)
     if (Features::isComputed(images, kfInterFtPath, ftType, keyFrames) && !force)
         featuresDense = Features::fromDir(images, kfInterFtPath, ftType, keyFrames);
     else
-        featuresDense = Features::compute(images, kfInterFtPath, ftType, 2000, cacheSize, keyFrames);
+        featuresDense
+            = Features::compute(images, kfInterFtPath, ftType, 4 * numFts, cacheSize, keyFrames);
 
     auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
     if (!matches::isComputed(kfInterPath, geomType) || force)
     {
-        matches::compute(kfInterPath, geomType, featuresDense,
-                matches::MatchType::Strategy, 3, 0.0,
-                std::move(mildRecommender), cacheSize, keyFrames);
+        matches::compute(kfInterPath, geomType, featuresDense, matches::MatchType::Strategy, 3, 0.0,
+            std::move(mildRecommender), cacheSize, keyFrames);
     }
 
     // panoramas can only be calculated from theses Types
@@ -138,10 +140,9 @@ int main(int argc, char** argv)
 
     // do pano stitching for some wanted type
     auto geomPano = GeometricType::Similarity;
-    auto stitcher
-        = PanoramaStitcher(images, keyFrames, geomPano);
-        /* = PanoramaStitcher(images, featuresDense, matches::getMatches(kfInterPath, geomPano), */
-        /*     matches::getTrafos(kfInterPath, geomPano), keyFrames, geomPano, Blending::NoBlend); */
+    auto stitcher = PanoramaStitcher(images, keyFrames, geomPano);
+    /* = PanoramaStitcher(images, featuresDense, matches::getMatches(kfInterPath, geomPano), */
+    /*     matches::getTrafos(kfInterPath, geomPano), keyFrames, geomPano, Blending::NoBlend); */
 
     // init trafos of keyframes by concatenating them
     stitcher.initTrafos(matches::getTrafos(kfInterPath, geomPano));
