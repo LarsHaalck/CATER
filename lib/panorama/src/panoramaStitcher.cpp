@@ -342,8 +342,8 @@ void PanoramaStitcher::refineNonKeyFrames(
             boundedMatches.push_back(std::move(currMatches));
     }
 
-    // optimization problems might have very different sizes so use dynamic scheduling
-    #pragma omp parallel for schedule(dynamic)
+// optimization problems might have very different sizes so use dynamic scheduling
+#pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < boundedMatches.size(); i++)
         globalOptimize(fts, boundedMatches[i], FramesMode::AllFrames, limitTo, false);
 
@@ -379,7 +379,6 @@ void PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     // invert params to use the model as an undistortion model instead of an distortion model
     distParams = invertDistParameterization(distParams);
 
-
     ceres::Problem problem;
     ceres::Solver::Options options;
     options.max_num_iterations = 500;
@@ -389,7 +388,6 @@ void PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         options.num_threads = 16;
     else
         options.num_threads = 1;
-
 
     /* std::cout << "Building Optimization Problem..." << std::endl; */
     // TODO: progress with size matches.size()
@@ -582,7 +580,7 @@ void PanoramaStitcher::reconstructTrafos(FramesMode framesMode)
         for (std::size_t i = 0; i < mImages.size(); i++)
         {
             if ((framesMode == FramesMode::AllFrames && !isKeyFrame(i))
-                    || (framesMode == FramesMode::KeyFramesOnly && isKeyFrame(i)))
+                || (framesMode == FramesMode::KeyFramesOnly && isKeyFrame(i)))
             {
                 mOptimizedTrafos[i].at<double>(0, 0) = std::cos(params[i][0]);
                 mOptimizedTrafos[i].at<double>(0, 1) = std::sin(params[i][0]);

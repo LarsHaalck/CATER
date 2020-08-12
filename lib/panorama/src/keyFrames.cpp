@@ -28,10 +28,7 @@ namespace ht::KeyFrames
 /*         mIsComputed = false; */
 /* } */
 
-bool isComputed(const std::filesystem::path& file)
-{
-    return fs::is_regular_file(file);
-}
+bool isComputed(const std::filesystem::path& file) { return fs::is_regular_file(file); }
 
 std::vector<std::size_t> fromDir(const std::filesystem::path& file)
 {
@@ -71,7 +68,7 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
         {
             std::vector<std::pair<float, std::size_t>> currDistOverlapVec(omp_get_max_threads());
 
-            #pragma omp parallel
+#pragma omp parallel
             {
                 std::size_t currThread = omp_get_thread_num();
                 std::size_t nextView = currView + 1 + (k + currThread);
@@ -140,131 +137,133 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
 
 namespace detail
 {
-std::pair<float, float> getRealLowHigh(cv::Size imgSize, float low, float high)
-{
-    // get image sizes (in this setup all images have the same width and height
-    auto width = imgSize.width;
-    auto height = imgSize.height;
-    std::size_t minWH = std::min(width, height);
-    float realLow = (low * minWH) * (low * minWH);
-    float realHigh;
-    if (high > 0)
-        realHigh = (high * minWH) * (high * minWH);
-    else // choose greatest possible value
-        realHigh = (width * width) + (height * height);
-
-    return std::make_pair(realLow, realHigh);
-}
-
-std::pair<float, std::size_t> getMedianDistanceShift(
-    std::size_t idI, std::size_t idJ, const BaseFeatureContainer& fts, GeometricType type)
-{
-    auto ftsI = fts.featureAt(idI);
-    auto ftsJ = fts.featureAt(idJ);
-    auto [trafos, matches] = matches::computePair(type, fts, idI, idJ);
-
-    // skip putative matches and empty trafo
-    auto trafo = trafos[1];
-    auto geomMatches = matches[1];
-
-    std::vector<float> distances;
-    std::vector<cv::Point2f> srcFiltered, dstFiltered;
-    for (std::size_t i = 0; i < geomMatches.size(); i++)
+    std::pair<float, float> getRealLowHigh(cv::Size imgSize, float low, float high)
     {
-        auto ptI = ftsI[geomMatches[i].queryIdx].pt;
-        auto ptJ = ftsJ[geomMatches[i].trainIdx].pt;
+        // get image sizes (in this setup all images have the same width and height
+        auto width = imgSize.width;
+        auto height = imgSize.height;
+        std::size_t minWH = std::min(width, height);
+        float realLow = (low * minWH) * (low * minWH);
+        float realHigh;
+        if (high > 0)
+            realHigh = (high * minWH) * (high * minWH);
+        else // choose greatest possible value
+            realHigh = (width * width) + (height * height);
 
-        distances.push_back(l2Dist(ptI, ptJ));
-        srcFiltered.push_back(ptI);
-        dstFiltered.push_back(ptJ);
+        return std::make_pair(realLow, realHigh);
     }
 
-    /* double reprojError = calcReprojError(srcFiltered, dstFiltered, trafo); */
-    if (srcFiltered.size() < 10)
-        return std::make_pair(0.0f, 0);
-
-    return std::make_pair(getMedian(distances), distances.size());
-}
-
-double calcReprojError(const std::vector<cv::Point2f>& ptsSrc,
-    std::vector<cv::Point2f>& ptsDst, const cv::Mat& trafo)
-{
-    cv::Mat transTrafo;
-    if (trafo.rows == 2)
+    std::pair<float, std::size_t> getMedianDistanceShift(
+        std::size_t idI, std::size_t idJ, const BaseFeatureContainer& fts, GeometricType type)
     {
-        transTrafo = cv::Mat::eye(3, 3, CV_32F);
-        trafo.copyTo(transTrafo.rowRange(0, 2));
+        auto ftsI = fts.featureAt(idI);
+        auto ftsJ = fts.featureAt(idJ);
+        auto [trafos, matches] = matches::computePair(type, fts, idI, idJ);
+
+        // skip putative matches and empty trafo
+        auto trafo = trafos[1];
+        auto geomMatches = matches[1];
+
+        std::vector<float> distances;
+        std::vector<cv::Point2f> srcFiltered, dstFiltered;
+        for (std::size_t i = 0; i < geomMatches.size(); i++)
+        {
+            auto ptI = ftsI[geomMatches[i].queryIdx].pt;
+            auto ptJ = ftsJ[geomMatches[i].trainIdx].pt;
+
+            distances.push_back(l2Dist(ptI, ptJ));
+            srcFiltered.push_back(ptI);
+            dstFiltered.push_back(ptJ);
+        }
+
+        /* double reprojError = calcReprojError(srcFiltered, dstFiltered, trafo); */
+        if (srcFiltered.size() < 10)
+            return std::make_pair(0.0f, 0);
+
+        return std::make_pair(getMedian(distances), distances.size());
     }
-    else
-        transTrafo = trafo;
 
-    std::vector<cv::Point2f> transSrc;
-    cv::perspectiveTransform(ptsSrc, transSrc, transTrafo);
+    double calcReprojError(const std::vector<cv::Point2f>& ptsSrc, std::vector<cv::Point2f>& ptsDst,
+        const cv::Mat& trafo)
+    {
+        cv::Mat transTrafo;
+        if (trafo.rows == 2)
+        {
+            transTrafo = cv::Mat::eye(3, 3, CV_32F);
+            trafo.copyTo(transTrafo.rowRange(0, 2));
+        }
+        else
+            transTrafo = trafo;
 
-    double error = 0;
-    for (std::size_t i = 0; i < ptsSrc.size(); i++)
-        error = l2Dist(transSrc[i], ptsDst[i]);
+        std::vector<cv::Point2f> transSrc;
+        cv::perspectiveTransform(ptsSrc, transSrc, transTrafo);
 
-    return error / ptsSrc.size();
-}
+        double error = 0;
+        for (std::size_t i = 0; i < ptsSrc.size(); i++)
+            error = l2Dist(transSrc[i], ptsDst[i]);
 
-std::size_t filterViews(
-    const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low, float high)
-{
-    auto maxView = std::max_element(std::begin(distOverlapVec), std::end(distOverlapVec),
-        [&](const auto& lhs, const auto& rhs) { return compareMaxOverlap(lhs, rhs, low, high); });
+        return error / ptsSrc.size();
+    }
 
-    return static_cast<std::size_t>(std::distance(std::begin(distOverlapVec), maxView));
-}
+    std::size_t filterViews(
+        const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low, float high)
+    {
+        auto maxView = std::max_element(std::begin(distOverlapVec), std::end(distOverlapVec),
+            [&](const auto& lhs, const auto& rhs) {
+                return compareMaxOverlap(lhs, rhs, low, high);
+            });
 
-bool compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
-    const std::pair<float, std::size_t>& rhs, float low, float high)
-{
-    auto isInRange = [low, high](const auto& pair) -> bool {
-        return ((pair.first >= low) && (pair.first <= high));
-    };
+        return static_cast<std::size_t>(std::distance(std::begin(distOverlapVec), maxView));
+    }
 
-    if (!isInRange(lhs) && !isInRange(rhs))
-        return (lhs.first < rhs.first);
-    if (!isInRange(lhs) && isInRange(rhs))
+    bool compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
+        const std::pair<float, std::size_t>& rhs, float low, float high)
+    {
+        auto isInRange = [low, high](const auto& pair) -> bool {
+            return ((pair.first >= low) && (pair.first <= high));
+        };
+
+        if (!isInRange(lhs) && !isInRange(rhs))
+            return (lhs.first < rhs.first);
+        if (!isInRange(lhs) && isInRange(rhs))
+            return true;
+        if (isInRange(lhs) && !isInRange(rhs))
+            return false;
+        if (isInRange(lhs) && isInRange(rhs))
+            return (lhs.second < rhs.second);
+
+        // only for compiler warning, can't happen
         return true;
-    if (isInRange(lhs) && !isInRange(rhs))
-        return false;
-    if (isInRange(lhs) && isInRange(rhs))
-        return (lhs.second < rhs.second);
-
-    // only for compiler warning, can't happen
-    return true;
-}
-
-void writeToFile(const fs::path& file, const std::vector<std::size_t>& keyFrames)
-{
-    cv::FileStorage fs(file.string(), cv::FileStorage::WRITE);
-    if (!fs.isOpened())
-    {
-        throw std::filesystem::filesystem_error(
-            "Error opening key frame file", file, std::make_error_code(std::errc::io_error));
     }
 
-    std::vector<int> keyFramesInt(std::begin(keyFrames), std::end(keyFrames));
-    fs << "key_frames" << keyFramesInt;
-    fs.release();
-}
-
-std::vector<std::size_t> loadFromFile(const fs::path& file)
-{
-    cv::FileStorage fs(file.string(), cv::FileStorage::READ);
-    if (!fs.isOpened())
+    void writeToFile(const fs::path& file, const std::vector<std::size_t>& keyFrames)
     {
-        throw std::filesystem::filesystem_error(
-            "Error opening key frame file", file, std::make_error_code(std::errc::io_error));
+        cv::FileStorage fs(file.string(), cv::FileStorage::WRITE);
+        if (!fs.isOpened())
+        {
+            throw std::filesystem::filesystem_error(
+                "Error opening key frame file", file, std::make_error_code(std::errc::io_error));
+        }
+
+        std::vector<int> keyFramesInt(std::begin(keyFrames), std::end(keyFrames));
+        fs << "key_frames" << keyFramesInt;
+        fs.release();
     }
 
-    std::vector<int> keyFramesInt;
-    fs["key_frames"] >> keyFramesInt;
+    std::vector<std::size_t> loadFromFile(const fs::path& file)
+    {
+        cv::FileStorage fs(file.string(), cv::FileStorage::READ);
+        if (!fs.isOpened())
+        {
+            throw std::filesystem::filesystem_error(
+                "Error opening key frame file", file, std::make_error_code(std::errc::io_error));
+        }
 
-    std::vector<std::size_t> keyFrames(std::begin(keyFramesInt), std::end(keyFramesInt));
-    return keyFrames;
-}
+        std::vector<int> keyFramesInt;
+        fs["key_frames"] >> keyFramesInt;
+
+        std::vector<std::size_t> keyFrames(std::begin(keyFramesInt), std::end(keyFramesInt));
+        return keyFrames;
+    }
 } // namespace detail
 } // namespace ht
