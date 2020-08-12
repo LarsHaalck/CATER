@@ -1,5 +1,5 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 #include "image-processing/features.h"
 #include "image-processing/matches.h"
@@ -63,8 +63,8 @@ int main(int argc, char** argv)
     fs::path key_frames_file;
 
     cxxopts::Options options("single", "");
-    options.add_options()("i,in", "matches or trafo file", cxxopts::value(file))
-    ("k,keyframes", "key_frames.yml used for translating", cxxopts::value(key_frames_file));
+    options.add_options()("i,in", "matches or trafo file", cxxopts::value(file))(
+        "k,keyframes", "key_frames.yml used for translating", cxxopts::value(key_frames_file));
 
     auto result = options.parse(argc, argv);
     if (result.count("in") != 1)
@@ -84,7 +84,6 @@ int main(int argc, char** argv)
         for (std::size_t i = 0; i < tmp.size(); i++)
             keyframes.insert({tmp[i], i});
     }
-
 
     if (file.string().find("matches") != std::string::npos)
         exportMatches(file, keyframes);

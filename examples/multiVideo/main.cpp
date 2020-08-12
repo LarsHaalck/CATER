@@ -31,9 +31,8 @@ void drawImg(const cv::Mat& img)
 int main()
 {
     std::filesystem::path basePath = "/home/lars/data/ontogenyTest";
-    std::vector<std::filesystem::path> videoPaths
-        = {basePath / "vid2"};
-        /* = {basePath / "vid2", basePath / "vid3", basePath / "vid4"}; */
+    std::vector<std::filesystem::path> videoPaths = {basePath / "vid2"};
+    /* = {basePath / "vid2", basePath / "vid3", basePath / "vid4"}; */
 
     // collect img and ft containers and list of keyframes
     std::vector<std::shared_ptr<ImageContainer>> imgContainers;
@@ -123,23 +122,23 @@ int main()
         globalKeyFrames, GeometricType::Similarity, Blending::NoBlend);
 
     stitcher->initTrafosFromMultipleVideos(sizes, localOptimalTrafos, optimalTransitions);
-    auto panoImg0 = std::get<0>(stitcher->stitchPano(cv::Size(2*1920, 2*1080)));
+    auto panoImg0 = std::get<0>(stitcher->stitchPano(cv::Size(2 * 1920, 2 * 1080)));
     /* drawImg(panoImg0); */
     cv::imwrite("combined0.png", panoImg0);
 
     stitcher->globalOptimizeKeyFrames();
-    auto panoImg1 = std::get<0>(stitcher->stitchPano(cv::Size(2*1920, 2*1080)));
+    auto panoImg1 = std::get<0>(stitcher->stitchPano(cv::Size(2 * 1920, 2 * 1080)));
     /* drawImg(panoImg1); */
     cv::imwrite("combined1.png", panoImg1);
 
     stitcher->reintegrate();
-    auto panoImg2 = std::get<0>(stitcher->stitchPano(cv::Size(2*1920, 2*1080), true));
+    auto panoImg2 = std::get<0>(stitcher->stitchPano(cv::Size(2 * 1920, 2 * 1080), true));
     cv::imwrite("combined2.png", panoImg2);
 
     auto globalIntraMatches = translator.localToGlobal(matchesIntraList);
     matchesIntraList.clear();
     stitcher->refineNonKeyFrames(globalIntraMatches);
-    auto panoImg3 = std::get<0>(stitcher->stitchPano(cv::Size(2*1920, 2*1080), true));
+    auto panoImg3 = std::get<0>(stitcher->stitchPano(cv::Size(2 * 1920, 2 * 1080), true));
     cv::imwrite("combined3.png", panoImg3);
 
     stitcher->writeTrafos(basePath / "ivlc/opt_trafos.yml", WriteType::Readable);

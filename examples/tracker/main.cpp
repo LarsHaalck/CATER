@@ -1,7 +1,7 @@
-#include "image-processing/images.h"
-#include "image-processing/features.h"
-#include "image-processing/matches.h"
 #include "habitrack/unaries.h"
+#include "image-processing/features.h"
+#include "image-processing/images.h"
+#include "image-processing/matches.h"
 
 /* #include "habitrack/transformation.h" */
 
@@ -9,8 +9,8 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 
-#include <spdlog/spdlog.h>
 #include <spdlog/cfg/env.h>
+#include <spdlog/spdlog.h>
 
 using path = std::filesystem::path;
 path base_path = "/data/ant/ant_short";
@@ -43,8 +43,8 @@ int main()
     }
     else
     {
-        ht::matches::compute(match_folder, geom_type, fts,
-            ht::matches::MatchType::Windowed, 2, 0.0, nullptr, cache_size);
+        ht::matches::compute(match_folder, geom_type, fts, ht::matches::MatchType::Windowed, 2, 0.0,
+            nullptr, cache_size);
     }
 
     auto types
@@ -57,7 +57,7 @@ int main()
         return 0;
     }
 
-    imgs = ht::Images{img_folder, ht::Images::ReadMode::Unchanged};
+    imgs = ht::Images {img_folder, ht::Images::ReadMode::Unchanged};
     auto trafos = ht::matches::getTrafos(match_folder, geom_type);
     ht::Unaries uns;
 
@@ -68,7 +68,6 @@ int main()
     }
     else
         uns = ht::Unaries::compute(imgs, un_folder, 0, -1, true, 0.8, 200.0, trafos, cache_size);
-
 
     return 0;
 }
