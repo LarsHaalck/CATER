@@ -6,15 +6,15 @@
 
 namespace cv
 {
-    class FileStorage;
+class FileStorage;
 } // namespace cv
 
 namespace gui
 {
 namespace detail
 {
-void savePreferences(cv::FileStorage& fs, const Preferences& prefs);
-Preferences loadPreferences(const cv::FileStorage& fs);
+    void savePreferences(cv::FileStorage& fs, const Preferences& prefs);
+    Preferences loadPreferences(const cv::FileStorage& fs);
 } // namespace detail
 
 void saveResults(const std::filesystem::path& resultFile, const Preferences& prefs,

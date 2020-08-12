@@ -15,6 +15,7 @@ public:
     UnaryGraphicsView(QWidget* parent = 0);
     UnaryGraphicsView(UnaryScene* scene, QWidget* parent);
     UnaryScene* getUnaryScene() { return this->mScene; }
+
 protected:
     void resizeEvent(QResizeEvent* event);
     void mousePressEvent(QMouseEvent* event);

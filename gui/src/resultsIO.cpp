@@ -1,7 +1,7 @@
 #include "resultsIO.h"
 
-#include <opencv2/core/persistence.hpp>
 #include "spdlog/spdlog.h"
+#include <opencv2/core/persistence.hpp>
 
 namespace gui
 {

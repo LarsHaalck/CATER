@@ -8,14 +8,14 @@ QImage img2qimg(cv::Mat const& img)
     // convert the color to RGB (OpenCV uses BGR)
     switch (img.type())
     {
-        case CV_8UC1:
-            cv::cvtColor(img, tmp_img, cv::COLOR_GRAY2BGR);
-            break;
-        case CV_8UC3:
-            cv::cvtColor(img, tmp_img, cv::COLOR_BGR2RGB);
-            break;
-        default:
-            return QImage();
+    case CV_8UC1:
+        cv::cvtColor(img, tmp_img, cv::COLOR_GRAY2BGR);
+        break;
+    case CV_8UC3:
+        cv::cvtColor(img, tmp_img, cv::COLOR_BGR2RGB);
+        break;
+    default:
+        return QImage();
     }
 
     // return the QImage
@@ -31,12 +31,12 @@ QImage img2qimgRaw(cv::Mat const& img)
     // convert the color to RGB (OpenCV uses BGR)
     switch (img.type())
     {
-        case CV_8UC1:
-            cv::cvtColor(img, dst, cv::COLOR_GRAY2BGR);
-            break;
-        default:
-            dst = img.clone();
-            break;
+    case CV_8UC1:
+        cv::cvtColor(img, dst, cv::COLOR_GRAY2BGR);
+        break;
+    default:
+        dst = img.clone();
+        break;
     }
 
     int h = dst.rows;
@@ -81,8 +81,7 @@ QImage img2qimgRaw(cv::Mat const& img)
 std::vector<std::string>& qstrList2strList(
     QStringList const& qStringList, std::vector<std::string>& strList)
 {
-    for (QStringList::const_iterator it = qStringList.begin(); it != qStringList.end();
-         it++)
+    for (QStringList::const_iterator it = qStringList.begin(); it != qStringList.end(); it++)
     {
         strList.push_back(qstr2str((*it)));
     }
@@ -101,16 +100,12 @@ QString str2qstr(std::string const& str)
     return QString::fromStdString(str);
 }
 
-cv::Rect qRect2Rect(QRectF const& r)
-{
-    return cv::Rect(r.x(), r.y(), r.width(), r.height());
-}
+cv::Rect qRect2Rect(QRectF const& r) { return cv::Rect(r.x(), r.y(), r.width(), r.height()); }
 
 cv::RotatedRect qRect2RotatedRect(QRectF const& r)
 {
     cv::Rect cvRect = qRect2Rect(r);
-    return cv::RotatedRect(cv::Point2f(cvRect.x + cvRect.width / 2,
-        cvRect.y + cvRect.height / 2),
+    return cv::RotatedRect(cv::Point2f(cvRect.x + cvRect.width / 2, cvRect.y + cvRect.height / 2),
         cv::Size2f(cvRect.width, cvRect.height), 180.0);
 }
 
@@ -121,8 +116,8 @@ cv::Point qpoint2point(QPointF const& p) { return cv::Point(p.x(), p.y()); }
 cv::Mat qimg2img(const QImage& qimg)
 {
     cv::Mat img;
-    img = cv::Mat(qimg.height(), qimg.width(), CV_8UC4, const_cast<uchar*>(qimg.bits()),
-        qimg.bytesPerLine());
+    img = cv::Mat(
+        qimg.height(), qimg.width(), CV_8UC4, const_cast<uchar*>(qimg.bits()), qimg.bytesPerLine());
     return img;
 }
 

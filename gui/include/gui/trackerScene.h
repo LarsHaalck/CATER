@@ -19,8 +19,9 @@ public:
     TrackerScene(QObject* parent = 0);
 
     void setPixmap(const QPixmap& img);
-    protected:
-        void keyPressEvent(QKeyEvent* event);
+
+protected:
+    void keyPressEvent(QKeyEvent* event);
 
 private:
     QGraphicsPixmapItem* mImage;

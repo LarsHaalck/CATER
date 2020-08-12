@@ -1,8 +1,8 @@
 #ifndef UNARY_SCENE_H
 #define UNARY_SCENE_H
 
-#include <QGraphicsScene>
 #include <QColor>
+#include <QGraphicsScene>
 #include <map>
 
 namespace gui
@@ -24,7 +24,6 @@ enum class UnaryState
     ComputingAlt
 };
 
-
 class UnaryScene : public QGraphicsScene
 {
     Q_OBJECT
@@ -41,11 +40,13 @@ public:
     static std::string unaryQualityToString(UnaryQuality quality);
 public slots:
     void update();
+
 private:
     QColor unaryQualityToQColor(UnaryQuality quality) const;
     QColor unaryStateToQColor(UnaryState state) const;
     inline QPen getPen(const QColor& color) const;
     inline double idToX(std::size_t idx) const;
+
 private:
     std::size_t mNumImages;
 

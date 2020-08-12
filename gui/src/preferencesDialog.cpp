@@ -143,10 +143,7 @@ void PreferencesDialog::on_resetButton_clicked()
     }
 }
 
-void PreferencesDialog::on_resetAllButton_clicked()
-{
-    initPreferences(mPrefsDefaults);
-}
+void PreferencesDialog::on_resetAllButton_clicked() { initPreferences(mPrefsDefaults); }
 
 void PreferencesDialog::on_enableColourCorrection_toggled(bool value)
 {

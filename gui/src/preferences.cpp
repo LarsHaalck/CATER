@@ -1,7 +1,7 @@
 #include "gui/preferences.h"
 
 using namespace gui;
-std::ostream& operator<< (std::ostream& stream, const Preferences& prefs)
+std::ostream& operator<<(std::ostream& stream, const Preferences& prefs)
 {
     stream << "Preferences: \n";
     stream << "General: \n";
@@ -39,4 +39,3 @@ std::ostream& operator<< (std::ostream& stream, const Preferences& prefs)
     stream << "====================\n";
     return stream;
 }
-

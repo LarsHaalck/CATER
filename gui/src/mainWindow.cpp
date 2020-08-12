@@ -10,16 +10,16 @@
 #include <QDate>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QSound>
 #include <QStatusBar>
 #include <QTime>
 #include <QtConcurrent>
 #include <algorithm>
 #include <chrono>
 #include <iostream>
-#include <QSound>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 using namespace ht;
 namespace fs = std::filesystem;
@@ -232,7 +232,7 @@ void HabiTrack::populatePaths()
         logger->set_level(spdlog::level::debug);
         spdlog::flush_every(std::chrono::seconds(3));
         spdlog::set_default_logger(logger);
-     }
+    }
     catch (const spdlog::spdlog_ex& ex)
     {
         std::cout << "Log initialization failed: " << ex.what() << std::endl;
@@ -422,10 +422,7 @@ bool HabiTrack::unariesComputed() const
     return Unaries::isComputed(mImgFolder, mUnFolder, mStartFrameNumber - 1, mEndFrameNumber);
 }
 
-bool HabiTrack::detectsComputed() const
-{
-    return fs::is_regular_file(mDetectionsFile);
-}
+bool HabiTrack::detectsComputed() const { return fs::is_regular_file(mDetectionsFile); }
 
 void HabiTrack::on_actionOpenImgFolder_triggered()
 {
@@ -443,8 +440,7 @@ void HabiTrack::on_actionOpenImgFolder_triggered()
 
 void HabiTrack::on_actionOpenImgList_triggered()
 {
-    QMessageBox::warning(
-        this, "Warning", "Not implemented yet");
+    QMessageBox::warning(this, "Warning", "Not implemented yet");
     return;
 
     /* spdlog::debug("GUI: Triggered open image list file"); */
@@ -681,8 +677,8 @@ void HabiTrack::on_buttonOptimizeUnaries_clicked()
         auto trafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography);
         if (chunk == -1)
         {
-            detectionFuture = QtConcurrent::run(
-                Tracker::track, mUnaries, mManualUnaries, settings, trafos);
+            detectionFuture
+                = QtConcurrent::run(Tracker::track, mUnaries, mManualUnaries, settings, trafos);
         }
         else
         {
@@ -859,7 +855,6 @@ void HabiTrack::setupUnaryScene(std::vector<double> qualities)
 
     for (const auto& manualUnary : std::as_const(mManualUnaries))
         scene->setUnaryQuality(manualUnary.first, UnaryQuality::Excellent);
-
 }
 
 void HabiTrack::toggleChunkUnaryScene(int chunkId, bool computing)

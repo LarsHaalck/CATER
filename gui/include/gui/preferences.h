@@ -1,9 +1,9 @@
 #ifndef GUI_PREFERENCES_H
 #define GUI_PREFERENCES_H
 
-#include <ostream>
-#include "spdlog/fmt/ostr.h"
 #include "image-processing/baseFeatureContainer.h"
+#include "spdlog/fmt/ostr.h"
+#include <ostream>
 
 namespace gui
 {
@@ -46,6 +46,6 @@ struct Preferences
 };
 } // namespace gui
 
-std::ostream& operator<< (std::ostream& stream, const gui::Preferences& prefs);
+std::ostream& operator<<(std::ostream& stream, const gui::Preferences& prefs);
 
 #endif // GUI_PREFERENCES_H
