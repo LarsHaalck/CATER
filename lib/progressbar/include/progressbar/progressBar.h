@@ -11,7 +11,11 @@ class ProgressBar : public BaseProgressBar
 public:
     ProgressBar();
 
-    inline void setTotal(std::size_t total) override { mTicks = 0; mTotalTicks = total; }
+    inline void setTotal(std::size_t total) override
+    {
+        mTicks = 0;
+        mTotalTicks = total;
+    }
     inline void inc() override
     {
         mTicks++;

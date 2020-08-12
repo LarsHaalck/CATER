@@ -39,10 +39,7 @@ void ProgressBar::display() const
     std::cout.flush();
 }
 
-void ProgressBar::status(const std::string& state)
-{
-    std::cout << state << std::endl;
-}
+void ProgressBar::status(const std::string& state) { std::cout << state << std::endl; }
 void ProgressBar::done()
 {
     if (!mIsFinished)
