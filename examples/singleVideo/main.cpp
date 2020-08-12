@@ -113,15 +113,12 @@ int main(int argc, char** argv)
 
     auto kfInterFtPath = kfInterPath / "fts";
     auto featuresDense = Features();
-    if (Features::isComputed(images, kfInterFtPath, ftType) && !force)
+    if (Features::isComputed(images, kfInterFtPath, ftType, keyFrames) && !force)
         featuresDense = Features::fromDir(images, kfInterFtPath, ftType, keyFrames);
     else
         featuresDense = Features::compute(images, kfInterFtPath, ftType, 2000, cacheSize, keyFrames);
 
-    // pass low features here
     auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
-
-    // and more_features here
     if (!matches::isComputed(kfInterPath, geomType) || force)
     {
         matches::compute(kfInterPath, geomType, featuresDense,

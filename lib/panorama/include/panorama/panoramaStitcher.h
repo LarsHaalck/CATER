@@ -59,13 +59,14 @@ public:
     void writeTrafos(const std::filesystem::path& file, WriteType writeType = WriteType::Binary);
 
 private:
+    void buildParamsVector();
     void highlightImg(cv::Mat& img);
     std::vector<std::size_t> sortIdsByResponseProduct(
         const std::vector<cv::KeyPoint>& ftsI, const std::vector<cv::KeyPoint>& ftsJ);
     std::vector<cv::KeyPoint> permute(
         const std::vector<cv::KeyPoint>& fts, const std::vector<std::size_t>& p);
-    void globalOptimizeHelper(const BaseFeatureContainer& fts,
-        const matches::PairwiseMatches& matches, FramesMode keyFramesMode, std::size_t limitTo);
+    void globalOptimize(const BaseFeatureContainer& fts, const matches::PairwiseMatches& matches,
+        FramesMode keyFramesMode, std::size_t limitTo, bool multiThread);
     cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
         const cv::Mat& trafo, cv::Rect2d currRect = cv::Rect2d()) const;
@@ -74,7 +75,7 @@ private:
     void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, const cv::Point2f& ptJ,
         cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
         std::vector<double>* paramsI, std::vector<double>* paramsJ, double weight = 1.0);
-    void repairTrafos(const std::vector<std::vector<double>>& params, FramesMode framesMode);
+    void reconstructTrafos(FramesMode framesMode);
 
     std::vector<double> getCamParameterization() const;
     std::vector<double> getDistParameterization() const;
@@ -103,6 +104,7 @@ private:
     cv::Mat mDistCoeffs;
 
     std::vector<cv::Mat> mOptimizedTrafos;
+    std::vector<std::vector<double>> mOptimizedParams; // use for isometries and similaries
 };
 } // namespace ht
 #endif // HABITRACK_PANORAMA_STITCHER_H

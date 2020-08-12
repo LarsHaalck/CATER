@@ -21,6 +21,8 @@
 #include <queue>
 #include <unsupported/Eigen/MatrixFunctions>
 
+#include <chrono>
+
 namespace fs = std::filesystem;
 using Gt = ht::GeometricType;
 using namespace ht::matches;
@@ -40,6 +42,7 @@ PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
     , mCamMatInv()
     , mDistCoeffs(distCoeffs)
     , mOptimizedTrafos(mImages.size(), cv::Mat())
+    , mOptimizedParams(mImages.size(), std::vector<double>(3, -11))
 {
     if (mCamMat.empty())
     {
@@ -75,6 +78,9 @@ void PanoramaStitcher::initTrafos(const PairwiseTrafos& trafos)
         trafo = mOptimizedTrafos[prevId] * trafo;
         mOptimizedTrafos[currId] = trafo;
     }
+
+    if (mType == GeometricType::Isometry)
+        buildParamsVector();
 }
 
 /* void PanoramaStitcher::initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo, */
@@ -137,6 +143,8 @@ void PanoramaStitcher::initTrafos(const PairwiseTrafos& trafos)
 /*             } */
 /*         } */
 /*     } */
+/*     if (mType == GeometricType::Isometry) */
+/*         buildParamsVector(); */
 /* } */
 
 cv::Mat PanoramaStitcher::transformBoundingRect(const cv::Mat& trafo) const
@@ -167,6 +175,22 @@ cv::Point PanoramaStitcher::getCenter(const cv::Mat& trafo)
     cv::Point2f p0(cornersTrafo.at<double>(0, 0), cornersTrafo.at<double>(0, 1));
     cv::Point2f p1(cornersTrafo.at<double>(3, 0), cornersTrafo.at<double>(3, 1));
     return 0.5 * (p0 + p1);
+}
+
+void PanoramaStitcher::buildParamsVector()
+{
+    for (std::size_t i = 0; i < mImages.size(); i++)
+    {
+        const auto& trafoI = mOptimizedTrafos[i];
+        auto& paramsI = mOptimizedParams[i];
+        if (!mOptimizedTrafos[i].empty())
+        {
+            double angle0 = std::atan2(trafoI.at<double>(1, 0), trafoI.at<double>(0, 0));
+            paramsI[0] = angle0;
+            paramsI[1] = trafoI.at<double>(0, 2);
+            paramsI[2] = trafoI.at<double>(1, 2);
+        }
+    }
 }
 
 void PanoramaStitcher::highlightImg(cv::Mat& img)
@@ -228,7 +252,6 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
         {
             if (i > 0)
             {
-                // TODO: if-else
                 for (std::size_t j = mKeyFrames[i - 1] + 1; j < mKeyFrames[i]; j++)
                 {
                     auto interpTrafo
@@ -248,7 +271,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
                 img0 = warped;
             warped.copyTo(img0, warpedMask);
 
-            // for debugging
+            // DEBUG
             /* cv::namedWindow("current pano", cv::WINDOW_NORMAL); */
             /* cv::imshow("bla", img0); */
             /* std::cout << mKeyFrames[i] << std::endl; */
@@ -268,35 +291,30 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     else
         pano = img0;
 
-    // DEBUG
     if (drawCenters)
     {
         for (std::size_t i = 0; i < centersTrans.size(); i++)
         {
-            cv::Scalar color;
-            if (i < 106)
-                color = cv::Scalar(0, 0, 255);
-            else if (i < 7589)
-                color = cv::Scalar(0, 255, 0);
-            else
-                color = cv::Scalar(255, 0, 0);
+            cv::Scalar color = cv::Scalar(255, 0, 0);
 
             if (i > 0)
                 cv::line(pano, centersTrans[i - 1], centersTrans[i], color);
         }
 
-        cv::FileStorage fs("centersTrans.yml", cv::FileStorage::WRITE);
-        fs << "pos" << centersTrans;
-        fs.release();
+        // DEBUG
+        /* cv::FileStorage fs("centersTrans.yml", cv::FileStorage::WRITE); */
+        /* fs << "pos" << centersTrans; */
+        /* fs.release(); */
+        // DEBUG
     }
-    // DEBUG
     return std::make_tuple(pano, scaleMat, transMat);
 }
 
 void PanoramaStitcher::globalOptimizeKeyFrames(
     const BaseFeatureContainer& fts, const matches::PairwiseMatches& matches, std::size_t limitTo)
 {
-    globalOptimizeHelper(fts, matches, FramesMode::KeyFramesOnly, limitTo);
+    globalOptimize(fts, matches, FramesMode::KeyFramesOnly, limitTo, true);
+    reconstructTrafos(FramesMode::KeyFramesOnly);
 }
 
 void PanoramaStitcher::refineNonKeyFrames(
@@ -304,12 +322,10 @@ void PanoramaStitcher::refineNonKeyFrames(
 {
     auto pairs = getKeyList(matches);
 
+    std::vector<PairwiseMatches> boundedMatches;
     std::size_t currMatchId = 0;
     for (std::size_t i = 1; i < mKeyFrames.size(); i++)
     {
-        std::cout << "Performaing local correction of keyframe pair: " << i - 1 << " / "
-                  << mKeyFrames.size() - 2 << std::endl;
-
         auto prevKf = mKeyFrames[i - 1];
         auto currKf = mKeyFrames[i];
         auto pair = pairs[currMatchId];
@@ -321,9 +337,17 @@ void PanoramaStitcher::refineNonKeyFrames(
             pair = pairs[currMatchId];
         }
 
+        // should not be empty except when prevKf + 1 = currKf
         if (!currMatches.empty())
-            globalOptimizeHelper(fts, currMatches, FramesMode::AllFrames, limitTo);
+            boundedMatches.push_back(std::move(currMatches));
     }
+
+    // optimization problems might have very different sizes so use dynamic scheduling
+    #pragma omp parallel for schedule(dynamic)
+    for (std::size_t i = 0; i < boundedMatches.size(); i++)
+        globalOptimize(fts, boundedMatches[i], FramesMode::AllFrames, limitTo, false);
+
+    reconstructTrafos(FramesMode::AllFrames);
 }
 
 std::vector<std::size_t> PanoramaStitcher::sortIdsByResponseProduct(
@@ -347,40 +371,42 @@ std::vector<cv::KeyPoint> PanoramaStitcher::permute(
     return sorted;
 }
 
-void PanoramaStitcher::globalOptimizeHelper(const BaseFeatureContainer& fts,
-    const PairwiseMatches& matches, FramesMode framesMode, std::size_t limitTo)
+void PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
+    const PairwiseMatches& matches, FramesMode framesMode, std::size_t limitTo, bool multiThread)
 {
     auto camParams = getCamParameterization();
     auto distParams = getDistParameterization();
     // invert params to use the model as an undistortion model instead of an distortion model
     distParams = invertDistParameterization(distParams);
 
-    std::vector<std::vector<double>> params;
-    if (mType == GeometricType::Isometry)
-    {
-        params = std::vector<std::vector<double>>(mImages.size(), std::vector<double>(3, -11));
-    }
 
     ceres::Problem problem;
     ceres::Solver::Options options;
-    options.num_threads = 16;
     options.max_num_iterations = 500;
-    options.minimizer_progress_to_stdout = true;
+    options.minimizer_progress_to_stdout = false;
 
-    std::cout << "Building Optimization Problem..." << std::endl;
-    // TODO: progress
-    /* ProgressBar bar(matches.size()); */
+    if (multiThread)
+        options.num_threads = 16;
+    else
+        options.num_threads = 1;
+
+
+    /* std::cout << "Building Optimization Problem..." << std::endl; */
+    // TODO: progress with size matches.size()
     for (const auto& [pair, match] : matches)
     {
         auto [idI, idJ] = pair;
         cv::Mat* trafoI = &mOptimizedTrafos[idI];
         cv::Mat* trafoJ = &mOptimizedTrafos[idJ];
+        std::vector<double>* paramsI = &mOptimizedParams[idI];
+        std::vector<double>* paramsJ = &mOptimizedParams[idJ];
 
         auto [ftsI, ftsJ] = getCorrespondingPoints(pair, match, fts);
 
         auto numFunctors = ftsI.size();
         if (limitTo)
         {
+            // get first limitTo features with hightes response (best features)
             auto p = sortIdsByResponseProduct(ftsI, ftsJ);
             ftsI = permute(ftsI, p);
             ftsJ = permute(ftsJ, p);
@@ -390,40 +416,37 @@ void PanoramaStitcher::globalOptimizeHelper(const BaseFeatureContainer& fts,
         for (size_t k = 0; k < numFunctors; k++)
         {
             addFunctor(problem, ftsI[k].pt, ftsJ[k].pt, trafoI, trafoJ, camParams.data(),
-                distParams.data(), &params[idI], &params[idJ], ftsI[k].response * ftsJ[k].response);
+                distParams.data(), paramsI, paramsJ, ftsI[k].response * ftsJ[k].response);
         }
         if (framesMode == FramesMode::AllFrames && isKeyFrame(idI))
+        {
+            // TODO: check if iso
             problem.SetParameterBlockConstant(trafoI->ptr<double>(0));
+        }
         if (framesMode == FramesMode::AllFrames && isKeyFrame(idJ))
+        {
+            // TODO: check if iso
             problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
-
-        /* ++bar; */
-        /* bar.display(); */
+        }
     }
-    /* bar.done(); */
-    std::cout << "Optimizing Problem..." << std::endl;
 
-    // TODO: is this even needed anymore?
+    // fix first transformation to identity
     if (framesMode == FramesMode::KeyFramesOnly)
     {
+        // TODO: check if iso
         problem.SetParameterBlockConstant(mOptimizedTrafos[mKeyFrames[0]].ptr<double>(0));
         /* problem.SetParameterBlockConstant(params[mKeyFrames[0]].data()); */
     }
 
-    // for now
+    // TODO: control this via argument
+    // and should always be constant for AllFrames Mode for parallel processing
     problem.SetParameterBlockConstant(camParams.data());
     problem.SetParameterBlockConstant(distParams.data());
 
+    /* std::cout << "Optimizing Problem..." << std::endl; */
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
-    std::cout << summary.FullReport() << std::endl;
-
-    // convert parametrizations back to full transformation if needed
-    repairTrafos(params, framesMode);
-
-    /* std::cout << "Estimated camera parameters: " << std::endl; */
-    /* std::cout << mCamMat << std::endl; */
-    /* std::cout << mDistCoeffs << std::endl; */
+    /* std::cout << summary.FullReport() << std::endl; */
 }
 
 void PanoramaStitcher::reintegrate()
@@ -481,21 +504,22 @@ void PanoramaStitcher::addFunctor(ceres::Problem& problem, const cv::Point2f& pt
     case GeometricType::Isometry:
     {
         // Isometries need a parametrization vector because the angle needs to
-        // be optimized explicitly !!!
-        if ((*paramsI)[0] < -10)
-        {
-            double angle0 = std::atan2((*trafoI).at<double>(1, 0), (*trafoI).at<double>(0, 0));
-            (*paramsI)[0] = angle0;
-            (*paramsI)[1] = (*trafoI).at<double>(0, 2);
-            (*paramsI)[2] = (*trafoI).at<double>(1, 2);
-        }
-        if ((*paramsJ)[0] < -10)
-        {
-            double angle1 = std::atan2((*trafoJ).at<double>(1, 0), (*trafoJ).at<double>(0, 0));
-            (*paramsJ)[0] = angle1;
-            (*paramsJ)[1] = (*trafoJ).at<double>(0, 2);
-            (*paramsJ)[2] = (*trafoJ).at<double>(1, 2);
-        }
+        // be optimized explicitly
+        // -11 means not initialized yet
+        /* if ((*paramsI)[0] < -10) */
+        /* { */
+        /*     double angle0 = std::atan2((*trafoI).at<double>(1, 0), (*trafoI).at<double>(0, 0)); */
+        /*     (*paramsI)[0] = angle0; */
+        /*     (*paramsI)[1] = (*trafoI).at<double>(0, 2); */
+        /*     (*paramsI)[2] = (*trafoI).at<double>(1, 2); */
+        /* } */
+        /* if ((*paramsJ)[0] < -10) */
+        /* { */
+        /*     double angle1 = std::atan2((*trafoJ).at<double>(1, 0), (*trafoJ).at<double>(0, 0)); */
+        /*     (*paramsJ)[0] = angle1; */
+        /*     (*paramsJ)[1] = (*trafoJ).at<double>(0, 2); */
+        /*     (*paramsJ)[2] = (*trafoJ).at<double>(1, 2); */
+        /* } */
 
         using Functor = IsometryGlobalFunctor;
         Functor* functor
@@ -505,11 +529,6 @@ void PanoramaStitcher::addFunctor(ceres::Problem& problem, const cv::Point2f& pt
             new ceres::HuberLoss(1.0), camParams, distParams, static_cast<double*>(paramsI->data()),
             static_cast<double*>(paramsJ->data()));
 
-        // no need to constraint them because values below zero or over 2*pi are still angles
-        /* problem.SetParameterLowerBound(static_cast<double*>(paramsI->data()), 0, 0); */
-        /* problem.SetParameterUpperBound(static_cast<double*>(paramsI->data()), 0, 2 * 3.14159); */
-        /* problem.SetParameterLowerBound(static_cast<double*>(paramsJ->data()), 0, 0); */
-        /* problem.SetParameterUpperBound(static_cast<double*>(paramsJ->data()), 0, 2 * 3.14159); */
         break;
     }
     case GeometricType::Similarity:
@@ -519,7 +538,7 @@ void PanoramaStitcher::addFunctor(ceres::Problem& problem, const cv::Point2f& pt
             = new Functor(Eigen::Vector2d(ptI.x, ptI.y), Eigen::Vector2d(ptJ.x, ptJ.y), weight);
 
         // use all first 6 elements although only 4 in total are needed
-        // to avoid copying data and use "repairTrafos" to update ignored values
+        // to avoid copying data and use "reconstructTrafos" to update ignored values
         problem.AddResidualBlock(new ceres::AutoDiffCostFunction<Functor, 4, 4, 3, 6, 6>(functor),
             new ceres::HuberLoss(1.0), camParams, distParams, trafoI->ptr<double>(0),
             trafoJ->ptr<double>(0));
@@ -552,17 +571,18 @@ void PanoramaStitcher::addFunctor(ceres::Problem& problem, const cv::Point2f& pt
     }
 }
 
-void PanoramaStitcher::repairTrafos(
-    const std::vector<std::vector<double>>& params, FramesMode framesMode)
+void PanoramaStitcher::reconstructTrafos(FramesMode framesMode)
 {
     switch (mType)
     {
     case GeometricType::Isometry:
+    {
         // rebuild matrix from params vector
+        const auto& params = mOptimizedParams;
         for (std::size_t i = 0; i < mImages.size(); i++)
         {
             if ((framesMode == FramesMode::AllFrames && !isKeyFrame(i))
-                || (framesMode == FramesMode::KeyFramesOnly && isKeyFrame(i)))
+                    || (framesMode == FramesMode::KeyFramesOnly && isKeyFrame(i)))
             {
                 mOptimizedTrafos[i].at<double>(0, 0) = std::cos(params[i][0]);
                 mOptimizedTrafos[i].at<double>(0, 1) = std::sin(params[i][0]);
@@ -574,6 +594,7 @@ void PanoramaStitcher::repairTrafos(
             }
         }
         break;
+    }
     case GeometricType::Similarity:
         // ensure similarity property
         for (std::size_t i = 0; i < mImages.size(); i++)
@@ -605,7 +626,6 @@ cv::Rect2d PanoramaStitcher::generateBoundingRect() const
     for (size_t i = 1; i < mKeyFrames.size(); i++)
     {
         auto currId = mKeyFrames[i];
-        /* std::cout << mOptimizedTrafos[currId] << std::endl; */
         boundingRect = generateBoundingRectHelper(mOptimizedTrafos[currId], boundingRect);
     }
     return boundingRect;
