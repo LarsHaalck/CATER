@@ -1,8 +1,8 @@
 #ifndef HABITRACK_TRACKER_H
 #define HABITRACK_TRACKER_H
 
-#include <opencv2/core.hpp>
 #include "habitrack/detections.h"
+#include <opencv2/core.hpp>
 
 namespace ht
 {
@@ -52,9 +52,8 @@ private:
     static Detections extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
         std::size_t offset, const Settings& settings, const matches::PairwiseTrafos& trafos);
 
-    static std::pair<double, double> calcBearingAndQuality(std::size_t lastIdx,
-            std::size_t idx, cv::Point lastPos, cv::Point pos, const
-            matches::PairwiseTrafos& trafos);
+    static std::pair<double, double> calcBearingAndQuality(std::size_t lastIdx, std::size_t idx,
+        cv::Point lastPos, cv::Point pos, const matches::PairwiseTrafos& trafos);
 
     static void smoothBearing(Detections& detections, const Settings& settings);
     static std::vector<double> filterAndNormaliseLengthVec(

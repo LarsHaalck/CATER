@@ -18,26 +18,26 @@ void Detections::save(const std::filesystem::path& detectionsFile)
 
     for (const auto& elem : mDetections)
     {
-            auto d = elem.second;
-            fs << "{";
-            fs << "frame_no" << static_cast<int>(elem.first);
-            fs << "position" << d.position;
-            fs << "theta" << d.theta;
-            fs << "theta_quality" << d.thetaQuality;
+        auto d = elem.second;
+        fs << "{";
+        fs << "frame_no" << static_cast<int>(elem.first);
+        fs << "position" << d.position;
+        fs << "theta" << d.theta;
+        fs << "theta_quality" << d.thetaQuality;
 
-            // TODO: needed when implementing manual bearing corrections
-            /* cv::Point manualThetaPosition; */
-            /* if (trackingData.getManuallySetBearingDirectionPoint( */
-            /*         *it, manualThetaPosition)) */
-            /* { */
-            /*     fs << "manually_set" << true; */
-            /*     fs << "manual_direction_point" << manualThetaPosition; */
-            /* } */
-            /* else */
-            /* { */
-            fs << "manually_set" << false;
-            /* } */
-            fs << "}";
+        // TODO: needed when implementing manual bearing corrections
+        /* cv::Point manualThetaPosition; */
+        /* if (trackingData.getManuallySetBearingDirectionPoint( */
+        /*         *it, manualThetaPosition)) */
+        /* { */
+        /*     fs << "manually_set" << true; */
+        /*     fs << "manual_direction_point" << manualThetaPosition; */
+        /* } */
+        /* else */
+        /* { */
+        fs << "manually_set" << false;
+        /* } */
+        fs << "}";
     }
     fs << "]";
     fs.release();

@@ -1,9 +1,9 @@
 #ifndef HABITRACK_DETECTIONS_H
 #define HABITRACK_DETECTIONS_H
 
-#include <opencv2/core.hpp>
-#include <map>
 #include "image-processing/matches.h"
+#include <map>
+#include <opencv2/core.hpp>
 
 // TODO: replace member with typedef to make data() function oboslete
 namespace ht

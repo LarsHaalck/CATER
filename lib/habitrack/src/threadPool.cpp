@@ -32,8 +32,7 @@ ThreadPool::ThreadPool(std::size_t threads)
     for (std::size_t i = 0; i < threads; i++)
     {
         // emplace threads, blocking directly
-        workers.emplace_back([this]
-        {
+        workers.emplace_back([this] {
             while (true)
             {
                 std::function<void()> task;

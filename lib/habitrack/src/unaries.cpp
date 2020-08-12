@@ -103,7 +103,7 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
         return Unaries::fromDir(imgContainer, unDir, start, end);
 
     spdlog::warn("Unaries were not computed sucessfully");
-    return Unaries{};
+    return Unaries {};
 }
 
 bool Unaries::isComputed(

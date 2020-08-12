@@ -1,18 +1,16 @@
 #include "habitrack/tracker.h"
 
 #include "habitrack/manualUnaries.h"
+#include "habitrack/threadPool.h"
 #include "habitrack/unaries.h"
+#include "image-processing/transformation.h"
+#include "image-processing/util.h"
 #include "spdlog/spdlog.h"
+#include <chrono>
 #include <future>
 #include <iostream>
 #include <limits>
 #include <opencv2/imgproc.hpp>
-#include "habitrack/threadPool.h"
-#include "image-processing/util.h"
-#include "image-processing/transformation.h"
-#include <chrono>
-#include "image-processing/util.h"
-
 
 namespace ht
 {
@@ -22,8 +20,7 @@ using namespace transformation;
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
     const Settings& settings, std::size_t chunk, const matches::PairwiseTrafos& trafos)
 {
-    auto pairwiseKernel
-        = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
+    auto pairwiseKernel = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
     cv::log(pairwiseKernel, pairwiseKernel);
     auto ids = unaries.getIDs();
     auto numUnaries = unaries.size();
@@ -37,8 +34,8 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 
     auto start = std::chrono::system_clock::now();
     std::size_t boundary = getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
-    auto states = truncatedMaxSum(chunk * chunkSize, boundary, ids, unaries, manualUnaries,
-        settings, pairwiseKernel);
+    auto states = truncatedMaxSum(
+        chunk * chunkSize, boundary, ids, unaries, manualUnaries, settings, pairwiseKernel);
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     spdlog::debug("Elapsed time for chunk {} tracking: {}", chunk, elapsed.count());
@@ -48,8 +45,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
     const Settings& settings, const matches::PairwiseTrafos& trafos)
 {
-    auto pairwiseKernel
-        = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
+    auto pairwiseKernel = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
     cv::log(pairwiseKernel, pairwiseKernel);
     auto ids = unaries.getIDs();
     auto numUnaries = unaries.size();
@@ -301,8 +297,8 @@ Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<s
         double thetaQuality = -1;
         if (row > 0)
         {
-            auto [theta_, thetaQuality_] = calcBearingAndQuality(lastIdx, idx,
-                    lastPos, position, trafos);
+            auto [theta_, thetaQuality_]
+                = calcBearingAndQuality(lastIdx, idx, lastPos, position, trafos);
             theta = theta_;
             thetaQuality = thetaQuality_;
         }
@@ -320,11 +316,11 @@ Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<s
     return detections;
 }
 
-std::pair<double, double> Tracker::calcBearingAndQuality(std::size_t lastIdx,
-        std::size_t idx, cv::Point lastPos, cv::Point pos, const PairwiseTrafos& trafos)
+std::pair<double, double> Tracker::calcBearingAndQuality(std::size_t lastIdx, std::size_t idx,
+    cv::Point lastPos, cv::Point pos, const PairwiseTrafos& trafos)
 {
-    auto transLastPos = transformPoint(lastPos, trafos.at({lastIdx, idx}),
-            GeometricType::Homography);
+    auto transLastPos
+        = transformPoint(lastPos, trafos.at({lastIdx, idx}), GeometricType::Homography);
     auto theta = calcAngle(transLastPos, pos);
     auto thetaQuality = euclidianDist<double>(transLastPos, pos);
     return {theta, thetaQuality};

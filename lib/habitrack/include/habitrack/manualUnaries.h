@@ -39,7 +39,6 @@ public:
 private:
     ManualUnaries(double subsample, cv::Size imgSize,
         const std::unordered_map<std::size_t, cv::Point2f>& mPoints);
-
 };
 } // namespace ht
 #endif // HABITRACK_MANUAL_UNARIES_H
