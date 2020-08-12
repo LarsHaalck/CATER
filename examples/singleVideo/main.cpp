@@ -16,16 +16,6 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-void drawImg(const cv::Mat& img)
-{
-    int key = 0;
-    do
-    {
-        cv::imshow("img", img);
-        key = cv::waitKey(0);
-    } while (key != 27);
-}
-
 using namespace ht;
 namespace fs = std::filesystem;
 int main(int argc, char** argv)
@@ -138,11 +128,8 @@ int main(int argc, char** argv)
     if (stage < 3)
         return 0;
 
-    // do pano stitching for some wanted type
     auto geomPano = GeometricType::Similarity;
     auto stitcher = PanoramaStitcher(images, keyFrames, geomPano);
-    /* = PanoramaStitcher(images, featuresDense, matches::getMatches(kfInterPath, geomPano), */
-    /*     matches::getTrafos(kfInterPath, geomPano), keyFrames, geomPano, Blending::NoBlend); */
 
     // init trafos of keyframes by concatenating them
     stitcher.initTrafos(matches::getTrafos(kfInterPath, geomPano));
@@ -150,7 +137,6 @@ int main(int argc, char** argv)
     {
         auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
         cv::imwrite((basePath / "pano0.png").string(), pano);
-        /* drawImg(pano); */
     }
 
     if (stage < 4)
@@ -163,7 +149,6 @@ int main(int argc, char** argv)
     {
         auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
         cv::imwrite((basePath / "pano1.png").string(), pano);
-        /* drawImg(pano); */
     }
 
     if (stage < 5)
@@ -175,7 +160,6 @@ int main(int argc, char** argv)
     {
         auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), false, true));
         cv::imwrite((basePath / "pano2.png").string(), pano);
-        /* drawImg(pano); */
     }
     stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
 
@@ -189,7 +173,6 @@ int main(int argc, char** argv)
     {
         auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), false, true));
         cv::imwrite((basePath / "pano3.png").string(), pano);
-        /* drawImg(pano); */
     }
 
     stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
