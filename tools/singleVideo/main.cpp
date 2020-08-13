@@ -108,8 +108,10 @@ int main(int argc, char** argv)
     if (Features::isComputed(images, kfInterFtPath, ftType, keyFrames) && !force)
         featuresDense = Features::fromDir(images, kfInterFtPath, ftType, keyFrames);
     else
+    {
         featuresDense
             = Features::compute(images, kfInterFtPath, ftType, 4 * numFts, cacheSize, keyFrames);
+    }
 
     auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
     if (!matches::isComputed(kfInterPath, geomType) || force)

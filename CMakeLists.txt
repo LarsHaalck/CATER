@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/ui)
 
 option(BUILD_GUI "Build the graphical user interface" TRUE)
-option(BUILD_EXAMPLES "Build examples" TRUE)
+option(BUILD_TOOLS "Build tools" TRUE)
 # option(BUILD_IMAGE_PROCESSING "Build the graphical user interface" FALSE)
 
 # enable highest error level and optimizations
@@ -69,8 +69,8 @@ endif()
 
 add_subdirectory(lib)
 
-if(${BUILD_EXAMPLES})
-    add_subdirectory(examples)
+if(${BUILD_TOOLS})
+    add_subdirectory(tools)
 endif()
 
 if(${BUILD_GUI})
