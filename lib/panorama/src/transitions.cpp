@@ -1,13 +1,14 @@
-#include "habitrack/transitions.h"
-#include "habitrack/idTranslator.h"
+#include "panorama/transitions.h"
 #include "mst.h"
+#include "panorama/idTranslator.h"
 
 namespace ht::transitions
 {
 std::unordered_map<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t>>
-getMostProminantTransition(const PairwiseMatches& matches, const std::vector<std::size_t>& sizes)
+getMostProminantTransition(
+    const matches::PairwiseMatches& matches, const std::vector<std::size_t>& sizes)
 {
-    auto keys = MatchesContainer::getKeyList(matches);
+    auto keys = matches::getKeyList(matches);
     ht::Translator translator(sizes);
 
     std::unordered_map<std::pair<std::size_t, std::size_t>,

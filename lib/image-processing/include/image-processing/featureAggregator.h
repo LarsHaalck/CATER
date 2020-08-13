@@ -9,7 +9,7 @@ namespace ht
 class FeatureAggregator : public BaseFeatureContainer
 {
 public:
-    FeatureAggregator(const std::vector<const Features&>& mFtContainers);
+    FeatureAggregator(const std::vector<Features>& mFtContainers);
     FeatureAggregator(const Features& ftContainer);
 
     std::vector<cv::KeyPoint> featureAt(std::size_t idx) const override;
@@ -28,12 +28,15 @@ public:
     FeatureType getFeatureType() const override;
     std::size_t size() const override;
 
-private:
-    std::pair<std::size_t, std::vector<std::size_t>> sumNumImgs(
-        const std::vector<const Features&>& ftContainers) const;
+    std::vector<std::size_t> getBlockList() const;
+
 
 private:
-    const std::vector<const Features&> mFtContainers;
+    std::pair<std::size_t, std::vector<std::size_t>> sumNumImgs(
+        const std::vector<Features>& ftContainers) const;
+
+private:
+    const std::vector<Features>& mFtContainers;
     std::size_t mNumImgs;
     std::vector<std::size_t> mNumImgsVec;
 };

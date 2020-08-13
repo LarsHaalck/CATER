@@ -40,12 +40,13 @@ public:
         const cv::Mat& distCoeffs = cv::Mat());
 
     void initTrafos(const matches::PairwiseTrafos& trafos);
-    /* void initTrafosFromMultipleVideos(const std::vector<std::size_t> sizes, */
-    /*     const std::vector<std::vector<cv::Mat>>& localOptimalTrafos, */
-    /*     const std::unordered_map<std::pair<std::size_t, std::size_t>, */
-    /*         std::pair<std::size_t, std::size_t>>& optimalTransitions); */
-    /* void initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo, */
-    /*     const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes); */
+    void initTrafosFromMultipleVideos(const matches::PairwiseTrafos& trafos,
+        const std::vector<std::size_t> sizes,
+        const std::vector<std::vector<cv::Mat>>& localOptimalTrafos,
+        const std::unordered_map<std::pair<std::size_t, std::size_t>,
+            std::pair<std::size_t, std::size_t>>& optimalTransitions);
+    void initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
+        const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes);
     std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(
         cv::Size targetSize, bool blend = false, bool drawCenters = false);
 

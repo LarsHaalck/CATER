@@ -22,17 +22,16 @@ int main(int argc, char** argv)
 {
     /* spdlog::set_level(spdlog::level::debug); */
 
+    // TODO: add sift orb, sp argument
+    // add option for exhaustive or mild
     fs::path basePath;
     bool showResults = false;
     bool force = false;
     int stage = 0;
     std::size_t cacheSize = 200;
-
     int cols = 2 * 1920;
     int rows = 2 * 1080;
-
     int numFts = 500;
-
     double minCoverage = 0.0;
 
     /* auto geomType = GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity */
@@ -103,20 +102,21 @@ int main(int argc, char** argv)
     // calculate matches between keyframes via exhaustive matching
     auto kfInterPath = basePath / "kfs/maches_inter";
 
-    auto kfInterFtPath = kfInterPath / "fts";
+    auto featuresDensePath = basePath / "kfs/fts";
     auto featuresDense = Features();
-    if (Features::isComputed(images, kfInterFtPath, ftType, keyFrames) && !force)
-        featuresDense = Features::fromDir(images, kfInterFtPath, ftType, keyFrames);
+    if (Features::isComputed(images, featuresDensePath, ftType, keyFrames) && !force)
+        featuresDense = Features::fromDir(images, featuresDensePath, ftType, keyFrames);
     else
     {
-        featuresDense
-            = Features::compute(images, kfInterFtPath, ftType, 4 * numFts, cacheSize, keyFrames);
+        featuresDense = Features::compute(
+            images, featuresDensePath, ftType, 4 * numFts, cacheSize, keyFrames);
     }
 
     auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
     if (!matches::isComputed(kfInterPath, geomType) || force)
     {
-        matches::compute(kfInterPath, geomType, featuresDense, matches::MatchType::Strategy, 3, 0.0,
+        // 4 because ceil(1 / 0.3) seems like a sensible default
+        matches::compute(kfInterPath, geomType, featuresDense, matches::MatchType::Strategy, 4, 0.0,
             std::move(mildRecommender), cacheSize, keyFrames);
     }
 

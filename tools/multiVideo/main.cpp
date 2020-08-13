@@ -7,23 +7,13 @@
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
 #include "image-processing/mildRecommender.h"
+#include "panorama/idTranslator.h"
 #include "panorama/keyFrameRecommender.h"
 #include "panorama/keyFrames.h"
 #include "panorama/panoramaStitcher.h"
-#include "panorama/idTranslator.h"
+#include "panorama/transitions.h"
 
-/* #include "cxxopts.hpp" */
-/* #include "habitrack/featureAggregator.h" */
-/* #include "habitrack/featureContainer.h" */
-/* #include "habitrack/idTranslator.h" */
-/* #include "habitrack/imageAggregator.h" */
-/* #include "habitrack/imageContainer.h" */
-/* #include "habitrack/keyFrameRecommender.h" */
-/* #include "habitrack/keyFrameSelector.h" */
-/* #include "habitrack/matchesContainer.h" */
-/* #include "habitrack/mildRecommender.h" */
-/* #include "habitrack/panoramaStitcher.h" */
-/* #include "habitrack/transitions.h" */
+#include "cxxopts.hpp"
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -36,8 +26,14 @@ int main()
     std::vector<std::filesystem::path> videoPaths
         = {basePath / "vid2", basePath / "vid3", basePath / "vid4"};
 
+    // TODO: deduce feature type from
     bool force = false;
     int cacheSize = 200;
+
+    int cols = 2 * 1920;
+    int rows = 2 * 1080;
+
+    GeometricType geomType = GeometricType::Similarity;
 
     // collect img and ft containers and list of keyframes
     std::vector<Images> imgContainers;
@@ -48,11 +44,12 @@ int main()
     std::vector<matches::PairwiseMatches> matchesIntraList;
     std::vector<matches::PairwiseMatches> matchesInterList;
 
-    GeometricType geomType = GeometricType::Similarity;
     for (const auto& path : videoPaths)
     {
         auto images = Images(path / "imgs");
-        auto ftsLocal = Features::fromDir(images, path / "fts", FeatureType::SIFT);
+        auto ftsLocal = Features::fromDir(images, path / "fts", FeatureType::ORB);
+        auto ftsLocalDense
+            = Features::fromDir(images, path / "kfs/matches_inter/fts", FeatureType::ORB);
 
         auto keyFrames = KeyFrames::fromDir(path / "key_frames.yml");
         keyFrameList.push_back(keyFrames);
@@ -84,68 +81,58 @@ int main()
     Translator translator(sizes);
 
     // aggregate img and feature container
-    auto globalImgContainer = ImageAggregator(imgContainers);
-    auto globalFtSiftContainer = FeatureAggregator(ftLocalContainers);
+    auto combindImgContainer = ImageAggregator(imgContainers);
+    auto combinedLocalFtContainer = FeatureAggregator(ftLocalContainers);
+    auto combinedGlobalFtContainer = FeatureAggregator(ftGlobalContainers);
 
+    // list of local keyframes to global keyframes
+    auto globalKeyFrames = translator.localToGlobal(keyFrameList);
 
     // match inter video
-    /* auto ivlcMatchPath = basePath / "ivlc/matches"; */
-    /* auto mildRecommender = MildRecommender(ftGlobalContainers); */
-    /* if (!matches::isComputed(ivlcMatchPath, geomType) || force) */
-    /* { */
-    /*     matches::compute(ivlcMatchPath, geomType, global, matches::MatchType::Strategy, 3, 0.0, */
-    /*         std::move(mildRecommender), cacheSize, keyFrames); */
-    /* } */
+    auto ivlcMatchPath = basePath / "ivlc/matches";
+    auto mildRecommender = std::make_unique<MildRecommender>(ftGlobalContainers);
+    if (!matches::isComputed(ivlcMatchPath, geomType) || force)
+    {
+        matches::compute(ivlcMatchPath, geomType, combinedGlobalFtContainer,
+            matches::MatchType::Strategy, 3, 0.0, std::move(mildRecommender), cacheSize,
+            globalKeyFrames);
+    }
 
-    /* auto matchInterVidContainer = std::make_shared<MatchesContainer>(globalFtSiftContainer, */
-    /*     basePath / "ivlc/matches", MatchType::Strategy, 1, // TODO: incorporate into ML estimator? */
-    /*     GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity */
-    /*         | GeometricType::Isometry, */
-    /*     0, std::move(recommender)); */
+    // combined local dense matches and inter video sparse matches
+    auto interVidMatches = matches::getMatches(ivlcMatchPath, geomType);
+    auto optimalTransitions = transitions::getMostProminantTransition(interVidMatches, sizes);
+    std::vector<std::vector<cv::Mat>> localOptimalTrafos;
+    for (auto path : videoPaths)
+        localOptimalTrafos.push_back(PanoramaStitcher::loadTrafos(path / "kfs/opt_trafos.bin"));
 
-    /* // list of local keyframes to global keyframes */
-    /* auto globalKeyFrames = translator.localToGlobal(keyFrameList); */
-    /* keyFrameList.clear(); */
-    /* matchInterVidContainer->compute(5000, ComputeBehavior::Keep, globalKeyFrames); */
+    auto globalInterMatches = translator.localToGlobal(matchesInterList);
+    globalInterMatches.insert(std::begin(interVidMatches), std::end(interVidMatches));
 
-    /* // combined local dense matches and inter video sparse matches */
-    /* auto interVidMatches = matchInterVidContainer->getMatches(GeometricType::Similarity); */
-    /* auto optimalTransitions = transitions::getMostProminantTransition(interVidMatches, sizes); */
-    /* std::vector<std::vector<cv::Mat>> localOptimalTrafos; */
-    /* for (auto path : videoPaths) */
-    /*     localOptimalTrafos.push_back(PanoramaStitcher::loadTrafos(path / "kfs/opt_trafos.bin")); */
-
-    /* auto globalInterMatches = translator.localToGlobal(matchesInterList); */
-    /* matchesInterList.clear(); */
-    /* globalInterMatches.insert(std::begin(interVidMatches), std::end(interVidMatches)); */
-    /* interVidMatches.clear(); */
-
-    /* // do pano stitching for every wanted type */
+    // do pano stitching for every wanted type
+    auto stitcher = PanoramaStitcher(combindImgContainer, globalKeyFrames, geomType);
     /* auto stitcher = std::make_unique<PanoramaStitcher>(globalImgContainer, globalFtSiftContainer, */
     /*     globalInterMatches, matchInterVidContainer->getTrafos(GeometricType::Similarity), */
     /*     globalKeyFrames, GeometricType::Similarity, Blending::NoBlend); */
 
-    /* stitcher->initTrafosFromMultipleVideos(sizes, localOptimalTrafos, optimalTransitions); */
-    /* auto panoImg0 = std::get<0>(stitcher->stitchPano(cv::Size(2 * 1920, 2 * 1080))); */
-    /* /1* drawImg(panoImg0); *1/ */
-    /* cv::imwrite("combined0.png", panoImg0); */
+    stitcher.initTrafosFromMultipleVideos(
+        matches::getTrafos(ivlcMatchPath), sizes, localOptimalTrafos, optimalTransitions);
+    auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
+    cv::imwrite("combined0.png", pano);
 
-    /* stitcher->globalOptimizeKeyFrames(); */
-    /* auto panoImg1 = std::get<0>(stitcher->stitchPano(cv::Size(2 * 1920, 2 * 1080))); */
-    /* /1* drawImg(panoImg1); *1/ */
-    /* cv::imwrite("combined1.png", panoImg1); */
+    stitcher.globalOptimizeKeyFrames(combinedGlobalFtContainer, globalInterMatches);
+    pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
+    cv::imwrite("combined1.png", pano);
 
-    /* stitcher->reintegrate(); */
-    /* auto panoImg2 = std::get<0>(stitcher->stitchPano(cv::Size(2 * 1920, 2 * 1080), true)); */
-    /* cv::imwrite("combined2.png", panoImg2); */
+    stitcher.reintegrate();
+    pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
+    cv::imwrite("combined2.png", pano);
 
-    /* auto globalIntraMatches = translator.localToGlobal(matchesIntraList); */
-    /* matchesIntraList.clear(); */
-    /* stitcher->refineNonKeyFrames(globalIntraMatches); */
-    /* auto panoImg3 = std::get<0>(stitcher->stitchPano(cv::Size(2 * 1920, 2 * 1080), true)); */
-    /* cv::imwrite("combined3.png", panoImg3); */
+    auto globalIntraMatches = translator.localToGlobal(matchesIntraList);
+    stitcher.refineNonKeyFrames(combinedGlobalFtContainer, globalIntraMatches);
+    pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
+    cv::imwrite("combined3.png", pano);
 
-    /* stitcher->writeTrafos(basePath / "ivlc/opt_trafos.yml", WriteType::Readable); */
+    stitcher.writeTrafos(basePath / "ivlc/opt_trafos.yml", WriteType::Readable);
 
-    /* return 0; */
+    return 0;
 }

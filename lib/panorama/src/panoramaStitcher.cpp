@@ -83,69 +83,70 @@ void PanoramaStitcher::initTrafos(const PairwiseTrafos& trafos)
         buildParamsVector();
 }
 
-/* void PanoramaStitcher::initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo, */
-/*     const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes) */
-/* { */
-/*     Translator translator(sizes); */
-/*     auto lower = translator.localToGlobal(std::make_pair(currBlock, static_cast<std::size_t>(0))); */
-/*     auto upper = lower + sizes[currBlock]; */
-/*     for (std::size_t i = lower; i < upper; i++) */
-/*     { */
-/*         if (isKeyFrame(i)) */
-/*             mOptimizedTrafos[i] = currTrafo * localOptimalTrafos[i - lower]; */
-/*     } */
-/* } */
+void PanoramaStitcher::initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
+    const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes)
+{
+    Translator translator(sizes);
+    auto lower = translator.localToGlobal(std::make_pair(currBlock, static_cast<std::size_t>(0)));
+    auto upper = lower + sizes[currBlock];
+    for (std::size_t i = lower; i < upper; i++)
+    {
+        if (isKeyFrame(i))
+            mOptimizedTrafos[i] = currTrafo * localOptimalTrafos[i - lower];
+    }
+}
 
-/* void PanoramaStitcher::initTrafosFromMultipleVideos(const std::vector<std::size_t> sizes, */
-/*     const std::vector<std::vector<cv::Mat>>& localOptimalTrafos, */
-/*     const std::unordered_map<std::pair<std::size_t, std::size_t>, */
-/*         std::pair<std::size_t, std::size_t>>& optimalTransitions) */
-/* { */
-/*     std::queue<std::pair<std::size_t, cv::Mat>> queue; */
-/*     queue.push(std::make_pair(0, getIdentity(true))); */
+void PanoramaStitcher::initTrafosFromMultipleVideos(const matches::PairwiseTrafos& trafos,
+    const std::vector<std::size_t> sizes,
+    const std::vector<std::vector<cv::Mat>>& localOptimalTrafos,
+    const std::unordered_map<std::pair<std::size_t, std::size_t>,
+        std::pair<std::size_t, std::size_t>>& optimalTransitions)
+{
+    std::queue<std::pair<std::size_t, cv::Mat>> queue;
+    queue.push(std::make_pair(0, getIdentity(true)));
 
-/*     std::unordered_set<std::size_t> marked; */
-/*     Translator translator(sizes); */
-/*     while (!queue.empty()) */
-/*     { */
-/*         // find all descendants of current node */
-/*         auto [currBlock, currTrafo] = queue.front(); */
-/*         initTrafosMultipleHelper(currBlock, currTrafo, localOptimalTrafos[currBlock], sizes); */
-/*         queue.pop(); */
-/*         marked.insert(currBlock); */
-/*         for (const auto& [transBlock, transFrame] : optimalTransitions) */
-/*         { */
-/*             if (transBlock.first == currBlock && !marked.count(transBlock.second)) */
-/*             { */
-/*                 cv::Mat pairTrans = invert(mTrafos.at(transFrame), mType, true); */
+    std::unordered_set<std::size_t> marked;
+    Translator translator(sizes);
+    while (!queue.empty())
+    {
+        // find all descendants of current node
+        auto [currBlock, currTrafo] = queue.front();
+        initTrafosMultipleHelper(currBlock, currTrafo, localOptimalTrafos[currBlock], sizes);
+        queue.pop();
+        marked.insert(currBlock);
+        for (const auto& [transBlock, transFrame] : optimalTransitions)
+        {
+            if (transBlock.first == currBlock && !marked.count(transBlock.second))
+            {
+                cv::Mat pairTrans = invert(trafos.at(transFrame), mType, true);
 
-/*                 auto localId = translator.globalToLocal(transFrame.second).second; */
-/*                 cv::Mat preMult = localOptimalTrafos[transBlock.second][localId]; */
-/*                 cv::Mat postMult = mOptimizedTrafos[transFrame.first]; */
+                auto localId = translator.globalToLocal(transFrame.second).second;
+                cv::Mat preMult = localOptimalTrafos[transBlock.second][localId];
+                cv::Mat postMult = mOptimizedTrafos[transFrame.first];
 
-/*                 cv::Mat invertPreMult; */
-/*                 cv::invert(preMult, invertPreMult); */
-/*                 cv::Mat newTrans = pairTrans * postMult * invertPreMult; */
-/*                 queue.push(std::make_pair(transBlock.second, newTrans)); */
-/*             } */
-/*             else if (transBlock.second == currBlock && !marked.count(transBlock.first)) */
-/*             { */
-/*                 cv::Mat pairTrans = makeFull(mTrafos.at(transFrame)); */
+                cv::Mat invertPreMult;
+                cv::invert(preMult, invertPreMult);
+                cv::Mat newTrans = pairTrans * postMult * invertPreMult;
+                queue.push(std::make_pair(transBlock.second, newTrans));
+            }
+            else if (transBlock.second == currBlock && !marked.count(transBlock.first))
+            {
+                cv::Mat pairTrans = makeFull(trafos.at(transFrame));
 
-/*                 auto localId = translator.globalToLocal(transFrame.first).second; */
-/*                 cv::Mat preMult = localOptimalTrafos[transBlock.first][localId]; */
-/*                 cv::Mat postMult = mOptimizedTrafos[transFrame.second]; */
+                auto localId = translator.globalToLocal(transFrame.first).second;
+                cv::Mat preMult = localOptimalTrafos[transBlock.first][localId];
+                cv::Mat postMult = mOptimizedTrafos[transFrame.second];
 
-/*                 cv::Mat invertPreMult; */
-/*                 cv::invert(preMult, invertPreMult); */
-/*                 cv::Mat newTrans = pairTrans * postMult * invertPreMult; */
-/*                 queue.push(std::make_pair(transBlock.first, newTrans)); */
-/*             } */
-/*         } */
-/*     } */
-/*     if (mType == GeometricType::Isometry) */
-/*         buildParamsVector(); */
-/* } */
+                cv::Mat invertPreMult;
+                cv::invert(preMult, invertPreMult);
+                cv::Mat newTrans = pairTrans * postMult * invertPreMult;
+                queue.push(std::make_pair(transBlock.first, newTrans));
+            }
+        }
+    }
+    if (mType == GeometricType::Isometry)
+        buildParamsVector();
+}
 
 cv::Mat PanoramaStitcher::transformBoundingRect(const cv::Mat& trafo) const
 {

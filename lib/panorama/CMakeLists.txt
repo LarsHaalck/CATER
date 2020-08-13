@@ -19,6 +19,8 @@ set(SOURCES
     src/isometryGlobalOptimizer.cpp
 
     src/idTranslator.cpp
+    src/transitions.cpp
+    src/mst.cpp
 )
 
 ###########################################################################

@@ -8,6 +8,7 @@
 
 namespace ht
 {
+class Features;
 class BaseFeatureContainer;
 class FeatureAggregator;
 class FeatureContainer;
@@ -21,8 +22,7 @@ public:
     explicit MildRecommender(
         const BaseFeatureContainer& ftContainer, int dilation = 0, bool addDiagonal = false);
 
-    // TODO: fix
-    /* MildRecommender(std::vector<std::shared_ptr<FeatureContainer>> ftContainers); */
+    MildRecommender(const FeatureAggregator& ftContainers);
 
     std::vector<std::pair<std::size_t, std::size_t>> getPairs(
         std::size_t size, std::size_t window, const std::vector<std::size_t>& ids) override;

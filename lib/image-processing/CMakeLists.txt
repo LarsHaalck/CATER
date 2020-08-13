@@ -18,7 +18,7 @@ set(SOURCES
     # feature container related
     src/baseFeatureContainer.cpp
     src/features.cpp
-    # src/featureAggregator.cpp
+    src/featureAggregator.cpp
     src/pairwiseFeatureCache.cpp
     src/featureCache.cpp
     src/descriptorCache.cpp

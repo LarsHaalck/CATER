@@ -1,9 +1,10 @@
 #include "image-processing/mildRecommender.h"
 
-/* #include "image-processing/featureAggregator.h" */
+#include "image-processing/featureAggregator.h"
 #include "MILD/BayesianFilter.hpp"
 #include "MILD/loop_closure_detector.h"
 #include "image-processing/matches.h"
+#include "image-processing/features.h"
 #include <spdlog/spdlog.h>
 
 namespace ht
@@ -19,12 +20,12 @@ MildRecommender::MildRecommender(
         && "FeatureType must be ORB for MILD Recommender");
 }
 
-/* MildRecommender::MildRecommender(std::vector<std::shared_ptr<FeatureContainer>> ftContainers) */
-/*     : MildRecommender(std::make_shared<FeatureAggregator>(ftContainers)) */
-/* { */
-/*     for (const auto& ftContainer : ftContainers) */
-/*         mBlockList.push_back(ftContainer->getNumImgs()); */
-/* } */
+MildRecommender::MildRecommender(
+    const FeatureAggregator& ftContainers)
+    : MildRecommender(ftContainers, 0, false)
+{
+    mBlockList = ftContainers.getBlockList();
+}
 
 std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
     std::size_t, std::size_t window, const std::vector<std::size_t>& ids)
@@ -33,7 +34,7 @@ std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
     MILD::LoopClosureDetector lcd(FEATURE_TYPE_ORB, 16, 0);
 
     // prob thes, non loop closure thresh, min shared thresh, min distance
-    MILD::BayesianFilter filter(0.7, 2, 2, window);
+    MILD::BayesianFilter filter(0.5, 2, 2, window);
 
     Eigen::VectorXf prevVisitProb(1);
     prevVisitProb << 0.1;
