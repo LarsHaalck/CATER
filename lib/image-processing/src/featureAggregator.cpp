@@ -8,9 +8,9 @@ FeatureAggregator::FeatureAggregator(
     , mNumImgs()
     , mNumImgsVec()
 {
-    auto size = mFtContainers[0].getImageSize();
-    auto ftType = mFtContainers[0].getFeatureType();
-    for (const auto& c : mFtContainers)
+    [[maybe_unused]] auto size = mFtContainers[0].getImageSize();
+    [[maybe_unused]] auto ftType = mFtContainers[0].getFeatureType();
+    for ([[maybe_unused]] const auto& c : mFtContainers)
     {
         assert(c.getImageSize() == size
             && "image sizes of containers in FeatureAggregator do not match");

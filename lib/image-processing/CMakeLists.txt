@@ -57,6 +57,7 @@ target_link_libraries(${LIB_NAME}
     opencv_highgui
     opencv_imgproc
     opencv_features2d
+    opencv_calib3d
     opencv_flann
     opencv_imgcodecs
     cache
