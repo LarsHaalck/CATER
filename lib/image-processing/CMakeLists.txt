@@ -56,7 +56,6 @@ target_link_libraries(${LIB_NAME}
     opencv_core
     opencv_highgui
     opencv_imgproc
-    opencv_xfeatures2d
     opencv_features2d
     opencv_flann
     opencv_imgcodecs
