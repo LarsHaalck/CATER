@@ -1,12 +1,8 @@
-FROM ubuntu:19.10
+FROM ubuntu:20.04
 
-# timezone settings
-ENV TZ=Europe/Berlin
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-RUN apt-get update && apt-get install -y \
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive apt install -y \
     build-essential \
-    gdb \
     wget \
     tar \
     git \
@@ -27,20 +23,15 @@ RUN apt-get update && apt-get install -y \
 
 # https://github.com/opencv/opencv/issues/12957
 RUN cd /tmp \
-    && wget -O opencv.tar.gz https://github.com/opencv/opencv/archive/4.1.2.tar.gz \
-    && wget -O opencv_contrib.tar.gz https://github.com/opencv/opencv_contrib/archive/4.1.2.tar.gz \
+    && wget -O opencv.tar.gz https://github.com/opencv/opencv/archive/4.4.0.tar.gz \
     && tar xf opencv.tar.gz \
-    && tar xf opencv_contrib.tar.gz \
-    && mv opencv-4.1.2 opencv \
-    && mv opencv_contrib-4.1.2 opencv_contrib \
+    && mv opencv-4.4.0 opencv \
     && cd opencv \
     && ln -s /usr/include/lapacke.h /usr/include/x86_64-linux-gnu \
     && sed -i 's/SET(Open_BLAS_INCLUDE_SEARCH_PATHS/SET(Open_BLAS_INCLUDE_SEARCH_PATHS\n  \/usr\/include\/x86_64-linux-gnu/g' cmake/OpenCVFindOpenBLAS.cmake \
     && sed -i 's/SET(Open_BLAS_LIB_SEARCH_PATHS/SET(Open_BLAS_INCLUDE_SEARCH_PATHS\n  \/usr\/lib\/x86_64-linux-gnu/g' cmake/OpenCVFindOpenBLAS.cmake \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -D OPENCV_EXTRA_MODULES_PATH=/tmp/opencv_contrib/modules \
-        -D OPENCV_ENABLE_NONFREE=ON ../ \
         -DWITH_OPENCL=ON \
         -DWITH_OPENGL=ON \
         -DWITH_TBB=ON \
@@ -51,11 +42,10 @@ RUN cd /tmp \
         -DINSTALL_C_EXAMPLES=OFF \
         -DINSTALL_PYTHON_EXAMPLES=OFF \
         -DOPENCV_GENERATE_PKGCONFIG=ON \
-        -DOPENCV_ENABLE_NONFREE=ON \
         -DOPENCV_JNI_INSTALL_PATH=lib \
         -DOPENCV_GENERATE_SETUPVARS=OFF \
         ../ \
-    && make -j16 && make install && rm -rf /tmp/*
+    && make install -j && rm -rf /tmp/*
 
 RUN cd /tmp \
     && git clone https://github.com/LarsHaalck/MILD \
@@ -65,15 +55,22 @@ RUN cd /tmp \
     && rm -rf /tmp/*
 
 RUN cd /tmp \
-    && git clone -b onlyBinary --single-branch https://github.com/LarsHaalck/cereal \
+    && git clone https://github.com/LarsHaalck/cereal \
     && cd cereal && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ../ \
-    && make && make install \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DJUST_INSTALL_CEREAL=ON ../ \
+    && make install -j \
     && rm -rf /tmp/*
 
 RUN cd /tmp \
     && git clone https://github.com/jarro2783/cxxopts \
     && cd cxxopts && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ../ \
-    && make && make install \
+    && make install -j \
+    && rm -rf /tmp/*
+
+RUN cd /tmp \
+    && git clone https://github.com/gabime/spdlog \
+    && cd spdlog && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ../ \
+    && make install -j \
     && rm -rf /tmp/*
