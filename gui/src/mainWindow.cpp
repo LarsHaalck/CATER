@@ -526,6 +526,7 @@ void HabiTrack::on_mikeButton_clicked()
     on_buttonExtractFeatures_clicked();
     on_buttonExtractTrafos_clicked();
     on_buttonExtractUnaries_clicked();
+    on_buttonOptimizeUnaries_clicked();
 }
 
 void HabiTrack::on_buttonExtractFeatures_clicked()
