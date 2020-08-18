@@ -18,7 +18,8 @@
 
 using namespace ht;
 namespace fs = std::filesystem;
-int main(int argc, char** argv)
+
+int main(int argc, const char** argv)
 {
     /* spdlog::set_level(spdlog::level::debug); */
 

@@ -57,7 +57,7 @@ void exportTrafos(fs::path file, const std::unordered_map<std::size_t, std::size
     }
 }
 
-int main(int argc, char** argv)
+int main(int argc, const char** argv)
 {
     fs::path file;
     fs::path key_frames_file;

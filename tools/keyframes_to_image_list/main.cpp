@@ -9,7 +9,7 @@ using namespace ht;
 namespace fs = std::filesystem;
 
 
-int main(int argc, char** argv)
+int main(int argc, const char** argv)
 {
     fs::path key_frames_file;
     bool absolute = false;
@@ -18,7 +18,6 @@ int main(int argc, char** argv)
     options.add_options()(
         "k,keyframes", "key_frames.yml used for translating", cxxopts::value(key_frames_file))(
         "a,absolute", "if paths should be written as absolute paths", cxxopts::value(absolute));
-
 
     auto result = options.parse(argc, argv);
     if (result.count("k") != 1 || key_frames_file.empty())
