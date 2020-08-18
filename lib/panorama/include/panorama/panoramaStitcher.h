@@ -47,13 +47,15 @@ public:
             std::pair<std::size_t, std::size_t>>& optimalTransitions);
     void initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
         const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes);
-    std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(
-        cv::Size targetSize, bool blend = false, bool drawCenters = false);
+    std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool blend = false,
+        bool drawCenters = false, std::shared_ptr<BaseProgressBar> cb = {});
 
     void globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
-        const matches::PairwiseMatches& matches, std::size_t limitTo = 0);
+        const matches::PairwiseMatches& matches, std::size_t limitTo = 0,
+        std::shared_ptr<BaseProgressBar> cb = {});
     void refineNonKeyFrames(const BaseFeatureContainer& fts,
-        const matches::PairwiseMatches& matches, std::size_t limitTo = 0);
+        const matches::PairwiseMatches& matches, std::size_t limitTo = 0,
+        std::shared_ptr<BaseProgressBar> cb = {});
     void reintegrate();
 
     static std::vector<cv::Mat> loadTrafos(const std::filesystem::path& file);
@@ -66,8 +68,9 @@ private:
         const std::vector<cv::KeyPoint>& ftsI, const std::vector<cv::KeyPoint>& ftsJ);
     std::vector<cv::KeyPoint> permute(
         const std::vector<cv::KeyPoint>& fts, const std::vector<std::size_t>& p);
-    void globalOptimize(const BaseFeatureContainer& fts, const matches::PairwiseMatches& matches,
-        FramesMode keyFramesMode, std::size_t limitTo, bool multiThread);
+    bool globalOptimize(const BaseFeatureContainer& fts, const matches::PairwiseMatches& matches,
+        FramesMode keyFramesMode, std::size_t limitTo, bool multiThread,
+        std::shared_ptr<BaseProgressBar> cb = {});
     cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
         const cv::Mat& trafo, cv::Rect2d currRect = cv::Rect2d()) const;

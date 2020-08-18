@@ -1,4 +1,5 @@
 add_subdirectory(cache)
+add_subdirectory(util)
 add_subdirectory(progressbar)
 add_subdirectory(io)
 add_subdirectory(image-processing)

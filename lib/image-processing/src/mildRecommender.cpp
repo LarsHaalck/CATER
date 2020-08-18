@@ -5,6 +5,8 @@
 #include "MILD/loop_closure_detector.h"
 #include "image-processing/matches.h"
 #include "image-processing/features.h"
+#include "util/stopWatch.h"
+
 #include <spdlog/spdlog.h>
 
 namespace ht
@@ -47,6 +49,7 @@ std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
 
     std::size_t numImgs = ids.empty() ? mFtContainer.size() : ids.size();
     spdlog::info("Using MILD to get possible image pairs");
+    PreciseStopWatch timer;
     for (std::size_t k = 0; k < numImgs; k++)
     {
         auto desc = mFtContainer.descriptorAt(transId(k));
@@ -89,6 +92,8 @@ std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
     }
 
     filterPairList(pairs, numImgs);
+    auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
+    spdlog::info("MILD recommendation took {} ms", elapsed_time);
     return pairs;
 }
 

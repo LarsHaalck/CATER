@@ -9,16 +9,18 @@
 #include "panorama/idTranslator.h"
 #include "progressbar/progressBar.h"
 #include "similarityGlobalOptimizer.h"
+#include "util/stopWatch.h"
+
 #include <Eigen/Dense>
 #include <ceres/ceres.h>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/stitching.hpp>
 #include <queue>
+#include <spdlog/spdlog.h>
 #include <unsupported/Eigen/MatrixFunctions>
 
 #include <chrono>
@@ -206,7 +208,7 @@ void PanoramaStitcher::highlightImg(cv::Mat& img)
 }
 
 std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
-    cv::Size targetSize, bool blend, bool drawCenters)
+    cv::Size targetSize, bool blend, bool drawCenters, std::shared_ptr<BaseProgressBar> cb)
 {
     auto rect = generateBoundingRect();
     rect.width = rect.width - rect.x;
@@ -222,15 +224,23 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     cv::Mat transMat = getTranslationMat(-rect.x, -rect.y, true);
     cv::Size newSize(scale * rect.width, scale * rect.height);
 
-    std::cout << "Target size: " << newSize << std::endl;
+    spdlog::info("Target size: {} x {}", newSize.width, newSize.height);
 
     cv::detail::MultiBandBlender blender(false, 1);
     blender.prepare(cv::Rect(0, 0, newSize.width, newSize.height));
+
+    spdlog::info("Stitching Panorama");
+
+    if (!cb)
+        cb = std::make_shared<ProgressBar>();
+    cb->status("Stitching Panorama");
+    cb->setTotal(mKeyFrames.size());
 
     // here we start from 0 instead of 1 because we explicitly added the identity trafo
     cv::Mat img0;
     std::vector<cv::Point> centersTrans;
     centersTrans.reserve(mKeyFrames.size());
+    PreciseStopWatch timer;
     for (size_t i = 0; i < mKeyFrames.size(); i++)
     {
         auto currId = mKeyFrames[i];
@@ -280,7 +290,13 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
             /* { */
             /* } */
         }
+        cb->inc();
     }
+
+    /* auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>(); */
+    /* cb->status("Finished"); */
+    /* cb->done(); */
+    /* spdlog::info("Stitched panoram in {} ms", elapsed_time); */
 
     cv::Mat pano;
     if (blend)
@@ -311,15 +327,25 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     return std::make_tuple(pano, scaleMat, transMat);
 }
 
-void PanoramaStitcher::globalOptimizeKeyFrames(
-    const BaseFeatureContainer& fts, const matches::PairwiseMatches& matches, std::size_t limitTo)
+void PanoramaStitcher::globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
+    const matches::PairwiseMatches& matches, std::size_t limitTo,
+    std::shared_ptr<BaseProgressBar> cb)
 {
-    globalOptimize(fts, matches, FramesMode::KeyFramesOnly, limitTo, true);
+    if (!cb)
+        cb = std::make_shared<ProgressBar>();
+
+    PreciseStopWatch timer;
+    bool res = globalOptimize(fts, matches, FramesMode::KeyFramesOnly, limitTo, true, cb);
     reconstructTrafos(FramesMode::KeyFramesOnly);
+    auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
+    spdlog::info("Optimization took {} ms", elapsed_time);
+
+    if (!res)
+        spdlog::warn("Optimization might not be reliable");
 }
 
-void PanoramaStitcher::refineNonKeyFrames(
-    const BaseFeatureContainer& fts, const PairwiseMatches& matches, std::size_t limitTo)
+void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
+    const PairwiseMatches& matches, std::size_t limitTo, std::shared_ptr<BaseProgressBar> cb)
 {
     auto pairs = getKeyList(matches);
 
@@ -343,12 +369,40 @@ void PanoramaStitcher::refineNonKeyFrames(
             boundedMatches.push_back(std::move(currMatches));
     }
 
-// optimization problems might have very different sizes so use dynamic scheduling
-#pragma omp parallel for schedule(dynamic)
-    for (std::size_t i = 0; i < boundedMatches.size(); i++)
-        globalOptimize(fts, boundedMatches[i], FramesMode::AllFrames, limitTo, false);
+    if (!cb)
+        cb = std::make_shared<ProgressBar>();
+    spdlog::info("Performing global optimization between keyframes");
+    cb->status("Performing global optimization between keyframes");
+    cb->setTotal(mKeyFrames.size() - 1);
 
+    std::vector<bool> res(boundedMatches.size());
+    PreciseStopWatch timer;
+    // optimization problems might have very different sizes so use dynamic scheduling
+    #pragma omp parallel for schedule(dynamic)
+    for (std::size_t i = 0; i < boundedMatches.size(); i++)
+    {
+        res[i] = globalOptimize(fts, boundedMatches[i], FramesMode::AllFrames, limitTo, false);
+
+        #pragma omp critical
+        cb->inc();
+    }
+
+    auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
+    cb->status("Finished");
+    cb->done();
+    spdlog::info("Computed Features in {} ms", elapsed_time);
     reconstructTrafos(FramesMode::AllFrames);
+
+    for (std::size_t i = 0; i < boundedMatches.size(); i++)
+    {
+        if (!res[i])
+        {
+            auto id = getKeyList(boundedMatches[i])[0].first;
+            spdlog::warn(
+                "Optimization might not be reliable for segmet starting with frame {}", id);
+        }
+    }
+
 }
 
 std::vector<std::size_t> PanoramaStitcher::sortIdsByResponseProduct(
@@ -361,6 +415,7 @@ std::vector<std::size_t> PanoramaStitcher::sortIdsByResponseProduct(
         return (ftsI[k].response * ftsJ[k].response) > (ftsI[l].response * ftsJ[l].response);
     });
 
+
     return ids;
 }
 
@@ -372,8 +427,9 @@ std::vector<cv::KeyPoint> PanoramaStitcher::permute(
     return sorted;
 }
 
-void PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
-    const PairwiseMatches& matches, FramesMode framesMode, std::size_t limitTo, bool multiThread)
+bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
+    const PairwiseMatches& matches, FramesMode framesMode, std::size_t limitTo, bool multiThread,
+    std::shared_ptr<BaseProgressBar> cb)
 {
     auto camParams = getCamParameterization();
     auto distParams = getDistParameterization();
@@ -390,8 +446,13 @@ void PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     else
         options.num_threads = 1;
 
-    /* std::cout << "Building Optimization Problem..." << std::endl; */
-    // TODO: progress with size matches.size()
+    if (cb)
+    {
+        spdlog::info("Building optimization problem");
+        cb->status("Building optimization problem");
+        cb->setTotal(matches.size());
+    }
+
     for (const auto& [pair, match] : matches)
     {
         auto [idI, idJ] = pair;
@@ -427,6 +488,15 @@ void PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
             // TODO: check if iso
             problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
         }
+
+        if (cb)
+            cb->inc();
+    }
+
+    if (cb)
+    {
+        cb->status("Finished");
+        cb->done();
     }
 
     // fix first transformation to identity
@@ -446,6 +516,7 @@ void PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     /* std::cout << summary.FullReport() << std::endl; */
+    return summary.IsSolutionUsable();
 }
 
 void PanoramaStitcher::reintegrate()

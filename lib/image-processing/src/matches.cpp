@@ -6,6 +6,7 @@
 #include "progressbar/progressBar.h"
 #include "unknownFeatureType.h"
 #include "unknownGeometricType.h"
+#include "util/stopWatch.h"
 #include <fstream>
 #include <numeric>
 #include <opencv2/imgproc.hpp>
@@ -216,7 +217,8 @@ namespace detail
         auto descMatcher = getMatcher(fts.getFeatureType());
 
         spdlog::info("Computing putative matches");
-        cb->status("Computing Putative Matches");
+        PreciseStopWatch timer;
+        cb->status("Computing putative matches");
         cb->setTotal(descCache.getNumChunks());
         PairwiseMatches matches;
         for (std::size_t i = 0; i < descCache.getNumChunks(); i++)
@@ -250,10 +252,13 @@ namespace detail
             }
             cb->inc();
         }
+        auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
+        cb->status("Finished");
         cb->done();
         filterEmptyPairwise(matches);
         writeMatches(matchDir, matches, Put);
         spdlog::debug("Found {} maches and wrote to {}", matches.size(), matchDir.string());
+        spdlog::info("Computed matches in {} ms", elapsed_time);
         return matches;
     }
 
@@ -304,6 +309,8 @@ namespace detail
 
         cb->status(std::string("Computing Geometric Matches for: ") + typeToString(geomType));
         cb->setTotal(featCache.getNumChunks());
+
+        PreciseStopWatch timer;
         for (std::size_t i = 0; i < featCache.getNumChunks(); i++)
         {
             auto chunk = featCache.getChunk(i);
@@ -343,7 +350,10 @@ namespace detail
             }
             cb->inc();
         }
+        auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
+        cb->status("Finished");
         cb->done();
+        spdlog::info("Computed matches in {} ms", elapsed_time);
 
         filterEmptyPairwise(trafos);
         filterEmptyPairwise(filteredMatches);

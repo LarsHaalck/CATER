@@ -1,8 +1,11 @@
 #include "panorama/keyFrames.h"
 
+#include "util/stopWatch.h"
+
 #include <opencv2/core.hpp>
 #include <spdlog/spdlog.h>
 
+// stubs if omp is not available on the system
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -13,21 +16,6 @@
 namespace fs = std::filesystem;
 namespace ht::KeyFrames
 {
-/* KeyFrameSelector::KeyFrameSelector(std::shared_ptr<BaseFeatureContainer> ftContainer, */
-/*     GeometricType type, const fs::path& file, double minCoverage) */
-/*     : mFtContainer(std::move(ftContainer)) */
-/*     , mType(type) */
-/*     , mFile(file) */
-/*     , mMatchesContainer(std::make_unique<MatchesContainer>( */
-/*           mFtContainer, "", MatchType::Manual, 0, mType, minCoverage)) */
-/*     , mImgSize(mFtContainer->getImgSize()) */
-/*     , mArea(mImgSize.area()) */
-/*     , mIsComputed(true) */
-/* { */
-/*     if (!fs::is_regular_file(mFile)) */
-/*         mIsComputed = false; */
-/* } */
-
 bool isComputed(const std::filesystem::path& file) { return fs::is_regular_file(file); }
 
 std::vector<std::size_t> fromDir(const std::filesystem::path& file)
@@ -52,8 +40,10 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
     spdlog::info("Computing Keyframes");
     if (!cb)
         cb = std::make_shared<ProgressBar>();
-    cb->status("Computing Keyframes");
+
+    cb->status("Computing keyframes");
     cb->setTotal(ftContainer.size());
+    PreciseStopWatch timer;
 
     // find next keyframe until all framges have been processed
     while (currView < ftContainer.size())
@@ -127,9 +117,11 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
     if (keyFrames[keyFrames.size() - 1] != ftContainer.size() - 1)
         keyFrames.push_back(ftContainer.size() - 1);
 
-    spdlog::info("Keeping: {} / {} files", keyFrames.size(), ftContainer.size());
+    auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
     cb->status("Finished");
     cb->done();
+    spdlog::info("Keeping: {} / {} files", keyFrames.size(), ftContainer.size());
+    spdlog::info("Computed keyframes in {} ms", elapsed_time);
 
     detail::writeToFile(file, keyFrames);
     return keyFrames;

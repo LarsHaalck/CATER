@@ -67,6 +67,7 @@ target_link_libraries(${LIB_NAME}
     mild::mild
     cereal
     io
+    util
 )
 
 if(${OpenMP_CXX_FOUND})

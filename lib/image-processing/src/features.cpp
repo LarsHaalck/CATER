@@ -6,6 +6,7 @@
 #include "io/matIO.h"
 #include "progressbar/progressBar.h"
 #include "unknownFeatureType.h"
+#include "util/stopWatch.h"
 #include <fstream>
 #include <iostream>
 #include <opencv2/imgproc.hpp>
@@ -37,11 +38,14 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
     auto ftPtr = getFtPtr(type, numFeatures);
     auto imgCache = imgContainer.getCache(cacheSize, ids);
 
-    spdlog::info("Computing features");
+    spdlog::info("Computing Features");
+
     if (!cb)
         cb = std::make_shared<ProgressBar>();
-    cb->status("Computing Features");
+    cb->status("Computing features");
     cb->setTotal(imgCache.getNumChunks());
+
+    PreciseStopWatch timer;
     for (std::size_t i = 0; i < imgCache.getNumChunks(); i++)
     {
         auto chunk = imgCache.getChunk(i);
@@ -60,8 +64,11 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
         cb->inc();
         writeChunk(imgContainer, ftDir, type, imgCache.getChunkBounds(i), fts, descs, ids);
     }
+
+    auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
     cb->status("Finished");
     cb->done();
+    spdlog::info("Computed Features in {} ms", elapsed_time);
 
     // sanity check
     if (isComputed(imgContainer, ftDir, type, ids))

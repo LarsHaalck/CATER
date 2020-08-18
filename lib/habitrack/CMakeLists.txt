@@ -30,16 +30,18 @@ target_include_directories(${LIB_NAME}
 target_link_libraries(${LIB_NAME}
     PUBLIC
     image-processing
+    PRIVATE
+    spdlog::spdlog
+    cereal
+    progressbar
+    io
+    util
 )
 
 if(${OpenMP_CXX_FOUND})
     target_link_libraries(${LIB_NAME}
         PRIVATE
         OpenMP::OpenMP_CXX
-        spdlog::spdlog
-        cereal
-        progressbar
-        io
     )
 endif()
 

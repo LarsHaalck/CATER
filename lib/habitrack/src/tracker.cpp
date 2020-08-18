@@ -5,6 +5,7 @@
 #include "habitrack/unaries.h"
 #include "image-processing/transformation.h"
 #include "image-processing/util.h"
+#include "util/algorithm.h"
 #include "spdlog/spdlog.h"
 #include <chrono>
 #include <future>

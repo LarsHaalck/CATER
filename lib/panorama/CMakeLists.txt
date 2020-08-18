@@ -47,8 +47,8 @@ target_link_libraries(${LIB_NAME}
     ceres
     progressbar
     io
+    util
     opencv_stitching
-
 )
 
 if(${OpenMP_CXX_FOUND})
