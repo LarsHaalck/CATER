@@ -560,7 +560,8 @@ void HabiTrack::on_buttonExtractTrafos_clicked()
     else
     {
         matches::compute(mMatchFolder, GeometricType::Homography, mFeatures,
-            matches::MatchType::Windowed, 2, 0.0, nullptr, mPrefs.cacheSize, size_t_vec(), mBar);
+            matches::MatchType::Windowed, 2, 0.0, nullptr, mPrefs.cacheSize,
+            getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber), mBar);
     }
 
     auto size = matches::getTrafos(mMatchFolder, GeometricType::Homography).size();
