@@ -4,6 +4,8 @@
 find_package(cereal REQUIRED)
 find_package(mild REQUIRED)
 find_package(Eigen3 REQUIRED)
+# find_package(Torch REQUIRED)
+
 ###########################################################################
 #                                FILES                                    #
 ###########################################################################
@@ -53,16 +55,16 @@ target_include_directories(${LIB_NAME}
 
 target_link_libraries(${LIB_NAME}
     PUBLIC
-    opencv_core
-    opencv_highgui
-    opencv_imgproc
-    opencv_features2d
-    opencv_calib3d
-    opencv_flann
-    opencv_imgcodecs
     cache
     progressbar
+    opencv_core
+    opencv_imgcodecs
+    opencv_features2d
+    opencv_calib3d
     PRIVATE
+    opencv_imgproc
+    opencv_highgui
+    opencv_flann
     spdlog::spdlog
     mild::mild
     cereal

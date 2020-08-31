@@ -31,10 +31,10 @@ target_link_libraries(${LIB_NAME}
     PUBLIC
     image-processing
     PRIVATE
-    spdlog::spdlog
     cereal
-    progressbar
     io
+    progressbar
+    spdlog::spdlog
     util
 )
 

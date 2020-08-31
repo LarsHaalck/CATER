@@ -2,7 +2,6 @@
 #                                FILES                                    #
 ###########################################################################
 set(SOURCES
-    # image container related
     src/progressBar.cpp
 )
 

@@ -45,7 +45,7 @@ set_target_properties(${EXE_NAME} PROPERTIES AUTORCC ON)
 
 target_include_directories(${EXE_NAME} PUBLIC include)
 target_link_libraries(${EXE_NAME}
-    PUBLIC
+    PRIVATE
     Qt5::Widgets
     Qt5::Concurrent
     Qt5::Multimedia

@@ -4,6 +4,7 @@
 find_package(cereal REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Ceres REQUIRED)
+
 ###########################################################################
 #                                FILES                                    #
 ###########################################################################
@@ -42,13 +43,13 @@ target_link_libraries(${LIB_NAME}
     image-processing
     Eigen3::Eigen
     PRIVATE
-    spdlog::spdlog
     cereal
     ceres
-    progressbar
     io
-    util
     opencv_stitching
+    progressbar
+    spdlog::spdlog
+    util
 )
 
 if(${OpenMP_CXX_FOUND})
