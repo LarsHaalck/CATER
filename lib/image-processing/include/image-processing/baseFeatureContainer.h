@@ -14,7 +14,8 @@ namespace ht
 enum class FeatureType
 {
     ORB,
-    SIFT
+    SIFT,
+    SuperPoint
 };
 
 std::ostream& operator<<(std::ostream& os, const FeatureType& type);

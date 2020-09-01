@@ -38,13 +38,38 @@ Images::Images(const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d
 
     // sort files to cope with different operating system conventions
     std::sort(std::begin(mImageFiles), std::end(mImageFiles));
+    setImgSize();
+}
 
+Images::Images(const std::vector<fs::path>& paths, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize)
+    : mImageFiles(paths)
+    , mMode(mode)
+    , mWeights(weights)
+    , mResize(resize)
+{
+    for (auto p : paths)
+    {
+        if (!fs::exists(p) || !fs::is_regular_file(p))
+        {
+            throw fs::filesystem_error("Image file does not exist or is not a file", p,
+                std::make_error_code(std::errc::no_such_file_or_directory));
+        }
+    }
+
+    if (mode == ReadMode::SpecialGray && cv::countNonZero(weights) == 0)
+        throw std::invalid_argument("Readmode SpecialGray cannot be used with all-zero-weights");
+
+    setImgSize();
+}
+
+void Images::setImgSize()
+{
     auto firstImg = at(0);
     mImgSize = firstImg.size();
-    if (resize[0] > 0 && resize[1] > 0)
+    if (mResize[0] > 0 && mResize[1] > 0)
     {
         mImgSize = cv::Size(
-            std::round(resize[0] * mImgSize.width), std::round(resize[1] * mImgSize.height));
+            std::round(mResize[0] * mImgSize.width), std::round(mResize[1] * mImgSize.height));
     }
 }
 

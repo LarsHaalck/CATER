@@ -4,7 +4,7 @@
 find_package(cereal REQUIRED)
 find_package(mild REQUIRED)
 find_package(Eigen3 REQUIRED)
-# find_package(Torch REQUIRED)
+find_package(Torch REQUIRED)
 
 ###########################################################################
 #                                FILES                                    #
@@ -36,6 +36,8 @@ set(SOURCES
     src/transformation.cpp
     src/mildRecommender.cpp
 
+    # misc
+    src/superGlue.cpp
     src/util.cpp
 )
 
@@ -69,6 +71,7 @@ target_link_libraries(${LIB_NAME}
     mild::mild
     cereal
     io
+    torch
     util
 )
 

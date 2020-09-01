@@ -169,6 +169,8 @@ FeatureType Features::getTypeFromFile(const fs::path& file)
         return FeatureType::ORB;
     if (type == ".sift")
         return FeatureType::SIFT;
+    if (type == ".sp")
+        return FeatureType::SuperPoint;
 
     throw UnknownFeatureType(type);
 }
@@ -239,7 +241,14 @@ std::filesystem::path Features::getFileName(
 {
     auto fullFile = ftDir / stem;
     fullFile += (ftDesc == FtDesc::Feature) ? "-ft" : "-desc";
-    fullFile += (type == FeatureType::ORB) ? ".orb" : ".sift";
+
+    if (type == FeatureType::ORB)
+        fullFile += ".orb";
+    else if (type == FeatureType::SIFT)
+        fullFile += ".sift";
+    else
+        fullFile += ".sp";
+
     fullFile += ".bin";
     return fullFile;
 }
