@@ -22,9 +22,9 @@ namespace ht::matches
 
 namespace detail
 {
-    std::tuple<KeyPoints, KeyPoints, Matches> glue(const cv::Mat& imgI, const cv::Mat& imgJ,
-        jit::script::Module& sp, jit::script::Module& sg, Device& device, float scale,
-        int targetWidth, int targetHeight);
+    std::tuple<KeyPoints, cv::Mat, KeyPoints, cv::Mat, Matches> glue(const cv::Mat& imgI,
+        const cv::Mat& imgJ, jit::script::Module& sp, jit::script::Module& sg, Device& device,
+        float scale, int targetWidth, int targetHeight);
 
     inline cv::Mat prepare(const cv::Mat& img, int targetWidth, int targetHeight)
     {
@@ -92,6 +92,15 @@ namespace detail
         }
         return matches;
     }
+
+    inline cv::Mat tensor2Mat(torch::Tensor tensor)
+    {
+        tensor = tensor.to(torch::kCPU).contiguous();
+        cv::Mat mat(tensor.size(-2), tensor.size(-1), CV_32F);
+        std::memcpy(
+            reinterpret_cast<float*>(mat.data), tensor.data_ptr(), sizeof(float) * tensor.numel());
+        return mat;
+    }
 } // namespace detail
 
 SuperGlue::SuperGlue(const std::filesystem::path& zipFolder, int targetWidth)
@@ -119,6 +128,8 @@ Features SuperGlue::compute(const Images& imgContainer, const std::filesystem::p
 
     auto put = putative(
         imgContainer, ftDir, matchDir, matchType, window, std::move(recommender), ids, cb);
+
+    return Features::fromDir(imgContainer, ftDir, FeatureType::SuperPoint, ids);
 }
 
 PairwiseMatches SuperGlue::putative(const Images& imgs, const std::filesystem::path& ftDir,
@@ -129,7 +140,7 @@ PairwiseMatches SuperGlue::putative(const Images& imgs, const std::filesystem::p
     Device device(kCPU);
     if (torch::cuda::is_available())
     {
-        std::cout << "CUDA is available! Training on GPU." << std::endl;
+        spdlog::debug("CUDA is available! Running SuperPoint/Glue on GPU");
         device = Device(kCUDA);
     }
     jit::script::Module superpoint = jit::load(mFolder / "SuperPoint.zip");
@@ -143,7 +154,6 @@ PairwiseMatches SuperGlue::putative(const Images& imgs, const std::filesystem::p
         = detail::getPairList(matchType, imgs.size(), window, std::move(recommender), ids);
 
     float scale = static_cast<float>(mTargetWidth) / imgs.getImgSize().width;
-    std::cout << "scale: " << scale << std::endl;
     int targetHeight = std::lround(scale * imgs.getImgSize().height);
 
     spdlog::info("Computing putative matches");
@@ -157,8 +167,24 @@ PairwiseMatches SuperGlue::putative(const Images& imgs, const std::filesystem::p
         auto imgI = imgs.at(idI);
         auto imgJ = imgs.at(idJ);
 
-        auto [ftsI, ftsJ, currMatches] = detail::glue(imgI.clone(), imgJ.clone(), superpoint,
-            superglue, device, scale, mTargetWidth, targetHeight);
+        auto [ftsI, descsI, ftsJ, descsJ, currMatches] = detail::glue(imgI.clone(), imgJ.clone(),
+            superpoint, superglue, device, scale, mTargetWidth, targetHeight);
+
+        // write ftsI, ftsJ, descsI, descsJ
+        auto stemI = imgs.getFileName(idI).stem();
+        auto stemJ = imgs.getFileName(idJ).stem();
+        auto ffI = Features::getFileName(
+            ftDir, FeatureType::SuperPoint, stemI, Features::FtDesc::Feature);
+        auto ffJ = Features::getFileName(
+            ftDir, FeatureType::SuperPoint, stemJ, Features::FtDesc::Feature);
+        auto dfI = Features::getFileName(
+            ftDir, FeatureType::SuperPoint, stemI, Features::FtDesc::Descriptor);
+        auto dfJ = Features::getFileName(
+            ftDir, FeatureType::SuperPoint, stemJ, Features::FtDesc::Descriptor);
+        Features::writeFts(ffI, ftsI);
+        Features::writeFts(ffJ, ftsJ);
+        Features::writeDescs(dfI, descsI);
+        Features::writeDescs(dfJ, descsJ);
 
         if (!currMatches.empty())
             matches[{idI, idJ}] = std::move(currMatches);
@@ -175,9 +201,9 @@ PairwiseMatches SuperGlue::putative(const Images& imgs, const std::filesystem::p
 
 namespace detail
 {
-    std::tuple<KeyPoints, KeyPoints, Matches> glue(const cv::Mat& imgI, const cv::Mat& imgJ,
-        jit::script::Module& sp, jit::script::Module& sg, Device& device, float scale,
-        int targetWidth, int targetHeight)
+    std::tuple<KeyPoints, cv::Mat, KeyPoints, cv::Mat, Matches> glue(const cv::Mat& imgI,
+        const cv::Mat& imgJ, jit::script::Module& sp, jit::script::Module& sg, Device& device,
+        float scale, int targetWidth, int targetHeight)
     {
         cv::Mat grayI = detail::prepare(imgI, targetWidth, targetHeight);
         cv::Mat grayJ = detail::prepare(imgJ, targetWidth, targetHeight);
@@ -203,7 +229,10 @@ namespace detail
 
         auto retKps0 = detail::tensor2KeyPoints(kps0, scores0, scale);
         auto retKps1 = detail::tensor2KeyPoints(kps1, scores1, scale);
-        return {retKps0, retKps1, detail::tensor2Matches(matches, confidence)};
+        auto retDescs0 = detail::tensor2Mat(descs0);
+        auto retDescs1 = detail::tensor2Mat(descs1);
+        return {
+            retKps0, retDescs0, retKps1, retDescs1, detail::tensor2Matches(matches, confidence)};
     }
 } // namespace detail
 } // namespace ht

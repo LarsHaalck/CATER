@@ -40,16 +40,12 @@ int main(int argc, const char** argv)
         return -1;
     }
 
-    std::cout << img1.string() << std::endl;
-    std::cout << img2.string() << std::endl;
-    std::cout << targetWidth << std::endl;
-
     auto geomType = GeometricType::Similarity;
     auto images = Images({img1, img2});
 
     auto superglue
         = matches::SuperGlue("/home/lars/gitProjects/SuperGluePretrainedNetwork/cpp", targetWidth);
-    superglue.compute(images, "fts", "mtch", geomType, matches::MatchType::Exhaustive);
+    auto spFts = superglue.compute(images, "fts", "mtch", geomType, matches::MatchType::Exhaustive);
 
     return 0;
 }

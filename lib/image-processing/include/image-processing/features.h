@@ -17,6 +17,11 @@ namespace ht
 class Images;
 }
 
+namespace ht::matches
+{
+    class SuperGlue;
+}
+
 namespace ht
 {
 class Features : public BaseFeatureContainer
@@ -86,7 +91,14 @@ private:
     FeatureType mType;
     cv::Size mImgSize;
     std::unordered_map<std::size_t, std::filesystem::path> mFtStems;
+
+    // TODO rewrite this hacky bit
+    friend class ht::matches::SuperGlue;
 };
+
+namespace fts::detail
+{
+}
 } // namespace ht
 
 #endif // HABITRACK_FEATURES_H
