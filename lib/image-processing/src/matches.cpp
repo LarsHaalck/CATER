@@ -257,7 +257,7 @@ namespace detail
         cb->done();
         filterEmptyPairwise(matches);
         writeMatches(matchDir, matches, Put);
-        spdlog::debug("Found {} maches and wrote to {}", matches.size(), matchDir.string());
+        spdlog::debug("Found {} matches and wrote to {}", matches.size(), matchDir.string());
         spdlog::info("Computed matches in {} ms", elapsed_time);
         return matches;
     }
@@ -359,7 +359,7 @@ namespace detail
         filterEmptyPairwise(filteredMatches);
         writeMatches(matchDir, filteredMatches, geomType);
         writeTrafos(matchDir, trafos, geomType);
-        spdlog::debug("Found {} maches, {} trafos and wrote to {}", filteredMatches.size(),
+        spdlog::debug("Found {} matches, {} trafos and wrote to {}", filteredMatches.size(),
             trafos.size(), matchDir.string());
         return filteredMatches;
     }
@@ -469,7 +469,7 @@ namespace detail
         cv::Mat mat;
         std::vector<uchar> mask;
         if (src.size() >= 2)
-            mat = cv::estimateIsometry2D(src, dst, mask, cv::RANSAC);
+            mat = cv::estimateIsometry2D(src, dst, mask, cv::RANSAC, 9);
         else
             return std::make_pair(std::vector<uchar>(), cv::Mat());
 
@@ -485,7 +485,7 @@ namespace detail
         cv::Mat mat;
         std::vector<uchar> mask;
         if (src.size() >= 2)
-            mat = cv::estimateAffinePartial2D(src, dst, mask, cv::RANSAC);
+            mat = cv::estimateAffinePartial2D(src, dst, mask, cv::RANSAC, 9);
         else
             return std::make_pair(std::vector<uchar>(), cv::Mat());
 
@@ -501,7 +501,7 @@ namespace detail
         cv::Mat mat;
         std::vector<uchar> mask;
         if (src.size() >= 3)
-            mat = cv::estimateAffine2D(src, dst, mask, cv::RANSAC);
+            mat = cv::estimateAffine2D(src, dst, mask, cv::RANSAC, 9);
         else
             return std::make_pair(std::vector<uchar>(), cv::Mat());
 
@@ -517,7 +517,7 @@ namespace detail
         std::vector<uchar> mask;
         cv::Mat mat;
         if (src.size() >= 4)
-            mat = cv::findHomography(src, dst, mask, cv::RANSAC);
+            mat = cv::findHomography(src, dst, mask, cv::RANSAC, 9);
         else
             return std::make_pair(std::vector<uchar>(), cv::Mat());
 

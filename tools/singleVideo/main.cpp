@@ -8,6 +8,7 @@
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
 #include "image-processing/mildRecommender.h"
+#include "image-processing/superGlue.h"
 #include "panorama/keyFrameRecommender.h"
 #include "panorama/keyFrames.h"
 #include "panorama/panoramaStitcher.h"
@@ -100,10 +101,13 @@ int main(int argc, const char** argv)
             std::move(kfRecommender), cacheSize);
     }
 
+    if (stage < 3)
+        return 0;
+
     // calculate matches between keyframes via exhaustive matching
     auto kfInterPath = basePath / "kfs/maches_inter";
-
     auto featuresDensePath = basePath / "kfs/fts";
+
     auto featuresDense = Features();
     if (Features::isComputed(images, featuresDensePath, ftType, keyFrames) && !force)
         featuresDense = Features::fromDir(images, featuresDensePath, ftType, keyFrames);
@@ -113,6 +117,25 @@ int main(int argc, const char** argv)
             images, featuresDensePath, ftType, 4 * numFts, cacheSize, keyFrames);
     }
 
+    // SUPERGLUE
+    /* if (Features::isComputed(images, featuresDensePath, FeatureType::SuperPoint, keyFrames) */
+    /*     && !force) */
+    /* { */
+    /*     featuresDense */
+    /*         = Features::fromDir(images, featuresDensePath, FeatureType::SuperPoint, keyFrames); */
+    /* } */
+    /* else */
+    /* { */
+    /*     auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true); */
+    /*     featuresDense */
+    /*         = matches::SuperGlue("/home/lars/gitProjects/SuperGluePretrainedNetwork/cpp", 900) */
+    /*               .compute(images, featuresDensePath, kfInterPath, geomType, */
+    /*                   matches::MatchType::Strategy, 4, 0.0, std::move(mildRecommender), cacheSize, */
+    /*                   keyFrames); */
+    /* } */
+
+
+    // NON-SUPERGLUE
     auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
     if (!matches::isComputed(kfInterPath, geomType) || force)
     {
@@ -128,7 +151,7 @@ int main(int argc, const char** argv)
     for (auto type : typeList)
         std::cout << type << std::endl;
 
-    if (stage < 3)
+    if (stage < 4)
         return 0;
 
     auto geomPano = GeometricType::Similarity;
@@ -142,7 +165,7 @@ int main(int argc, const char** argv)
         cv::imwrite((basePath / "pano0.png").string(), pano);
     }
 
-    if (stage < 4)
+    if (stage < 5)
         return 0;
 
     // globally optimized these keyframe tranformations and write them for later IVLC
@@ -154,7 +177,7 @@ int main(int argc, const char** argv)
         cv::imwrite((basePath / "pano1.png").string(), pano);
     }
 
-    if (stage < 5)
+    if (stage < 6)
         return 0;
 
     // reintegrate by geodesic interpolation of frames between keyframes
@@ -166,7 +189,7 @@ int main(int argc, const char** argv)
     }
     stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
 
-    if (stage < 6)
+    if (stage < 7)
         return 0;
 
     // refine all keyframes

@@ -33,6 +33,17 @@ auto std_dev(InputIt first, InputIt last) -> typename InputIt::value_type
 
 inline double degree2Radian(double degree) { return ((degree * M_PI) / 180.0); }
 inline double radian2Degree(double radian) { return ((radian * 180.0) / M_PI); }
+
+template <typename T>
+std::vector<T> permute(const std::vector<T>& vec, const std::vector<std::size_t>& p)
+{
+    if (vec.empty())
+        return vec;
+
+    std::vector<T> sorted(p.size());
+    std::transform(p.begin(), p.end(), sorted.begin(), [&](std::size_t i) { return vec[i]; });
+    return sorted;
+}
 } // namespace ht
 
 #endif // HT_UTIL_H

@@ -79,6 +79,9 @@ namespace detail
         confTensor = confTensor.to(torch::kCPU);
 
         auto valid = at::nonzero(matchTensor > -1).squeeze();
+        /* if (valid.numel() == 1) */
+        /*     return Matches(); */
+
         int n = valid.size(0);
 
         std::vector<cv::DMatch> matches;
@@ -119,17 +122,28 @@ Features SuperGlue::compute(const Images& imgContainer, const std::filesystem::p
     std::size_t window, double minCoverage, std::unique_ptr<PairRecommender> recommender,
     std::size_t cacheSize, const size_t_vec& ids, std::shared_ptr<BaseProgressBar> cb)
 {
-    autograd::GradMode::set_enabled(false);
+    /* autograd::GradMode::set_enabled(false); */
 
     if (!cb)
         cb = std::make_shared<ProgressBar>();
     if (matchType != MatchType::Manual && (!fs::exists(matchDir) || !fs::is_directory(matchDir)))
         fs::create_directories(matchDir);
 
-    auto put = putative(
+    auto matches = putative(
         imgContainer, ftDir, matchDir, matchType, window, std::move(recommender), ids, cb);
 
-    return Features::fromDir(imgContainer, ftDir, FeatureType::SuperPoint, ids);
+    auto fts = Features::fromDir(imgContainer, ftDir, FeatureType::SuperPoint, ids);
+    for (auto type : detail::getTypeList(geomType))
+    {
+        matches = detail::getGeomMatches(matchDir, fts, type, minCoverage,
+            fts.getImageSize().area(), cacheSize, std::move(matches), cb);
+    }
+
+    // sanity check
+    if (isComputed(matchDir, geomType))
+        return fts;
+
+    return Features();
 }
 
 PairwiseMatches SuperGlue::putative(const Images& imgs, const std::filesystem::path& ftDir,
@@ -205,6 +219,8 @@ namespace detail
         const cv::Mat& imgJ, jit::script::Module& sp, jit::script::Module& sg, Device& device,
         float scale, int targetWidth, int targetHeight)
     {
+        autograd::GradMode::set_enabled(false);
+        manual_seed(1);
         cv::Mat grayI = detail::prepare(imgI, targetWidth, targetHeight);
         cv::Mat grayJ = detail::prepare(imgJ, targetWidth, targetHeight);
         auto grayTI = detail::mat2tensor(grayI).to(device);
@@ -224,6 +240,7 @@ namespace detail
         input.insert("descriptors1", descs1.unsqueeze(0));
 
         torch::Dict<std::string, Tensor> pred = detail::toTensorDict(sg.forward({input}));
+
         auto matches = pred.at("matches0")[0];
         auto confidence = pred.at("matching_scores0")[0];
 

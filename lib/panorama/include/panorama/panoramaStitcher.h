@@ -64,10 +64,9 @@ public:
 private:
     void buildParamsVector();
     void highlightImg(cv::Mat& img);
-    std::vector<std::size_t> sortIdsByResponseProduct(
-        const std::vector<cv::KeyPoint>& ftsI, const std::vector<cv::KeyPoint>& ftsJ);
-    std::vector<cv::KeyPoint> permute(
-        const std::vector<cv::KeyPoint>& fts, const std::vector<std::size_t>& p);
+    std::vector<std::size_t> sortIdsByResponseProduct(const std::vector<cv::KeyPoint>& ftsI,
+        const std::vector<cv::KeyPoint>& ftsJ, const std::vector<float>& weights);
+
     bool globalOptimize(const BaseFeatureContainer& fts, const matches::PairwiseMatches& matches,
         FramesMode keyFramesMode, std::size_t limitTo, bool multiThread,
         std::shared_ptr<BaseProgressBar> cb = {});
@@ -78,7 +77,7 @@ private:
 
     void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, const cv::Point2f& ptJ,
         cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
-        std::vector<double>* paramsI, std::vector<double>* paramsJ, double weight = 1.0);
+        std::vector<double>* paramsI, std::vector<double>* paramsJ, float response, float weight);
     void reconstructTrafos(FramesMode framesMode);
 
     std::vector<double> getCamParameterization() const;
@@ -87,9 +86,9 @@ private:
     void repairIntriniscs(
         const std::vector<double>& camParams, const std::vector<double>& distParams);
 
-    std::pair<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>> getCorrespondingPoints(
-        std::pair<std::size_t, std::size_t> pair, const matches::Matches& matches,
-        const BaseFeatureContainer& fts);
+    std::tuple<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>, std::vector<float>>
+    getCorrespondingPoints(std::pair<std::size_t, std::size_t> pair,
+        const matches::Matches& matches, const BaseFeatureContainer& fts);
     cv::Point getCenter(const cv::Mat& trafo);
 
     cv::Mat transformBoundingRect(const cv::Mat& trafo) const;

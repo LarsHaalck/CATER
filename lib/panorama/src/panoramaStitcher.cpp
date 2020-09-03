@@ -9,6 +9,7 @@
 #include "panorama/idTranslator.h"
 #include "progressbar/progressBar.h"
 #include "similarityGlobalOptimizer.h"
+#include "util/algorithm.h"
 #include "util/stopWatch.h"
 
 #include <Eigen/Dense>
@@ -377,13 +378,13 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
 
     std::vector<bool> res(boundedMatches.size());
     PreciseStopWatch timer;
-    // optimization problems might have very different sizes so use dynamic scheduling
-    #pragma omp parallel for schedule(dynamic)
+// optimization problems might have very different sizes so use dynamic scheduling
+#pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < boundedMatches.size(); i++)
     {
         res[i] = globalOptimize(fts, boundedMatches[i], FramesMode::AllFrames, limitTo, false);
 
-        #pragma omp critical
+#pragma omp critical
         cb->inc();
     }
 
@@ -402,29 +403,28 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
                 "Optimization might not be reliable for segmet starting with frame {}", id);
         }
     }
-
 }
 
 std::vector<std::size_t> PanoramaStitcher::sortIdsByResponseProduct(
-    const std::vector<cv::KeyPoint>& ftsI, const std::vector<cv::KeyPoint>& ftsJ)
+    const std::vector<cv::KeyPoint>& ftsI, const std::vector<cv::KeyPoint>& ftsJ,
+    const std::vector<float>& weights)
 {
     auto ids = std::vector<std::size_t>(ftsI.size());
     std::iota(std::begin(ids), std::end(ids), 0);
 
-    std::sort(std::begin(ids), std::end(ids), [&](std::size_t k, std::size_t l) {
-        return (ftsI[k].response * ftsJ[k].response) > (ftsI[l].response * ftsJ[l].response);
-    });
-
+    if (weights.empty())
+    {
+        std::sort(std::begin(ids), std::end(ids), [&](std::size_t k, std::size_t l) {
+            return (ftsI[k].response * ftsJ[k].response) > (ftsI[l].response * ftsJ[l].response);
+        });
+    }
+    else
+    {
+        std::sort(std::begin(ids), std::end(ids),
+            [&](std::size_t k, std::size_t l) { return weights[k] > weights[l]; });
+    }
 
     return ids;
-}
-
-std::vector<cv::KeyPoint> PanoramaStitcher::permute(
-    const std::vector<cv::KeyPoint>& fts, const std::vector<std::size_t>& p)
-{
-    std::vector<cv::KeyPoint> sorted(p.size());
-    std::transform(p.begin(), p.end(), sorted.begin(), [&](std::size_t i) { return fts[i]; });
-    return sorted;
 }
 
 bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
@@ -461,22 +461,26 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         std::vector<double>* paramsI = &mOptimizedParams[idI];
         std::vector<double>* paramsJ = &mOptimizedParams[idJ];
 
-        auto [ftsI, ftsJ] = getCorrespondingPoints(pair, match, fts);
+        auto [ftsI, ftsJ, weights] = getCorrespondingPoints(pair, match, fts);
 
         auto numFunctors = ftsI.size();
         if (limitTo)
         {
             // get first limitTo features with hightes response (best features)
-            auto p = sortIdsByResponseProduct(ftsI, ftsJ);
+            auto p = sortIdsByResponseProduct(ftsI, ftsJ, weights);
             ftsI = permute(ftsI, p);
             ftsJ = permute(ftsJ, p);
+            weights = permute(weights, p);
             numFunctors = std::min(limitTo, numFunctors);
         }
 
         for (size_t k = 0; k < numFunctors; k++)
         {
+            float w = 0;
+            if (!weights.empty())
+                w = weights[k];
             addFunctor(problem, ftsI[k].pt, ftsJ[k].pt, trafoI, trafoJ, camParams.data(),
-                distParams.data(), paramsI, paramsJ, ftsI[k].response * ftsJ[k].response);
+                distParams.data(), paramsI, paramsJ, ftsI[k].response * ftsJ[k].response, w);
         }
         if (framesMode == FramesMode::AllFrames && isKeyFrame(idI))
         {
@@ -535,20 +539,27 @@ void PanoramaStitcher::reintegrate()
     }
 }
 
-std::pair<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>>
+std::tuple<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>, std::vector<float>>
 PanoramaStitcher::getCorrespondingPoints(std::pair<std::size_t, std::size_t> pair,
     const Matches& matches, const BaseFeatureContainer& fts)
 {
     std::vector<cv::KeyPoint> src, dst;
     src.reserve(matches.size());
     dst.reserve(matches.size());
+
+    std::vector<float> weight;
+    if (fts.getFeatureType() == FeatureType::SuperPoint)
+        weight.reserve(matches.size());
     for (const auto& match : matches)
     {
         src.push_back(fts.featureAt(pair.first)[match.queryIdx]);
         dst.push_back(fts.featureAt(pair.second)[match.trainIdx]);
+
+        if (fts.getFeatureType() == FeatureType::SuperPoint)
+            weight.push_back(match.distance);
     }
 
-    return std::make_pair(src, dst);
+    return std::make_tuple(src, dst, weight);
 }
 
 cv::Mat PanoramaStitcher::interpolateTrafo(
@@ -567,8 +578,11 @@ cv::Mat PanoramaStitcher::interpolateTrafo(
 
 void PanoramaStitcher::addFunctor(ceres::Problem& problem, const cv::Point2f& ptI,
     const cv::Point2f& ptJ, cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
-    std::vector<double>* paramsI, std::vector<double>* paramsJ, double weight)
+    std::vector<double>* paramsI, std::vector<double>* paramsJ, float response, float weight)
 {
+    if (weight == 0.0f)
+        weight = response;
+
     switch (mType)
     {
     case GeometricType::Isometry:
