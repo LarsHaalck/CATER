@@ -118,31 +118,31 @@ int main(int argc, const char** argv)
     }
 
     // SUPERGLUE
-    /* if (Features::isComputed(images, featuresDensePath, FeatureType::SuperPoint, keyFrames) */
-    /*     && !force) */
-    /* { */
-    /*     featuresDense */
-    /*         = Features::fromDir(images, featuresDensePath, FeatureType::SuperPoint, keyFrames); */
-    /* } */
-    /* else */
-    /* { */
-    /*     auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true); */
-    /*     featuresDense */
-    /*         = matches::SuperGlue("/home/lars/gitProjects/SuperGluePretrainedNetwork/cpp", 900) */
-    /*               .compute(images, featuresDensePath, kfInterPath, geomType, */
-    /*                   matches::MatchType::Strategy, 4, 0.0, std::move(mildRecommender), cacheSize, */
-    /*                   keyFrames); */
-    /* } */
+    if (Features::isComputed(images, featuresDensePath, FeatureType::SuperPoint, keyFrames)
+        && !force)
+    {
+        featuresDense
+            = Features::fromDir(images, featuresDensePath, FeatureType::SuperPoint, keyFrames);
+    }
+    else
+    {
+        auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
+        featuresDense
+            = matches::SuperGlue("/data/arbeit/sg/indoor", 800)
+                  .compute(images, featuresDensePath, kfInterPath, geomType,
+                      matches::MatchType::Strategy, 4, 0.0, std::move(mildRecommender), cacheSize,
+                      keyFrames);
+    }
 
 
     // NON-SUPERGLUE
-    auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
-    if (!matches::isComputed(kfInterPath, geomType) || force)
-    {
-        // 4 because ceil(1 / 0.3) seems like a sensible default
-        matches::compute(kfInterPath, geomType, featuresDense, matches::MatchType::Strategy, 4, 0.0,
-            std::move(mildRecommender), cacheSize, keyFrames);
-    }
+    /* auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true); */
+    /* if (!matches::isComputed(kfInterPath, geomType) || force) */
+    /* { */
+    /*     // 4 because ceil(1 / 0.3) seems like a sensible default */
+    /*     matches::compute(kfInterPath, geomType, featuresDense, matches::MatchType::Strategy, 4, 0.0, */
+    /*         std::move(mildRecommender), cacheSize, keyFrames); */
+    /* } */
 
     // panoramas can only be calculated from theses Types
     GeometricType useableTypes = matches::getConnectedTypes(kfInterPath, geomType, keyFrames);

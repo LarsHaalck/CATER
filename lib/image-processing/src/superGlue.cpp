@@ -79,8 +79,8 @@ namespace detail
         confTensor = confTensor.to(torch::kCPU);
 
         auto valid = at::nonzero(matchTensor > -1).squeeze();
-        /* if (valid.numel() == 1) */
-        /*     return Matches(); */
+        if (valid.ndimension() == 0)
+            return Matches();
 
         int n = valid.size(0);
 

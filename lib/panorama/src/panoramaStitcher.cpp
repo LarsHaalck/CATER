@@ -50,11 +50,13 @@ PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
     if (mCamMat.empty())
     {
         mCamMat = cv::Mat::eye(3, 3, CV_64F);
+
         /* auto imgSize = mImages.getImgSize(); */
         /* mCamMat.at<double>(0, 0) = mCamMat.at<double>(1, 1) */
         /*     = 1.2 * std::max(imgSize.width, imgSize.height); */
         /* mCamMat.at<double>(0, 2) = imgSize.width / 2; */
         /* mCamMat.at<double>(1, 2) = imgSize.height / 2; */
+
         mDistCoeffs = cv::Mat::zeros(5, 1, CV_64F);
     }
     // zero out tangential components
@@ -520,6 +522,8 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     /* std::cout << summary.FullReport() << std::endl; */
+
+    /* repairIntriniscs(camParams, distParams); */
     return summary.IsSolutionUsable();
 }
 

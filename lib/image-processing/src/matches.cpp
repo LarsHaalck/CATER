@@ -469,7 +469,7 @@ namespace detail
         cv::Mat mat;
         std::vector<uchar> mask;
         if (src.size() >= 2)
-            mat = cv::estimateIsometry2D(src, dst, mask, cv::RANSAC, 9);
+            mat = cv::estimateIsometry2D(src, dst, mask, cv::RANSAC, 3);
         else
             return std::make_pair(std::vector<uchar>(), cv::Mat());
 
@@ -485,7 +485,7 @@ namespace detail
         cv::Mat mat;
         std::vector<uchar> mask;
         if (src.size() >= 2)
-            mat = cv::estimateAffinePartial2D(src, dst, mask, cv::RANSAC, 9);
+            mat = cv::estimateAffinePartial2D(src, dst, mask, cv::RANSAC, 3);
         else
             return std::make_pair(std::vector<uchar>(), cv::Mat());
 
@@ -501,7 +501,7 @@ namespace detail
         cv::Mat mat;
         std::vector<uchar> mask;
         if (src.size() >= 3)
-            mat = cv::estimateAffine2D(src, dst, mask, cv::RANSAC, 9);
+            mat = cv::estimateAffine2D(src, dst, mask, cv::RANSAC, 3);
         else
             return std::make_pair(std::vector<uchar>(), cv::Mat());
 
@@ -517,7 +517,7 @@ namespace detail
         std::vector<uchar> mask;
         cv::Mat mat;
         if (src.size() >= 4)
-            mat = cv::findHomography(src, dst, mask, cv::RANSAC, 9);
+            mat = cv::findHomography(src, dst, mask, cv::RANSAC, 3);
         else
             return std::make_pair(std::vector<uchar>(), cv::Mat());
 
