@@ -166,7 +166,7 @@ int main(int argc, const char** argv)
 
     // globally optimized these keyframe tranformations and write them for later IVLC
     stitcher.globalOptimizeKeyFrames(features, matches::getMatches(matchPath, geomPano));
-    stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
+    stitcher.writeTrafos(basePath / "opt_trafos.bin");
     if (showResults)
     {
         auto pano = std::get<0>(
