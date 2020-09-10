@@ -6,4 +6,6 @@ target_link_libraries(opencv_stitcher
     opencv_imgcodecs
     opencv_highgui
     opencv_stitching
+    spdlog
+    util
 )

@@ -20,12 +20,12 @@
 using namespace ht;
 namespace fs = std::filesystem;
 
+auto ORB = ht::FeatureType::ORB;
+
 int main(int argc, const char** argv)
 {
     /* spdlog::set_level(spdlog::level::debug); */
 
-    // TODO: add sift orb, sp argument
-    // add option for exhaustive or mild
     fs::path basePath;
     bool showResults = false;
     bool force = false;
@@ -35,9 +35,8 @@ int main(int argc, const char** argv)
     int rows = 2 * 1080;
     int numFts = 500;
     double minCoverage = 0.0;
+    int featureInt = 0;
 
-    /* auto geomType = GeometricType::Homography | GeometricType::Affinity | GeometricType::Similarity */
-    /*     | GeometricType::Isometry; */
     auto geomType = GeometricType::Similarity;
 
     cxxopts::Options options("single", "");
@@ -45,7 +44,8 @@ int main(int argc, const char** argv)
         "v", "show results", cxxopts::value(showResults))("c", "cache", cxxopts::value(cacheSize))(
         "f", "force", cxxopts::value(force))("k, cols", "cols", cxxopts::value(cols))(
         "l, rows", "rows", cxxopts::value(rows))("n,num_fts", "num", cxxopts::value(numFts))(
-        "m, min_coverage", "min coverage", cxxopts::value(minCoverage))("s,stage",
+        "m, min_coverage", "min coverage", cxxopts::value(minCoverage))("g,feature",
+        "feature type 0: ORB, 1: SIFT, 2: SuperPoint", cxxopts::value(featureInt))("s,stage",
         "0: fts, 1: kfs: 2: matches, 3: init, 4: global, 5: reint; 6: global",
         cxxopts::value(stage));
 
@@ -64,19 +64,25 @@ int main(int argc, const char** argv)
     std::cout << "k: " << rows << std::endl;
     std::cout << "n: " << numFts << std::endl;
     std::cout << "m: " << minCoverage << std::endl;
+    std::cout << "g: " << featureInt << std::endl;
     std::cout << "s: " << stage << std::endl;
+
+    auto ftType = FeatureType::ORB;
+    if (featureInt == 1)
+        ftType = FeatureType::SIFT;
+    if (featureInt == 2)
+        ftType = FeatureType::SuperPoint;
 
     // load images
     auto images = Images(basePath / "imgs");
 
     // calc features for all frames
     auto ftPath = basePath / "fts";
-    auto ftType = FeatureType::ORB;
     auto features = Features();
-    if (Features::isComputed(images, ftPath, ftType) && !force)
-        features = Features::fromDir(images, ftPath, ftType);
+    if (Features::isComputed(images, ftPath, ORB) && !force)
+        features = Features::fromDir(images, ftPath, ORB);
     else
-        features = Features::compute(images, ftPath, ftType, numFts, cacheSize);
+        features = Features::compute(images, ftPath, ORB, numFts, cacheSize);
 
     if (stage < 1)
         return 0;
@@ -92,7 +98,7 @@ int main(int argc, const char** argv)
     if (stage < 2)
         return 0;
 
-    // calculate matches between images between keyframes via KeyFrameRecommender
+    // calculate matches between keyframes via KeyFrameRecommender
     auto kfIntraPath = basePath / "kfs/maches_intra";
     auto kfRecommender = std::make_unique<KeyFrameRecommender>(keyFrames);
     if (!matches::isComputed(kfIntraPath, geomType) || force)
@@ -109,40 +115,58 @@ int main(int argc, const char** argv)
     auto featuresDensePath = basePath / "kfs/fts";
 
     auto featuresDense = Features();
-    if (Features::isComputed(images, featuresDensePath, ftType, keyFrames) && !force)
-        featuresDense = Features::fromDir(images, featuresDensePath, ftType, keyFrames);
+    if (Features::isComputed(images, featuresDensePath, ORB, keyFrames) && !force)
+        featuresDense = Features::fromDir(images, featuresDensePath, ORB, keyFrames);
     else
     {
-        featuresDense = Features::compute(
-            images, featuresDensePath, ftType, 4 * numFts, cacheSize, keyFrames);
+        featuresDense
+            = Features::compute(images, featuresDensePath, ORB, 4 * numFts, cacheSize, keyFrames);
     }
 
-    // SUPERGLUE
-    if (Features::isComputed(images, featuresDensePath, FeatureType::SuperPoint, keyFrames)
-        && !force)
+    // window is 4 because ceil(1 / 0.3) seems like a sensible default
+    auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
+    if (ftType == FeatureType::SuperPoint)
     {
-        featuresDense
-            = Features::fromDir(images, featuresDensePath, FeatureType::SuperPoint, keyFrames);
+        if (Features::isComputed(images, featuresDensePath, ftType, keyFrames) && !force)
+        {
+            featuresDense = Features::fromDir(images, featuresDensePath, ftType, keyFrames);
+        }
+        else
+        {
+            featuresDense = matches::SuperGlue("/data/arbeit/sg/indoor", 800)
+                                .compute(images, featuresDensePath, kfInterPath, geomType,
+                                    matches::MatchType::Strategy, 4, 0.0,
+                                    std::move(mildRecommender), cacheSize, keyFrames);
+        }
+    }
+    else if (ftType == FeatureType::SIFT)
+    {
+        auto featuresSift = Features();
+        if (Features::isComputed(images, featuresDensePath, ftType, keyFrames) && !force)
+        {
+            featuresSift = Features::fromDir(images, featuresDensePath, ftType, keyFrames);
+        }
+        else
+        {
+            featuresSift = Features::compute(
+                images, featuresDensePath, ftType, 4 * numFts, cacheSize, keyFrames);
+
+            if (!matches::isComputed(kfInterPath, geomType) || force)
+            {
+                matches::compute(kfInterPath, geomType, featuresSift, matches::MatchType::Strategy,
+                    4, 0.0, std::move(mildRecommender), cacheSize, keyFrames);
+            }
+            featuresDense = featuresSift;
+        }
     }
     else
     {
-        auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
-        featuresDense
-            = matches::SuperGlue("/data/arbeit/sg/indoor", 800)
-                  .compute(images, featuresDensePath, kfInterPath, geomType,
-                      matches::MatchType::Strategy, 4, 0.0, std::move(mildRecommender), cacheSize,
-                      keyFrames);
+        if (!matches::isComputed(kfInterPath, geomType) || force)
+        {
+            matches::compute(kfInterPath, geomType, featuresDense, matches::MatchType::Strategy, 4,
+                0.0, std::move(mildRecommender), cacheSize, keyFrames);
+        }
     }
-
-
-    // NON-SUPERGLUE
-    /* auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true); */
-    /* if (!matches::isComputed(kfInterPath, geomType) || force) */
-    /* { */
-    /*     // 4 because ceil(1 / 0.3) seems like a sensible default */
-    /*     matches::compute(kfInterPath, geomType, featuresDense, matches::MatchType::Strategy, 4, 0.0, */
-    /*         std::move(mildRecommender), cacheSize, keyFrames); */
-    /* } */
 
     // panoramas can only be calculated from theses Types
     GeometricType useableTypes = matches::getConnectedTypes(kfInterPath, geomType, keyFrames);

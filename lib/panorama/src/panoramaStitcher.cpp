@@ -322,9 +322,9 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
         }
 
         // DEBUG
-        /* cv::FileStorage fs("centersTrans.yml", cv::FileStorage::WRITE); */
-        /* fs << "pos" << centersTrans; */
-        /* fs.release(); */
+        cv::FileStorage fs("centersTrans.yml", cv::FileStorage::WRITE);
+        fs << "pos" << centersTrans;
+        fs.release();
         // DEBUG
     }
     return std::make_tuple(pano, scaleMat, transMat);

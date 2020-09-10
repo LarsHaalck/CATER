@@ -31,6 +31,9 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
     FeatureType type, std::size_t numFeatures, std::size_t cacheSize, const size_t_vec& ids,
     std::shared_ptr<BaseProgressBar> cb)
 {
+    if (type == FeatureType::SuperPoint)
+        return {};
+
     // make sure folder exits
     if (!fs::exists(ftDir) || !fs::is_directory(ftDir))
         fs::create_directories(ftDir);

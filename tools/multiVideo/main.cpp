@@ -20,8 +20,22 @@
 
 using namespace ht;
 
-int main()
+int main(int argc, const char** argv)
 {
+    std::vector<std::filesystem::path> folders;
+
+    cxxopts::Options options("multi", "");
+    options.show_positional_help();
+    options.add_options()("folders", "folders", cxxopts::value(folders));
+    options.parse_positional({"folders"});
+
+    auto result = options.parse(argc, argv);
+
+    std::cout << result.count("folders") << std::endl;
+    for (auto b : folders)
+        std::cout << b << std::endl;
+
+    return 0;
     std::filesystem::path basePath = "/home/lars/data/ontogenyTest";
     std::vector<std::filesystem::path> videoPaths
         = {basePath / "vid2", basePath / "vid3", basePath / "vid4"};
@@ -71,7 +85,7 @@ int main()
         else
         {
             ftsGlobal = Features::compute(
-                images, ftsGlobalPath, ftsGlobalType, 3000, cacheSize, keyFrames);
+                images, ftsGlobalPath, ftsGlobalType, 2000, cacheSize, keyFrames);
         }
 
         ftGlobalContainers.push_back(std::move(ftsGlobal));

@@ -1,5 +1,6 @@
 add_subdirectory(tracker)
 add_subdirectory(singleVideo)
+add_subdirectory(fullVideo)
 add_subdirectory(multiVideo)
 add_subdirectory(match_trafo_exporter)
 add_subdirectory(keyframes_to_image_list)
