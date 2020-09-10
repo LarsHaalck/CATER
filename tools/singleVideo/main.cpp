@@ -208,10 +208,11 @@ int main(int argc, const char** argv)
     stitcher.reintegrate();
     if (showResults)
     {
-        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), false, true));
+        auto pano = std::get<0>(
+            stitcher.stitchPano(cv::Size(cols, rows), false, basePath / "reint_centers.yml"));
         cv::imwrite((basePath / "pano2.png").string(), pano);
     }
-    stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
+    stitcher.writeTrafos(basePath / "reint_trafos.yml", WriteType::Readable);
 
     if (stage < 7)
         return 0;
@@ -221,7 +222,8 @@ int main(int argc, const char** argv)
     stitcher.writeTrafos(basePath / "opt_trafos.bin");
     if (showResults)
     {
-        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), false, true));
+        auto pano = std::get<0>(
+            stitcher.stitchPano(cv::Size(cols, rows), false, basePath / "opt_centers.yml"));
         cv::imwrite((basePath / "pano3.png").string(), pano);
     }
 

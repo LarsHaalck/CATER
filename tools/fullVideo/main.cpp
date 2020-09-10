@@ -129,8 +129,7 @@ int main(int argc, const char** argv)
             {
                 features = matches::SuperGlue("/data/arbeit/sg/indoor", 800)
                                .compute(images, ftPath, matchPath, geomType,
-                                   matches::MatchType::Exhaustive, 0, 0.0, nullptr,
-                                   cacheSize);
+                                   matches::MatchType::Exhaustive, 0, 0.0, nullptr, cacheSize);
             }
             else
             {
@@ -170,7 +169,8 @@ int main(int argc, const char** argv)
     stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
     if (showResults)
     {
-        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
+        auto pano = std::get<0>(
+            stitcher.stitchPano(cv::Size(cols, rows), false, basePath / "opt_centers.yml"));
         cv::imwrite((basePath / "pano1.png").string(), pano);
     }
 

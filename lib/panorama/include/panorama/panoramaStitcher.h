@@ -48,7 +48,7 @@ public:
     void initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
         const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes);
     std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool blend = false,
-        bool drawCenters = false, std::shared_ptr<BaseProgressBar> cb = {});
+        const std::filesystem::path& centerPath = {}, std::shared_ptr<BaseProgressBar> cb = {});
 
     void globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
         const matches::PairwiseMatches& matches, std::size_t limitTo = 0,

@@ -210,8 +210,8 @@ void PanoramaStitcher::highlightImg(cv::Mat& img)
     }
 }
 
-std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
-    cv::Size targetSize, bool blend, bool drawCenters, std::shared_ptr<BaseProgressBar> cb)
+std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targetSize, bool blend,
+    const fs::path& centerPath, std::shared_ptr<BaseProgressBar> cb)
 {
     auto rect = generateBoundingRect();
     rect.width = rect.width - rect.x;
@@ -262,7 +262,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
         cv::warpPerspective(undistImg, warped, currTrafo, newSize);
 
         // DEBUG
-        if (drawCenters)
+        if (!centerPath.empty())
         {
             if (i > 0)
             {
@@ -311,7 +311,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
     else
         pano = img0;
 
-    if (drawCenters)
+    if (!centerPath.empty())
     {
         for (std::size_t i = 0; i < centersTrans.size(); i++)
         {
@@ -322,7 +322,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(
         }
 
         // DEBUG
-        cv::FileStorage fs("centersTrans.yml", cv::FileStorage::WRITE);
+        cv::FileStorage fs(centerPath.string(), cv::FileStorage::WRITE);
         fs << "pos" << centersTrans;
         fs.release();
         // DEBUG
