@@ -20,96 +20,109 @@
 
 using namespace ht;
 
+auto ORB = ht::FeatureType::ORB;
+namespace fs = std::filesystem;
 int main(int argc, const char** argv)
 {
-    std::vector<std::filesystem::path> folders;
+    std::vector<fs::path> videoPaths;
+    int featureInt = 0;
 
-    cxxopts::Options options("multi", "");
-    options.show_positional_help();
-    options.add_options()("folders", "folders", cxxopts::value(folders));
-    options.parse_positional({"folders"});
-
-    auto result = options.parse(argc, argv);
-
-    std::cout << result.count("folders") << std::endl;
-    for (auto b : folders)
-        std::cout << b << std::endl;
-
-    return 0;
-    std::filesystem::path basePath = "/home/lars/data/ontogenyTest";
-    std::vector<std::filesystem::path> videoPaths
-        = {basePath / "vid2", basePath / "vid3", basePath / "vid4"};
-
-    // TODO: deduce feature type from
     bool force = false;
     int cacheSize = 200;
 
     int cols = 2 * 1920;
     int rows = 2 * 1080;
 
+    cxxopts::Options options("multi", "");
+    options.show_positional_help();
+    options.add_options()("folders", "folders", cxxopts::value(videoPaths))("g,feature",
+        "feature type 0: ORB, 1: SIFT, 2: SuperPoint",
+        cxxopts::value(featureInt))("f", "force", cxxopts::value(force))(
+        "k, cols", "cols", cxxopts::value(cols))("l, rows", "rows", cxxopts::value(rows));
+
+    options.parse_positional({"folders"});
+
+    auto result = options.parse(argc, argv);
+    if (result.count("folders") < 2)
+    {
+        options.help();
+        return -1;
+    }
+
+    auto ftType = FeatureType::ORB;
+    if (featureInt == 1)
+        ftType = FeatureType::SIFT;
+    if (featureInt == 2)
+        ftType = FeatureType::SuperPoint;
+
+    fs::path basePath = videoPaths[0].parent_path();
+    if (basePath.empty())
+        return -1;
+
     GeometricType geomType = GeometricType::Similarity;
 
     // collect img and ft containers and list of keyframes
     std::vector<Images> imgContainers;
-    std::vector<Features> ftLocalContainers;
-    std::vector<Features> ftGlobalContainers;
     std::vector<std::vector<std::size_t>> keyFrameList;
     std::vector<std::size_t> sizes;
     std::vector<matches::PairwiseMatches> matchesIntraList;
     std::vector<matches::PairwiseMatches> matchesInterList;
 
+    std::vector<Features> ftsOrbSparse;
+    std::vector<Features> ftsOrbDense;
+    std::vector<Features> ftsDense;
+
     for (const auto& path : videoPaths)
     {
         auto images = Images(path / "imgs");
-        auto ftsLocal = Features::fromDir(images, path / "fts", FeatureType::ORB);
-        auto ftsLocalDense
-            = Features::fromDir(images, path / "kfs/matches_inter/fts", FeatureType::ORB);
+        auto currFtsOrbSparse = Features::fromDir(images, path / "fts", ORB);
+        auto currFtsOrbDense = Features::fromDir(images, path / "kfs/fts", ORB);
+
+        if (ftType != ORB)
+            ftsDense.push_back(Features::fromDir(images, path / "kfs/fts", ftType));
 
         auto keyFrames = KeyFrames::fromDir(path / "key_frames.yml");
         keyFrameList.push_back(keyFrames);
 
-        auto matchesIntra = matches::getMatches(path / "kfs/matches_intra", geomType);
+        auto matchesIntra = matches::getMatches(path / "kfs/maches_intra", geomType);
         matchesIntraList.push_back(std::move(matchesIntra));
 
-        auto matchesInter = matches::getMatches(path / "kfs/matches_inter", geomType);
+        auto matchesInter = matches::getMatches(path / "kfs/maches_inter", geomType);
         matchesInterList.push_back(std::move(matchesInter));
 
-        ftLocalContainers.push_back(std::move(ftsLocal));
+        ftsOrbSparse.push_back(std::move(currFtsOrbSparse));
+        ftsOrbDense.push_back(std::move(currFtsOrbDense));
 
-        // add and compute orb containers for mild recomender
-        auto ftsGlobalPath = path / "kfs/fts";
-        auto ftsGlobalType = FeatureType::ORB;
-        auto ftsGlobal = Features();
-        if (Features::isComputed(images, ftsGlobalPath, ftsGlobalType) && !force)
-            ftsGlobal = Features::fromDir(images, ftsGlobalPath, ftsGlobalType, keyFrames);
-        else
-        {
-            ftsGlobal = Features::compute(
-                images, ftsGlobalPath, ftsGlobalType, 2000, cacheSize, keyFrames);
-        }
-
-        ftGlobalContainers.push_back(std::move(ftsGlobal));
         sizes.push_back(images.size());
         imgContainers.push_back(std::move(images));
     }
     Translator translator(sizes);
 
     // aggregate img and feature container
-    auto combindImgContainer = ImageAggregator(imgContainers);
-    auto combinedLocalFtContainer = FeatureAggregator(ftLocalContainers);
-    auto combinedGlobalFtContainer = FeatureAggregator(ftGlobalContainers);
+    auto combinedImgContainer = ImageAggregator(imgContainers);
+    auto combinedSparseFtContainer = FeatureAggregator(ftsOrbSparse);
+    auto combinedDenseOrbFtContainer = FeatureAggregator(ftsOrbDense);
+    auto combinedDenseFtContainer = FeatureAggregator(ftsDense);
 
     // list of local keyframes to global keyframes
     auto globalKeyFrames = translator.localToGlobal(keyFrameList);
 
     // match inter video
     auto ivlcMatchPath = basePath / "ivlc/matches";
-    auto mildRecommender = std::make_unique<MildRecommender>(ftGlobalContainers);
+    auto mildRecommender = std::make_unique<MildRecommender>(combinedDenseOrbFtContainer);
     if (!matches::isComputed(ivlcMatchPath, geomType) || force)
     {
-        matches::compute(ivlcMatchPath, geomType, combinedGlobalFtContainer,
-            matches::MatchType::Strategy, 3, 0.0, std::move(mildRecommender), cacheSize,
-            globalKeyFrames);
+        if (ftType != ORB)
+        {
+            matches::compute(ivlcMatchPath, geomType, combinedDenseFtContainer,
+                    matches::MatchType::Strategy, 3, 0.0, std::move(mildRecommender), cacheSize,
+                    globalKeyFrames);
+        }
+        {
+            matches::compute(ivlcMatchPath, geomType, combinedDenseOrbFtContainer,
+                    matches::MatchType::Strategy, 3, 0.0, std::move(mildRecommender), cacheSize,
+                    globalKeyFrames);
+        }
     }
 
     // combined local dense matches and inter video sparse matches
@@ -122,18 +135,19 @@ int main(int argc, const char** argv)
     auto globalInterMatches = translator.localToGlobal(matchesInterList);
     globalInterMatches.insert(std::begin(interVidMatches), std::end(interVidMatches));
 
-    // do pano stitching for every wanted type
-    auto stitcher = PanoramaStitcher(combindImgContainer, globalKeyFrames, geomType);
-    /* auto stitcher = std::make_unique<PanoramaStitcher>(globalImgContainer, globalFtSiftContainer, */
-    /*     globalInterMatches, matchInterVidContainer->getTrafos(GeometricType::Similarity), */
-    /*     globalKeyFrames, GeometricType::Similarity, Blending::NoBlend); */
+    auto stitcher = PanoramaStitcher(combinedImgContainer, globalKeyFrames, geomType);
 
     stitcher.initTrafosFromMultipleVideos(
         matches::getTrafos(ivlcMatchPath), sizes, localOptimalTrafos, optimalTransitions);
     auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
     cv::imwrite("combined0.png", pano);
 
-    stitcher.globalOptimizeKeyFrames(combinedGlobalFtContainer, globalInterMatches);
+
+    if (ftType != ORB)
+        stitcher.globalOptimizeKeyFrames(combinedDenseFtContainer, globalInterMatches);
+    else
+        stitcher.globalOptimizeKeyFrames(combinedDenseOrbFtContainer, globalInterMatches);
+
     pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
     cv::imwrite("combined1.png", pano);
 
@@ -142,7 +156,7 @@ int main(int argc, const char** argv)
     cv::imwrite("combined2.png", pano);
 
     auto globalIntraMatches = translator.localToGlobal(matchesIntraList);
-    stitcher.refineNonKeyFrames(combinedGlobalFtContainer, globalIntraMatches);
+    stitcher.refineNonKeyFrames(combinedSparseFtContainer, globalIntraMatches);
     pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
     cv::imwrite("combined3.png", pano);
 
