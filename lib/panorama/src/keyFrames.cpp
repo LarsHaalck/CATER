@@ -9,8 +9,8 @@
 #ifdef _OPENMP
 #include <omp.h>
 #else
-#define omp_get_max_threads() 0
-#define omp_get_thread_num() 0
+#define omp_get_max_threads() 1
+#define omp_get_thread_num() 1
 #endif // _OPENMP
 
 namespace fs = std::filesystem;
@@ -80,18 +80,12 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
                 {
                     warning = true;
                     break;
-                    /* if (warning) */
-                    /*     break; */
-                    /* warning = true; */
                 }
-                /* else */
-                /*     warning = false; */
 
                 if (shift > high)
                 {
                     warning = true;
                     break;
-                    /* break; */
                 }
                 distOverlapVec.push_back(pair);
             }
