@@ -367,6 +367,11 @@ namespace detail
     Matches putMatchPair(
         cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ)
     {
+        // TODO: find out the real lower bound here:
+        // knnMatch(2) breaks at least with rows == 3
+        if (descI.rows < 5 || descJ.rows < 5)
+            return Matches();
+
         auto matchesI = putMatchPairHelper(descMatcher, descI, descJ);
         auto matchesJ = putMatchPairHelper(descMatcher, descJ, descI);
 
