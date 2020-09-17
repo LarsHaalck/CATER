@@ -45,7 +45,7 @@ int main(int argc, const char** argv)
     auto result = options.parse(argc, argv);
     if (result.count("folders") < 2)
     {
-        options.help();
+        std::cout << options.help() << std::endl;
         return -1;
     }
 
@@ -57,7 +57,7 @@ int main(int argc, const char** argv)
 
     fs::path basePath = videoPaths[0].parent_path();
     if (basePath.empty())
-        return -1;
+        basePath = ".";
 
     GeometricType geomType = GeometricType::Similarity;
 
