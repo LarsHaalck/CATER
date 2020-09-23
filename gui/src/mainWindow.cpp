@@ -129,11 +129,13 @@ void HabiTrack::on_actionSave_Results_triggered()
     spdlog::debug("GUI: Save Results triggered");
 
     saveResults(mResultsFile, mPrefs, mImgFolder, mStartFrameNumber, mEndFrameNumber);
-    mManualUnaries.save(mUnFolder);
+    if (mManualUnaries.size())
+        mManualUnaries.save(mUnFolder);
     //mManualBearing.save(mOutputPath);
 
     statusBar()->showMessage("Saved results.", statusDelay);
 }
+
 void HabiTrack::on_actionPreferences_triggered()
 {
     PreferencesDialog prefDialog(this, mPrefs);
@@ -232,6 +234,7 @@ void HabiTrack::populatePaths()
         logger->set_level(spdlog::level::debug);
         spdlog::flush_every(std::chrono::seconds(3));
         spdlog::set_default_logger(logger);
+        spdlog::info("New run -------------");
     }
     catch (const spdlog::spdlog_ex& ex)
     {
@@ -360,8 +363,6 @@ void HabiTrack::openImagesHelper(const fs::path& path)
 
     ui->labelFileName->setText(QString::fromStdString(mImages.getFileName(0).string()));
 
-    mStartFrameNumber = 1;
-    mEndFrameNumber = numImgs;
     ui->labelStartFrame->setText(QString::number(mStartFrameNumber));
     ui->labelEndFrame->setText(QString::number(mEndFrameNumber));
     ui->labelNumTrafos->setText(QString::number(0));
@@ -382,8 +383,8 @@ void HabiTrack::openImagesHelper(const fs::path& path)
     ui->buttonEndFrame->setEnabled(true);
 
     // show first frame
-    mCurrentFrameNumber = 1;
-    showFrame(1);
+    mCurrentFrameNumber = mStartFrameNumber;
+    showFrame(mStartFrameNumber);
 
     if (path.empty())
     {
@@ -435,6 +436,8 @@ void HabiTrack::on_actionOpenImgFolder_triggered()
 
     mImgFolder = fs::path(imgFolderPath.toStdString());
     mImages = Images(mImgFolder);
+    mStartFrameNumber = 1;
+    mEndFrameNumber = mImages.size();
     openImagesHelper();
 }
 
@@ -487,7 +490,9 @@ void HabiTrack::on_actionOpenResultsFile_triggered()
             {
                 on_buttonExtractUnaries_clicked();
                 if (detectsComputed())
+                {
                     mDetections = Detections::fromDir(mDetectionsFile);
+                }
             }
         }
     }

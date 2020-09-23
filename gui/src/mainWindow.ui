@@ -444,7 +444,7 @@ color: black;
 </string>
                      </property>
                      <property name="text">
-                      <string>Mikes Super Button</string>
+                      <string>Track without input</string>
                      </property>
                     </widget>
                    </item>
@@ -466,7 +466,7 @@ color: white;
 </string>
                      </property>
                      <property name="text">
-                      <string>Optimize Unaries</string>
+                      <string>Correct tracks</string>
                      </property>
                     </widget>
                    </item>

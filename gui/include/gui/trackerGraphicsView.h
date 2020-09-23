@@ -24,6 +24,7 @@ public:
 
 protected:
     void wheelEvent(QWheelEvent* event);
+    void mouseMoveEvent(QMouseEvent* event);
     void mousePressEvent(QMouseEvent* event);
 
 private:

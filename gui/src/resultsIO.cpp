@@ -108,13 +108,17 @@ void saveResults(const fs::path& resultFile, const Preferences& prefs, const fs:
 std::tuple<Preferences, std::filesystem::path, std::size_t, std::size_t> loadResults(
     const std::filesystem::path& resultFile)
 {
-    spdlog::info("Save results file to: {}", resultFile.string());
+    spdlog::info("load results from: {}", resultFile.string());
     cv::FileStorage fs(resultFile.string(), cv::FileStorage::READ);
 
     auto imgFolder = static_cast<fs::path>(fs["img_folder"]);
     auto startFrame = static_cast<std::size_t>(static_cast<int>(fs["start_frame"]));
     auto endFrame = static_cast<std::size_t>(static_cast<int>(fs["end_frame"]));
     auto prefs = detail::loadPreferences(fs);
+
+    spdlog::debug("Img folder: {}", imgFolder.string());
+    spdlog::debug("start frame: {}", startFrame);
+    spdlog::debug("end frame: {}", endFrame);
     return {prefs, imgFolder, startFrame, endFrame};
 }
 

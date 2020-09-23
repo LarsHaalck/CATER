@@ -46,29 +46,35 @@ void TrackerGraphicsView::wheelEvent(QWheelEvent* event)
         QGraphicsView::wheelEvent(event);
 }
 
+void TrackerGraphicsView::mouseMoveEvent(QMouseEvent* event)
+{
+    if (event->modifiers().testFlag(Qt::ControlModifier))
+        QGraphicsView::mouseMoveEvent(event);
+}
+
 void TrackerGraphicsView::mousePressEvent(QMouseEvent* event)
 {
-    if (event->modifiers().testFlag(Qt::ControlModifier)
+    if (!event->modifiers().testFlag(Qt::ControlModifier)
         && !event->modifiers().testFlag(Qt::ShiftModifier)
         && event->buttons().testFlag(Qt::LeftButton))
     {
         QPointF pos = this->mapToScene(event->pos());
         emit this->positionChanged(pos);
     }
-    else if (event->modifiers().testFlag(Qt::ControlModifier)
+    else if (!event->modifiers().testFlag(Qt::ControlModifier)
         && !event->modifiers().testFlag(Qt::ShiftModifier)
         && event->buttons().testFlag(Qt::RightButton))
     {
         emit this->positionCleared();
     }
-    else if (event->modifiers().testFlag(Qt::ControlModifier)
+    else if (!event->modifiers().testFlag(Qt::ControlModifier)
         && event->modifiers().testFlag(Qt::ShiftModifier)
         && event->buttons().testFlag(Qt::LeftButton))
     {
         QPointF pos = this->mapToScene(event->pos());
         emit this->bearingChanged(pos);
     }
-    else if (event->modifiers().testFlag(Qt::ControlModifier)
+    else if (!event->modifiers().testFlag(Qt::ControlModifier)
         && event->modifiers().testFlag(Qt::ShiftModifier)
         && event->buttons().testFlag(Qt::RightButton))
     {
