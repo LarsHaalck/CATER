@@ -79,9 +79,12 @@ target_link_libraries(${LIB_NAME}
     mild::mild
     cereal
     io
-    torch
     util
 )
+
+if(${WITH_SUPERGLUE})
+    target_link_libraries(${LIB_NAME} PRIVATE torch)
+endif()
 
 if(${OpenMP_CXX_FOUND})
     target_link_libraries(${LIB_NAME}
