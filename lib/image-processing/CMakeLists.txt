@@ -4,7 +4,10 @@
 find_package(cereal REQUIRED)
 find_package(mild REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(Torch REQUIRED)
+
+if(${WITH_SUPERGLUE})
+    find_package(Torch REQUIRED)
+endif()
 
 ###########################################################################
 #                                FILES                                    #
@@ -37,9 +40,14 @@ set(SOURCES
     src/mildRecommender.cpp
 
     # misc
-    src/superGlue.cpp
     src/util.cpp
 )
+
+if(${WITH_SUPERGLUE})
+    list(APPEND SOURCES src/superGlue.cpp)
+else()
+    list(APPEND SOURCES src/superGlueStub.cpp)
+endif()
 
 ###########################################################################
 #                               TARGETS                                   #

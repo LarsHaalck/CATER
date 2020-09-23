@@ -9,7 +9,7 @@ set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/ui)
 
 option(BUILD_GUI "Build the graphical user interface" TRUE)
 option(BUILD_TOOLS "Build tools" TRUE)
-# option(BUILD_IMAGE_PROCESSING "Build the graphical user interface" FALSE)
+option(WITH_SUPERGLUE "With SuperGlue/SuperPoint support" FALSE)
 
 # enable highest error level and optimizations
 if(MSVC)
@@ -56,7 +56,6 @@ endif ()
 find_package(OpenCV REQUIRED)
 find_package(OpenMP QUIET)
 find_package(spdlog REQUIRED)
-# find_package(Eigen3 REQUIRED)
 
 if(NOT ${OpenMP_CXX_FOUND})
     message(STATUS "Could not find OpenMP; building without...")
