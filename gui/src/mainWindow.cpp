@@ -506,7 +506,7 @@ void HabiTrack::on_buttonStartFrame_clicked()
             this, "Warning", "Start frame cannot be equal or greater than end frame");
         return;
     }
-    spdlog::debug("GUI: changed start frame to {}", mCurrentFrameNumber - 1);
+    spdlog::debug("GUI: changed start frame to {}", mCurrentFrameNumber);
     // TODO: some data structures are no longer valid and should be computed again
     mStartFrameNumber = mCurrentFrameNumber;
     ui->labelStartFrame->setText(QString::number(mStartFrameNumber));
@@ -520,7 +520,7 @@ void HabiTrack::on_buttonEndFrame_clicked()
             this, "Warning", "End frame cannot be equal or smaller than start frame");
         return;
     }
-    spdlog::debug("GUI: changed end frame to {}", mCurrentFrameNumber - 1);
+    spdlog::debug("GUI: changed end frame to {}", mCurrentFrameNumber);
     // TODO: some data structures are no longer valid and should be computed again
     mEndFrameNumber = mCurrentFrameNumber;
     ui->labelEndFrame->setText(QString::number(mEndFrameNumber));
