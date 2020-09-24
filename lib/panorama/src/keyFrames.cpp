@@ -50,7 +50,7 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
     {
         std::size_t remainImgs = ftContainer.size() - currView - 1;
         std::vector<std::pair<float, std::size_t>> distOverlapVec;
-        distOverlapVec.reserve(remainImgs);
+        int extended = -1;
 
         // control relative offset to current frame
         // thread 0 handles direct neighbor, thread 1 direct neighbor + 1, etc
@@ -70,28 +70,37 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
                 }
             }
 
-            // investigate tuples, break if shift is to high or no feature points
-            // for two consecutive frames
-            bool warning = false;
+            bool highShift = false;
             for (const auto& pair : currDistOverlapVec)
             {
                 auto [shift, numFts] = pair;
                 if (numFts == 0)
                 {
-                    warning = true;
-                    break;
+                    if (extended < 0)
+                        extended = 10;
+                    else if (extended > 0)
+                        extended--;
+                    else
+                        break;
                 }
-
                 if (shift > high)
                 {
-                    warning = true;
+                    highShift = true;
                     break;
                 }
                 distOverlapVec.push_back(pair);
             }
-            if (warning && distOverlapVec.empty())
+
+            // we extended the window a bit and have not reached high shift yet
+            if (extended > 0 && !highShift)
+                continue;
+
+            // border case where velocity is too high
+            if (highShift && distOverlapVec.empty())
                 distOverlapVec.push_back(currDistOverlapVec[0]);
-            if (warning)
+
+            // enough shift, break
+            if (highShift)
                 break;
         }
 
