@@ -352,6 +352,8 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
 {
     auto pairs = getKeyList(matches);
 
+    std::unordered_set<std::size_t> postpones;
+
     std::vector<PairwiseMatches> boundedMatches;
     std::size_t currMatchId = 0;
     for (std::size_t i = 1; i < mKeyFrames.size(); i++)
@@ -365,6 +367,16 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
             currMatches.insert(std::make_pair(pair, matches.at(pair)));
             currMatchId++;
             pair = pairs[currMatchId];
+        }
+
+        // save all frames, without matches with the adjacent keyframes for later refinement
+        for (std::size_t j = prevKf + 1; j < currKf; j++)
+        {
+            if (currMatches.count({prevKf, j}) + currMatches.count({j, currKf}) == 0)
+            {
+                spdlog::debug("Inserting: {}", j);
+                postpones.insert(j);
+            }
         }
 
         // should not be empty except when prevKf + 1 = currKf
@@ -403,6 +415,47 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
             auto id = getKeyList(boundedMatches[i])[0].first;
             spdlog::warn(
                 "Optimization might not be reliable for segmet starting with frame {}", id);
+        }
+    }
+
+    spdlog::info("Interpolating postponed transformations of {} frames", postpones.size());
+    for (std::size_t i = 1; i < mImages.size(); i++)
+    {
+        if (postpones.count(i))
+        {
+            int left = -1;
+            int right = -1;
+            for (int j = static_cast<int>(i) - 1; j >= 0; j--)
+            {
+                if (postpones.count(j) == 0)
+                {
+                    left = j;
+                    break;
+                }
+            }
+
+            for (std::size_t j = i + 1; j < mImages.size(); j++)
+            {
+                if (postpones.count(j) == 0)
+                {
+                    right = j;
+                    break;
+                }
+            }
+            if (left < 0)
+            {
+                left = right;
+                right++;
+            }
+            if (right < 0)
+            {
+                right = left;
+                left--;
+            }
+            auto alpha = static_cast<float>((i - left)) / (right - left);
+            spdlog::debug("Postpone refine {}: {} -> {}, s = {}", i, left, right, alpha);
+            mOptimizedTrafos[i]
+                = interpolateTrafo(alpha, mOptimizedTrafos[left], mOptimizedTrafos[right]);
         }
     }
 }
