@@ -352,7 +352,7 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
 {
     auto pairs = getKeyList(matches);
 
-    std::unordered_set<std::size_t> postpones;
+    std::vector<std::size_t> postpones;
 
     std::vector<PairwiseMatches> boundedMatches;
     std::size_t currMatchId = 0;
@@ -374,8 +374,8 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
         {
             if (currMatches.count({prevKf, j}) + currMatches.count({j, currKf}) == 0)
             {
-                spdlog::debug("Inserting: {}", j);
-                postpones.insert(j);
+                spdlog::debug("Inserting: {} for postponed initialization", j);
+                postpones.push_back(j);
             }
         }
 
@@ -419,44 +419,46 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
     }
 
     spdlog::info("Interpolating postponed transformations of {} frames", postpones.size());
-    for (std::size_t i = 1; i < mImages.size(); i++)
-    {
-        if (postpones.count(i))
-        {
-            int left = -1;
-            int right = -1;
-            for (int j = static_cast<int>(i) - 1; j >= 0; j--)
-            {
-                if (postpones.count(j) == 0)
-                {
-                    left = j;
-                    break;
-                }
-            }
+    std::vector<int> left(postpones.size(), 0);
+    std::vector<int> right(postpones.size(), 0);
 
-            for (std::size_t j = i + 1; j < mImages.size(); j++)
-            {
-                if (postpones.count(j) == 0)
-                {
-                    right = j;
-                    break;
-                }
-            }
-            if (left < 0)
-            {
-                left = right;
-                right++;
-            }
-            if (right < 0)
-            {
-                right = left;
-                left--;
-            }
-            auto alpha = static_cast<float>((i - left)) / (right - left);
-            spdlog::debug("Postpone refine {}: {} -> {}, s = {}", i, left, right, alpha);
-            mOptimizedTrafos[i]
-                = interpolateTrafo(alpha, mOptimizedTrafos[left], mOptimizedTrafos[right]);
+    left[0] = postpones[0] - 1; // always correct
+    for (std::size_t i = 1; i < postpones.size(); i++)
+    {
+        if (postpones[i - 1] + 1 == postpones[i])
+            left[i] = left[i - 1];
+        else
+            left[i] = postpones[i] - 1;
+    }
+
+    // may need correction after the following loop
+    right[postpones.size() - 1] = postpones[postpones.size() - 1] + 1;
+    for (int i = static_cast<int>(postpones.size()) - 1; i >= 0; i--)
+    {
+        if (postpones[i + 1] - 1 == postpones[i])
+            right[i] = right[i + 1];
+        else
+            right[i] = postpones[i] + 1;
+    }
+
+    for (std::size_t i = 0; i < postpones.size(); i++)
+    {
+        if (right[i] >= static_cast<int>(mImages.size()))
+        {
+            right[i] = left[i];
+            left[i] = left[i] - 1;
         }
+        if (left[i] < 0 || left[i] >= static_cast<int>(mImages.size()) || right[i] < 0
+            || right[i] >= static_cast<int>(mImages.size()))
+        {
+            spdlog::warn("Boundaries have wrong values in postponed initialization");
+        }
+
+        auto alpha = static_cast<float>((postpones[i] - left[i])) / (right[i] - left[i]);
+        spdlog::debug(
+            "Postpone refine {}: {} -> {}, s = {}", postpones[i], left[i], right[i], alpha);
+        mOptimizedTrafos[i]
+            = interpolateTrafo(alpha, mOptimizedTrafos[left[i]], mOptimizedTrafos[right[i]]);
     }
 }
 
