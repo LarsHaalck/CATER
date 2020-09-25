@@ -2,10 +2,10 @@
 
 #include <fstream>
 #include <iostream>
+#include <opencv2/features2d.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/stitching.hpp>
-#include <opencv2/features2d.hpp>
 
 using namespace std;
 using namespace cv;
@@ -95,7 +95,8 @@ int main(int argc, char* argv[])
     Mat pano;
     Ptr<Stitcher> stitcher = Stitcher::create(mode);
     stitcher->setFeaturesFinder(ORB::create(2000));
-    auto ptr = cv::makePtr<cv::FlannBasedMatcher>(cv::makePtr<cv::flann::LshIndexParams>(20, 10, 2));
+    auto ptr
+        = cv::makePtr<cv::FlannBasedMatcher>(cv::makePtr<cv::flann::LshIndexParams>(20, 10, 2));
     /* stitcher->setFeaturesMatcher(ptr); */
     Stitcher::Status status = stitcher->stitch(imgs, pano);
     if (status != Stitcher::OK)

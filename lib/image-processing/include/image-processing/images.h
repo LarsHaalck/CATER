@@ -22,9 +22,8 @@ public:
 
     Images() = default; // needed for aggregator
 
-    Images(const std::vector<std::filesystem::path>& paths,
-        ReadMode mode = ReadMode::Unchanged, cv::Vec3d weights = cv::Vec3d(),
-        cv::Vec2d resize = cv::Vec2d());
+    Images(const std::vector<std::filesystem::path>& paths, ReadMode mode = ReadMode::Unchanged,
+        cv::Vec3d weights = cv::Vec3d(), cv::Vec2d resize = cv::Vec2d());
 
     Images(const std::filesystem::path& path, ReadMode mode = ReadMode::Unchanged,
         cv::Vec3d weights = cv::Vec3d(), cv::Vec2d resize = cv::Vec2d());

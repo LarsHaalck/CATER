@@ -1,10 +1,10 @@
 #include "image-processing/mildRecommender.h"
 
-#include "image-processing/featureAggregator.h"
 #include "MILD/BayesianFilter.hpp"
 #include "MILD/loop_closure_detector.h"
-#include "image-processing/matches.h"
+#include "image-processing/featureAggregator.h"
 #include "image-processing/features.h"
+#include "image-processing/matches.h"
 #include "util/stopWatch.h"
 
 #include <spdlog/spdlog.h>
@@ -22,8 +22,7 @@ MildRecommender::MildRecommender(
         && "FeatureType must be ORB for MILD Recommender");
 }
 
-MildRecommender::MildRecommender(
-    const FeatureAggregator& ftContainers)
+MildRecommender::MildRecommender(const FeatureAggregator& ftContainers)
     : MildRecommender(ftContainers, 0, false)
 {
     mBlockList = ftContainers.getBlockList();

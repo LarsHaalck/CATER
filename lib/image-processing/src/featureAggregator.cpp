@@ -2,8 +2,7 @@
 
 namespace ht
 {
-FeatureAggregator::FeatureAggregator(
-    const std::vector<Features>& ftContainers)
+FeatureAggregator::FeatureAggregator(const std::vector<Features>& ftContainers)
     : mFtContainers(ftContainers)
     , mNumImgs()
     , mNumImgsVec()
@@ -96,15 +95,9 @@ PairwiseFeatureCache FeatureAggregator::getPairwiseFeatureCache(
 
 std::size_t FeatureAggregator::size() const { return mNumImgs; }
 
-cv::Size FeatureAggregator::getImageSize() const
-{
-    return mFtContainers[0].getImageSize();
-}
+cv::Size FeatureAggregator::getImageSize() const { return mFtContainers[0].getImageSize(); }
 
-FeatureType FeatureAggregator::getFeatureType() const
-{
-    return mFtContainers[0].getFeatureType();
-}
+FeatureType FeatureAggregator::getFeatureType() const { return mFtContainers[0].getFeatureType(); }
 
 std::vector<std::size_t> FeatureAggregator::getBlockList() const
 {

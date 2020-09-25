@@ -37,6 +37,7 @@ private:
         const std::filesystem::path& matchDir, MatchType matchType, std::size_t window,
         std::unique_ptr<PairRecommender> recommender, const size_t_vec& ids,
         std::shared_ptr<BaseProgressBar> cb);
+
 private:
     std::filesystem::path mFolder;
     int mTargetWidth;

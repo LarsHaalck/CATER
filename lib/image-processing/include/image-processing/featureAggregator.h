@@ -30,7 +30,6 @@ public:
 
     std::vector<std::size_t> getBlockList() const;
 
-
 private:
     std::pair<std::size_t, std::vector<std::size_t>> sumNumImgs(
         const std::vector<Features>& ftContainers) const;

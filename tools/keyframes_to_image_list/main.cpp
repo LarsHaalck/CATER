@@ -1,13 +1,12 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
+#include "cxxopts.hpp"
 #include "image-processing/images.h"
 #include "panorama/keyFrames.h"
-#include "cxxopts.hpp"
 
 using namespace ht;
 namespace fs = std::filesystem;
-
 
 int main(int argc, const char** argv)
 {

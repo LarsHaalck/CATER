@@ -115,13 +115,13 @@ int main(int argc, const char** argv)
         if (ftType != ORB)
         {
             matches::compute(ivlcMatchPath, geomType, combinedDenseFtContainer,
-                    matches::MatchType::Strategy, 3, 0.0, std::move(mildRecommender), cacheSize,
-                    globalKeyFrames);
+                matches::MatchType::Strategy, 3, 0.0, std::move(mildRecommender), cacheSize,
+                globalKeyFrames);
         }
         {
             matches::compute(ivlcMatchPath, geomType, combinedDenseOrbFtContainer,
-                    matches::MatchType::Strategy, 3, 0.0, std::move(mildRecommender), cacheSize,
-                    globalKeyFrames);
+                matches::MatchType::Strategy, 3, 0.0, std::move(mildRecommender), cacheSize,
+                globalKeyFrames);
         }
     }
 
@@ -141,7 +141,6 @@ int main(int argc, const char** argv)
         matches::getTrafos(ivlcMatchPath), sizes, localOptimalTrafos, optimalTransitions);
     auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
     cv::imwrite("combined0.png", pano);
-
 
     if (ftType != ORB)
         stitcher.globalOptimizeKeyFrames(combinedDenseFtContainer, globalInterMatches);

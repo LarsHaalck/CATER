@@ -19,7 +19,7 @@ class Images;
 
 namespace ht::matches
 {
-    class SuperGlue;
+class SuperGlue;
 }
 
 namespace ht

@@ -2,8 +2,7 @@
 
 namespace ht
 {
-ImageAggregator::ImageAggregator(
-    const std::vector<Images>& imgContainers)
+ImageAggregator::ImageAggregator(const std::vector<Images>& imgContainers)
     : mImgContainers(imgContainers)
     , mNumImgs()
     , mNumImgsVec()
@@ -48,7 +47,6 @@ cv::Mat ImageAggregator::at(std::size_t idx) const
 
 cv::Size ImageAggregator::getImgSize() const { return mImgContainers[0].getImgSize(); }
 cv::Point2f ImageAggregator::getCenter() const { return mImgContainers[0].getCenter(); }
-
 
 ImageCache ImageAggregator::getCache(std::size_t maxChunkSize, const size_t_vec& ids) const
 {

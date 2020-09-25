@@ -41,7 +41,8 @@ Images::Images(const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d
     setImgSize();
 }
 
-Images::Images(const std::vector<fs::path>& paths, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize)
+Images::Images(
+    const std::vector<fs::path>& paths, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize)
     : mImageFiles(paths)
     , mMode(mode)
     , mWeights(weights)
