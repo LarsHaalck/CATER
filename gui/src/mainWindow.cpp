@@ -306,6 +306,20 @@ void HabiTrack::showFrame(std::size_t frameNumber)
         if (ui->overlayBearings->isChecked())
             cv::line(frame, position, dirIndicator, cv::Scalar(0, 255, 0), 1);
 
+        // overloay manual unary as well
+        if (mManualUnaries.exists(idx))
+        {
+            auto unary = mManualUnaries.previewUnaryAt(idx);
+            cv::Mat unaryColor;
+            cv::cvtColor(unary, unaryColor, cv::COLOR_GRAY2BGR);
+            std::vector<cv::Mat> channels(3);
+            cv::split(unaryColor, channels);
+            channels[2] = cv::Mat::zeros(unary.size(), CV_8UC1);
+            cv::merge(channels, unaryColor);
+            cv::resize(unaryColor, unaryColor, frame.size());
+            cv::add(frame, unaryColor, frame);
+        }
+
         cv::Scalar color(100, 100, 255);
         cv::circle(frame, position, 20, color, 2);
     }
