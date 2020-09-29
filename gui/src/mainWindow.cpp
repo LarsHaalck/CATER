@@ -7,6 +7,7 @@
 #include "habitrack/tracker.h"
 #include "image-processing/util.h"
 #include "resultsIO.h"
+#include "setIO.h"
 #include <QDate>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -41,6 +42,7 @@ HabiTrack::HabiTrack(QWidget* parent)
     , mFeatures()
     , mUnaries()
     , mManualUnaries()
+    , mInvisibles()
     , mDetections()
     , mDetectionsWatchers()
     , mDetectionsQueue()
@@ -131,6 +133,9 @@ void HabiTrack::on_actionSave_Results_triggered()
     saveResults(mResultsFile, mPrefs, mImgFolder, mStartFrameNumber, mEndFrameNumber);
     if (mManualUnaries.size())
         mManualUnaries.save(mUnFolder);
+    if (mInvisibles.size())
+        saveSet(mSetFile, mInvisibles);
+
     //mManualBearing.save(mOutputPath);
 
     statusBar()->showMessage("Saved results.", statusDelay);
@@ -219,6 +224,7 @@ void HabiTrack::populatePaths()
     mMatchFolder = mOutputPath / "matches";
     mUnFolder = mOutputPath / "unaries";
     mDetectionsFile = mOutputPath / "detections.yml";
+    mSetFile = mOutputPath / "invisibles.yml";
 
     try
     {
@@ -255,6 +261,7 @@ void HabiTrack::showFrame(std::size_t frameNumber)
 
     // set filename
     ui->labelFileName->setText(QString::fromStdString(mImages.getFileName(idx).string()));
+    ui->labelLabel->setText(mInvisibles.count(idx) ? QString("Invisible") : QString());
 
     if (mUnaries.size())
     {
@@ -320,7 +327,12 @@ void HabiTrack::showFrame(std::size_t frameNumber)
             cv::add(frame, unaryColor, frame);
         }
 
-        cv::Scalar color(100, 100, 255);
+        cv::Scalar color;
+        if (mInvisibles.count(idx))
+            color = cv::Scalar(100, 255, 255);
+        else
+            color = cv::Scalar(100, 100, 255);
+
         cv::circle(frame, position, 20, color, 2);
     }
 
@@ -385,6 +397,8 @@ void HabiTrack::openImagesHelper(const fs::path& path)
 
     ui->buttonPrevFrame->setEnabled(true);
     ui->buttonNextFrame->setEnabled(true);
+    ui->buttonVisible->setEnabled(true);
+    ui->buttonInvisible->setEnabled(true);
     ui->actionPrev_Frame->setEnabled(true);
     ui->actionNext_Frame->setEnabled(true);
 
@@ -510,6 +524,8 @@ void HabiTrack::on_actionOpenResultsFile_triggered()
             }
         }
     }
+    if (fs::is_regular_file(mSetFile))
+        mInvisibles = loadSet(mSetFile);
 }
 
 void HabiTrack::on_buttonStartFrame_clicked()
@@ -538,6 +554,23 @@ void HabiTrack::on_buttonEndFrame_clicked()
     // TODO: some data structures are no longer valid and should be computed again
     mEndFrameNumber = mCurrentFrameNumber;
     ui->labelEndFrame->setText(QString::number(mEndFrameNumber));
+}
+
+void HabiTrack::on_buttonVisible_clicked()
+{
+    spdlog::debug("GUI: Removed invisible tag for: {}", mCurrentFrameNumber - 1);
+    auto it = mInvisibles.find(mCurrentFrameNumber - 1);
+    if (it != std::end(mInvisibles))
+        mInvisibles.erase(it);
+    statusBar()->showMessage("Set detection to visible", statusDelay);
+}
+
+void HabiTrack::on_buttonInvisible_clicked()
+{
+    spdlog::debug("GUI: Inserted invisible tag for: {}", mCurrentFrameNumber - 1);
+    mInvisibles.insert(mCurrentFrameNumber - 1);
+    showFrame(mCurrentFrameNumber);
+    statusBar()->showMessage("Set detection to invisible", statusDelay);
 }
 
 void HabiTrack::on_mikeButton_clicked()

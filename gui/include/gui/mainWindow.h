@@ -17,6 +17,7 @@
 #include <QFutureWatcher>
 #include <deque>
 #include <filesystem>
+#include <unordered_set>
 
 namespace Ui
 {
@@ -69,6 +70,8 @@ private slots:
     void on_buttonNextFrame_clicked();
     void on_actionPrev_Frame_triggered();
     void on_actionNext_Frame_triggered();
+    void on_buttonVisible_clicked();
+    void on_buttonInvisible_clicked();
 
     void on_buttonStartFrame_clicked();
     void on_buttonEndFrame_clicked();
@@ -102,6 +105,7 @@ private:
     std::filesystem::path mMatchFolder;
     std::filesystem::path mUnFolder;
     std::filesystem::path mDetectionsFile;
+    std::filesystem::path mSetFile;
 
     ht::Images mImages;
     std::size_t mCurrentFrameNumber;
@@ -114,6 +118,7 @@ private:
     ht::ManualUnaries mManualUnaries;
     std::vector<double> mUnaryQualities;
     std::unordered_map<std::size_t, UnaryQuality> mUnaryQualityValues;
+    std::unordered_set<std::size_t> mInvisibles;
 
     ht::Detections mDetections;
     std::unordered_map<int, std::unique_ptr<QFutureWatcher<ht::Detections>>> mDetectionsWatchers;

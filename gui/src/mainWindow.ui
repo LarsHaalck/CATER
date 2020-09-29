@@ -40,7 +40,7 @@
            <x>0</x>
            <y>0</y>
            <width>303</width>
-           <height>981</height>
+           <height>1004</height>
           </rect>
          </property>
          <property name="maximumSize">
@@ -89,59 +89,52 @@
                 <string>Status Box</string>
                </property>
                <layout class="QGridLayout" name="gridLayout">
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_5">
-                  <property name="text">
-                   <string>Start Frame:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="9" column="1">
-                 <widget class="QLabel" name="labelNumUnaries">
-                  <property name="text">
-                   <string>&lt;num&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="10" column="1">
-                 <widget class="QLabel" name="labelNumTrackedPos">
-                  <property name="text">
-                   <string>&lt;num&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLabel" name="labelFileName">
-                  <property name="text">
-                   <string>&lt;fileName&gt;</string>
-                  </property>
-                 </widget>
-                </item>
                 <item row="4" column="1">
+                 <widget class="QLabel" name="labelStartFrame">
+                  <property name="text">
+                   <string>&lt;num&gt;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="1">
                  <widget class="QLabel" name="labelEndFrame">
                   <property name="text">
                    <string>&lt;num&gt;</string>
                   </property>
                  </widget>
                 </item>
-                <item row="10" column="0">
-                 <widget class="QLabel" name="label_15">
-                  <property name="text">
-                   <string># Tracked Positions:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="8" column="1">
+                <item row="9" column="1">
                  <widget class="QLabel" name="labelNumTrafos">
                   <property name="text">
                    <string>&lt;num&gt;</string>
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
+                <item row="9" column="0">
+                 <widget class="QLabel" name="label_12">
+                  <property name="text">
+                   <string># Transformations:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="0">
                  <widget class="QLabel" name="label_7">
                   <property name="text">
                    <string>End Frame:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="10" column="0">
+                 <widget class="QLabel" name="label_11">
+                  <property name="text">
+                   <string># Unaries:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="10" column="1">
+                 <widget class="QLabel" name="labelNumUnaries">
+                  <property name="text">
+                   <string>&lt;num&gt;</string>
                   </property>
                  </widget>
                 </item>
@@ -152,38 +145,24 @@
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_3">
-                  <property name="text">
-                   <string>File Name:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLabel" name="labelStartFrame">
-                  <property name="text">
-                   <string>&lt;num&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="6" column="0" colspan="2">
-                 <widget class="Line" name="line">
+                <item row="3" column="0" colspan="2">
+                 <widget class="Line" name="line_2">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
                  </widget>
                 </item>
-                <item row="8" column="0">
-                 <widget class="QLabel" name="label_12">
+                <item row="11" column="0">
+                 <widget class="QLabel" name="label_15">
                   <property name="text">
-                   <string># Transformations:</string>
+                   <string># Tracked Positions:</string>
                   </property>
                  </widget>
                 </item>
-                <item row="9" column="0">
-                 <widget class="QLabel" name="label_11">
+                <item row="4" column="0">
+                 <widget class="QLabel" name="label_5">
                   <property name="text">
-                   <string># Unaries:</string>
+                   <string>Start Frame:</string>
                   </property>
                  </widget>
                 </item>
@@ -197,10 +176,45 @@
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="0" colspan="2">
-                 <widget class="Line" name="line_2">
+                <item row="11" column="1">
+                 <widget class="QLabel" name="labelNumTrackedPos">
+                  <property name="text">
+                   <string>&lt;num&gt;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_3">
+                  <property name="text">
+                   <string>File Name:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLabel" name="labelFileName">
+                  <property name="text">
+                   <string>&lt;fileName&gt;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="7" column="0" colspan="2">
+                 <widget class="Line" name="line">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_2">
+                  <property name="text">
+                   <string>Label:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QLabel" name="labelLabel">
+                  <property name="text">
+                   <string>&lt;label&gt;</string>
                   </property>
                  </widget>
                 </item>
@@ -796,6 +810,29 @@ color: white;
                 </size>
                </property>
               </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="buttonVisible">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>Visible</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="buttonInvisible">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>Invisible</string>
+               </property>
+               <property name="shortcut">
+                <string>I</string>
+               </property>
+              </widget>
              </item>
             </layout>
            </item>

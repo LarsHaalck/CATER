@@ -4,6 +4,7 @@
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Concurrent REQUIRED)
 find_package(Qt5Multimedia REQUIRED)
+find_package(cereal REQUIRED)
 
 ###########################################################################
 #                                FILES                                    #
@@ -20,6 +21,7 @@ set(SOURCES
     src/qtOpencvCore.cpp
     src/progressStatusBar.cpp
     src/resultsIO.cpp
+    src/setIO.cpp
     resources/resources.qrc
 )
 
