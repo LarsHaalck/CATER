@@ -17,5 +17,6 @@ linuxdeploy-x86_64.AppImage \
     -d "AppDir/share/applications/habitrack-gui.desktop" \
     -i "AppDir/share/icons/hicolor/128x128/apps/habitrack-gui.png" \
     -e "AppDir/bin/habitrack-gui" \
-    --output appimage
+    --output appimage \
+    --plugin qt
 
