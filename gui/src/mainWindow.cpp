@@ -526,6 +526,8 @@ void HabiTrack::on_actionOpenResultsFile_triggered()
     }
     if (fs::is_regular_file(mSetFile))
         mInvisibles = loadSet(mSetFile);
+
+    showFrame(mStartFrameNumber);
 }
 
 void HabiTrack::on_buttonStartFrame_clicked()
