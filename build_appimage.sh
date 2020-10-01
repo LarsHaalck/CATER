@@ -3,7 +3,11 @@ export CC=gcc-10
 export CXX=g++-10
 mkdir -p buildApp
 cd buildApp
-cmake -DCMAKE_BUILD_TYPE=Release \
+cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_GUI=ON \
+    -DBUILD_TOOLS=OFF \
+    -DWITH_SUPERGLUE=OFF \
     -Dcxxopts_DIR=${HAB_DEP}/cxxopts/install/lib/cmake/cxxopts \
     -Dmild_DIR=${HAB_DEP}/MILD/install/cmake \
     -DCeres_DIR=${HAB_DEP}/Ceres/ \
