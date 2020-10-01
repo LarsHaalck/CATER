@@ -1,4 +1,6 @@
 #!/bin/env sh
+export CC=gcc-10
+export CXX=g++-10
 mkdir -p buildApp
 cd buildApp
 cmake -DCMAKE_BUILD_TYPE=Release \
