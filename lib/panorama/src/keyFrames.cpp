@@ -93,14 +93,17 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
 
             // we extended the window a bit and have not reached high shift yet
             if (extended > 0 && !highShift)
+            {
+                spdlog::debug("Window was extended for kf candiate {}", currView);
                 continue;
+            }
 
             // border case where velocity is too high
             if (highShift && distOverlapVec.empty())
                 distOverlapVec.push_back(currDistOverlapVec[0]);
 
             // enough shift, break
-            if (highShift)
+            if (highShift || extended == 0)
                 break;
         }
 
