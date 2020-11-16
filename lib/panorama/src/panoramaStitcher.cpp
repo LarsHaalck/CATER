@@ -419,6 +419,9 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
     }
 
     spdlog::info("Interpolating postponed transformations of {} frames", postpones.size());
+    if (postpones.empty())
+        return;
+
     std::vector<int> left(postpones.size(), 0);
     std::vector<int> right(postpones.size(), 0);
 
