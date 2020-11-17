@@ -1,6 +1,7 @@
 #include "panorama/transitions.h"
 #include "mst.h"
 #include "panorama/idTranslator.h"
+#include <spdlog/spdlog.h>
 
 namespace ht::transitions
 {
@@ -39,9 +40,8 @@ getMostProminantTransition(
     {
         auto [blockI, blockJ] = elem.first;
         auto [idI, idJ, count] = elem.second;
-        std::cout << "Transition from block: " << blockI << " --> " << blockJ << std::endl;
-        std::cout << "With frames: " << idI << " --> " << idJ << ", count = " << count << std::endl;
-        std::cout << "--------------------------------------------------" << std::endl;
+        spdlog::debug("Transition from block {} to {}", blockI, blockJ);
+        spdlog::debug("With frames: {}, {}, count = {}", idI, idJ, count);
 
         graph.addEdge(blockI, blockJ, -count);
     }
@@ -62,8 +62,7 @@ getMostProminantTransition(
     {
         auto [blockI, blockJ] = elem.first;
         auto [idI, idJ] = elem.second;
-        std::cout << "Mapping " << blockI << " --> " << blockJ << " with " << idI << " --> " << idJ
-                  << std::endl;
+        spdlog::info("Mapping {} to {} with frame {} to {}", blockI, blockJ, idI, idJ);
     }
     return optimalTransitions;
 }
