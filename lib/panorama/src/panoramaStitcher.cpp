@@ -131,7 +131,8 @@ void PanoramaStitcher::initTrafosFromMultipleVideos(const matches::PairwiseTrafo
 
                 cv::Mat invertPreMult;
                 cv::invert(preMult, invertPreMult);
-                cv::Mat newTrans = pairTrans * postMult * invertPreMult;
+                cv::Mat newTrans = postMult * pairTrans * invertPreMult;
+
                 queue.push(std::make_pair(transBlock.second, newTrans));
             }
             else if (transBlock.second == currBlock && !marked.count(transBlock.first))
@@ -144,7 +145,8 @@ void PanoramaStitcher::initTrafosFromMultipleVideos(const matches::PairwiseTrafo
 
                 cv::Mat invertPreMult;
                 cv::invert(preMult, invertPreMult);
-                cv::Mat newTrans = pairTrans * postMult * invertPreMult;
+                cv::Mat newTrans = postMult * pairTrans * invertPreMult;
+
                 queue.push(std::make_pair(transBlock.first, newTrans));
             }
         }
@@ -244,7 +246,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
     std::vector<cv::Point> centersTrans;
     centersTrans.reserve(mKeyFrames.size());
     PreciseStopWatch timer;
-    for (size_t i = 0; i < mKeyFrames.size(); i++)
+    for (std::size_t i = 0; i < mKeyFrames.size(); i++)
     {
         auto currId = mKeyFrames[i];
         cv::Mat currImg = mImages.at(mKeyFrames[i]);
@@ -292,6 +294,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
             /* while (cv::waitKey(0) != 27) */
             /* { */
             /* } */
+            // DEBUG
         }
         cb->inc();
     }
