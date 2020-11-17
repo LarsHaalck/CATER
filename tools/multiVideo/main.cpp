@@ -18,12 +18,16 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include <spdlog/spdlog.h>
+
 using namespace ht;
 
 auto ORB = ht::FeatureType::ORB;
 namespace fs = std::filesystem;
 int main(int argc, const char** argv)
 {
+    spdlog::set_level(spdlog::level::debug);
+
     std::vector<fs::path> videoPaths;
     int featureInt = 0;
 
@@ -136,9 +140,8 @@ int main(int argc, const char** argv)
     globalInterMatches.insert(std::begin(interVidMatches), std::end(interVidMatches));
 
     auto stitcher = PanoramaStitcher(combinedImgContainer, globalKeyFrames, geomType);
-
     stitcher.initTrafosFromMultipleVideos(
-        matches::getTrafos(ivlcMatchPath), sizes, localOptimalTrafos, optimalTransitions);
+        matches::getTrafos(ivlcMatchPath, geomType), sizes, localOptimalTrafos, optimalTransitions);
     auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
     cv::imwrite("combined0.png", pano);
 
