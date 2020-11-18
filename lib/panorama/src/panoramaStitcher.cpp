@@ -325,7 +325,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
             auto color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255);
 
             if (i > 0)
-                cv::line(pano, centersTrans[i - 1], centersTrans[i], color);
+                cv::line(pano, centersTrans[i - 1], centersTrans[i], color, 4);
         }
 
         // DEBUG
@@ -586,7 +586,7 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     /* std::cout << "Optimizing Problem..." << std::endl; */
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
-    std::cout << summary.FullReport() << std::endl;
+    /* std::cout << summary.FullReport() << std::endl; */
 
     /* repairIntriniscs(camParams, distParams); */
     return summary.IsSolutionUsable();
