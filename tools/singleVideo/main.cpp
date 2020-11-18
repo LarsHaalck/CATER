@@ -98,7 +98,7 @@ int main(int argc, const char** argv)
     if (stage < 2)
         return 0;
 
-    // calculate matches between keyframes via KeyFrameRecommender
+    // calculate matches between keyframes and intermediate frames via KeyFrameRecommender
     auto kfIntraPath = basePath / "kfs/maches_intra";
     auto kfRecommender = std::make_unique<KeyFrameRecommender>(keyFrames);
     if (!matches::isComputed(kfIntraPath, geomType) || force)
@@ -156,8 +156,8 @@ int main(int argc, const char** argv)
                 matches::compute(kfInterPath, geomType, featuresSift, matches::MatchType::Strategy,
                     4, 0.0, std::move(mildRecommender), cacheSize, keyFrames);
             }
-            featuresDense = featuresSift;
         }
+        featuresDense = std::move(featuresSift);
     }
     else
     {
