@@ -11,6 +11,7 @@
 #include "similarityGlobalOptimizer.h"
 #include "util/algorithm.h"
 #include "util/stopWatch.h"
+#include "util/tinycolormap.hpp"
 
 #include <Eigen/Dense>
 #include <ceres/ceres.h>
@@ -316,9 +317,12 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
 
     if (!centerPath.empty())
     {
+        namespace tcm = tinycolormap;
         for (std::size_t i = 0; i < centersTrans.size(); i++)
         {
-            cv::Scalar color = cv::Scalar(255, 0, 0);
+            auto tcm_color = tcm::GetColor(
+                static_cast<double>(i) / centersTrans.size(), tcm::ColormapType::Viridis);
+            auto color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255);
 
             if (i > 0)
                 cv::line(pano, centersTrans[i - 1], centersTrans[i], color);
@@ -582,7 +586,7 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     /* std::cout << "Optimizing Problem..." << std::endl; */
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
-    /* std::cout << summary.FullReport() << std::endl; */
+    std::cout << summary.FullReport() << std::endl;
 
     /* repairIntriniscs(camParams, distParams); */
     return summary.IsSolutionUsable();
