@@ -156,7 +156,8 @@ Features Features::fromDir(const Images& imgContainer, const std::filesystem::pa
         for (auto i : ids)
             ftStems.insert({i, imgContainer.getFileName(i).stem()});
     }
-    spdlog::debug("{} feature files available in folder {}", ftStems.size(), ftDir.string());
+    spdlog::debug("Found {} feature files available in folder {} for type {}", ftStems.size(),
+        ftDir.string(), type);
     return Features {ftDir, type, imgContainer.getImgSize(), ftStems};
 }
 Features Features::fromDir(const Images& imgContainer, const fs::path& ftDir, FeatureType type,

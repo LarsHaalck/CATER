@@ -45,7 +45,8 @@ bool isComputed(const fs::path& matchDir, Gt geomType)
         }
     }
 
-    spdlog::info("Found matches and trafo files in {}", matchDir.string());
+    spdlog::info("Found matches and trafo files in {} for type {}", matchDir.string(),
+        detail::typeToString(geomType));
     return true;
 }
 
