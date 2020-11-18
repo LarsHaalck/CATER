@@ -24,7 +24,7 @@ auto ORB = ht::FeatureType::ORB;
 
 int main(int argc, const char** argv)
 {
-    /* spdlog::set_level(spdlog::level::debug); */
+    spdlog::set_level(spdlog::level::debug);
 
     fs::path basePath;
     bool showResults = false;
