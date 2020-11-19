@@ -119,12 +119,13 @@ int main(int argc, const char** argv)
         if (ftType != ORB)
         {
             matches::compute(ivlcMatchPath, geomType, combinedDenseFtContainer,
-                matches::MatchType::Strategy, 3, 0.0, std::move(mildRecommender), cacheSize,
+                matches::MatchType::Strategy, 10, 0.0, std::move(mildRecommender), cacheSize,
                 globalKeyFrames);
         }
+        else
         {
             matches::compute(ivlcMatchPath, geomType, combinedDenseOrbFtContainer,
-                matches::MatchType::Strategy, 3, 0.0, std::move(mildRecommender), cacheSize,
+                matches::MatchType::Strategy, 10, 0.0, std::move(mildRecommender), cacheSize,
                 globalKeyFrames);
         }
     }
@@ -154,12 +155,14 @@ int main(int argc, const char** argv)
     cv::imwrite("combined1.png", pano);
 
     stitcher.reintegrate();
-    pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
+    pano = std::get<0>(
+        stitcher.stitchPano(cv::Size(cols, rows), false, basePath / "reint_centers.yml"));
     cv::imwrite("combined2.png", pano);
 
     auto globalIntraMatches = translator.localToGlobal(matchesIntraList);
     stitcher.refineNonKeyFrames(combinedSparseFtContainer, globalIntraMatches);
-    pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
+    pano = std::get<0>(
+        stitcher.stitchPano(cv::Size(cols, rows), false, basePath / "opt_centers.yml"));
     cv::imwrite("combined3.png", pano);
 
     stitcher.writeTrafos(basePath / "ivlc/opt_trafos.yml", WriteType::Readable);
