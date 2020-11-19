@@ -25,6 +25,7 @@ getMostProminantTransition(
         auto blockJ = localIdJ.first;
         auto blockPair = std::make_pair(blockI, blockJ);
 
+        //spdlog::debug("{}:{}, {}:{},c={}", blockI, blockJ, idI, idJ, matches.at(pair).size());
         if (!transitions.count(blockPair))
             transitions[blockPair] = std::make_tuple(idI, idJ, matches.at(pair).size());
         else

@@ -42,6 +42,7 @@ PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
     , mKeyFrames(keyFrames)
     , mKeyFramesSet(std::begin(keyFrames), std::end(keyFrames))
     , mType(type)
+    , mSizes()
     , mCamMat(camMat)
     , mCamMatInv()
     , mDistCoeffs(distCoeffs)
@@ -92,6 +93,7 @@ void PanoramaStitcher::initTrafos(const PairwiseTrafos& trafos)
 void PanoramaStitcher::initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
     const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes)
 {
+    mSizes = sizes;
     Translator translator(sizes);
     auto lower = translator.localToGlobal(std::make_pair(currBlock, static_cast<std::size_t>(0)));
     auto upper = lower + sizes[currBlock];
@@ -232,8 +234,12 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
 
     spdlog::info("Target size: {} x {}", newSize.width, newSize.height);
 
-    cv::detail::MultiBandBlender blender(false, 1);
+    cv::detail::MultiBandBlender blender(false, 5);
     blender.prepare(cv::Rect(0, 0, newSize.width, newSize.height));
+
+    /* cv::detail::GainCompensator gainCompensator; */
+    /* if (gain) */
+    /*     prepareCompensator(gainCompensator); */
 
     spdlog::info("Stitching Panorama");
 
@@ -251,6 +257,9 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
     {
         auto currId = mKeyFrames[i];
         cv::Mat currImg = mImages.at(mKeyFrames[i]);
+
+        /* if (gain) */
+        /*     gainCompensator.apply(i, cv::Point(0, 0), currImg, cv::Mat()); */
 
         cv::Mat mask(currImg.size(), CV_8UC1, cv::Scalar(255));
 
@@ -318,10 +327,22 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
     if (!centerPath.empty())
     {
         namespace tcm = tinycolormap;
+        auto Viridis = tcm::ColormapType::Viridis;
         for (std::size_t i = 0; i < centersTrans.size(); i++)
         {
-            auto tcm_color = tcm::GetColor(
-                static_cast<double>(i) / centersTrans.size(), tcm::ColormapType::Viridis);
+            tcm::Color tcm_color(0, 0, 0);
+            if (!mSizes.empty())
+            {
+                Translator translator(mSizes);
+                auto vidId = translator.globalToLocal(i).first;
+                tcm_color = tcm::GetColor(
+                    static_cast<double>(vidId) / (mSizes.size() - 1), Viridis);
+            }
+            else
+            {
+                tcm_color = tcm::GetColor(
+                    static_cast<double>(i) / (centersTrans.size() - 1), Viridis);
+            }
             auto color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255);
 
             if (i > 0)
@@ -336,6 +357,23 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
     }
     return std::make_tuple(pano, scaleMat, transMat);
 }
+
+/* void PanoramaStitcher::prepareCompensator(cv::detail::GainCompensator& c) const */
+/* { */
+/*     std::vector<cv::UMat> imgs; */
+/*     for (std::size_t i = 0; i < mKeyFrames.size(); i++) */
+/*     { */
+/*         auto img = mImages.at(mKeyFrames[i]); */
+/*         cv::UMat uimg; */
+/*         img.copyTo(uimg); */
+/*         imgs.push_back(uimg); */
+/*     } */
+/*     auto pts = std::vector<cv::Point>(imgs.size(), cv::Point(0, 0)); */
+/*     auto mask = cv::UMat(imgs[0].rows, imgs[0].cols, CV_8U, cv::Scalar(255)); */
+/*     auto masks = std::vector<std::pair<cv::UMat, uchar>>( */
+/*         imgs.size(), std::make_pair(mask, 255)); */
+/*     c.feed(pts, imgs, masks); */
+/* } */
 
 void PanoramaStitcher::globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
     const matches::PairwiseMatches& matches, std::size_t limitTo,
@@ -507,6 +545,8 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     ceres::Solver::Options options;
     options.max_num_iterations = 500;
     options.minimizer_progress_to_stdout = false;
+    options.linear_solver_type = ceres::ITERATIVE_SCHUR;
+    options.preconditioner_type = ceres::SCHUR_JACOBI;
 
     if (multiThread)
         options.num_threads = 16;
@@ -529,6 +569,9 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         std::vector<double>* paramsJ = &mOptimizedParams[idJ];
 
         auto [ftsI, ftsJ, weights] = getCorrespondingPoints(pair, match, fts);
+
+        /* if (idI > 2800 && idI < 3000 && idJ > 12100 && idJ < 12300) */
+        /*     spdlog::critical("{}:{}, c = {}", idI, idJ, ftsI.size()); */
 
         auto numFunctors = ftsI.size();
         if (limitTo)

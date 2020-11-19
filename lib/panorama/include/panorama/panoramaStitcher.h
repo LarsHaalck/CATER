@@ -15,6 +15,11 @@ namespace ceres
 class Problem;
 }
 
+namespace cv::detail
+{
+class GainCompensator;
+}
+
 namespace ht
 {
 enum class FramesMode : bool
@@ -96,11 +101,14 @@ private:
 
     inline bool isKeyFrame(std::size_t idx) { return mKeyFramesSet.count(idx); };
 
+    void prepareCompensator(cv::detail::GainCompensator& c) const;
+
 private:
     const BaseImageContainer& mImages;
     std::vector<std::size_t> mKeyFrames;
     std::unordered_set<std::size_t> mKeyFramesSet;
     GeometricType mType;
+    std::vector<std::size_t> mSizes; // only used for IVLC
 
     cv::Mat mCamMat;
     cv::Mat mCamMatInv;
