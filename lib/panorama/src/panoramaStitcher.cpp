@@ -467,7 +467,7 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
         auto alpha = static_cast<float>((postpones[i] - left[i])) / (right[i] - left[i]);
         spdlog::debug(
             "Postpone refine {}: {} -> {}, s = {}", postpones[i], left[i], right[i], alpha);
-        mOptimizedTrafos[i]
+        mOptimizedTrafos[postpones[i]]
             = interpolateTrafo(alpha, mOptimizedTrafos[left[i]], mOptimizedTrafos[right[i]]);
     }
 }
