@@ -43,9 +43,9 @@ struct Preferences
     bool removeCamMotion = true;
     double nnRatio = 0.8;
     double ranscacReproj = 3.0;
+
+    friend std::ostream& operator<<(std::ostream& stream, const gui::Preferences& prefs);
 };
 } // namespace gui
-
-std::ostream& operator<<(std::ostream& stream, const gui::Preferences& prefs);
 
 #endif // GUI_PREFERENCES_H
