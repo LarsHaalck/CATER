@@ -144,7 +144,7 @@ int main(int argc, const char** argv)
     stitcher.initTrafosFromMultipleVideos(
         matches::getTrafos(ivlcMatchPath, geomType), sizes, localOptimalTrafos, optimalTransitions);
     auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
-    cv::imwrite("combined0.png", pano);
+    cv::imwrite(basePath / "combined0.png", pano);
 
     if (ftType != ORB)
         stitcher.globalOptimizeKeyFrames(combinedDenseFtContainer, globalInterMatches);
@@ -152,18 +152,18 @@ int main(int argc, const char** argv)
         stitcher.globalOptimizeKeyFrames(combinedDenseOrbFtContainer, globalInterMatches);
 
     pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
-    cv::imwrite("combined1.png", pano);
+    cv::imwrite(basePath / "combined1.png", pano);
 
     stitcher.reintegrate();
     pano = std::get<0>(
         stitcher.stitchPano(cv::Size(cols, rows), false, basePath / "reint_centers.yml"));
-    cv::imwrite("combined2.png", pano);
+    cv::imwrite(basePath / "combined2.png", pano);
 
     auto globalIntraMatches = translator.localToGlobal(matchesIntraList);
     stitcher.refineNonKeyFrames(combinedSparseFtContainer, globalIntraMatches);
     pano = std::get<0>(
         stitcher.stitchPano(cv::Size(cols, rows), false, basePath / "opt_centers.yml"));
-    cv::imwrite("combined3.png", pano);
+    cv::imwrite(basePath / "combined3.png", pano);
 
     stitcher.writeTrafos(basePath / "ivlc/opt_trafos.yml", WriteType::Readable);
 

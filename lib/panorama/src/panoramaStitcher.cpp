@@ -361,6 +361,8 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
                 tcm_color
                     = tcm::GetColor(static_cast<double>(i) / (centersTrans.size() - 1), Viridis);
             }
+            /* tcm_color = tcm::GetColor(0.5, Viridis); // greenish */
+            tcm_color = tcm::GetColor(1.0, Viridis); // yellow
             auto color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255);
 
             /* if (Translator(mSizes).globalToLocal(i).first == mSizes.size() - 1) */
@@ -373,6 +375,22 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
                 cv::line(pano, centersTrans[i - 1], centersTrans[i], color, 4);
             else if (mSizes.empty() && i > 0)
                 cv::line(pano, centersTrans[i - 1], centersTrans[i], color, 4);
+
+            auto marker = cv::MarkerTypes::MARKER_SQUARE;
+            if (isKeyFrame(i))
+            {
+                marker = cv::MarkerTypes::MARKER_DIAMOND;
+                tcm_color = tcm::GetColor(0.0, Viridis);
+                color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255);
+                cv::drawMarker(pano, centersTrans[i], color, marker, 15, 2, cv::LineTypes::FILLED);
+            }
+            /* else if (i % 1 == 0) */
+            /* { */
+            /*     marker = cv::MarkerTypes::MARKER_CROSS; */
+            /*     tcm_color = tcm::GetColor(1.0, Viridis); */
+            /*     color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255); */
+            /*     cv::drawMarker(pano, centersTrans[i], color, marker, 15, 2, cv::LineTypes::FILLED); */
+            /* } */
         }
 
         // DEBUG
