@@ -33,6 +33,20 @@ using namespace ht::matches;
 using namespace ht::transformation;
 using namespace ht::io;
 
+/* namespace cv */
+/* { */
+/* void cv::dline(cv::Mat& img, Point pt1, Point pt2, const Scalar& color, int thickness = 1) */
+/* { */
+/*     LineIterator it(img, pt1, pt2, 8); // get a line iterator */
+/*     for (int i = 0; i < it.count; i++, it++) */
+/*     { */
+/*         if (i % 5 != 0) */
+/*             (*it)[0] = 200; */
+/*     } */
+/* } */
+
+/* } */
+
 namespace ht
 {
 PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
@@ -110,6 +124,9 @@ void PanoramaStitcher::initTrafosFromMultipleVideos(const matches::PairwiseTrafo
     const std::unordered_map<std::pair<std::size_t, std::size_t>,
         std::pair<std::size_t, std::size_t>>& optimalTransitions)
 {
+    for (std::size_t i = 0; i < mKeyFrames.size(); i++)
+        mOptimizedTrafos[mKeyFrames[i]] = getIdentity(true);
+
     std::queue<std::pair<std::size_t, cv::Mat>> queue;
     queue.push(std::make_pair(0, getIdentity(true)));
 
@@ -328,24 +345,33 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
     {
         namespace tcm = tinycolormap;
         auto Viridis = tcm::ColormapType::Viridis;
+
+        Translator translator(mSizes);
         for (std::size_t i = 0; i < centersTrans.size(); i++)
         {
             tcm::Color tcm_color(0, 0, 0);
             if (!mSizes.empty())
             {
-                Translator translator(mSizes);
                 auto vidId = translator.globalToLocal(i).first;
-                tcm_color = tcm::GetColor(
-                    static_cast<double>(vidId) / (mSizes.size() - 1), Viridis);
+                tcm_color
+                    = tcm::GetColor(static_cast<double>(vidId) / (mSizes.size() - 1), Viridis);
             }
             else
             {
-                tcm_color = tcm::GetColor(
-                    static_cast<double>(i) / (centersTrans.size() - 1), Viridis);
+                tcm_color
+                    = tcm::GetColor(static_cast<double>(i) / (centersTrans.size() - 1), Viridis);
             }
             auto color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255);
 
-            if (i > 0)
+            /* if (Translator(mSizes).globalToLocal(i).first == mSizes.size() - 1) */
+            /* { */
+            /*     cv::dline(pano, centersTrans[i - 1], centersTrans[i], color, 4); */
+            /*     continue; */
+            /* } */
+
+            if (!mSizes.empty() && translator.globalToLocal(i).second > 0)
+                cv::line(pano, centersTrans[i - 1], centersTrans[i], color, 4);
+            else if (mSizes.empty() && i > 0)
                 cv::line(pano, centersTrans[i - 1], centersTrans[i], color, 4);
         }
 
@@ -569,9 +595,6 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         std::vector<double>* paramsJ = &mOptimizedParams[idJ];
 
         auto [ftsI, ftsJ, weights] = getCorrespondingPoints(pair, match, fts);
-
-        /* if (idI > 2800 && idI < 3000 && idJ > 12100 && idJ < 12300) */
-        /*     spdlog::critical("{}:{}, c = {}", idI, idJ, ftsI.size()); */
 
         auto numFunctors = ftsI.size();
         if (limitTo)
