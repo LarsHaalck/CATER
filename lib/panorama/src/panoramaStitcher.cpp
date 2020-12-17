@@ -346,7 +346,10 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
         namespace tcm = tinycolormap;
         auto Viridis = tcm::ColormapType::Viridis;
 
-        Translator translator(mSizes);
+        Translator translator;
+        if (!mSizes.empty())
+            translator = Translator(mSizes);
+
         for (std::size_t i = 0; i < centersTrans.size(); i++)
         {
             tcm::Color tcm_color(0, 0, 0);

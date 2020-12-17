@@ -9,6 +9,7 @@ namespace ht
 class Translator
 {
 public:
+    Translator() = default;
     Translator(const std::vector<std::size_t>& sizes);
 
     std::pair<std::size_t, std::size_t> globalToLocal(std::size_t idx);
