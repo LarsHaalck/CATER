@@ -93,7 +93,7 @@ int main(int argc, const char** argv)
     if (KeyFrames::isComputed(kfPath) && !force)
         keyFrames = KeyFrames::fromDir(kfPath);
     else
-        keyFrames = KeyFrames::compute(features, GeometricType::Similarity, kfPath, 0.3, 0.5);
+        keyFrames = KeyFrames::compute(features, geomType, kfPath, 0.3, 0.5);
 
     if (stage < 2)
         return 0;
@@ -178,11 +178,10 @@ int main(int argc, const char** argv)
     if (stage < 4)
         return 0;
 
-    auto geomPano = GeometricType::Similarity;
-    auto stitcher = PanoramaStitcher(images, keyFrames, geomPano);
+    auto stitcher = PanoramaStitcher(images, keyFrames, geomType);
 
     // init trafos of keyframes by concatenating them
-    stitcher.initTrafos(matches::getTrafos(kfInterPath, geomPano));
+    stitcher.initTrafos(matches::getTrafos(kfInterPath, geomType));
     if (showResults)
     {
         auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
@@ -193,7 +192,7 @@ int main(int argc, const char** argv)
         return 0;
 
     // globally optimized these keyframe tranformations and write them for later IVLC
-    stitcher.globalOptimizeKeyFrames(featuresDense, matches::getMatches(kfInterPath, geomPano));
+    stitcher.globalOptimizeKeyFrames(featuresDense, matches::getMatches(kfInterPath, geomType));
     stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
     if (showResults)
     {
@@ -218,7 +217,7 @@ int main(int argc, const char** argv)
         return 0;
 
     // refine all keyframes
-    stitcher.refineNonKeyFrames(features, matches::getMatches(kfIntraPath, geomPano), 50);
+    stitcher.refineNonKeyFrames(features, matches::getMatches(kfIntraPath, geomType), 50);
     stitcher.writeTrafos(basePath / "opt_trafos.bin");
     if (showResults)
     {

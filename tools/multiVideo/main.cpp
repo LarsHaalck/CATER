@@ -143,6 +143,7 @@ int main(int argc, const char** argv)
     auto stitcher = PanoramaStitcher(combinedImgContainer, globalKeyFrames, geomType);
     stitcher.initTrafosFromMultipleVideos(
         matches::getTrafos(ivlcMatchPath, geomType), sizes, localOptimalTrafos, optimalTransitions);
+
     auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
     cv::imwrite(basePath / "combined0.png", pano);
 
