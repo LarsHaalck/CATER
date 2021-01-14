@@ -195,9 +195,21 @@ void HabiTrack::on_buttonNextFrame_clicked()
     }
 }
 
-void HabiTrack::on_actionPrev_Frame_triggered() { on_buttonPrevFrame_clicked(); }
+void HabiTrack::on_actionPrev_Frame_triggered()
+{
+    // mask action to not overshoot target frame
+    this->ui->actionPrev_Frame->setDisabled(true);
+    on_buttonPrevFrame_clicked();
+    this->ui->actionPrev_Frame->setDisabled(false);
+}
 
-void HabiTrack::on_actionNext_Frame_triggered() { on_buttonNextFrame_clicked(); }
+void HabiTrack::on_actionNext_Frame_triggered()
+{
+    // mask action to not overshoot target frame
+    this->ui->actionNext_Frame->setDisabled(true);
+    on_buttonNextFrame_clicked();
+    this->ui->actionNext_Frame->setDisabled(false);
+}
 
 void HabiTrack::refreshWindow()
 {
@@ -573,6 +585,7 @@ void HabiTrack::on_buttonInvisible_clicked()
     mInvisibles.insert(mCurrentFrameNumber - 1);
     showFrame(mCurrentFrameNumber);
     statusBar()->showMessage("Set detection to invisible", statusDelay);
+    on_buttonNextFrame_clicked();
 }
 
 void HabiTrack::on_mikeButton_clicked()
