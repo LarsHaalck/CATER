@@ -48,9 +48,17 @@ std::vector<double> random_choice(
     return subset;
 }
 
-int main()
+int main(int argc, char** argv)
 {
     spdlog::set_level(spdlog::level::info);
+
+    if (argc != 4)
+        return -1;
+
+    std::string a1 {argv[1]};
+    std::string a2 {argv[2]};
+    std::string a3 {argv[3]};
+    spdlog::info("Called {}-{}-{}", a1, a2, a3);
 
     auto imgs = ht::Images(img_folder);
     auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
@@ -58,6 +66,8 @@ int main()
     auto manual_uns = ht::ManualUnaries::fromDir(un_folder, 0.8, imgs.getImgSize());
     auto settings = ht::Tracker::Settings {0.8, 25, 250, 4, false, 5, 3, chunk};
     auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
+    std::string end = a1 + "-" + a2 + "-" + a3 + "_";
+    detections.save(base_path / ("detections_" + end +  std::to_string(manual_uns.size()) + ".yaml"));
 
     std::vector<double> frames;
     frames.reserve(manual_uns.size());
@@ -67,15 +77,24 @@ int main()
 
     std::size_t step = 100;
 
-    // put here if it should be done before
-    /* auto kde = KDE(KDE::BandwidthType::Silverman); */
-    /* kde.fit(frames); */
+    auto kde = KDE(KDE::BandwidthType::Silverman);
+    if (a1 == "b")
+        kde = KDE(KDE::BandwidthType::Bisection);
+
+    if (a2 == "b")
+        kde.fit(frames);
 
     while (manual_uns.size() > step)
     {
         std::size_t k = manual_uns.size() - step;
-        auto kde = KDE(KDE::BandwidthType::Silverman);
-        kde.fit(frames);
+        if (a2 == "a")
+        {
+            if (a1 == "s")
+                kde = KDE(KDE::BandwidthType::Silverman);
+            else
+                kde = KDE(KDE::BandwidthType::Bisection);
+            kde.fit(frames);
+        }
         auto frames_prob = kde.pdf(frames);
 
         std::vector<double> frames_prob_inv;
@@ -84,8 +103,18 @@ int main()
         std::transform(std::begin(frames_prob), std::end(frames_prob), std::begin(frames_prob_inv),
             [max](auto elem) { return max - elem; });
 
-        auto frames_subset0 = random_choice(frames, k / 2, frames_prob);
-        auto frames_subset1 = random_choice(frames, k / 2, frames_prob_inv);
+        auto frames_subset0 = std::vector<double>();
+        auto frames_subset1 = std::vector<double>();
+
+        if (a3 == "h")
+        {
+            frames_subset0 = random_choice(frames, k / 2, frames_prob);
+            frames_subset1 = random_choice(frames, k / 2, frames_prob_inv);
+        }
+        if (a3 == "d")
+            frames_subset0 = random_choice(frames, k, frames_prob);
+        if (a3 == "i")
+            frames_subset1 = random_choice(frames, k, frames_prob_inv);
 
         frames_subset0.insert(std::end(frames_subset0),
             std::make_move_iterator(std::begin(frames_subset1)),
@@ -99,7 +128,7 @@ int main()
 
         spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
         detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
-        detections.save(base_path / "detections_" / std::to_string(manual_uns.size()) / ".yaml");
+        detections.save(base_path / ("detections_" + end +  std::to_string(manual_uns.size()) + ".yaml"));
     }
 
     return 0;
