@@ -32,7 +32,7 @@ ManualUnaries::ManualUnaries(
     mUnaries.reserve(mPoints.size());
     for (const auto& [id, pt] : mPoints)
     {
-        cv::Mat gaussian = scaledGauss2D(pt.x, pt.y, 5.0, 5.0, 255.0, mImgSize);
+        cv::Mat gaussian = scaledGauss2D(pt.x, pt.y, 9.0, 9.0, 255.0, mImgSize);
         cv::resize(gaussian, gaussian, cv::Size(), mSubsample, mSubsample, cv::INTER_LINEAR);
         mUnaries.insert({id, gaussian});
     }
@@ -87,16 +87,16 @@ cv::Mat ManualUnaries::previewUnaryAt(std::size_t id) const
     return unary;
 }
 
-/* cv::Point2f ManualUnaries::unaryPointAt(std::size_t id) const */
-/* { */
-/*     assert(mPoints.count(id) && "Unary id does not exist in unaryAt()"); */
-/*     return mPoints.at(id); */
-/* } */
+cv::Point2f ManualUnaries::unaryPointAt(std::size_t id) const
+{
+    assert(mPoints.count(id) && "Unary id does not exist in unaryAt()");
+    return mPoints.at(id);
+}
 
 void ManualUnaries::insert(std::size_t id, cv::Point2f pt)
 {
     mPoints.insert_or_assign(id, pt);
-    cv::Mat gaussian = scaledGauss2D(pt.x, pt.y, 5.0, 5.0, 255.0, mImgSize);
+    cv::Mat gaussian = scaledGauss2D(pt.x, pt.y, 9.0, 9.0, 255.0, mImgSize);
     cv::resize(gaussian, gaussian, cv::Size(), mSubsample, mSubsample, cv::INTER_LINEAR);
     mUnaries.insert_or_assign(id, gaussian);
 }
