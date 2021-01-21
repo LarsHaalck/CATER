@@ -142,9 +142,9 @@ int main(int argc, char** argv)
         manual_uns = std::move(manual_uns_subset);
 
         spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
-        /* auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos); */
-        /* detections.save( */
-        /*     base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml")); */
+        auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
+        detections.save(
+            base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml"));
     }
 
     return 0;
