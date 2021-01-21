@@ -1,22 +1,19 @@
 #include "habitrack/manualUnaries.h"
 #include "habitrack/tracker.h"
 #include "habitrack/unaries.h"
-
 #include "image-processing/features.h"
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
-
 #include "kde.h"
 
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <random>
+#include <set>
 
 #include <spdlog/cfg/env.h>
 #include <spdlog/spdlog.h>
-
-#include <fstream>
 
 using path = std::filesystem::path;
 path base_path = "/data/Dropbox/Selected Ontogeny Data/Videos/Ant13/Ant13R1";
@@ -31,21 +28,34 @@ std::size_t chunk = 100;
 std::random_device rd;
 std::mt19937 gen(rd());
 
-std::vector<double> random_choice(
+std::pair<std::vector<double>, std::vector<std::size_t>> random_choice(
     const std::vector<double>& vec, std::size_t n, std::vector<double> probs)
 {
     std::vector<double> subset;
+    std::vector<size_t> subset_id;
     subset.reserve(n);
+    subset_id.reserve(n);
     std::discrete_distribution<std::size_t> dist(std::begin(probs), std::end(probs));
     for (std::size_t i = 0; i < n; i++)
     {
         auto idx = dist(gen);
+        subset_id.push_back(idx);
         subset.push_back(vec[idx]);
         probs[idx] = 0;
         dist = std::discrete_distribution<std::size_t>(std::begin(probs), std::end(probs));
     }
 
-    return subset;
+    return {subset, subset_id};
+}
+
+std::vector<double> inv_probs(const std::vector<double>& probs)
+{
+    std::vector<double> probs_inv;
+    probs_inv.resize(probs.size());
+    auto max = *std::max_element(std::begin(probs), std::end(probs));
+    std::transform(std::begin(probs), std::end(probs), std::begin(probs_inv),
+        [max](auto elem) { return max - elem; });
+    return probs_inv;
 }
 
 int main(int argc, char** argv)
@@ -65,9 +75,10 @@ int main(int argc, char** argv)
     auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
     auto manual_uns = ht::ManualUnaries::fromDir(un_folder, 0.8, imgs.getImgSize());
     auto settings = ht::Tracker::Settings {0.8, 25, 250, 4, false, 5, 3, chunk};
-    auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
+    /* auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos); */
     std::string end = a1 + "-" + a2 + "-" + a3 + "_";
-    detections.save(base_path / ("detections_" + end +  std::to_string(manual_uns.size()) + ".yaml"));
+    /* detections.save( */
+    /*     base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml")); */
 
     std::vector<double> frames;
     frames.reserve(manual_uns.size());
@@ -80,7 +91,6 @@ int main(int argc, char** argv)
     auto kde = KDE(KDE::BandwidthType::Silverman);
     if (a1 == "b")
         kde = KDE(KDE::BandwidthType::Bisection);
-
     if (a2 == "b")
         kde.fit(frames);
 
@@ -96,39 +106,45 @@ int main(int argc, char** argv)
             kde.fit(frames);
         }
         auto frames_prob = kde.pdf(frames);
-
-        std::vector<double> frames_prob_inv;
-        frames_prob_inv.resize(frames_prob.size());
-        auto max = *std::max_element(std::begin(frames_prob), std::end(frames_prob));
-        std::transform(std::begin(frames_prob), std::end(frames_prob), std::begin(frames_prob_inv),
-            [max](auto elem) { return max - elem; });
+        auto frames_prob_inv = inv_probs(frames_prob);
 
         auto frames_subset0 = std::vector<double>();
         auto frames_subset1 = std::vector<double>();
 
         if (a3 == "h")
         {
-            frames_subset0 = random_choice(frames, k / 2, frames_prob);
-            frames_subset1 = random_choice(frames, k / 2, frames_prob_inv);
+            auto [subset, ids] = random_choice(frames, k / 2, frames_prob);
+            frames_subset0 = subset;
+            for (auto id : ids)
+                frames_prob_inv[id] = 0.0;
+            frames_subset1 = std::get<0>(random_choice(frames, k / 2, frames_prob_inv));
         }
         if (a3 == "d")
-            frames_subset0 = random_choice(frames, k, frames_prob);
+            frames_subset0 = std::get<0>(random_choice(frames, k, frames_prob));
         if (a3 == "i")
-            frames_subset1 = random_choice(frames, k, frames_prob_inv);
+            frames_subset1 = std::get<0>(random_choice(frames, k, frames_prob_inv));
+
+        spdlog::warn("S0 {}, S1 {}, S0 + S1 {}", frames_subset0.size(), frames_subset1.size(),
+            frames_subset0.size() + frames_subset1.size());
 
         frames_subset0.insert(std::end(frames_subset0),
             std::make_move_iterator(std::begin(frames_subset1)),
             std::make_move_iterator(std::end(frames_subset1)));
 
         frames = std::move(frames_subset0);
+
+        auto uniqs = std::set<std::size_t>(std::begin(frames), std::end(frames));
+        spdlog::warn("Uniq {}", uniqs.size());
+
         auto manual_uns_subset = ht::ManualUnaries(0.8, imgs.getImgSize());
         for (auto f : frames)
             manual_uns_subset.insert(f, manual_uns.unaryPointAt(f));
         manual_uns = std::move(manual_uns_subset);
 
         spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
-        detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
-        detections.save(base_path / ("detections_" + end +  std::to_string(manual_uns.size()) + ".yaml"));
+        /* auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos); */
+        /* detections.save( */
+        /*     base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml")); */
     }
 
     return 0;
