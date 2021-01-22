@@ -1,5 +1,5 @@
 #include "habitrack/manualUnaries.h"
-#include "habitrack/tracker.h"
+#include "habitrack/tracker2.h"
 #include "habitrack/unaries.h"
 #include "image-processing/features.h"
 #include "image-processing/images.h"
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
     auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
     auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
     auto manual_uns = ht::ManualUnaries::fromDir(un_folder, 0.8, imgs.getImgSize());
-    auto settings = ht::Tracker::Settings {0.8, 25, 250, 4, false, 5, 3, chunk};
+    auto settings = ht::Tracker2::Settings {0.8, 25, 250, 4, false, 5, 3, chunk};
     /* auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos); */
     std::string end = a1 + "-" + a2 + "-" + a3 + "_";
     /* detections.save( */
@@ -142,7 +142,7 @@ int main(int argc, char** argv)
         manual_uns = std::move(manual_uns_subset);
 
         spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
-        auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
+        auto detections = ht::Tracker2::track(uns, manual_uns, settings, trafos);
         detections.save(
             base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml"));
     }
