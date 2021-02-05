@@ -45,14 +45,10 @@ Detections Tracker2::track(const Unaries& unaries, const ManualUnaries& manualUn
     std::sort(std::begin(manual_ids), std::end(manual_ids));
 
     Detections detections;
-    ManualUnaries muns(settings.subsample, unSize);
 
     // from first unary id to first manual unary id use center of image
     for (std::size_t i = ids[0]; i < manual_ids[0]; i++)
-    {
         detections.insert(i, {center, 0, 0});
-        muns.insert(i, detections.at(i).position);
-    }
 
     // rest interpolate
     for (std::size_t i = 0; i < manual_ids.size() - 1; i++)
@@ -72,21 +68,12 @@ Detections Tracker2::track(const Unaries& unaries, const ManualUnaries& manualUn
                                  "{} from {} and {}",
                     pt.x, pt.y, curr_pt.x, curr_pt.y, next_pt.x, next_pt.y, alpha, curr, next);
             detections.insert(j, {pt, 0, 0});
-            muns.insert(j, detections.at(j).position);
         }
     }
 
     // from last manual unary id to last unary id use center of image
     for (std::size_t i = manual_ids[manual_ids.size() - 1]; i < ids[ids.size() - 1]; i++)
-    {
         detections.insert(i, {center, 0, 0});
-        muns.insert(i, detections.at(i).position);
-    }
-
-
-    muns.save("/data");
-
-    std::exit(0);
 
     return detections;
 }
