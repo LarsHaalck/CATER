@@ -75,6 +75,14 @@ Detections Tracker2::track(const Unaries& unaries, const ManualUnaries& manualUn
     for (std::size_t i = manual_ids[manual_ids.size() - 1]; i < ids[ids.size() - 1]; i++)
         detections.insert(i, {center, 0, 0});
 
+
+    ManualUnaries muns(settings.subsample, unSize);
+    for (auto id : ids)
+        muns.insert(id, detections.at(id).position);
+    muns.save("/data");
+
+    std::exit(0);
+
     return detections;
 }
 

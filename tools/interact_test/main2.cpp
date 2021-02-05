@@ -1,97 +1,170 @@
-// Kernel density estimation by Tim Nugent (c) 2014
+#include "habitrack/manualUnaries.h"
+#include "habitrack/tracker2.h"
+#include "habitrack/unaries.h"
+#include "image-processing/features.h"
+#include "image-processing/images.h"
+#include "image-processing/matches.h"
+#include "kde.h"
 
-#include <fstream>
 #include <iostream>
-#include <kde.h>
-#include <sstream>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string>
-#include <vector>
-#include <memory>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <random>
+#include <set>
 
-using namespace std;
+#include <spdlog/cfg/env.h>
+#include <spdlog/spdlog.h>
 
-void usage(const char* prog)
+using path = std::filesystem::path;
+path base_path = "/data";
+path img_folder = base_path / "imgs";
+path match_folder = base_path / "imgs_output" / "now" / "matches";
+path un_folder = base_path / "imgs_output" / "now" / "unaries";
+
+std::size_t start_frame = 619;
+std::size_t end_frame = 13724;
+std::size_t chunk = 100;
+
+std::size_t NUM_CLICKED = 5251;
+
+std::random_device rd;
+std::mt19937 gen(rd());
+
+std::pair<std::vector<double>, std::vector<std::size_t>> random_choice(
+    const std::vector<double>& vec, std::size_t n, std::vector<double> probs)
 {
+    std::vector<double> subset;
+    std::vector<size_t> subset_id;
+    subset.reserve(n);
+    subset_id.reserve(n);
+    std::discrete_distribution<std::size_t> dist(std::begin(probs), std::end(probs));
+    for (std::size_t i = 0; i < n; i++)
+    {
+        auto idx = dist(gen);
+        subset_id.push_back(idx);
+        subset.push_back(vec[idx]);
+        probs[idx] = 0;
+        dist = std::discrete_distribution<std::size_t>(std::begin(probs), std::end(probs));
+    }
 
-    cout << "Read data from a csv file then perform kernel density estimation:\nUsage:\n"
-         << prog << " [options] <csv_file>" << endl
-         << endl;
-    cout << "Options:" << endl;
-    cout << "-b <int>   Bandwidth optimisation (Gaussian only):" << endl;
-    cout << "           1 = Default" << endl;
-    cout << "           2 = AMISE optimal, secant method" << endl;
-    cout << "           3 = AMISE optimal, bisection method" << endl;
-    cout << "-p <int>   Calculate:" << endl;
-    cout << "           1 = PDF (default)" << endl;
-    cout << "           2 = CDF" << endl;
-    cout << endl;
+    return {subset, subset_id};
 }
 
-int main(int argc, const char* argv[])
+std::vector<double> random_choice_even(
+    const std::vector<double>& vec, std::size_t n)
 {
-
-    auto kde = std::make_unique<KDE>(KDE::BandwidthType::Silverman);
-    string output, line;
-    int pdf = 1;
-
-    if (argc < 2)
+    std::vector<double> subset;
+    subset.reserve(n);
+    float step = static_cast<float>(vec.size()) / n;
+    for (std::size_t i = 0; i < n; i++)
     {
-        usage(argv[0]);
-        return (1);
+        auto idx = static_cast<int>(std::round(i * step));
+        subset.push_back(vec[idx]);
     }
-    else
+
+    return subset;
+}
+
+std::vector<double> inv_probs(const std::vector<double>& probs)
+{
+    std::vector<double> probs_inv;
+    probs_inv.resize(probs.size());
+    auto max = *std::max_element(std::begin(probs), std::end(probs));
+    std::transform(std::begin(probs), std::end(probs), std::begin(probs_inv),
+        [max](auto elem) { return max - elem; });
+    return probs_inv;
+}
+
+int main(int argc, char** argv)
+{
+    spdlog::set_level(spdlog::level::info);
+
+    if (argc != 4)
+        return -1;
+
+    std::string a1 {argv[1]};
+    std::string a2 {argv[2]};
+    std::string a3 {argv[3]};
+    spdlog::info("Called {}-{}-{}", a1, a2, a3);
+
+    auto imgs = ht::Images(img_folder);
+    auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
+    auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
+    auto manual_uns = ht::ManualUnaries::fromDir(un_folder, 0.8, imgs.getImgSize());
+    auto settings = ht::Tracker2::Settings {0.8, 25, 250, 4, false, 5, 3, chunk};
+    auto detections = ht::Tracker2::track(uns, manual_uns, settings, trafos);
+    std::string end = a1 + "-" + a2 + "-" + a3 + "_";
+    /* detections.save( */
+    /*     base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml")); */
+
+    std::vector<double> frames;
+    frames.reserve(manual_uns.size());
+    for (const auto& pointPair : manual_uns)
+        frames.push_back(pointPair.first);
+    std::sort(std::begin(frames), std::end(frames));
+
+    std::size_t step = 100;
+
+    auto kde = KDE(KDE::BandwidthType::Silverman);
+    if (a1 == "b")
+        kde = KDE(KDE::BandwidthType::Bisection);
+    if (a2 == "b")
+        kde.fit(frames);
+
+    while (manual_uns.size() > step)
     {
-        for (int i = 0; i < argc; i++)
+        std::size_t k = manual_uns.size() - step;
+        if (a2 == "a")
         {
-            if (string(argv[i]) == "-b" && i < argc - 1)
-            {
-                switch(atoi(argv[i+1]))
-                {
-                case 1:
-                    kde = std::make_unique<KDE>(KDE::BandwidthType::Silverman);
-                    break;
-                case 2:
-                    kde = std::make_unique<KDE>(KDE::BandwidthType::Secant);
-                    break;
-                case 3:
-                    kde = std::make_unique<KDE>(KDE::BandwidthType::Bisection);
-                    break;
-                default:
-                    break;
-                }
-            }
-            if (string(argv[i]) == "-o" && i < argc - 1)
-            {
-                output = argv[i + 1];
-            }
-            if (string(argv[i]) == "-p" && i < argc - 1)
-            {
-                pdf = atoi(argv[i + 1]);
-            }
+            if (a1 == "s")
+                kde = KDE(KDE::BandwidthType::Silverman);
+            else
+                kde = KDE(KDE::BandwidthType::Bisection);
+            kde.fit(frames);
         }
+        auto frames_prob = kde.pdf(frames);
+        auto frames_prob_inv = inv_probs(frames_prob);
+
+        auto frames_subset0 = std::vector<double>();
+        auto frames_subset1 = std::vector<double>();
+
+        if (a3 == "h")
+        {
+            auto [subset, ids] = random_choice(frames, k / 2, frames_prob);
+            frames_subset0 = subset;
+            for (auto id : ids)
+                frames_prob_inv[id] = 0.0;
+            frames_subset1 = std::get<0>(random_choice(frames, k / 2, frames_prob_inv));
+        }
+        if (a3 == "d")
+            frames_subset0 = std::get<0>(random_choice(frames, k, frames_prob));
+        if (a3 == "i")
+            frames_subset1 = std::get<0>(random_choice(frames, k, frames_prob_inv));
+        if (a3 == "e")
+            frames_subset1 = random_choice_even(frames, k);
+
+        spdlog::warn("S0 {}, S1 {}, S0 + S1 {}", frames_subset0.size(), frames_subset1.size(),
+            frames_subset0.size() + frames_subset1.size());
+
+        frames_subset0.insert(std::end(frames_subset0),
+            std::make_move_iterator(std::begin(frames_subset1)),
+            std::make_move_iterator(std::end(frames_subset1)));
+
+        frames = std::move(frames_subset0);
+
+        auto uniqs = std::set<std::size_t>(std::begin(frames), std::end(frames));
+        spdlog::warn("Uniq {}", uniqs.size());
+
+        auto manual_uns_subset = ht::ManualUnaries(0.8, imgs.getImgSize());
+        for (auto f : frames)
+            manual_uns_subset.insert(f, manual_uns.unaryPointAt(f));
+        manual_uns = std::move(manual_uns_subset);
+
+        spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
+        detections = ht::Tracker2::track(uns, manual_uns, settings, trafos);
+        detections.save(
+            base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml"));
     }
 
-    ifstream file(argv[argc - 1]);
-    std::vector<double> data;
-    while (getline(file, line))
-        data.push_back(std::stod(line));
-    file.close();
-
-    kde->fit(data);
-
-
-    double min_x = kde->get_min();
-    double max_x = kde->get_max();
-    double x_increment = (max_x - min_x) / 1000.0;
-    for (double x = min_x; x <= max_x; x += x_increment)
-    {
-        if (pdf)
-            printf("%2.6F\n", kde->pdf(x));
-        else
-            printf("%2.6F,%2.6F\n", x, kde->cdf(x));
-    }
-
-    return (0);
+    return 0;
 }
