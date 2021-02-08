@@ -69,11 +69,11 @@ int main(int argc, char** argv)
     std::size_t step = 100;
     std::size_t n = 5251 + step; // so the first loop will implicitly handle mikes number
 
-    auto manual_uns = manual_uns_all;
     while (n > step)
     {
         std::size_t k = n - step;
 
+        auto manual_uns = manual_uns_all;
         auto frames_subset = random_choice_even(frames_all, k);
 
         spdlog::warn("S {}", frames_subset.size());
@@ -89,6 +89,8 @@ int main(int argc, char** argv)
         auto detections = ht::Tracker2::track(uns, manual_uns, settings, trafos);
         detections.save(
             base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml"));
+
+        n = k;
     }
 
     return 0;

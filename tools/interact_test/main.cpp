@@ -86,7 +86,6 @@ int main(int argc, char** argv)
         frames.push_back(pointPair.first);
     std::sort(std::begin(frames), std::end(frames));
 
-    std::size_t step = 100;
 
     auto kde = KDE(KDE::BandwidthType::Silverman);
     if (a1 == "b")
@@ -94,9 +93,12 @@ int main(int argc, char** argv)
     if (a2 == "b")
         kde.fit(frames);
 
-    while (manual_uns.size() > step)
+    std::size_t step = 50;
+    std::size_t n = 1300 + step; // so the first loop will implicitly handle mikes number
+
+    while (n > step)
     {
-        std::size_t k = manual_uns.size() - step;
+        std::size_t k = n - step;
         if (a2 == "a")
         {
             if (a1 == "s")
@@ -145,6 +147,8 @@ int main(int argc, char** argv)
         auto detections = ht::Tracker2::track(uns, manual_uns, settings, trafos);
         detections.save(
             base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml"));
+
+        n = k;
     }
 
     return 0;
