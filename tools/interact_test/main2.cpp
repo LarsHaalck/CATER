@@ -20,6 +20,7 @@ path base_path = "/data";
 path img_folder = base_path / "imgs";
 path match_folder = base_path / "imgs_output" / "now" / "matches";
 path un_folder = base_path / "imgs_output" / "now" / "unaries";
+path detectFile = base_path / "imgs_output" / "now" / "detections_gt.yml";
 
 std::size_t start_frame = 619;
 std::size_t end_frame = 13724;
@@ -54,6 +55,14 @@ int main(int argc, char** argv)
     spdlog::info("Called {}-{}-{}", a1, a2, a3);
 
     auto imgs = ht::Images(img_folder);
+    auto detections = ht::Detections::fromDir(detectFile);
+    auto manual_uns = ht::ManualUnaries(0.8, imgs.getImgSize());
+    for (auto detect : detections.cdata())
+        manual_uns.insert(detect.first, detect.second.position);
+
+    manual_uns.save(un_folder);
+
+    /*auto imgs = ht::Images(img_folder);
     auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
     auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
     auto manual_uns_all = ht::ManualUnaries::fromDir(un_folder, 0.8, imgs.getImgSize());
@@ -78,7 +87,6 @@ int main(int argc, char** argv)
 
         spdlog::warn("S {}", frames_subset.size());
 
-        /* frames = std::move(frames_subset); */
 
         auto manual_uns_subset = ht::ManualUnaries(0.8, imgs.getImgSize());
         for (auto f : frames_subset)
@@ -91,7 +99,7 @@ int main(int argc, char** argv)
             base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml"));
 
         n = k;
-    }
+    }*/
 
     return 0;
 }
