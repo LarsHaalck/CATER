@@ -64,7 +64,7 @@ int main(int argc, char** argv)
     auto imgs = ht::Images(img_folder);
     auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
     auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
-    auto manual_uns_all = ht::ManualUnaries::fromDir(un_folder, 0.8, imgs.getImgSize());
+    auto manual_uns_all = ht::ManualUnaries::fromDir(un_folder, 0.8, 9, imgs.getImgSize());
     auto settings = ht::Tracker2::Settings {0.8, 25, 250, 4, false, 5, 3, chunk};
     std::string end = a1 + "-" + a2 + "-" + a3 + "_";
 
@@ -87,7 +87,7 @@ int main(int argc, char** argv)
         spdlog::warn("S {}", frames_subset.size());
 
 
-        auto manual_uns_subset = ht::ManualUnaries(0.8, imgs.getImgSize());
+        auto manual_uns_subset = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
         for (auto f : frames_subset)
             manual_uns_subset.insert(f, manual_uns.unaryPointAt(f));
         manual_uns = std::move(manual_uns_subset);
