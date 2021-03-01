@@ -10,40 +10,42 @@ namespace ht
 namespace fs = std::filesystem;
 ManualUnaries::ManualUnaries()
     : mSubsample(0)
+    , mUnarySize(0)
     , mImgSize()
+    , mPoints()
+    , mUnaries()
+
 {
 }
 
-ManualUnaries::ManualUnaries(double subsample, cv::Size imgSize)
+ManualUnaries::ManualUnaries(double subsample, int unarySize, cv::Size imgSize)
     : mSubsample(subsample)
+    , mUnarySize(unarySize)
     , mImgSize(imgSize)
     , mPoints()
     , mUnaries()
 {
 }
 
-ManualUnaries::ManualUnaries(
-    double subsample, cv::Size imgSize, const std::unordered_map<std::size_t, cv::Point2f>& points)
+ManualUnaries::ManualUnaries(double subsample, int unarySize, cv::Size imgSize,
+    const std::unordered_map<std::size_t, cv::Point2f>& points)
     : mSubsample(subsample)
+    , mUnarySize(unarySize)
     , mImgSize(imgSize)
     , mPoints(points)
     , mUnaries()
 {
     mUnaries.reserve(mPoints.size());
     for (const auto& [id, pt] : mPoints)
-    {
-        cv::Mat gaussian = scaledGauss2D(pt.x, pt.y, 9.0, 9.0, 255.0, mImgSize);
-        cv::resize(gaussian, gaussian, cv::Size(), mSubsample, mSubsample, cv::INTER_LINEAR);
-        mUnaries.insert({id, gaussian});
-    }
+        mUnaries.insert({id, getUnaryFromPoint(pt)});
 }
 
 ManualUnaries ManualUnaries::fromDir(
-    const std::filesystem::path& unDir, double subsample, cv::Size imgSize)
+    const std::filesystem::path& unDir, double subsample, int unarySize, cv::Size imgSize)
 {
     auto file = unDir / "manual_unaries.json";
     if (!fs::is_regular_file(file))
-        return ManualUnaries(subsample, imgSize);
+        return ManualUnaries(subsample, unarySize, imgSize);
     std::ifstream stream(file.string(), std::ios::in);
     io::checkStream(stream, file);
     std::unordered_map<std::size_t, cv::Point2f> points;
@@ -52,7 +54,7 @@ ManualUnaries ManualUnaries::fromDir(
         archive(points);
     }
 
-    ManualUnaries manual(subsample, imgSize, points);
+    ManualUnaries manual(subsample, unarySize, imgSize, points);
     return manual;
 }
 
@@ -69,7 +71,7 @@ void ManualUnaries::save(const std::filesystem::path& unDir)
 
 cv::Mat ManualUnaries::unaryAt(std::size_t id) const
 {
-    assert(mUnaries.count(id) && "Unary id does not exist in unaryAt()");
+    assert(mPoints.count(id) && "Unary id does not exist in unaryAt()");
     // ALWAYS clone because the mat is modified inplace otherwise
     cv::Mat unary = mUnaries.at(id).clone();
     unary.convertTo(unary, CV_32FC1);
@@ -80,7 +82,7 @@ cv::Mat ManualUnaries::unaryAt(std::size_t id) const
 
 cv::Mat ManualUnaries::previewUnaryAt(std::size_t id) const
 {
-    assert(mUnaries.count(id) && "Unary id does not exist in previewUnaryAt()");
+    assert(mPoints.count(id) && "Unary id does not exist in previewUnaryAt()");
     // ALWAYS clone because the mat is modified inplace otherwise
     cv::Mat unary = mUnaries.at(id).clone();
     unary.convertTo(unary, CV_8UC1);
@@ -96,9 +98,7 @@ cv::Point2f ManualUnaries::unaryPointAt(std::size_t id) const
 void ManualUnaries::insert(std::size_t id, cv::Point2f pt)
 {
     mPoints.insert_or_assign(id, pt);
-    cv::Mat gaussian = scaledGauss2D(pt.x, pt.y, 9.0, 9.0, 255.0, mImgSize);
-    cv::resize(gaussian, gaussian, cv::Size(), mSubsample, mSubsample, cv::INTER_LINEAR);
-    mUnaries.insert_or_assign(id, gaussian);
+    mUnaries.insert_or_assign(id, getUnaryFromPoint(pt));
 }
 
 void ManualUnaries::clear(std::size_t id)
@@ -108,4 +108,11 @@ void ManualUnaries::clear(std::size_t id)
 }
 
 bool ManualUnaries::exists(std::size_t id) const { return mPoints.count(id); }
+
+cv::Mat ManualUnaries::getUnaryFromPoint(const cv::Point2f& pt) const
+{
+    cv::Mat gaussian = scaledGauss2D(pt.x, pt.y, mUnarySize, mUnarySize, 255.0, mImgSize);
+    cv::resize(gaussian, gaussian, cv::Size(), mSubsample, mSubsample, cv::INTER_LINEAR);
+    return gaussian;
+}
 } // namespace ht
