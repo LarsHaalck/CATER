@@ -5,6 +5,7 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Concurrent REQUIRED)
 find_package(Qt5Multimedia REQUIRED)
 find_package(cereal REQUIRED)
+find_package(cxxopts REQUIRED)
 
 ###########################################################################
 #                                FILES                                    #
@@ -55,6 +56,7 @@ target_link_libraries(${EXE_NAME}
     habitrack
     spdlog::spdlog
     progressbar
+    cxxopts::cxxopts
 )
 
 install(TARGETS ${EXE_NAME}

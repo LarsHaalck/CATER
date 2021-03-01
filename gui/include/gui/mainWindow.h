@@ -48,6 +48,14 @@ private:
     bool unariesComputed() const;
     bool detectsComputed() const;
 
+public:
+    void setStartFrame(std::size_t frame);
+    void setEndFrame(std::size_t frame);
+    void loadImageFolder(const std::filesystem::path& imgFolder);
+    void loadResultsFile(const std::filesystem::path& resultFile);
+    void runFullPipeline();
+    void save();
+
 private slots:
     void on_sliderOverlayUnaries_sliderReleased();
     void on_overlayTrackedPosition_toggled(bool value);

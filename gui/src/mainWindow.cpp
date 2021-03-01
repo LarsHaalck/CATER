@@ -126,6 +126,11 @@ void HabiTrack::on_actionExpertMode_toggled(bool value)
     ui->labelExpertMode->setVisible(value);
 }
 
+void HabiTrack::save()
+{
+    on_actionSave_Results_triggered();
+}
+
 void HabiTrack::on_actionSave_Results_triggered()
 {
     spdlog::debug("GUI: Save Results triggered");
@@ -272,7 +277,7 @@ void HabiTrack::showFrame(std::size_t frameNumber)
     cv::Mat frame = mImages.at(idx); // zero indexed here
 
     // set filename
-    ui->labelFileName->setText(QString::fromStdString(mImages.getFileName(idx).string()));
+    ui->labelFileName->setText(QString::fromStdString(mImages.getFileName(idx)));
     ui->labelLabel->setText(mInvisibles.count(idx) ? QString("Invisible") : QString());
 
     if (mUnaries.size())
@@ -399,7 +404,7 @@ void HabiTrack::openImagesHelper(const fs::path& path)
     ui->spinCurrentFrame->setValue(1);
     ui->spinCurrentFrame->setEnabled(true);
 
-    ui->labelFileName->setText(QString::fromStdString(mImages.getFileName(0).string()));
+    ui->labelFileName->setText(QString::fromStdString(mImages.getFileName(0)));
 
     ui->labelStartFrame->setText(QString::number(mStartFrameNumber));
     ui->labelEndFrame->setText(QString::number(mEndFrameNumber));
@@ -465,6 +470,16 @@ bool HabiTrack::unariesComputed() const
 
 bool HabiTrack::detectsComputed() const { return fs::is_regular_file(mDetectionsFile); }
 
+void HabiTrack::loadImageFolder(const fs::path& imgFolder)
+{
+    mStartPath = QString::fromStdString(imgFolder);
+    mImgFolder = imgFolder;
+    mImages = Images(mImgFolder);
+    mStartFrameNumber = 1;
+    mEndFrameNumber = mImages.size();
+    openImagesHelper();
+}
+
 void HabiTrack::on_actionOpenImgFolder_triggered()
 {
     spdlog::debug("GUI: Triggered Open image folder");
@@ -472,13 +487,8 @@ void HabiTrack::on_actionOpenImgFolder_triggered()
         mStartPath, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (imgFolderPath.isEmpty())
         return;
-    mStartPath = imgFolderPath;
 
-    mImgFolder = fs::path(imgFolderPath.toStdString());
-    mImages = Images(mImgFolder);
-    mStartFrameNumber = 1;
-    mEndFrameNumber = mImages.size();
-    openImagesHelper();
+    loadImageFolder(fs::path(imgFolderPath.toStdString()));
 }
 
 void HabiTrack::on_actionOpenImgList_triggered()
@@ -499,19 +509,11 @@ void HabiTrack::on_actionOpenImgList_triggered()
     /* openImagesHelper(); */
 }
 
-void HabiTrack::on_actionOpenResultsFile_triggered()
+void HabiTrack::loadResultsFile(const fs::path& resultFile)
 {
-    spdlog::debug("GUI: Triggered Open results file");
-    QString resultFile = QFileDialog::getOpenFileName(
-        this, tr("Open Image File List"), mStartPath, "YAML (*.yml)");
-    if (resultFile.isEmpty())
-        return;
-
-    auto parentPath = fs::path(resultFile.toStdString()).parent_path();
-    mStartPath = QString::fromStdString(parentPath.string());
-
-    spdlog::debug("new start path: {}", mStartPath.toStdString());
-    auto [prefs_, imgFolder_, start_, end_] = loadResults(resultFile.toStdString());
+    auto parentPath = resultFile.parent_path();
+    auto [prefs_, imgFolder_, start_, end_] = loadResults(resultFile);
+    mStartPath = QString::fromStdString(parentPath);
     mPrefs = prefs_;
     mImgFolder = imgFolder_;
     mStartFrameNumber = start_;
@@ -539,8 +541,22 @@ void HabiTrack::on_actionOpenResultsFile_triggered()
     if (fs::is_regular_file(mSetFile))
         mInvisibles = loadSet(mSetFile);
 
+}
+
+void HabiTrack::on_actionOpenResultsFile_triggered()
+{
+    spdlog::debug("GUI: Triggered Open results file");
+    QString resultFile = QFileDialog::getOpenFileName(
+        this, tr("Open Image File List"), mStartPath, "YAML (*.yml)");
+    if (resultFile.isEmpty())
+        return;
+
+    loadResultsFile(resultFile.toStdString());
     showFrame(mStartFrameNumber);
 }
+
+void HabiTrack::setStartFrame(std::size_t frame) { mStartFrameNumber = frame; }
+void HabiTrack::setEndFrame(std::size_t frame) { mEndFrameNumber = frame; }
 
 void HabiTrack::on_buttonStartFrame_clicked()
 {
@@ -677,10 +693,19 @@ void HabiTrack::on_buttonExtractUnaries_clicked()
         unaryQuality[i] = Unaries::getUnaryQuality(mUnaries.at(i));
 
     // zero init if existent
-    mManualUnaries = ManualUnaries::fromDir(mUnFolder, mPrefs.unarySubsample, mImages.getImgSize());
+    mManualUnaries = ManualUnaries::fromDir(
+        mUnFolder, mPrefs.unarySubsample, mPrefs.manualUnarySize, mImages.getImgSize());
 
     setupUnaryScene(unaryQuality);
     ui->labelNumUnaries->setText(QString::number(mUnaries.size()));
+}
+
+void HabiTrack::runFullPipeline()
+{
+    on_buttonExtractFeatures_clicked();
+    on_buttonExtractTrafos_clicked();
+    on_buttonExtractUnaries_clicked();
+    on_buttonOptimizeUnaries_clicked();
 }
 
 void HabiTrack::on_buttonOptimizeUnaries_clicked()

@@ -29,6 +29,7 @@ struct Preferences
     bool removeRedLasers = true;
     double unarySuppress = 1.0;
     double unaryMultiplier = 4.0;
+    int manualUnarySize = 9;
 
     // pairwise, tracking recompute needed
     int pairwiseSize = 15;

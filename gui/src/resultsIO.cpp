@@ -32,6 +32,7 @@ namespace detail
         fs << "unary_remove_lasers" << prefs.removeRedLasers;
         fs << "unary_suppress" << prefs.unarySuppress;
         fs << "unary_multiplier" << prefs.unaryMultiplier;
+        fs << "manual_unary_size" << prefs.manualUnarySize;
 
         // pairwise
         fs << "pairwise_size" << prefs.pairwiseSize;
@@ -74,6 +75,9 @@ namespace detail
         prefs.removeRedLasers = static_cast<bool>(static_cast<int>(node["unary_remove_lasers"]));
         prefs.unarySuppress = node["unary_suppress"];
         prefs.unaryMultiplier = node["unary_multiplier"];
+
+        if (!node["manual_unary_size"].empty())
+            prefs.manualUnarySize = node["manual_unary_size"];
 
         // pairwise, tracking recompute needed
         prefs.pairwiseSize = node["pairwise_size"];

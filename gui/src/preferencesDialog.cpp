@@ -49,6 +49,7 @@ void PreferencesDialog::resetUnariesTo(const Preferences& prefs)
     ui->removeRedLasersCheck->setChecked(prefs.removeRedLasers);
     ui->suppressSpin->setValue(prefs.unarySuppress);
     ui->manualMultiplierSpin->setValue(prefs.unaryMultiplier);
+    ui->manualUnarySizeSpin->setValue(prefs.manualUnarySize);
 }
 
 void PreferencesDialog::resetPairwiseTo(const Preferences& prefs)
@@ -184,6 +185,7 @@ Preferences PreferencesDialog::getPreferences() const
     p.removeRedLasers = ui->removeRedLasersCheck->isChecked();
     p.unarySuppress = ui->suppressSpin->value();
     p.unaryMultiplier = ui->manualMultiplierSpin->value();
+    p.manualUnarySize = ui->manualUnarySizeSpin->value();
 
     // pairwise
     p.pairwiseSigma = ui->pairwiseSigmaSpin->value();
@@ -201,6 +203,7 @@ Preferences PreferencesDialog::getPreferences() const
     p.removeCamMotion = ui->removeCamMotion->isChecked();
     p.nnRatio = ui->nnRatioSpin->value();
     p.ranscacReproj = ui->maxReprojSpin->value();
+
 
     p.cacheSize = ui->cacheSpin->value();
     p.chunkSize = ui->chunkSpin->value();
