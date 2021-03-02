@@ -11,7 +11,9 @@
 #include <QDate>
 #include <QFileDialog>
 #include <QMessageBox>
+#ifdef WITH_QT5_MULTIMEDIA
 #include <QSound>
+#endif
 #include <QStatusBar>
 #include <QTime>
 #include <QtConcurrent>
@@ -796,7 +798,11 @@ void HabiTrack::onDetectionsAvailable(int chunkId)
 {
     // TODO: is the mutex needed?
     QMutexLocker locker(&mMutex);
+
+#ifdef WITH_QT5_MULTIMEDIA
     QSound::play("qrc:///sounds/notification.wav");
+#endif
+
     statusBar()->showMessage("New detections available", statusDelay);
 
     toggleChunkUnaryScene(chunkId, false);
