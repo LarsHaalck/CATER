@@ -1,5 +1,6 @@
 # FROM ubuntu:20.04
-FROM nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
+# FROM nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
+FROM nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive apt install -y \
@@ -23,10 +24,11 @@ RUN apt update && \
     ca-certificates \
     gnupg \
     software-properties-common \
+    qt5-default \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
-RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main' \
+RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main' \
     && apt update && apt install -y cmake \
     && rm -rf /var/lib/apt/lists/*
 
@@ -38,8 +40,8 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test \
 ENV CC gcc-10
 ENV CXX g++-10
 RUN cd /tmp \
-    && wget https://download.pytorch.org/libtorch/cu101/libtorch-cxx11-abi-shared-with-deps-1.6.0%2Bcu101.zip \
-    && unzip libtorch-cxx11-abi-shared-with-deps-1.6.0+cu101.zip \
+    && wget https://download.pytorch.org/libtorch/cu110/libtorch-cxx11-abi-shared-with-deps-1.7.1%2Bcu110.zip \
+    && unzip libtorch-cxx11-abi-shared-with-deps-1.7.1+cu110.zip \
     && mv libtorch/include/* /usr/local/include \
     && mv libtorch/lib/* /usr/local/lib \
     && mv libtorch/share/* /usr/local/share \
