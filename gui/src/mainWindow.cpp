@@ -930,8 +930,8 @@ void HabiTrack::setupUnaryScene(std::vector<double> qualities)
 
         std::nth_element(std::begin(dists), std::begin(dists) + dists.size() / 2, std::end(dists));
         auto medianDist = dists[dists.size() / 2];
-        spdlog::debug("GUI: Unary low threshold {}", median + 2.0 * medianDist);
-        spdlog::debug("GUI: Unary high threshold {}", median + 4.0 * medianDist);
+        /* spdlog::debug("GUI: Unary low threshold {}", median + 2.0 * medianDist); */
+        /* spdlog::debug("GUI: Unary high threshold {}", median + 4.0 * medianDist); */
         for (std::size_t j = start; j < end; j++)
         {
             UnaryQuality qual;

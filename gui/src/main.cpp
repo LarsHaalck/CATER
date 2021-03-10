@@ -35,12 +35,12 @@ int main(int argc, char* argv[])
     std::vector<std::string> qArgsVec;
     qArgsVec.push_back(argv[0]);
 
-    if (hideGui)
-    {
-        qNumArgs += 2;
-        qArgsVec.push_back("-platform");
-        qArgsVec.push_back("offscreen");
-    }
+    /* if (hideGui) */
+    /* { */
+    /*     qNumArgs += 2; */
+    /*     qArgsVec.push_back("-platform"); */
+    /*     qArgsVec.push_back("offscreen"); */
+    /* } */
 
     std::vector<char*> qArgs;
     for (auto& s: qArgsVec)
@@ -60,8 +60,10 @@ int main(int argc, char* argv[])
 
         w.runFullPipeline();
         w.save();
+        return 0;
 
     }
-    w.show();
+    else
+        w.show();
     return a.exec();
 }
