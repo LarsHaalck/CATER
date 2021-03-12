@@ -67,14 +67,12 @@ endif()
 
 
 add_subdirectory(lib)
+add_subdirectory(ui)
 
 if(${BUILD_TOOLS})
     add_subdirectory(tools)
 endif()
 
-if(${BUILD_GUI})
-    add_subdirectory(gui)
-endif()
 
 include(GNUInstallDirs)
 install(EXPORT habitrack-targets

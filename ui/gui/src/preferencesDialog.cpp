@@ -3,6 +3,8 @@
 #include <QMouseEvent>
 #include <iostream>
 
+using namespace model;
+
 namespace gui
 {
 PreferencesDialog::PreferencesDialog(QWidget* parent, const Preferences& prefs)

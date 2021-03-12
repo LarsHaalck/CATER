@@ -13,7 +13,6 @@ find_package(cxxopts REQUIRED)
 set(SOURCES
     src/main.cpp
     src/mainWindow.cpp
-    src/preferences.cpp
     src/preferencesDialog.cpp
     src/trackerScene.cpp
     src/trackerGraphicsView.cpp
@@ -56,6 +55,7 @@ target_link_libraries(${EXE_NAME}
     spdlog::spdlog
     progressbar
     cxxopts::cxxopts
+    uimodel
 )
 
 if(${QT5_MULTIMEDIA_FOUND})

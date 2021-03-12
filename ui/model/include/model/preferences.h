@@ -1,11 +1,11 @@
-#ifndef GUI_PREFERENCES_H
-#define GUI_PREFERENCES_H
+#ifndef MODEL_PREFERENCES_H
+#define MODEL_PREFERENCES_H
 
 #include "image-processing/baseFeatureContainer.h"
 #include "spdlog/fmt/ostr.h"
 #include <ostream>
 
-namespace gui
+namespace model
 {
 struct Preferences
 {
@@ -45,8 +45,8 @@ struct Preferences
     double nnRatio = 0.8;
     double ranscacReproj = 3.0;
 
-    friend std::ostream& operator<<(std::ostream& stream, const gui::Preferences& prefs);
+    friend std::ostream& operator<<(std::ostream& stream, const model::Preferences& prefs);
 };
-} // namespace gui
+} // namespace model
 
-#endif // GUI_PREFERENCES_H
+#endif // MODEL_PREFERENCES_H

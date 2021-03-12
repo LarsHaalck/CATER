@@ -3,6 +3,8 @@
 #include "spdlog/spdlog.h"
 #include <opencv2/core/persistence.hpp>
 
+using namespace model;
+
 namespace gui
 {
 namespace fs = std::filesystem;

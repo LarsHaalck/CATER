@@ -1,6 +1,6 @@
-#include "gui/preferences.h"
+#include "model/preferences.h"
 
-namespace gui
+namespace model
 {
 std::ostream& operator<<(std::ostream& stream, const Preferences& prefs)
 {
@@ -41,4 +41,4 @@ std::ostream& operator<<(std::ostream& stream, const Preferences& prefs)
     stream << "====================\n";
     return stream;
 }
-} // namespace gui
+} // namespace model

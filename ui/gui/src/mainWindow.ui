@@ -899,6 +899,7 @@ color: white;
      <string>Tools</string>
     </property>
     <addaction name="actionPreferences"/>
+    <addaction name="actionLabel_Editor"/>
     <addaction name="actionExpertMode"/>
     <addaction name="separator"/>
     <addaction name="actionPrev_Frame"/>
@@ -981,6 +982,11 @@ color: white;
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionLabel_Editor">
+   <property name="text">
+    <string>Label Editor...</string>
    </property>
   </action>
  </widget>

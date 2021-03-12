@@ -25,6 +25,7 @@
 #include <spdlog/spdlog.h>
 
 using namespace ht;
+using namespace model;
 namespace fs = std::filesystem;
 
 constexpr int statusDelay = 2000; // used
@@ -146,6 +147,12 @@ void HabiTrack::on_actionSave_Results_triggered()
     //mManualBearing.save(mOutputPath);
 
     statusBar()->showMessage("Saved results.", statusDelay);
+}
+
+void HabiTrack::on_actionLabel_Editor_triggered()
+{
+    LabelDialog labelDialog(this);
+    labelDialog.exec();
 }
 
 void HabiTrack::on_actionPreferences_triggered()

@@ -4,7 +4,7 @@
 #include <QMainWindow>
 
 #include "gui/guiPreferences.h"
-#include "gui/preferences.h"
+#include "model/preferences.h"
 #include "gui/trackerScene.h"
 #include "gui/unaryGraphicsView.h"
 #include "habitrack/detections.h"
@@ -65,6 +65,7 @@ private slots:
 
     void on_actionExpertMode_toggled(bool value);
     void on_actionSave_Results_triggered();
+    void on_actionLabel_Editor_triggered();
     void on_actionPreferences_triggered();
 
     void on_actionOpenImgFolder_triggered();
@@ -105,7 +106,7 @@ private:
     std::shared_ptr<ht::BaseProgressBar> mBar;
 
     GuiPreferences mGuiPrefs;
-    Preferences mPrefs;
+    model::Preferences mPrefs;
 
     std::filesystem::path mOutputPath;
     std::filesystem::path mResultsFile;
