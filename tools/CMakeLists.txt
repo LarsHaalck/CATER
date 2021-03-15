@@ -1,4 +1,4 @@
-add_subdirectory(tracker)
+add_subdirectory(simple_tracker)
 add_subdirectory(singleVideo)
 add_subdirectory(fullVideo)
 add_subdirectory(multiVideo)

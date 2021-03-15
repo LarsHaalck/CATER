@@ -17,7 +17,7 @@ set(SOURCES
 ###########################################################################
 #                               TARGETS                                   #
 ###########################################################################
-set(LIB_NAME "habitrack")
+set(LIB_NAME "tracker")
 add_library(${LIB_NAME} ${SOURCES})
 
 target_include_directories(${LIB_NAME}

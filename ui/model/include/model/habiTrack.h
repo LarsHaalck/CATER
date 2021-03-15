@@ -3,9 +3,10 @@
 
 
 #include "model/preferences.h"
-#include "habitrack/detections.h"
-#include "habitrack/manualUnaries.h"
-#include "habitrack/unaries.h"
+#include "tracker/tracker.h"
+#include "tracker/detections.h"
+#include "tracker/manualUnaries.h"
+#include "tracker/unaries.h"
 #include "image-processing/features.h"
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
@@ -14,11 +15,12 @@
 #include <filesystem>
 #include <unordered_set>
 
-namespace model
+namespace ht
 {
 class HabiTrack
 {
 public:
+    HabiTrack();
     bool featureComputed() const;
     bool matchesComputed() const;
     bool unariesComputed() const;
@@ -26,9 +28,10 @@ public:
 
     void loadImageFolder(const std::filesystem::path& imgFolder);
     void loadResultsFile(const std::filesystem::path& resultFile);
-    void saveResults(const std::filesystem::path& resultFile);
+    void saveResultsFile();
 
-    void setPreferences(const model::Preferences& prefs);
+    void setPreferences(const Preferences& prefs);
+    Preferences getPreferences() const;
 
     void setStartFrame(std::size_t frame);
     void setEndFrame(std::size_t frame);
@@ -39,24 +42,24 @@ public:
     void optimizeUnaries(int chunkId = -1);
     void runFullPipeline();
 
-private:
-    void populatePaths();
-    void openImagesHelper(const std::filesystem::path& path = {});
-
-/* private slots: */
-
-
 /*     void onPositionChanged(QPointF position); */
 /*     void onBearingChanged(QPointF position); */
 /*     void onPositionCleared(); */
 /*     void onBearingCleared(); */
-
 /*     void onDetectionsAvailable(int chunkId); */
 
 private:
-    std::shared_ptr<ht::BaseProgressBar> mBar;
+    void populatePaths();
+    void openImagesHelper(const std::filesystem::path& path = {});
+    std::string getDateTimeString() const;
 
-    model::Preferences mPrefs;
+    void setTrackerSettings(const Preferences& prefs);
+
+private:
+    std::shared_ptr<BaseProgressBar> mBar;
+
+    Preferences mPrefs;
+    Tracker::Settings mTrackerSettings;
 
     std::filesystem::path mOutputPath;
     std::filesystem::path mResultsFile;
@@ -65,23 +68,21 @@ private:
     std::filesystem::path mMatchFolder;
     std::filesystem::path mUnFolder;
     std::filesystem::path mDetectionsFile;
-    std::filesystem::path mSetFile;
+    /* std::filesystem::path mSetFile; */
 
-    ht::Images mImages;
+    Images mImages;
     std::size_t mCurrentFrameNumber;
     std::size_t mStartFrameNumber;
     std::size_t mEndFrameNumber;
 
-    ht::Features mFeatures;
-    ht::Unaries mUnaries;
-    ht::ManualUnaries mManualUnaries;
-    std::vector<double> mUnaryQualities;
-    std::unordered_set<std::size_t> mInvisibles;
+    Features mFeatures;
 
-    ht::Detections mDetections;
-    std::unordered_map<int, std::unique_ptr<QFutureWatcher<ht::Detections>>> mDetectionsWatchers;
-    std::deque<int> mDetectionsQueue;
+    Unaries mUnaries;
+    ManualUnaries mManualUnaries;
+    std::vector<double> mUnaryQualities;
+
+    Detections mDetections;
 };
-} // namespace model
+} // namespace ht
 
 #endif // MODEL_HABITRACK_H

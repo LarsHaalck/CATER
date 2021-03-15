@@ -5,7 +5,7 @@
 
 using namespace model;
 
-namespace gui
+namespace ht
 {
 namespace fs = std::filesystem;
 namespace detail
@@ -128,4 +128,4 @@ std::tuple<Preferences, std::filesystem::path, std::size_t, std::size_t> loadRes
     return {prefs, imgFolder, startFrame, endFrame};
 }
 
-} // namespace gui
+} // namespace ht

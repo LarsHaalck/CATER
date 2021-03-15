@@ -1,5 +1,5 @@
-#ifndef HABITRACK_UNARIES_H
-#define HABITRACK_UNARIES_H
+#ifndef TRACKER_UNARIES_H
+#define TRACKER_UNARIES_H
 
 #include "image-processing/matches.h"
 #include "image-processing/types.h"
@@ -61,4 +61,4 @@ private:
     cv::Mat mGaussian;
 };
 } // namespace ht
-#endif // HABITRACK_UNARIES_H
+#endif // TRACKER_UNARIES_H

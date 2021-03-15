@@ -8,7 +8,7 @@ target_include_directories(interact_test
 target_link_libraries(interact_test
     PUBLIC
     image-processing
-    habitrack
+    tracker
     cxxopts::cxxopts
     spdlog::spdlog
 )
@@ -21,7 +21,7 @@ target_include_directories(interact_test2
 target_link_libraries(interact_test2
     PUBLIC
     image-processing
-    habitrack
+    tracker
     cxxopts::cxxopts
     spdlog::spdlog
 )

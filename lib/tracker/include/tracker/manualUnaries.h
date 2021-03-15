@@ -1,5 +1,5 @@
-#ifndef HABITRACK_MANUAL_UNARIES_H
-#define HABITRACK_MANUAL_UNARIES_H
+#ifndef TRACKER_MANUAL_UNARIES_H
+#define TRACKER_MANUAL_UNARIES_H
 
 #include <filesystem>
 #include <opencv2/core.hpp>
@@ -44,4 +44,4 @@ private:
     cv::Mat getUnaryFromPoint(const cv::Point2f& pt) const;
 };
 } // namespace ht
-#endif // HABITRACK_MANUAL_UNARIES_H
+#endif // TRACKER_MANUAL_UNARIES_H

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>HabiTrack</class>
- <widget class="QMainWindow" name="HabiTrack">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>HabiTrack</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="enabled">
@@ -252,6 +252,9 @@
              </item>
              <item>
               <widget class="QGroupBox" name="groupBox_5">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="title">
                 <string>Overlay Settings</string>
                </property>
@@ -325,7 +328,7 @@ border: 1px solid red;
                 <item row="2" column="0">
                  <widget class="QCheckBox" name="overlayTrackedPosition">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                   <property name="text">
                    <string>Tracked Positions</string>

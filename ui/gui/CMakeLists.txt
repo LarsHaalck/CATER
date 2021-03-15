@@ -20,13 +20,14 @@ set(SOURCES
     src/unaryGraphicsView.cpp
     src/qtOpencvCore.cpp
     src/progressStatusBar.cpp
-    src/resultsIO.cpp
     src/setIO.cpp
+    src/viewModel.cpp
     resources/resources.qrc
 )
 
 set(GUI_HEADERS
     include/gui/mainWindow.h
+    include/gui/viewModel.h
     include/gui/preferencesDialog.h
     include/gui/trackerScene.h
     include/gui/trackerGraphicsView.h
@@ -51,7 +52,6 @@ target_link_libraries(${EXE_NAME}
     Qt5::Widgets
     Qt5::Concurrent
     OpenMP::OpenMP_CXX
-    habitrack
     spdlog::spdlog
     progressbar
     cxxopts::cxxopts

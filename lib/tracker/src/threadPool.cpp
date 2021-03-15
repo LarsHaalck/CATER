@@ -22,7 +22,7 @@ freely, subject to the following restrictions:
 
 Modfied by Lars Haalck
 **************************************************************************************/
-#include "habitrack/threadPool.h"
+#include "tracker/threadPool.h"
 
 namespace ht
 {

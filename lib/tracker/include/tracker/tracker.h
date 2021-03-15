@@ -1,7 +1,7 @@
-#ifndef HABITRACK_TRACKER_H
-#define HABITRACK_TRACKER_H
+#ifndef TRACKER_TRACKER_H
+#define TRACKER_TRACKER_H
 
-#include "habitrack/detections.h"
+#include "tracker/detections.h"
 #include <opencv2/core.hpp>
 
 namespace ht
@@ -63,5 +63,5 @@ private:
     static double calcWeightedCircularMean(
         const std::vector<double>& weightsWindow, const std::vector<double>& anglesWindow);
 };
-} // namespace habitrack
-#endif // HABITRACK_TRACKER_H
+} // namespace ht
+#endif // TRACKER_TRACKER_H

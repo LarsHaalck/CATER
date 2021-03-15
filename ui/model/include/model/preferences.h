@@ -5,7 +5,7 @@
 #include "spdlog/fmt/ostr.h"
 #include <ostream>
 
-namespace model
+namespace ht
 {
 struct Preferences
 {
@@ -45,8 +45,8 @@ struct Preferences
     double nnRatio = 0.8;
     double ranscacReproj = 3.0;
 
-    friend std::ostream& operator<<(std::ostream& stream, const model::Preferences& prefs);
+    friend std::ostream& operator<<(std::ostream& stream, const ht::Preferences& prefs);
 };
-} // namespace model
+} // namespace ht
 
 #endif // MODEL_PREFERENCES_H

@@ -1,10 +1,10 @@
 find_package(cxxopts REQUIRED)
 
-add_executable(tracker main.cpp)
-target_link_libraries(tracker
+add_executable(simple_tracker main.cpp)
+target_link_libraries(simple_tracker
     PUBLIC
     image-processing
-    habitrack
+    tracker
     cxxopts::cxxopts
     spdlog::spdlog
 )

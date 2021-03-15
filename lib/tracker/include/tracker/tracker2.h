@@ -1,7 +1,7 @@
-#ifndef HABITRACK_TRACKER2_H
-#define HABITRACK_TRACKER2_H
+#ifndef TRACKER_TRACKER2_H
+#define TRACKER_TRACKER2_H
 
-#include "habitrack/detections.h"
+#include "tracker/detections.h"
 #include <opencv2/core.hpp>
 
 namespace ht
@@ -37,5 +37,5 @@ public:
     static std::size_t getChunkEnd(
         std::size_t chunk, std::size_t numChunks, std::size_t chunkSize, std::size_t numUnaries);
 };
-} // namespace habitrack
-#endif // HABITRACK_TRACKER2_H
+} // namespace ht
+#endif // TRACKER_TRACKER2_H

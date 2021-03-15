@@ -1,5 +1,5 @@
-#ifndef HABITRACK_DETECTIONS_H
-#define HABITRACK_DETECTIONS_H
+#ifndef TRACKER_DETECTIONS_H
+#define TRACKER_DETECTIONS_H
 
 #include "image-processing/matches.h"
 #include <map>
@@ -42,4 +42,4 @@ private:
     std::map<std::size_t, Detection> mDetections;
 };
 } // namespace ht
-#endif // HABITRACK_DETECTIONS_H
+#endif // TRACKER_DETECTIONS_H

@@ -3,7 +3,7 @@
 #include <QMouseEvent>
 #include <iostream>
 
-using namespace model;
+using namespace ht;
 
 namespace gui
 {

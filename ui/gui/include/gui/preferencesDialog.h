@@ -17,21 +17,21 @@ class PreferencesDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit PreferencesDialog(QWidget* parent, const model::Preferences& prefs = model::Preferences());
+    explicit PreferencesDialog(QWidget* parent, const ht::Preferences& prefs = ht::Preferences());
     ~PreferencesDialog();
-    model::Preferences getPreferences() const;
+    ht::Preferences getPreferences() const;
 
 private:
-    void initPreferences(const model::Preferences& pefs);
+    void initPreferences(const ht::Preferences& pefs);
 
-    void resetGeneralTo(const model::Preferences& prefs);
-    void resetColourTo(const model::Preferences& prefs);
-    void resetFeaturesTo(const model::Preferences& prefs);
-    void resetUnariesTo(const model::Preferences& prefs);
-    void resetPairwiseTo(const model::Preferences& prefs);
-    void resetPanoramaTo(const model::Preferences& prefs);
-    void resetSmoothBearingTo(const model::Preferences& prefs);
-    void resetTransformationTo(const model::Preferences& prefs);
+    void resetGeneralTo(const ht::Preferences& prefs);
+    void resetColourTo(const ht::Preferences& prefs);
+    void resetFeaturesTo(const ht::Preferences& prefs);
+    void resetUnariesTo(const ht::Preferences& prefs);
+    void resetPairwiseTo(const ht::Preferences& prefs);
+    void resetPanoramaTo(const ht::Preferences& prefs);
+    void resetSmoothBearingTo(const ht::Preferences& prefs);
+    void resetTransformationTo(const ht::Preferences& prefs);
 
     ht::FeatureType stringToFeatureType(const QString& string) const;
 
@@ -45,8 +45,8 @@ private slots:
 
 private:
     Ui::PreferencesDialog* ui;
-    model::Preferences mPrefs;
-    const model::Preferences mPrefsDefaults;
+    ht::Preferences mPrefs;
+    const ht::Preferences mPrefsDefaults;
 };
 } // namespace gui
 #endif // PREFERENCESDIALOG_H
