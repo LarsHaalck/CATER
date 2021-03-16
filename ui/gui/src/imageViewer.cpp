@@ -27,25 +27,26 @@ ImageViewer::ImageViewer(const ht::Images& images, const ht::Unaries& unaries,
 }
 
 
-cv::Mat ImageViewer::showFrame(int frameNum)
+cv::Mat ImageViewer::getFrame(int frameNum)
 {
-    // we only allow one background thread, otherwise it is to much book-keeping
-    // if it is running, joinn it first
-    if (mThread.joinable())
-        mThread.join();
+    /* // we only allow one background thread, otherwise it is to much book-keeping */
+    /* // if it is running, joinn it first */
+    /* if (mThread.joinable()) */
+    /*     mThread.join(); */
 
-    if (isHit(frameNum))
-    {
-        // just return the image, nothing else to be done
-        if (isSafe(frameNum))
-            return processItem(mCache[frameNum - mStart]);
+    /* if (isHit(frameNum)) */
+    /* { */
+    /*     // just return the image, nothing else to be done */
+    /*     if (isSafe(frameNum)) */
+    /*         return processItem(mCache[frameNum - mStart]); */
 
 
-        mThread = std::thread(&ImageViewer::rebalance, this);
-        // return hit
-    }
+    /*     mThread = std::thread(&ImageViewer::rebalance, this); */
+    /*     // return hit */
+    /* } */
 
-    mThread = std::thread(&ImageViewer::buildCache, this);
+    /* mThread = std::thread(&ImageViewer::buildCache, this); */
+    /* return processItem(readItem(frameNum)); */
     return processItem(readItem(frameNum));
 }
 

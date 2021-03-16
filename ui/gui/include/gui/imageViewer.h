@@ -29,7 +29,7 @@ public:
     ImageViewer(const ht::Images& images, const ht::Unaries& unaries,
         const ht::ManualUnaries& manualUnaries, const ht::Detections& detections);
 
-    cv::Mat showFrame(int frameNum);
+    cv::Mat getFrame(int frameNum);
 
 private:
     void buildCache();

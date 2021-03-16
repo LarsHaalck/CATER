@@ -50,8 +50,8 @@ MainWindow::MainWindow(QWidget* parent)
     ui->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
     mBar = std::make_shared<ProgressStatusBar>(ui->progressBar, ui->labelProgress);
 
-    connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this,
-        [=](std::size_t num) { this->showFrame(num + 1); });
+    /* connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this, */
+    /*     [=](std::size_t num) { this->showFrame(num + 1); }); */
 
     connect(this->ui->graphicsView, SIGNAL(positionChanged(QPointF)), this,
         SLOT(onPositionChanged(QPointF)));
@@ -166,20 +166,20 @@ void MainWindow::on_actionPreferences_triggered()
 void MainWindow::on_sliderFrame_valueChanged(int value)
 {
     spdlog::debug("GUI: Changed slider frame");
-    showFrame(value);
+    /* showFrame(value); */
 }
 
 void MainWindow::on_spinCurrentFrame_editingFinished()
 {
     spdlog::debug("GUI: Changed frame spin (edited)");
     int value = ui->spinCurrentFrame->value();
-    showFrame(value);
+    /* showFrame(value); */
 }
 
 void MainWindow::on_spinCurrentFrame_valueChanged(int value)
 {
     spdlog::debug("GUI: Changed frame spin");
-    showFrame(value);
+    /* showFrame(value); */
 }
 
 void MainWindow::on_buttonPrevFrame_clicked()
@@ -188,7 +188,7 @@ void MainWindow::on_buttonPrevFrame_clicked()
     if (mCurrentFrameNumber > 1)
     {
         auto newIdx = mCurrentFrameNumber - 1;
-        showFrame(newIdx);
+        /* showFrame(newIdx); */
     }
 }
 
@@ -220,18 +220,18 @@ void MainWindow::on_actionNext_Frame_triggered()
 
 void MainWindow::refreshWindow()
 {
-    spdlog::debug("GUI: Redraw window");
+    /* spdlog::debug("GUI: Redraw window"); */
 
-    ui->sliderFrame->blockSignals(true);
-    ui->spinCurrentFrame->blockSignals(true);
+    /* ui->sliderFrame->blockSignals(true); */
+    /* ui->spinCurrentFrame->blockSignals(true); */
 
-    ui->sliderFrame->setValue(mCurrentFrameNumber);
-    ui->spinCurrentFrame->setValue(mCurrentFrameNumber);
+    /* ui->sliderFrame->setValue(mCurrentFrameNumber); */
+    /* ui->spinCurrentFrame->setValue(mCurrentFrameNumber); */
 
-    ui->sliderFrame->blockSignals(false);
-    ui->spinCurrentFrame->blockSignals(false);
+    /* ui->sliderFrame->blockSignals(false); */
+    /* ui->spinCurrentFrame->blockSignals(false); */
 
-    qApp->processEvents();
+    /* qApp->processEvents(); */
 }
 
 void MainWindow::populatePaths()
@@ -396,6 +396,13 @@ void MainWindow::showFrame(std::size_t frameNumber)
     /* refreshWindow(); */
 }
 
+void MainWindow::showFrame(const cv::Mat& img)
+{
+    auto pixMap = QPixmap::fromImage(QtOpencvCore::img2qimgRaw(img));
+    mScene->setPixmap(pixMap);
+    refreshWindow();
+}
+
 void MainWindow::openImagesHelper()
 {
     auto imgs = mHabiTrack.images();
@@ -438,7 +445,7 @@ void MainWindow::openImagesHelper()
 
     // show first frame
     mCurrentFrameNumber = mHabiTrack.getStartFrame();
-    mViewer.showFrame(mCurrentFrameNumber);
+    showFrame(mViewer.getFrame(mCurrentFrameNumber - 1));
 }
 
 
@@ -453,6 +460,7 @@ void MainWindow::on_actionOpenImgFolder_triggered()
     mBar->setTotal(0);
 
     mHabiTrack.loadImageFolder(fs::path(imgFolderPath.toStdString()));
+    openImagesHelper();
 }
 
 void MainWindow::on_actionOpenImgList_triggered()
