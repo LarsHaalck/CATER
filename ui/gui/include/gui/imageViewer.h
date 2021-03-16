@@ -2,7 +2,6 @@
 #define GUI_IMAGE_VIEWER_H
 
 #include <deque>
-#include <future>
 #include <thread>
 
 #include <opencv2/core.hpp>

@@ -444,7 +444,7 @@ void MainWindow::openImagesHelper()
 
 void MainWindow::on_actionOpenImgFolder_triggered()
 {
-    spdlog::debug("GUI: Triggered Open image folder");
+   spdlog::debug("GUI: Triggered Open image folder");
     QString imgFolderPath = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
         mStartPath, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (imgFolderPath.isEmpty())
