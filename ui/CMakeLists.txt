@@ -1,4 +1,3 @@
-add_subdirectory(model)
 # add_subdirectory(tui)
 
 if(${BUILD_GUI})

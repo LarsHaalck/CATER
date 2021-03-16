@@ -1,4 +1,4 @@
-#include "model/habiTrack.h"
+#include "habitrack/habiTrack.h"
 
 #include "image-processing/util.h"
 #include "resultsIO.h"
@@ -262,42 +262,64 @@ void HabiTrack::extractUnaries()
 
     /* std::vector<double> unaryQuality(mImages.size(), -1); */
     /* for (auto i = mStartFrameNumber - 1; i < mEndFrameNumber - 1; i++) */
-    /*     unaryQuality[i] = Unaries::getUnaryQuality(mUnaries.at(i)); */
+    /*     unaryQuality[i] = Unaries::getUnaryQuality(unaries.at(i)); */
 
     // zero init if existent
     mManualUnaries = ManualUnaries::fromDir(
         mUnFolder, mPrefs.unarySubsample, mPrefs.manualUnarySize, mImages.getImgSize());
 }
 
-void HabiTrack::optimizeUnaries(int chunk)
-{
-    spdlog::debug("HabiTrack: Clicked Optimize Unaries");
-    if (!unariesComputed())
-    {
-        // TODO: exception?
-        spdlog::warn("HabiTrack: Unaries need to be computed before pptimization.");
-        return;
-    }
+/* void HabiTrack::optimizeUnaries(int chunk, std::function<void()> callback) */
+/* { */
+/*     spdlog::debug("HabiTrack: Clicked Optimize Unaries"); */
+/*     if (!unariesComputed()) */
+/*     { */
+/*         // TODO: exception? */
+/*         spdlog::warn("HabiTrack: Unaries need to be computed before pptimization."); */
+/*         return; */
+/*     } */
 
-    Detections detections;
-    auto trafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography);
-    if (chunk == -1)
-        detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, trafos);
-    else
-        detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, chunk, trafos);
+/*     Detections detections; */
+/*     auto trafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography); */
+/*     if (chunk == -1) */
+/*         detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, trafos); */
+/*     else */
+/*         detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, chunk, trafos); */
 
-    auto& dd = mDetections.data();
-    for (auto&& d : detections.data())
-        dd.insert_or_assign(d.first, std::move(d.second));
-}
+/*     auto& dd = mDetections.data(); */
+/*     for (auto&& d : detections.data()) */
+/*         dd.insert_or_assign(d.first, std::move(d.second)); */
+/* } */
 
-void HabiTrack::runFullPipeline()
-{
-    extractFeatures();
-    extractTrafos();
-    extractUnaries();
-    optimizeUnaries();
-}
+/* void HabiTrack::optimizeUnaries(int chunk, std::function<void()> callback) */
+/* { */
+/*     spdlog::debug("HabiTrack: Clicked Optimize Unaries"); */
+/*     if (!unariesComputed()) */
+/*     { */
+/*         // TODO: exception? */
+/*         spdlog::warn("HabiTrack: Unaries need to be computed before pptimization."); */
+/*         return; */
+/*     } */
+
+/*     Detections detections; */
+/*     auto trafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography); */
+/*     if (chunk == -1) */
+/*         detections = Tracker::track(unaries, mManualUnaries, mTrackerSettings, trafos); */
+/*     else */
+/*         detections = Tracker::track(unaries, mManualUnaries, mTrackerSettings, chunk, trafos); */
+
+/*     auto& dd = mDetections.data(); */
+/*     for (auto&& d : detections.data()) */
+/*         dd.insert_or_assign(d.first, std::move(d.second)); */
+/* } */
+
+/* void HabiTrack::runFullPipeline() */
+/* { */
+/*     extractFeatures(); */
+/*     extractTrafos(); */
+/*     extractUnaries(); */
+/*     optimizeUnaries(); */
+/* } */
 
 /* void HabiTrack::onPositionChanged(QPointF position) */
 /* { */
@@ -318,11 +340,11 @@ void HabiTrack::runFullPipeline()
 /*     } */
 
 /*     // put it in queue if it does not exist */
-/*     if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk) */
-/*         == std::end(mDetectionsQueue)) */
+/*     if (std::find(std::begin(detectionsQueue), std::end(detectionsQueue), chunk) */
+/*         == std::end(detectionsQueue)) */
 /*     { */
 /*         spdlog::debug("GUI: added chunk {} to queue", chunk); */
-/*         mDetectionsQueue.push_back(chunk); */
+/*         detectionsQueue.push_back(chunk); */
 /*     } */
 
 /*     mManualUnaries.insert(mCurrentFrameNumber - 1, QtOpencvCore::qpoint2point(position)); */
@@ -357,11 +379,11 @@ void HabiTrack::runFullPipeline()
 /*         spdlog::debug("GUI: manual position cleard on frame {}", mCurrentFrameNumber - 1); */
 
 /*     // put it in queue if it does not exist */
-/*     if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk) */
-/*         == std::end(mDetectionsQueue)) */
+/*     if (std::find(std::begin(detectionsQueue), std::end(detectionsQueue), chunk) */
+/*         == std::end(detectionsQueue)) */
 /*     { */
 /*         spdlog::debug("GUI: added chunk {} to queue", chunk); */
-/*         mDetectionsQueue.push_back(chunk); */
+/*         detectionsQueue.push_back(chunk); */
 /*     } */
 
 /*     mManualUnaries.clear(mCurrentFrameNumber - 1); */

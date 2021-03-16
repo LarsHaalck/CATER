@@ -42,7 +42,7 @@ class ThreadPool
 {
 public:
     // the constructor just launches some amount of workers
-    ThreadPool(std::size_t threads);
+    ThreadPool(std::size_t threads = 0);
 
     // add new work item to the pool
     template <class F, class... Args>

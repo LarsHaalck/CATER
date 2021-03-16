@@ -1,4 +1,4 @@
-#include "model/preferences.h"
+#include "habitrack/preferences.h"
 
 namespace ht
 {

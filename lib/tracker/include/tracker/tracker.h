@@ -10,7 +10,6 @@ class Unaries;
 class ManualUnaries;
 } // namespace ht
 
-// TODO: replace with namespace and detail
 namespace ht
 {
 class Tracker

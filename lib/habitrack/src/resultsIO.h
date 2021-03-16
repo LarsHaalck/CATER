@@ -1,7 +1,7 @@
 #ifndef RESULTS_IO_H
 #define RESULTS_IO_H
 
-#include "model/preferences.h"
+#include "habitrack/preferences.h"
 #include <filesystem>
 
 namespace cv

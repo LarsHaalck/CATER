@@ -43,6 +43,8 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     return extractFromStates(states, ids, chunk * chunkSize, settings, trafos);
 }
 
+
+// TODO: maybe remove this function because of redundancy with the function above
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
     const Settings& settings, const matches::PairwiseTrafos& trafos)
 {

@@ -29,6 +29,9 @@ namespace ht
 ThreadPool::ThreadPool(std::size_t threads)
     : stop(false)
 {
+    if (threads == 0)
+        threads = std::thread::hardware_concurrency();
+
     for (std::size_t i = 0; i < threads; i++)
     {
         // emplace threads, blocking directly

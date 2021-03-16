@@ -1,9 +1,6 @@
 ###########################################################################
 #                              DEPENDENCIES                               #
 ###########################################################################
-# find_package(cereal REQUIRED)
-# find_package(Eigen3 REQUIRED)
-# find_package(Ceres REQUIRED)
 
 ###########################################################################
 #                                FILES                                    #
@@ -11,12 +8,13 @@
 set(SOURCES
     src/preferences.cpp
     src/habiTrack.cpp
+    src/resultsIO.cpp
 )
 
 ###########################################################################
 #                               TARGETS                                   #
 ###########################################################################
-set(LIB_NAME "uimodel")
+set(LIB_NAME "habitrack")
 add_library(${LIB_NAME} ${SOURCES})
 
 target_include_directories(${LIB_NAME}

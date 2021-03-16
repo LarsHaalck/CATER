@@ -2,8 +2,9 @@
 #define MODEL_HABITRACK_H
 
 
-#include "model/preferences.h"
+#include "habitrack/preferences.h"
 #include "tracker/tracker.h"
+#include "tracker/threadPool.h"
 #include "tracker/detections.h"
 #include "tracker/manualUnaries.h"
 #include "tracker/unaries.h"
@@ -35,18 +36,26 @@ public:
 
     void setStartFrame(std::size_t frame);
     void setEndFrame(std::size_t frame);
+    std::size_t getStartFrame() const { return mStartFrameNumber; }
+    std::size_t getEndFrame() const { return mEndFrameNumber; }
 
     void extractFeatures();
     void extractTrafos();
     void extractUnaries();
-    void optimizeUnaries(int chunkId = -1);
-    void runFullPipeline();
+    /* void optimizeUnaries(int chunkId, std::function<void()> callback = {}); */
+    /* void runFullPipeline(); */
 
 /*     void onPositionChanged(QPointF position); */
 /*     void onBearingChanged(QPointF position); */
 /*     void onPositionCleared(); */
 /*     void onBearingCleared(); */
 /*     void onDetectionsAvailable(int chunkId); */
+
+    const Images& images() const { return mImages; }
+    const Features& features() const { return mFeatures; }
+    const Unaries& unaries() const { return mUnaries; }
+    const ManualUnaries& manualUnaries() const { return mManualUnaries; }
+    const Detections& detections() const { return mDetections; }
 
 private:
     void populatePaths();
@@ -59,6 +68,8 @@ private:
     std::shared_ptr<BaseProgressBar> mBar;
 
     Preferences mPrefs;
+
+    ThreadPool mThreadPool;
     Tracker::Settings mTrackerSettings;
 
     std::filesystem::path mOutputPath;
@@ -70,18 +81,16 @@ private:
     std::filesystem::path mDetectionsFile;
     /* std::filesystem::path mSetFile; */
 
-    Images mImages;
-    std::size_t mCurrentFrameNumber;
     std::size_t mStartFrameNumber;
     std::size_t mEndFrameNumber;
 
+    Images mImages;
     Features mFeatures;
-
     Unaries mUnaries;
     ManualUnaries mManualUnaries;
+    Detections mDetections;
     std::vector<double> mUnaryQualities;
 
-    Detections mDetections;
 };
 } // namespace ht
 
