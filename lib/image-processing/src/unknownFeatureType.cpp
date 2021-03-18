@@ -4,12 +4,12 @@ namespace ht
 {
 UnknownFeatureType::UnknownFeatureType(const std::string& type)
     : std::exception()
-    , mType(type)
+    , mType(std::string("Unknown Feature Type suffix ") + type)
 {
 }
 const char* UnknownFeatureType::what() const throw()
 {
-    return (std::string("Unknown Feature Type suffix ") + mType).c_str();
+    return mType.c_str();
 }
 
 }

@@ -1,8 +1,11 @@
 #ifndef GUI_IMAGE_VIEWER_H
 #define GUI_IMAGE_VIEWER_H
 
-#include <deque>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <thread>
+#include <unordered_map>
 
 #include <opencv2/core.hpp>
 
@@ -22,7 +25,7 @@ private:
     struct CacheItem
     {
         cv::Mat img;
-        /* cv::Mat unary; */
+        cv::Mat unary;
     };
 
 public:
@@ -32,15 +35,14 @@ public:
     cv::Mat getFrame(int frameNum);
 
 private:
-    void buildCache();
-    void rebalance();
+    void threadEntrypoint();
+    void removeStale(std::pair<std::size_t, std::size_t> range);
+    void rebuildCache();
+    bool insertOnMiss(int frameNum);
 
-    bool isHit(int frameNum);
-    bool isSafe(int frameNum);
-
-    CacheItem readItem(int frameNum);
-
-    cv::Mat processItem(const CacheItem& item);
+    CacheItem readItem(int frameNum) const;
+    cv::Mat processItem(const CacheItem& item) const;
+    std::pair<std::size_t, std::size_t> getRange(int frameNum) const;
 
 private:
     const ht::Images& mImages;
@@ -48,8 +50,12 @@ private:
     const ht::ManualUnaries& mManualUnaries;
     const ht::Detections& mDetections;
 
-    int mStart;
-    std::deque<CacheItem> mCache;
+    bool mCachedUnaries;
+
+    std::atomic<int> mCurrent;
+    std::unordered_map<std::size_t, CacheItem> mCache;
+    std::mutex mMutex;
+    std::condition_variable mCondition;
 
     std::thread mThread;
 };

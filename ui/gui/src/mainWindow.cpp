@@ -1,9 +1,11 @@
 #include "gui/mainWindow.h"
 #include "ui_mainWindow.h"
 
+#include "gui/imagesWorker.h"
 #include "gui/preferencesDialog.h"
 #include "gui/progressStatusBar.h"
 #include "gui/qtOpencvCore.h"
+#include "gui/scopedBlocker.h"
 #include "image-processing/util.h"
 #include <QDate>
 #include <QFileDialog>
@@ -21,8 +23,6 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include "gui/imagesWorker.h"
-
 using namespace ht;
 namespace fs = std::filesystem;
 
@@ -36,6 +36,8 @@ MainWindow::MainWindow(QWidget* parent)
     , mHabiTrack()
     , mViewer(mHabiTrack.images(), mHabiTrack.unaries(), mHabiTrack.manualUnaries(),
           mHabiTrack.detections())
+    , total(0)
+    , num(0)
 {
     ui->setupUi(this);
 
@@ -166,20 +168,13 @@ void MainWindow::on_actionPreferences_triggered()
 void MainWindow::on_sliderFrame_valueChanged(int value)
 {
     spdlog::debug("GUI: Changed slider frame");
-    /* showFrame(value); */
-}
-
-void MainWindow::on_spinCurrentFrame_editingFinished()
-{
-    spdlog::debug("GUI: Changed frame spin (edited)");
-    int value = ui->spinCurrentFrame->value();
-    /* showFrame(value); */
+    showFrame(value);
 }
 
 void MainWindow::on_spinCurrentFrame_valueChanged(int value)
 {
     spdlog::debug("GUI: Changed frame spin");
-    /* showFrame(value); */
+    showFrame(value);
 }
 
 void MainWindow::on_buttonPrevFrame_clicked()
@@ -188,18 +183,18 @@ void MainWindow::on_buttonPrevFrame_clicked()
     if (mCurrentFrameNumber > 1)
     {
         auto newIdx = mCurrentFrameNumber - 1;
-        /* showFrame(newIdx); */
+        showFrame(newIdx);
     }
 }
 
 void MainWindow::on_buttonNextFrame_clicked()
 {
-    /* spdlog::debug("GUI: next clicked"); */
-    /* if (mCurrentFrameNumber < mImages.size()) */
-    /* { */
-    /*     auto newIdx = mCurrentFrameNumber + 1; */
-    /*     showFrame(newIdx); */
-    /* } */
+    spdlog::debug("GUI: next clicked");
+    if (mCurrentFrameNumber < mHabiTrack.images().size())
+    {
+        auto newIdx = mCurrentFrameNumber + 1;
+        showFrame(newIdx);
+    }
 }
 
 void MainWindow::on_actionPrev_Frame_triggered()
@@ -220,18 +215,11 @@ void MainWindow::on_actionNext_Frame_triggered()
 
 void MainWindow::refreshWindow()
 {
-    /* spdlog::debug("GUI: Redraw window"); */
-
-    /* ui->sliderFrame->blockSignals(true); */
-    /* ui->spinCurrentFrame->blockSignals(true); */
-
-    /* ui->sliderFrame->setValue(mCurrentFrameNumber); */
-    /* ui->spinCurrentFrame->setValue(mCurrentFrameNumber); */
-
-    /* ui->sliderFrame->blockSignals(false); */
-    /* ui->spinCurrentFrame->blockSignals(false); */
-
-    /* qApp->processEvents(); */
+    spdlog::debug("GUI: Redraw window");
+    auto blocker = ScopedBlocker{ui->sliderFrame, ui->spinCurrentFrame};
+    ui->sliderFrame->setValue(mCurrentFrameNumber);
+    ui->spinCurrentFrame->setValue(mCurrentFrameNumber);
+    qApp->processEvents();
 }
 
 void MainWindow::populatePaths()
@@ -267,137 +255,15 @@ void MainWindow::populatePaths()
     /* } */
 }
 
-
 /* needs:
  * Images, Unaries, Detections, sliders and Labels
  *
  */
 
-void MainWindow::showFrame(std::size_t frameNumber)
+void MainWindow::showFrame(std::size_t frame)
 {
-    /* if (frameNumber == 0) */
-    /*     return; */
-
-    /* auto idx = frameNumber - 1; */
-
-    /* spdlog::debug("GUI: Show frame {}", idx); */
-    /* mCurrentFrameNumber = frameNumber; */
-    /* cv::Mat frame = mImages.at(idx); // zero indexed here */
-
-    /* // set filename */
-    /* ui->labelFileName->setText(QString::fromStdString(mImages.getFileName(idx))); */
-    /* ui->labelLabel->setText(mInvisibles.count(idx) ? QString("Invisible") : QString()); */
-
-    /* if (mUnaries.size()) */
-    /* { */
-    /*     auto scene = ui->unaryView->getUnaryScene(); */
-    /*     auto color = scene->getUnaryColor(idx); */
-    /*     auto quality = UnaryScene::unaryQualityToString(scene->getUnaryQuality(idx)); */
-    /*     ui->qualityLabel->setStyleSheet( */
-    /*         QString("color: white; background-color: " + color.name() + ";")); */
-    /*     ui->qualityLabel->setText(quality.c_str()); */
-    /* } */
-    /* else */
-    /* { */
-    /*     ui->qualityLabel->setStyleSheet(QString("")); */
-    /*     ui->qualityLabel->setText("<quality>"); */
-    /* } */
-
-    /* // overlay unary */
-    /* int unarySlider = ui->sliderOverlayUnaries->value(); */
-    /* if (unarySlider > 0 && mUnaries.exists(idx)) */
-    /* { */
-    /*     double alpha = static_cast<double>(unarySlider) / 100.0; */
-
-    /*     cv::Mat unary; */
-    /*     if (mManualUnaries.exists(idx)) */
-    /*         unary = mManualUnaries.previewUnaryAt(idx); */
-    /*     else */
-    /*         unary = mUnaries.previewAt(idx); */
-
-    /*     cv::Mat unaryColor; */
-    /*     cv::cvtColor(unary, unaryColor, cv::COLOR_GRAY2BGR); */
-    /*     std::vector<cv::Mat> channels(3); */
-    /*     cv::split(unaryColor, channels); */
-    /*     channels[0] = cv::Mat::zeros(unary.size(), CV_8UC1); */
-    /*     cv::merge(channels, unaryColor); */
-
-    /*     cv::resize(unaryColor, unaryColor, frame.size()); */
-
-    /*     cv::addWeighted(unaryColor, alpha, frame, (1 - alpha), 0.0, frame); */
-    /* } */
-
-    /* // get position */
-    /* if (ui->overlayTrackedPosition->isChecked() > 0 && mDetections.exists(idx)) */
-    /* { */
-    /*     auto detection = mDetections.at(idx); */
-    /*     auto position = detection.position; */
-    /*     auto theta = detection.theta; */
-    /*     auto dirIndicator = rotatePointAroundPoint(position, theta); */
-
-    /*     if (ui->overlayBearings->isChecked()) */
-    /*         cv::line(frame, position, dirIndicator, cv::Scalar(0, 255, 0), 1); */
-
-    /*     // overloay manual unary as well */
-    /*     if (mManualUnaries.exists(idx)) */
-    /*     { */
-    /*         auto unary = mManualUnaries.previewUnaryAt(idx); */
-    /*         cv::Mat unaryColor; */
-    /*         cv::cvtColor(unary, unaryColor, cv::COLOR_GRAY2BGR); */
-    /*         std::vector<cv::Mat> channels(3); */
-    /*         cv::split(unaryColor, channels); */
-    /*         channels[2] = cv::Mat::zeros(unary.size(), CV_8UC1); */
-    /*         cv::merge(channels, unaryColor); */
-    /*         cv::resize(unaryColor, unaryColor, frame.size()); */
-    /*         cv::add(frame, unaryColor, frame); */
-    /*     } */
-
-    /*     cv::Scalar color; */
-    /*     if (mInvisibles.count(idx)) */
-    /*         color = cv::Scalar(100, 255, 255); */
-    /*     else */
-    /*         color = cv::Scalar(100, 100, 255); */
-
-    /*     cv::circle(frame, position, 20, color, 2); */
-    /* } */
-
-    /* // get trajectory */
-    /* std::size_t win = ui->trajectorySpin->value(); */
-    /* if (ui->overlayTrajectory->isChecked() && win > 0 && mDetections.exists(idx)) */
-    /* { */
-    /*     std::size_t start = 0; */
-    /*     if (idx > win) */
-    /*         start = idx - win; */
-
-    /*     auto track = mDetections.projectTo(start, idx, */
-    /*         ht::matches::getTrafos(mMatchFolder, GeometricType::Homography), */
-    /*         GeometricType::Homography); */
-    /*     for (std::size_t i = 1; i < track.size(); ++i) */
-    /*     { */
-    /*         cv::Point pre = track.at(i - 1); */
-    /*         cv::Point cur = track.at(i); */
-    /*         cv::line(frame, pre, cur, cv::Scalar(0, 127, 255), 2); */
-    /*     } */
-
-    /*     track = mDetections.projectFrom(idx, idx + win, */
-    /*         ht::matches::getTrafos(mMatchFolder, GeometricType::Homography), */
-    /*         GeometricType::Homography); */
-    /*     for (std::size_t i = 1; i < track.size(); ++i) */
-    /*     { */
-    /*         cv::Point pre = track.at(i - 1); */
-    /*         cv::Point cur = track.at(i); */
-    /*         cv::line(frame, pre, cur, cv::Scalar(0, 255, 255), 2); */
-    /*     } */
-    /* } */
-
-    /* // set combined image and redraw */
-    /* auto pixMap = QPixmap::fromImage(QtOpencvCore::img2qimgRaw(frame)); */
-    /* mScene->setPixmap(pixMap); */
-    /* refreshWindow(); */
-}
-
-void MainWindow::showFrame(const cv::Mat& img)
-{
+    mCurrentFrameNumber = frame;
+    auto img = mViewer.getFrame(frame - 1);
     auto pixMap = QPixmap::fromImage(QtOpencvCore::img2qimgRaw(img));
     mScene->setPixmap(pixMap);
     refreshWindow();
@@ -407,6 +273,9 @@ void MainWindow::openImagesHelper()
 {
     auto imgs = mHabiTrack.images();
     auto numImgs = imgs.size();
+
+    auto blocker = ScopedBlocker {
+        ui->sliderFrame, ui->spinCurrentFrame, ui->buttonPrevFrame, ui->buttonNextFrame};
 
     // set up gui elements
     ui->labelMaxFrames->setText(QString::number(numImgs));
@@ -418,6 +287,7 @@ void MainWindow::openImagesHelper()
     ui->spinCurrentFrame->setMinimum(1);
     ui->spinCurrentFrame->setMaximum(numImgs);
     ui->spinCurrentFrame->setValue(1);
+    ui->spinCurrentFrame->setKeyboardTracking(false);
     ui->spinCurrentFrame->setEnabled(true);
 
     ui->labelFileName->setText(QString::fromStdString(imgs.getFileName(0)));
@@ -445,13 +315,12 @@ void MainWindow::openImagesHelper()
 
     // show first frame
     mCurrentFrameNumber = mHabiTrack.getStartFrame();
-    showFrame(mViewer.getFrame(mCurrentFrameNumber - 1));
+    showFrame(mCurrentFrameNumber);
 }
-
 
 void MainWindow::on_actionOpenImgFolder_triggered()
 {
-   spdlog::debug("GUI: Triggered Open image folder");
+    spdlog::debug("GUI: Triggered Open image folder");
     QString imgFolderPath = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
         mStartPath, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (imgFolderPath.isEmpty())
@@ -482,35 +351,32 @@ void MainWindow::on_actionOpenResultsFile_triggered()
     // TODO: show start frame number frame
 }
 
-/* void MainWindow::setStartFrame(std::size_t frame) { mStartFrameNumber = frame; } */
-/* void MainWindow::setEndFrame(std::size_t frame) { mEndFrameNumber = frame; } */
-
 void MainWindow::on_buttonStartFrame_clicked()
 {
-    /* if (mCurrentFrameNumber >= mEndFrameNumber) */
-    /* { */
-    /*     QMessageBox::warning( */
-    /*         this, "Warning", "Start frame cannot be equal or greater than end frame"); */
-    /*     return; */
-    /* } */
-    /* spdlog::debug("GUI: changed start frame to {}", mCurrentFrameNumber); */
-    /* // TODO: some data structures are no longer valid and should be computed again */
-    /* mStartFrameNumber = mCurrentFrameNumber; */
-    /* ui->labelStartFrame->setText(QString::number(mStartFrameNumber)); */
+    if (mCurrentFrameNumber >= mHabiTrack.getEndFrame())
+    {
+        QMessageBox::warning(
+            this, "Warning", "Start frame cannot be equal or greater than end frame");
+        return;
+    }
+    spdlog::debug("GUI: changed start frame to {}", mCurrentFrameNumber);
+    // TODO: some data structures are no longer valid and should be computed again
+    mHabiTrack.setStartFrame(mCurrentFrameNumber);
+    ui->labelStartFrame->setText(QString::number(mCurrentFrameNumber));
 }
 
 void MainWindow::on_buttonEndFrame_clicked()
 {
-    /* if (mCurrentFrameNumber <= mStartFrameNumber) */
-    /* { */
-    /*     QMessageBox::warning( */
-    /*         this, "Warning", "End frame cannot be equal or smaller than start frame"); */
-    /*     return; */
-    /* } */
-    /* spdlog::debug("GUI: changed end frame to {}", mCurrentFrameNumber); */
-    /* // TODO: some data structures are no longer valid and should be computed again */
-    /* mEndFrameNumber = mCurrentFrameNumber; */
-    /* ui->labelEndFrame->setText(QString::number(mEndFrameNumber)); */
+    if (mCurrentFrameNumber <= mHabiTrack.getStartFrame())
+    {
+        QMessageBox::warning(
+            this, "Warning", "End frame cannot be equal or smaller than start frame");
+        return;
+    }
+    spdlog::debug("GUI: changed end frame to {}", mCurrentFrameNumber);
+    // TODO: some data structures are no longer valid and should be computed again
+    mHabiTrack.setEndFrame(mCurrentFrameNumber);
+    ui->labelEndFrame->setText(QString::number(mCurrentFrameNumber));
 }
 
 void MainWindow::on_buttonVisible_clicked()
@@ -541,7 +407,8 @@ void MainWindow::on_mikeButton_clicked()
 
 void MainWindow::on_buttonExtractFeatures_clicked()
 {
-    /* spdlog::debug("GUI: Clicked Extract Features"); */
+    spdlog::debug("GUI: Clicked Extract Features");
+    habitrac
 
     /* auto start = mStartFrameNumber - 1; */
     /* auto end = mEndFrameNumber; */
@@ -626,7 +493,6 @@ void MainWindow::on_buttonExtractUnaries_clicked()
     /* setupUnaryScene(unaryQuality); */
     /* ui->labelNumUnaries->setText(QString::number(mUnaries.size())); */
 }
-
 
 void MainWindow::on_buttonOptimizeUnaries_clicked()
 {
@@ -717,9 +583,9 @@ void MainWindow::onDetectionsAvailable(int chunkId)
     /* // TODO: is the mutex needed? */
     /* QMutexLocker locker(&mMutex); */
 
-/* #ifdef WITH_QT5_MULTIMEDIA */
+    /* #ifdef WITH_QT5_MULTIMEDIA */
     /* QSound::play("qrc:///sounds/notification.wav"); */
-/* #endif */
+    /* #endif */
 
     /* statusBar()->showMessage("New detections available", statusDelay); */
 

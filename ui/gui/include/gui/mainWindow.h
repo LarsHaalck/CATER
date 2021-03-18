@@ -62,7 +62,6 @@ private slots:
     void on_actionOpenResultsFile_triggered();
 
     void on_sliderFrame_valueChanged(int value);
-    void on_spinCurrentFrame_editingFinished();
     void on_spinCurrentFrame_valueChanged(int value);
     void on_buttonPrevFrame_clicked();
     void on_buttonNextFrame_clicked();
@@ -126,6 +125,9 @@ private:
 
     ht::HabiTrack mHabiTrack;
     ImageViewer mViewer;
+
+    double total;
+    int num;
 
     /* std::filesystem::path mImgFolder; */
     /* QThread* mBlockingThread; */

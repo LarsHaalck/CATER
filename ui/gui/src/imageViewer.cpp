@@ -1,16 +1,24 @@
 #include "gui/imageViewer.h"
 
 #include "image-processing/images.h"
-#include "tracker/unaries.h"
-#include "tracker/manualUnaries.h"
 #include "tracker/detections.h"
+#include "tracker/manualUnaries.h"
+#include "tracker/unaries.h"
 
-constexpr int lH = 20;
-constexpr int rH = 80;
-constexpr int n = lH + rH;
+#include <spdlog/spdlog.h>
 
-constexpr int lS = 10;
-constexpr int rS = 20;
+/* constexpr int left = 10; */
+/* constexpr int right = 8 * left; */
+/* constexpr int n = left + right; */
+constexpr int left = 10;
+constexpr int k = 8;
+constexpr int right = k*left;
+
+/* constexpr int leftHard = 2; */
+/* constexpr int rightHard = 8; */
+/* constexpr int leftSoft = 1; */
+/* constexpr int rightSoft = 2; */
+/* constexpr int n = leftHard + rightHard; */
 
 namespace gui
 {
@@ -20,199 +28,130 @@ ImageViewer::ImageViewer(const ht::Images& images, const ht::Unaries& unaries,
     , mUnaries(unaries)
     , mManualUnaries(manualUnaries)
     , mDetections(detections)
-    , mStart(-1)
+    , mCachedUnaries(false)
+    , mCurrent(-1)
     , mCache()
 {
-    mCache.resize(n);
+    mThread = std::thread(&ImageViewer::threadEntrypoint, this);
 }
-
 
 cv::Mat ImageViewer::getFrame(int frameNum)
 {
-    /* // we only allow one background thread, otherwise it is to much book-keeping */
-    /* // if it is running, joinn it first */
-    /* if (mThread.joinable()) */
-    /*     mThread.join(); */
+    mCurrent = frameNum;
 
-    /* if (isHit(frameNum)) */
-    /* { */
-    /*     // just return the image, nothing else to be done */
-    /*     if (isSafe(frameNum)) */
-    /*         return processItem(mCache[frameNum - mStart]); */
+    cv::Mat frame;
+    // check for hit and return it
+    {
+        std::scoped_lock<std::mutex> lock(mMutex);
 
+        if (mCache.count(frameNum))
+            frame = processItem(mCache[frameNum]);
+    }
+    mCondition.notify_all();
 
-    /*     mThread = std::thread(&ImageViewer::rebalance, this); */
-    /*     // return hit */
-    /* } */
+    // on miss, direct read
+    if (frame.empty())
+        frame = processItem(readItem(frameNum));
 
-    /* mThread = std::thread(&ImageViewer::buildCache, this); */
-    /* return processItem(readItem(frameNum)); */
-    return processItem(readItem(frameNum));
+    return frame;
 }
 
-bool ImageViewer::isHit(int frameNum)
+void ImageViewer::threadEntrypoint()
 {
-    if (mStart != -1 && (frameNum - mStart) < n)
+    std::unique_lock<std::mutex> lock(mMutex);
+    mCondition.wait(lock);
+    lock.unlock();
+
+    rebuildCache();
+}
+
+void ImageViewer::removeStale(std::pair<std::size_t, std::size_t> range)
+{
+    std::scoped_lock<std::mutex> lock(mMutex);
+    for (auto it = std::begin(mCache); it != std::end(mCache);)
+    {
+        if (it->first < range.first ||  it->first > range.second)
+            it = mCache.erase(it);
+        else
+            ++it;
+    }
+}
+
+void ImageViewer::rebuildCache()
+{
+    // rebuild cache for mCurrent
+    while (true)
+    {
+        int item = mCurrent.load();
+        auto range = getRange(item);
+
+        // cleanup everything else
+        removeStale(range);
+
+        bool finished = true;
+        for (std::size_t i = item; i < range.second; i++)
+        {
+            if(insertOnMiss(i))
+            {
+                finished = false;
+                break;
+            }
+        }
+
+        for (std::size_t i = range.first; i < static_cast<std::size_t>(item); i++)
+        {
+            if(insertOnMiss(i))
+            {
+                finished = false;
+                break;
+            }
+        }
+
+        if (finished)
+        {
+            std::unique_lock<std::mutex> lock(mMutex);
+            mCondition.wait(lock);
+        }
+    }
+}
+
+bool ImageViewer::insertOnMiss(int frameNum)
+{
+    std::unique_lock<std::mutex> lock(mMutex);
+    bool hit = mCache.count(frameNum);
+    lock.unlock();
+
+    if (!hit)
+    {
+        auto item = readItem(frameNum);
+
+        lock.lock();
+        mCache.insert({frameNum, item});
+        lock.unlock();
+
         return true;
+    }
 
     return false;
 }
 
-
-bool ImageViewer::isSafe(int frameNum)
+std::pair<std::size_t, std::size_t> ImageViewer::getRange(int frameNum) const
 {
-    auto id = frameNum - mStart;
-    if (id < (n - rS) && id > lS)
-        return true;
-
-    return false;
+    auto start = std::max<int>(0, frameNum - left);
+    auto end = std::min<int>(frameNum + right, mImages.size());
+    return {start, end};
 }
 
-// if thread is running, don't start another one
-void ImageViewer::buildCache()
-{
-}
-
-// if thread is running, don't start another one
-void ImageViewer::rebalance()
-{
-}
-
-ImageViewer::CacheItem ImageViewer::readItem(int frameNumber)
+ImageViewer::CacheItem ImageViewer::readItem(int frameNumber) const
 {
     CacheItem item;
     item.img = mImages.at(frameNumber);
+
+    if (mUnaries.exists(frameNumber))
+        item.unary = mUnaries.at(frameNumber);
+
     return item;
 }
 
-
-cv::Mat ImageViewer::processItem(const CacheItem& item)
-{
-    return item.img;
-}
-
-/* void showFrame(std::size_t frameNumber) */
-/* { */
-    /* if (frameNumber == 0) */
-    /*     return; */
-
-    /* auto idx = frameNumber - 1; */
-
-    /* spdlog::debug("GUI: Show frame {}", idx); */
-    /* mCurrentFrameNumber = frameNumber; */
-    /* cv::Mat frame = mImages.at(idx); // zero indexed here */
-
-    /* // set filename */
-    /* ui->labelFileName->setText(QString::fromStdString(mImages.getFileName(idx))); */
-    /* ui->labelLabel->setText(mInvisibles.count(idx) ? QString("Invisible") : QString()); */
-
-    /* if (mUnaries.size()) */
-    /* { */
-    /*     auto scene = ui->unaryView->getUnaryScene(); */
-    /*     auto color = scene->getUnaryColor(idx); */
-    /*     auto quality = UnaryScene::unaryQualityToString(scene->getUnaryQuality(idx)); */
-    /*     ui->qualityLabel->setStyleSheet( */
-    /*         QString("color: white; background-color: " + color.name() + ";")); */
-    /*     ui->qualityLabel->setText(quality.c_str()); */
-    /* } */
-    /* else */
-    /* { */
-    /*     ui->qualityLabel->setStyleSheet(QString("")); */
-    /*     ui->qualityLabel->setText("<quality>"); */
-    /* } */
-
-    /* // overlay unary */
-    /* int unarySlider = ui->sliderOverlayUnaries->value(); */
-    /* if (unarySlider > 0 && mUnaries.exists(idx)) */
-    /* { */
-    /*     double alpha = static_cast<double>(unarySlider) / 100.0; */
-
-    /*     cv::Mat unary; */
-    /*     if (mManualUnaries.exists(idx)) */
-    /*         unary = mManualUnaries.previewUnaryAt(idx); */
-    /*     else */
-    /*         unary = mUnaries.previewAt(idx); */
-
-    /*     cv::Mat unaryColor; */
-    /*     cv::cvtColor(unary, unaryColor, cv::COLOR_GRAY2BGR); */
-    /*     std::vector<cv::Mat> channels(3); */
-    /*     cv::split(unaryColor, channels); */
-    /*     channels[0] = cv::Mat::zeros(unary.size(), CV_8UC1); */
-    /*     cv::merge(channels, unaryColor); */
-
-    /*     cv::resize(unaryColor, unaryColor, frame.size()); */
-
-    /*     cv::addWeighted(unaryColor, alpha, frame, (1 - alpha), 0.0, frame); */
-    /* } */
-
-    /* // get position */
-    /* if (ui->overlayTrackedPosition->isChecked() > 0 && mDetections.exists(idx)) */
-    /* { */
-    /*     auto detection = mDetections.at(idx); */
-    /*     auto position = detection.position; */
-    /*     auto theta = detection.theta; */
-    /*     auto dirIndicator = rotatePointAroundPoint(position, theta); */
-
-    /*     if (ui->overlayBearings->isChecked()) */
-    /*         cv::line(frame, position, dirIndicator, cv::Scalar(0, 255, 0), 1); */
-
-    /*     // overloay manual unary as well */
-    /*     if (mManualUnaries.exists(idx)) */
-    /*     { */
-    /*         auto unary = mManualUnaries.previewUnaryAt(idx); */
-    /*         cv::Mat unaryColor; */
-    /*         cv::cvtColor(unary, unaryColor, cv::COLOR_GRAY2BGR); */
-    /*         std::vector<cv::Mat> channels(3); */
-    /*         cv::split(unaryColor, channels); */
-    /*         channels[2] = cv::Mat::zeros(unary.size(), CV_8UC1); */
-    /*         cv::merge(channels, unaryColor); */
-    /*         cv::resize(unaryColor, unaryColor, frame.size()); */
-    /*         cv::add(frame, unaryColor, frame); */
-    /*     } */
-
-    /*     cv::Scalar color; */
-    /*     if (mInvisibles.count(idx)) */
-    /*         color = cv::Scalar(100, 255, 255); */
-    /*     else */
-    /*         color = cv::Scalar(100, 100, 255); */
-
-    /*     cv::circle(frame, position, 20, color, 2); */
-    /* } */
-
-    /* // get trajectory */
-    /* std::size_t win = ui->trajectorySpin->value(); */
-    /* if (ui->overlayTrajectory->isChecked() && win > 0 && mDetections.exists(idx)) */
-    /* { */
-    /*     std::size_t start = 0; */
-    /*     if (idx > win) */
-    /*         start = idx - win; */
-
-    /*     auto track = mDetections.projectTo(start, idx, */
-    /*         ht::matches::getTrafos(mMatchFolder, GeometricType::Homography), */
-    /*         GeometricType::Homography); */
-    /*     for (std::size_t i = 1; i < track.size(); ++i) */
-    /*     { */
-    /*         cv::Point pre = track.at(i - 1); */
-    /*         cv::Point cur = track.at(i); */
-    /*         cv::line(frame, pre, cur, cv::Scalar(0, 127, 255), 2); */
-    /*     } */
-
-    /*     track = mDetections.projectFrom(idx, idx + win, */
-    /*         ht::matches::getTrafos(mMatchFolder, GeometricType::Homography), */
-    /*         GeometricType::Homography); */
-    /*     for (std::size_t i = 1; i < track.size(); ++i) */
-    /*     { */
-    /*         cv::Point pre = track.at(i - 1); */
-    /*         cv::Point cur = track.at(i); */
-    /*         cv::line(frame, pre, cur, cv::Scalar(0, 255, 255), 2); */
-    /*     } */
-    /* } */
-
-    /* // set combined image and redraw */
-    /* auto pixMap = QPixmap::fromImage(QtOpencvCore::img2qimgRaw(frame)); */
-    /* mScene->setPixmap(pixMap); */
-    /* refreshWindow(); */
-/* } */
-
-
+cv::Mat ImageViewer::processItem(const CacheItem& item) const { return item.img; }
 } // namespace gui

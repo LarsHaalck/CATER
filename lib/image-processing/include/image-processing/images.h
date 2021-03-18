@@ -10,7 +10,7 @@
 
 namespace ht
 {
-class Images : public BaseImageContainer
+class Images final : public BaseImageContainer
 {
 public:
     enum class ReadMode

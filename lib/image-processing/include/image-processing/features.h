@@ -24,7 +24,7 @@ class SuperGlue;
 
 namespace ht
 {
-class Features : public BaseFeatureContainer
+class Features final : public BaseFeatureContainer
 {
 private:
     enum class FtDesc : bool

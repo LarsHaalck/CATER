@@ -110,26 +110,27 @@ void HabiTrack::populatePaths()
     mDetectionsFile = mOutputPath / "detections.yml";
     /* mSetFile = mOutputPath / "invisibles.yml"; */
 
-    try
-    {
-        auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        console_sink->set_level(spdlog::level::info);
+    // TODO: uncomment
+    /* try */
+    /* { */
+    /*     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>(); */
+    /*     console_sink->set_level(spdlog::level::info); */
 
-        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-            (mOutputPath / "logs.txt").string(), false);
-        file_sink->set_level(spdlog::level::debug);
+    /*     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>( */
+    /*         (mOutputPath / "logs.txt").string(), false); */
+    /*     file_sink->set_level(spdlog::level::debug); */
 
-        auto logger = std::make_shared<spdlog::logger>(
-            "multi_sink", spdlog::sinks_init_list({console_sink, file_sink}));
-        logger->set_level(spdlog::level::debug);
-        spdlog::flush_every(std::chrono::seconds(3));
-        spdlog::set_default_logger(logger);
-        spdlog::info("New run -------------");
-    }
-    catch (const spdlog::spdlog_ex& ex)
-    {
-        std::cout << "Log initialization failed: " << ex.what() << std::endl;
-    }
+    /*     auto logger = std::make_shared<spdlog::logger>( */
+    /*         "multi_sink", spdlog::sinks_init_list({console_sink, file_sink})); */
+    /*     logger->set_level(spdlog::level::debug); */
+    /*     spdlog::flush_every(std::chrono::seconds(3)); */
+    /*     spdlog::set_default_logger(logger); */
+    /*     spdlog::info("New run -------------"); */
+    /* } */
+    /* catch (const spdlog::spdlog_ex& ex) */
+    /* { */
+    /*     std::cout << "Log initialization failed: " << ex.what() << std::endl; */
+    /* } */
 }
 
 void HabiTrack::openImagesHelper(const fs::path& path)
