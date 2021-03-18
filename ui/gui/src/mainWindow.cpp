@@ -52,6 +52,8 @@ MainWindow::MainWindow(QWidget* parent)
     ui->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
     mBar = std::make_shared<ProgressStatusBar>(ui->progressBar, ui->labelProgress);
 
+    mHabiTrack.setProgressBar(mBar);
+
     /* connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this, */
     /*     [=](std::size_t num) { this->showFrame(num + 1); }); */
 
@@ -379,24 +381,6 @@ void MainWindow::on_buttonEndFrame_clicked()
     ui->labelEndFrame->setText(QString::number(mCurrentFrameNumber));
 }
 
-void MainWindow::on_buttonVisible_clicked()
-{
-    /* spdlog::debug("GUI: Removed invisible tag for: {}", mCurrentFrameNumber - 1); */
-    /* auto it = mInvisibles.find(mCurrentFrameNumber - 1); */
-    /* if (it != std::end(mInvisibles)) */
-    /*     mInvisibles.erase(it); */
-    /* statusBar()->showMessage("Set detection to visible", statusDelay); */
-}
-
-void MainWindow::on_buttonInvisible_clicked()
-{
-    /* spdlog::debug("GUI: Inserted invisible tag for: {}", mCurrentFrameNumber - 1); */
-    /* mInvisibles.insert(mCurrentFrameNumber - 1); */
-    /* showFrame(mCurrentFrameNumber); */
-    /* statusBar()->showMessage("Set detection to invisible", statusDelay); */
-    /* on_buttonNextFrame_clicked(); */
-}
-
 void MainWindow::on_mikeButton_clicked()
 {
     on_buttonExtractFeatures_clicked();
@@ -408,18 +392,7 @@ void MainWindow::on_mikeButton_clicked()
 void MainWindow::on_buttonExtractFeatures_clicked()
 {
     spdlog::debug("GUI: Clicked Extract Features");
-    habitrac
-
-    /* auto start = mStartFrameNumber - 1; */
-    /* auto end = mEndFrameNumber; */
-    /* if (featureComputed()) */
-    /* { */
-    /*     mFeatures = Features::fromDir(mImages, mFtFolder, mPrefs.featureType, start, end); */
-    /*     mBar->done(); */
-    /*     return; */
-    /* } */
-    /* mFeatures = Features::compute(mImages, mFtFolder, mPrefs.featureType, mPrefs.numFeatures, start, */
-    /*     end, mPrefs.cacheSize, mBar); */
+    mHabiTrack.extractFeatures();
 }
 
 void MainWindow::on_buttonExtractTrafos_clicked()

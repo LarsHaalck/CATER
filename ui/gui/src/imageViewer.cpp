@@ -31,8 +31,16 @@ ImageViewer::ImageViewer(const ht::Images& images, const ht::Unaries& unaries,
     , mCachedUnaries(false)
     , mCurrent(-1)
     , mCache()
+    , mQuit(false)
 {
     mThread = std::thread(&ImageViewer::threadEntrypoint, this);
+}
+
+ImageViewer::~ImageViewer()
+{
+    mQuit = true;
+    mCondition.notify_all();
+    mThread.join();
 }
 
 cv::Mat ImageViewer::getFrame(int frameNum)
@@ -61,7 +69,6 @@ void ImageViewer::threadEntrypoint()
     std::unique_lock<std::mutex> lock(mMutex);
     mCondition.wait(lock);
     lock.unlock();
-
     rebuildCache();
 }
 
@@ -106,6 +113,9 @@ void ImageViewer::rebuildCache()
                 break;
             }
         }
+
+        if (mQuit.load())
+            return;
 
         if (finished)
         {
@@ -154,4 +164,5 @@ ImageViewer::CacheItem ImageViewer::readItem(int frameNumber) const
 }
 
 cv::Mat ImageViewer::processItem(const CacheItem& item) const { return item.img; }
+
 } // namespace gui

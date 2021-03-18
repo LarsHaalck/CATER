@@ -68,9 +68,6 @@ private slots:
     void on_actionPrev_Frame_triggered();
     void on_actionNext_Frame_triggered();
 
-    void on_buttonVisible_clicked();
-    void on_buttonInvisible_clicked();
-
     void on_buttonStartFrame_clicked();
     void on_buttonEndFrame_clicked();
 

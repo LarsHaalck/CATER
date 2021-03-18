@@ -22,6 +22,9 @@ class HabiTrack
 {
 public:
     HabiTrack();
+
+    void setProgressBar(std::shared_ptr<BaseProgressBar> bar) { mBar = std::move(bar); }
+
     bool featureComputed() const;
     bool matchesComputed() const;
     bool unariesComputed() const;

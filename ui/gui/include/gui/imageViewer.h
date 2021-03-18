@@ -31,6 +31,7 @@ private:
 public:
     ImageViewer(const ht::Images& images, const ht::Unaries& unaries,
         const ht::ManualUnaries& manualUnaries, const ht::Detections& detections);
+    ~ImageViewer();
 
     cv::Mat getFrame(int frameNum);
 
@@ -57,6 +58,7 @@ private:
     std::mutex mMutex;
     std::condition_variable mCondition;
 
+    std::atomic<bool> mQuit;
     std::thread mThread;
 };
 
