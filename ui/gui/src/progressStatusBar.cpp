@@ -2,9 +2,8 @@
 
 namespace gui
 {
-ProgressStatusBar::ProgressStatusBar(QProgressBar* bar, QLabel* label)
-    : mBar(bar)
-    , mLabel(label)
+ProgressStatusBar::ProgressStatusBar(QObject* parent)
+    : QObject(parent)
 {
 }
 } // namespace gui

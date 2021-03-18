@@ -45,6 +45,8 @@ public:
     void extractFeatures();
     void extractTrafos();
     void extractUnaries();
+
+    bool useableForTracking() const;
     /* void optimizeUnaries(int chunkId, std::function<void()> callback = {}); */
     /* void runFullPipeline(); */
 

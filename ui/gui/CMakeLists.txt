@@ -33,6 +33,7 @@ set(GUI_HEADERS
     include/gui/unaryScene.h
     include/gui/unaryGraphicsView.h
     include/gui/imagesWorker.h
+    include/gui/progressStatusBar.h
 )
 
 ###########################################################################

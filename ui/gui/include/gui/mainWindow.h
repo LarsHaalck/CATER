@@ -8,7 +8,7 @@
 #include "gui/trackerScene.h"
 #include "gui/unaryGraphicsView.h"
 #include "gui/imageViewer.h"
-#include "progressbar/baseProgressBar.h"
+#include "gui/progressStatusBar.h"
 #include "habitrack/habiTrack.h"
 #include <QFutureWatcher>
 #include <deque>
@@ -40,10 +40,11 @@ private:
     void showFrame(std::size_t frame);
     void showFrame(const cv::Mat& img);
 
-    void refreshWindow();
-    void populatePaths();
+    void updateSlider();
     void setupUnaryScene(std::vector<double> qualities);
     void toggleChunkUnaryScene(int chunk, bool computing);
+
+    void setupProgressBar();
 
 private slots:
     void on_sliderOverlayUnaries_sliderReleased();
@@ -74,6 +75,7 @@ private slots:
     void on_mikeButton_clicked();
     void on_buttonExtractFeatures_clicked();
     void on_buttonExtractTrafos_clicked();
+    void on_trafosExtracted();
     void on_buttonExtractUnaries_clicked();
     void on_buttonOptimizeUnaries_clicked();
 
@@ -86,11 +88,18 @@ private slots:
 
     /* void onBlockingThreadFinished(); */
 
+    // progressbar stuff
+    void onTotalChanged(int total);
+    void onIncremented();
+    void onIncremented(int inc);
+    void onIsDone();
+    void onStatusChanged(const QString& string);
+
 private:
     Ui::MainWindow* ui;
 
     QString mStartPath; // used for next QFileDialog
-    std::shared_ptr<ht::BaseProgressBar> mBar;
+    std::shared_ptr<ProgressStatusBar> mBar;
 
     GuiPreferences mGuiPrefs;
     /* model::Preferences mPrefs; */
@@ -123,11 +132,7 @@ private:
     ht::HabiTrack mHabiTrack;
     ImageViewer mViewer;
 
-    double total;
-    int num;
-
-    /* std::filesystem::path mImgFolder; */
-    /* QThread* mBlockingThread; */
+    QThread* mBlockingThread;
 };
 } // namespace gui
 #endif // MAINWINDOW_H

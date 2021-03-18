@@ -219,8 +219,6 @@ void HabiTrack::extractTrafos()
             getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber), mBar);
     }
 
-    auto size = matches::getTrafos(mMatchFolder, GeometricType::Homography).size();
-
     auto types = ht::matches::getConnectedTypes(mMatchFolder, ht::GeometricType::Homography,
         getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber));
     if (static_cast<unsigned int>(types & ht::GeometricType::Homography))

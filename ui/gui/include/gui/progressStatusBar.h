@@ -8,28 +8,24 @@
 
 namespace gui
 {
-class ProgressStatusBar : public ht::BaseProgressBar
+class ProgressStatusBar : public QObject, public ht::BaseProgressBar
 {
+    Q_OBJECT
 public:
-    ProgressStatusBar(QProgressBar* bar, QLabel* label);
-    void setTotal(std::size_t total)
-    {
-        mBar->setValue(0);
-        mBar->setMaximum(total);
-    }
-    void inc() { mBar->setValue(mBar->value() + 1); }
-    void inc(std::size_t inc) { mBar->setValue(mBar->value() + inc); }
-    void done()
-    {
-        status("Finished");
-        mBar->setValue(mBar->maximum());
-    }
-    void status(const std::string& state) { mLabel->setText(QString::fromStdString(state)); }
-    ~ProgressStatusBar() { done(); }
+    ProgressStatusBar(QObject* parent);
+    void setTotal(std::size_t total) { emit totalChanged(total); }
+    void inc() { emit incremented(); }
+    void inc(std::size_t inc) { emit incremented(inc); }
+    void done() { emit isDone(); }
+    void status(const std::string& state) { emit statusChanged(QString::fromStdString(state)); }
+    ~ProgressStatusBar() { emit isDone(); }
 
-private:
-    QProgressBar* mBar;
-    QLabel* mLabel;
+signals:
+    void totalChanged(int total);
+    void incremented();
+    void incremented(int inc);
+    void isDone();
+    void statusChanged(const QString& state);
 };
 } // namespace gui
 #endif // GUI_PROGRESS_STATUS_BAR_FUNCTOR_H

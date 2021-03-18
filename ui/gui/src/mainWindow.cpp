@@ -3,7 +3,6 @@
 
 #include "gui/imagesWorker.h"
 #include "gui/preferencesDialog.h"
-#include "gui/progressStatusBar.h"
 #include "gui/qtOpencvCore.h"
 #include "gui/scopedBlocker.h"
 #include "image-processing/util.h"
@@ -36,8 +35,6 @@ MainWindow::MainWindow(QWidget* parent)
     , mHabiTrack()
     , mViewer(mHabiTrack.images(), mHabiTrack.unaries(), mHabiTrack.manualUnaries(),
           mHabiTrack.detections())
-    , total(0)
-    , num(0)
 {
     ui->setupUi(this);
 
@@ -50,9 +47,9 @@ MainWindow::MainWindow(QWidget* parent)
     // needs to be done after setupUi
     mScene = ui->graphicsView->getTrackerScene();
     ui->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
-    mBar = std::make_shared<ProgressStatusBar>(ui->progressBar, ui->labelProgress);
+    ui->graphicsView->setFocusPolicy(Qt::NoFocus);
 
-    mHabiTrack.setProgressBar(mBar);
+    setupProgressBar();
 
     /* connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this, */
     /*     [=](std::size_t num) { this->showFrame(num + 1); }); */
@@ -66,6 +63,18 @@ MainWindow::MainWindow(QWidget* parent)
 }
 
 MainWindow::~MainWindow() { delete ui; }
+
+void MainWindow::setupProgressBar()
+{
+    mBar = std::make_shared<ProgressStatusBar>(this);
+    connect(mBar.get(), SIGNAL(totalChanged(int)), this, SLOT(onTotalChanged(int)));
+    connect(mBar.get(), SIGNAL(incremented(int)), this, SLOT(onIncremented(int)));
+    connect(mBar.get(), SIGNAL(incremented()), this, SLOT(onIncremented()));
+    connect(mBar.get(), SIGNAL(isDone()), this, SLOT(onIsDone()));
+    connect(mBar.get(), SIGNAL(statusChanged(const QString&)), this,
+        SLOT(onStatusChanged(const QString&)));
+    mHabiTrack.setProgressBar(mBar);
+}
 
 void MainWindow::populateGuiDefaults()
 {
@@ -169,19 +178,16 @@ void MainWindow::on_actionPreferences_triggered()
 
 void MainWindow::on_sliderFrame_valueChanged(int value)
 {
-    spdlog::debug("GUI: Changed slider frame");
     showFrame(value);
 }
 
 void MainWindow::on_spinCurrentFrame_valueChanged(int value)
 {
-    spdlog::debug("GUI: Changed frame spin");
     showFrame(value);
 }
 
 void MainWindow::on_buttonPrevFrame_clicked()
 {
-    spdlog::debug("GUI: prev clicked");
     if (mCurrentFrameNumber > 1)
     {
         auto newIdx = mCurrentFrameNumber - 1;
@@ -191,7 +197,6 @@ void MainWindow::on_buttonPrevFrame_clicked()
 
 void MainWindow::on_buttonNextFrame_clicked()
 {
-    spdlog::debug("GUI: next clicked");
     if (mCurrentFrameNumber < mHabiTrack.images().size())
     {
         auto newIdx = mCurrentFrameNumber + 1;
@@ -215,52 +220,12 @@ void MainWindow::on_actionNext_Frame_triggered()
     this->ui->actionNext_Frame->setDisabled(false);
 }
 
-void MainWindow::refreshWindow()
+void MainWindow::updateSlider()
 {
-    spdlog::debug("GUI: Redraw window");
     auto blocker = ScopedBlocker{ui->sliderFrame, ui->spinCurrentFrame};
     ui->sliderFrame->setValue(mCurrentFrameNumber);
     ui->spinCurrentFrame->setValue(mCurrentFrameNumber);
-    qApp->processEvents();
 }
-
-void MainWindow::populatePaths()
-{
-    /* spdlog::debug("Generated output path: {}", mOutputPath.string()); */
-
-    /* mResultsFile = mOutputPath / "results.yml"; */
-    /* mFtFolder = mOutputPath / "fts"; */
-    /* mMatchFolder = mOutputPath / "matches"; */
-    /* mUnFolder = mOutputPath / "unaries"; */
-    /* mDetectionsFile = mOutputPath / "detections.yml"; */
-    /* mSetFile = mOutputPath / "invisibles.yml"; */
-
-    /* try */
-    /* { */
-    /*     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>(); */
-    /*     console_sink->set_level(spdlog::level::info); */
-
-    /*     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>( */
-    /*         (mOutputPath / "logs.txt").string(), false); */
-    /*     file_sink->set_level(spdlog::level::debug); */
-
-    /*     auto logger = std::make_shared<spdlog::logger>( */
-    /*         "multi_sink", spdlog::sinks_init_list({console_sink, file_sink})); */
-    /*     logger->set_level(spdlog::level::debug); */
-    /*     spdlog::flush_every(std::chrono::seconds(3)); */
-    /*     spdlog::set_default_logger(logger); */
-    /*     spdlog::info("New run -------------"); */
-    /* } */
-    /* catch (const spdlog::spdlog_ex& ex) */
-    /* { */
-    /*     std::cout << "Log initialization failed: " << ex.what() << std::endl; */
-    /* } */
-}
-
-/* needs:
- * Images, Unaries, Detections, sliders and Labels
- *
- */
 
 void MainWindow::showFrame(std::size_t frame)
 {
@@ -268,7 +233,7 @@ void MainWindow::showFrame(std::size_t frame)
     auto img = mViewer.getFrame(frame - 1);
     auto pixMap = QPixmap::fromImage(QtOpencvCore::img2qimgRaw(img));
     mScene->setPixmap(pixMap);
-    refreshWindow();
+    updateSlider();
 }
 
 void MainWindow::openImagesHelper()
@@ -329,9 +294,9 @@ void MainWindow::on_actionOpenImgFolder_triggered()
         return;
 
     mBar->setTotal(0);
-
     mHabiTrack.loadImageFolder(fs::path(imgFolderPath.toStdString()));
     openImagesHelper();
+    mBar->setTotal(1);
 }
 
 void MainWindow::on_actionOpenImgList_triggered()
@@ -392,42 +357,33 @@ void MainWindow::on_mikeButton_clicked()
 void MainWindow::on_buttonExtractFeatures_clicked()
 {
     spdlog::debug("GUI: Clicked Extract Features");
-    mHabiTrack.extractFeatures();
+    mBlockingThread = QThread::create(&HabiTrack::extractFeatures, &mHabiTrack);
+    mBlockingThread->start();
 }
 
 void MainWindow::on_buttonExtractTrafos_clicked()
 {
-    /* spdlog::debug("GUI: Clicked Extract Trafos"); */
+    if (!mHabiTrack.featureComputed())
+    {
+        QMessageBox::warning(this, "Warning", "Features need to be computed first");
+        return;
+    }
 
-    /* if (!featureComputed()) */
-    /* { */
-    /*     QMessageBox::warning(this, "Warning", "Features need to be computed first"); */
-    /*     return; */
-    /* } */
+    mBlockingThread = QThread::create(&HabiTrack::extractTrafos, &mHabiTrack);
+    connect(mBlockingThread, SIGNAL(finished()), this, SLOT(on_trafosExtracted()));
+    mBlockingThread->start();
 
-    /* if (matchesComputed()) */
-    /*     mBar->done(); */
-    /* else */
-    /* { */
-    /*     matches::compute(mMatchFolder, GeometricType::Homography, mFeatures, */
-    /*         matches::MatchType::Windowed, 2, 0.0, nullptr, mPrefs.cacheSize, */
-    /*         getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber), mBar); */
-    /* } */
+}
 
+void MainWindow::on_trafosExtracted()
+{
+
+    /* auto size = mHabiTrack. */
     /* auto size = matches::getTrafos(mMatchFolder, GeometricType::Homography).size(); */
-    /* ui->labelNumTrafos->setText(QString::number(size)); */
 
-    /* auto types = ht::matches::getConnectedTypes(mMatchFolder, ht::GeometricType::Homography, */
-    /*     getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber)); */
-    /* if (static_cast<unsigned int>(types & ht::GeometricType::Homography)) */
-    /*     spdlog::info("Transformations usable for unary extraction."); */
-    /* else */
-    /* { */
-    /*     spdlog::warn( */
-    /*         "Exracted Transformations not a continous chain, Consider increasing feature points."); */
-    /*     QMessageBox::warning(this, "Warning", */
-    /*         "Exracted Transformations not a continous chain, Consider increasing feature points."); */
-    /* } */
+    /* ui->labelNumTrafos->setText(QString::number(size)); */
+    QMessageBox::warning(this, "Warning",
+        "Exracted Transformations not a continous chain, Consider increasing feature points.");
 }
 
 void MainWindow::on_buttonExtractUnaries_clicked()
@@ -574,6 +530,30 @@ void MainWindow::onDetectionsAvailable(int chunkId)
 
     /* // save detections */
     /* mDetections.save(mDetectionsFile); */
+}
+
+void MainWindow::onTotalChanged(int total)
+{
+    ui->progressBar->setValue(0);
+    ui->progressBar->setMaximum(total);
+}
+
+void MainWindow::onIncremented() { ui->progressBar->setValue(ui->progressBar->value() + 1); }
+
+void MainWindow::onIncremented(int inc)
+{
+    ui->progressBar->setValue(ui->progressBar->value() + inc);
+}
+
+void MainWindow::onIsDone()
+{
+    ui->labelProgress->setText("Finished");
+    ui->progressBar->setValue(ui->progressBar->maximum());
+}
+
+void MainWindow::onStatusChanged(const QString& state)
+{
+    ui->labelProgress->setText(state);
 }
 
 void MainWindow::onPositionChanged(QPointF position)
