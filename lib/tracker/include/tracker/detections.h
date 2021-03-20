@@ -27,9 +27,9 @@ public:
     std::size_t size() const;
 
     std::vector<cv::Point2d> projectTo(std::size_t from, std::size_t to,
-        const matches::PairwiseTrafos& trafos, GeometricType type) const;
+        const PairwiseTrafos& trafos, GeometricType type) const;
     std::vector<cv::Point2d> projectFrom(std::size_t from, std::size_t to,
-        const matches::PairwiseTrafos& trafos, GeometricType type) const;
+        const PairwiseTrafos& trafos, GeometricType type) const;
 
     std::map<std::size_t, Detection>& data() { return mDetections; }
     const std::map<std::size_t, Detection>& cdata() const { return mDetections; }

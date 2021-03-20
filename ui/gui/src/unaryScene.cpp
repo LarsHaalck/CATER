@@ -2,11 +2,15 @@
 
 #include "colors.h"
 #include "spdlog/spdlog.h"
+
+#include "tracker/tracker.h"
 #include <QLinearGradient>
 #include <ostream>
 
 constexpr double size_width = 1.0;
 constexpr double size_height = 100;
+
+using namespace ht;
 
 namespace gui
 {
@@ -15,7 +19,6 @@ UnaryScene::UnaryScene(QObject* parent)
     : QGraphicsScene(parent)
     , mNumImages(0)
     , mUnaryColors()
-    /* , mUnaryStates() */
     , mPen()
 {
     mPen.setWidthF(size_width);
@@ -24,17 +27,10 @@ UnaryScene::UnaryScene(QObject* parent)
 void UnaryScene::setTotalImages(std::size_t numImages)
 {
     mNumImages = numImages;
-    /* this->setSceneRect(0, 0, 99 + size_width, size_height); */
-
     this->setSceneRect(0, 0, 100, size_height);
     mPen.setWidthF(1.0 / mNumImages * 100);
-
-    /* this->setSceneRect(0, 0, mNumImages, size_height); */
-    /* mPen.setWidthF(1.0); */
-
     this->clear();
     this->mUnaryColors.clear();
-    /* this->mUnaryStates.clear(); */
     this->mUnaryColors.reserve(numImages);
 }
 
@@ -56,25 +52,10 @@ void UnaryScene::setUnaryState(std::size_t id, UnaryState state)
     this->addLine(start, 0, start, size_height / 3, pen);
 }
 
-void UnaryScene::update()
-{
-    /* for (const auto& elem : mUnaryColors) */
-    /* { */
-    /*     auto i = elem.first; */
-    /*     auto start = idToX(i); */
-    /*     auto pen = getPen(unaryQualityToQColor(mUnaryColors[i])); */
-    /*     this->addLine(start, size_height / 3, start, size_height, pen); */
-
-    /*     pen = getPen(unaryStateToQColor(mUnaryStates[i])); */
-    /*     this->addLine(start, 0, start, size_height / 3, pen); */
-    /* } */
-}
-
 QPen UnaryScene::getPen(const QColor& color) const
 {
     auto pen = mPen;
     pen.setColor(color);
-    /* pen.setWidthF(size_width); */
     return pen;
 }
 
@@ -148,6 +129,72 @@ QColor UnaryScene::unaryStateToQColor(UnaryState state) const
         return lightgray;
     default:
         return Qt::black;
+    }
+}
+
+void UnaryScene::setup(std::vector<double> qualities, std::size_t start, std::size_t end)
+{
+    setTotalImages(qualities.size() + 1);
+
+    auto offset = start - 1;
+    auto num = end - start;
+    std::size_t medSize = 100;
+    for (std::size_t i = 0; i < std::ceil(static_cast<double>(num) / medSize); i++)
+    {
+        auto currStart = i * medSize + offset;
+        auto currEnd = std::min((i + 1) * medSize, num) + offset;
+        auto mid = currStart + (currEnd - currStart) / 2;
+        std::nth_element(std::begin(qualities) + currStart, std::begin(qualities) + mid,
+            std::begin(qualities) + currEnd);
+        auto median = qualities[mid];
+
+        std::vector<double> dists;
+        dists.reserve(currEnd - currStart);
+        for (std::size_t j = currStart; j < currEnd; j++)
+            dists.push_back(std::abs(qualities[j] - median));
+
+        std::nth_element(std::begin(dists), std::begin(dists) + dists.size() / 2, std::end(dists));
+        auto medianDist = dists[dists.size() / 2];
+        for (std::size_t j = currStart; j < currEnd; j++)
+        {
+            UnaryQuality qual;
+            if (qualities[j] < (median + 1.5 * medianDist))
+                qual = UnaryQuality::Good;
+            else if (qualities[j] < (median + 3.0 * medianDist))
+                qual = UnaryQuality::Poor;
+            else
+                qual = UnaryQuality::Critical;
+
+            setUnaryQuality(j, qual);
+        }
+    }
+}
+
+void UnaryScene::toggleChunk(int chunkId, bool computing, int chunkSize, int start)
+{
+    auto numUnaries = mUnaryColors.size();
+    auto numChunks = Tracker::getNumChunks(numUnaries, chunkSize);
+
+    std::vector<int> chunks;
+    if (chunkId == -1)
+    {
+        chunks.resize(numChunks);
+        std::iota(std::begin(chunks), std::end(chunks), 0);
+    }
+    else
+        chunks = {chunkId};
+
+    for (auto chunk : chunks)
+    {
+        UnaryState state;
+        if (computing)
+            state = (chunk % 2) ? UnaryState::ComputingAlt : UnaryState::Computing;
+        else
+            state = (chunk % 2) ? UnaryState::DefaultAlt : UnaryState::Default;
+
+        auto end = Tracker::getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
+        for (std::size_t j = chunk * chunkSize; j < end; j++)
+            setUnaryState(j + start - 1, state);
     }
 }
 } // namespace gui

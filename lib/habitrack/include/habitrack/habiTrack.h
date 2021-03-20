@@ -18,6 +18,19 @@
 
 namespace ht
 {
+class HabiTrackException : public std::exception
+{
+public:
+    HabiTrackException(const std::string& type = std::string())
+        : mType(std::string("HabiTrack: ") + type)
+    {
+    }
+    const char* what() const throw() { return mType.c_str(); }
+
+private:
+    std::string mType;
+};
+
 class HabiTrack
 {
 public:
@@ -45,22 +58,27 @@ public:
     void extractFeatures();
     void extractTrafos();
     void extractUnaries();
+    std::vector<double> getUnaryQualities();
 
-    bool useableForTracking() const;
-    /* void optimizeUnaries(int chunkId, std::function<void()> callback = {}); */
-    /* void runFullPipeline(); */
+    bool hasUsableTrafos() const;
 
-/*     void onPositionChanged(QPointF position); */
-/*     void onBearingChanged(QPointF position); */
-/*     void onPositionCleared(); */
-/*     void onBearingCleared(); */
-/*     void onDetectionsAvailable(int chunkId); */
+    void optimizeUnaries(int chunkId);
+    void optimizeUnaries();
+
+    void runFullPipeline();
+    /* void onPositionChanged(QPointF position); */
+    /* void onBearingChanged(QPointF position); */
+    /* void onPositionCleared(); */
+    /* void onBearingCleared(); */
+    /* void onDetectionsAvailable(int chunkId); */
 
     const Images& images() const { return mImages; }
     const Features& features() const { return mFeatures; }
     const Unaries& unaries() const { return mUnaries; }
     const ManualUnaries& manualUnaries() const { return mManualUnaries; }
     const Detections& detections() const { return mDetections; }
+    PairwiseMatches matches() const;
+    PairwiseTrafos trafos() const;
 
 private:
     void populatePaths();
@@ -73,8 +91,6 @@ private:
     std::shared_ptr<BaseProgressBar> mBar;
 
     Preferences mPrefs;
-
-    ThreadPool mThreadPool;
     Tracker::Settings mTrackerSettings;
 
     std::filesystem::path mOutputPath;
@@ -84,7 +100,6 @@ private:
     std::filesystem::path mMatchFolder;
     std::filesystem::path mUnFolder;
     std::filesystem::path mDetectionsFile;
-    /* std::filesystem::path mSetFile; */
 
     std::size_t mStartFrameNumber;
     std::size_t mEndFrameNumber;
@@ -96,6 +111,7 @@ private:
     Detections mDetections;
     std::vector<double> mUnaryQualities;
 
+    PairwiseTrafos mTrafos;
 };
 } // namespace ht
 

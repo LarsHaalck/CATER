@@ -21,6 +21,7 @@ public:
 
     TrackerScene* getTrackerScene() { return this->mScene; }
     void setScale(const qreal scale);
+    void zoomToFit();
 
 protected:
     void wheelEvent(QWheelEvent* event);

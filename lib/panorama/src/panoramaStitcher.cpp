@@ -118,7 +118,7 @@ void PanoramaStitcher::initTrafosMultipleHelper(std::size_t currBlock, const cv:
     }
 }
 
-void PanoramaStitcher::initTrafosFromMultipleVideos(const matches::PairwiseTrafos& trafos,
+void PanoramaStitcher::initTrafosFromMultipleVideos(const PairwiseTrafos& trafos,
     const std::vector<std::size_t> sizes,
     const std::vector<std::vector<cv::Mat>>& localOptimalTrafos,
     const std::unordered_map<std::pair<std::size_t, std::size_t>,
@@ -423,7 +423,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
 /* } */
 
 void PanoramaStitcher::globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
-    const matches::PairwiseMatches& matches, std::size_t limitTo,
+    const PairwiseMatches& matches, std::size_t limitTo,
     std::shared_ptr<BaseProgressBar> cb)
 {
     if (!cb)

@@ -29,9 +29,9 @@ public:
 
 public:
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-        const Settings& settings, std::size_t chunk, const matches::PairwiseTrafos& trafos);
+        const Settings& settings, std::size_t chunk, const PairwiseTrafos& trafos);
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-        const Settings& settings, const matches::PairwiseTrafos& trafos);
+        const Settings& settings, const PairwiseTrafos& trafos);
     static std::size_t getNumChunks(std::size_t numUnaries, std::size_t chunkSize);
     static std::size_t getChunkEnd(
         std::size_t chunk, std::size_t numChunks, std::size_t chunkSize, std::size_t numUnaries);
@@ -49,10 +49,10 @@ private:
         const cv::Mat& unaryPotential, cv::Mat& messageToFactor);
 
     static Detections extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
-        std::size_t offset, const Settings& settings, const matches::PairwiseTrafos& trafos);
+        std::size_t offset, const Settings& settings, const PairwiseTrafos& trafos);
 
     static std::pair<double, double> calcBearingAndQuality(std::size_t lastIdx, std::size_t idx,
-        cv::Point lastPos, cv::Point pos, const matches::PairwiseTrafos& trafos);
+        cv::Point lastPos, cv::Point pos, const PairwiseTrafos& trafos);
 
     static void smoothBearing(Detections& detections, const Settings& settings);
     static std::vector<double> filterAndNormaliseLengthVec(

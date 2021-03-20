@@ -4,12 +4,12 @@ namespace ht
 {
 UnknownGeometricType::UnknownGeometricType(const std::string& type)
     : std::exception()
-    , mType(type)
+    , mType(std::string("Unknown Geometric Type suffix ") + type)
 {
 }
 const char* UnknownGeometricType::what() const throw()
 {
-    return (std::string("Unknown Geometric Type suffix ") + mType).c_str();
+    return mType.c_str();
 }
 
 }

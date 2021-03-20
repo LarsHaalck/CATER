@@ -11,16 +11,24 @@
 
 namespace ht
 {
-class Images;
-class Unaries;
-class ManualUnaries;
-class Detections;
+class HabiTrack;
 }
 
 namespace gui
 {
 class ImageViewer
 {
+
+public:
+    struct VisSettings
+    {
+        int unary;
+        bool detection;
+        bool bearing;
+        bool trajectory;
+        std::size_t trajectoryLength;
+    };
+
 private:
     struct CacheItem
     {
@@ -29,27 +37,23 @@ private:
     };
 
 public:
-    ImageViewer(const ht::Images& images, const ht::Unaries& unaries,
-        const ht::ManualUnaries& manualUnaries, const ht::Detections& detections);
+    ImageViewer(const ht::HabiTrack& habiTrack);
     ~ImageViewer();
 
-    cv::Mat getFrame(int frameNum);
+    cv::Mat getFrame(int frameNum, const VisSettings& settings);
+    void reset();
 
 private:
-    void threadEntrypoint();
     void removeStale(std::pair<std::size_t, std::size_t> range);
     void rebuildCache();
     bool insertOnMiss(int frameNum);
 
     CacheItem readItem(int frameNum) const;
-    cv::Mat processItem(const CacheItem& item) const;
+    cv::Mat processItem(int frameNum, const CacheItem& item, const VisSettings& settings) const;
     std::pair<std::size_t, std::size_t> getRange(int frameNum) const;
 
 private:
-    const ht::Images& mImages;
-    const ht::Unaries& mUnaries;
-    const ht::ManualUnaries& mManualUnaries;
-    const ht::Detections& mDetections;
+    const ht::HabiTrack& mHabiTrack;
 
     bool mCachedUnaries;
 

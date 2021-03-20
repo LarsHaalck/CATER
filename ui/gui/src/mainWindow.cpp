@@ -29,12 +29,13 @@ constexpr int statusDelay = 2000;
 
 namespace gui
 {
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , mHabiTrack()
-    , mViewer(mHabiTrack.images(), mHabiTrack.unaries(), mHabiTrack.manualUnaries(),
-          mHabiTrack.detections())
+    , mViewer(mHabiTrack)
+    , mSaved(true)
 {
     ui->setupUi(this);
 
@@ -51,8 +52,8 @@ MainWindow::MainWindow(QWidget* parent)
 
     setupProgressBar();
 
-    /* connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this, */
-    /*     [=](std::size_t num) { this->showFrame(num + 1); }); */
+    connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this,
+        [=](std::size_t num) { this->showFrame(num + 1); });
 
     connect(this->ui->graphicsView, SIGNAL(positionChanged(QPointF)), this,
         SLOT(onPositionChanged(QPointF)));
@@ -60,9 +61,15 @@ MainWindow::MainWindow(QWidget* parent)
         SLOT(onBearingChanged(QPointF)));
     connect(this->ui->graphicsView, SIGNAL(positionCleared()), this, SLOT(onPositionCleared()));
     connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this, SLOT(onBearingCleared()));
+
+    connect(this, SIGNAL(detectionsAvailable(int)), this, SLOT(onDetectionsAvailable(int)));
 }
 
-MainWindow::~MainWindow() { delete ui; }
+MainWindow::~MainWindow()
+{
+    this->blockSignals(true);
+    delete ui;
+}
 
 void MainWindow::setupProgressBar()
 {
@@ -79,6 +86,8 @@ void MainWindow::setupProgressBar()
 void MainWindow::populateGuiDefaults()
 {
     spdlog::debug("GUI: Populating GUI defaults");
+    auto blocker = ScopedBlocker {ui->sliderOverlayUnaries, ui->overlayTrackedPosition,
+        ui->overlayBearings, ui->overlayTrajectory, ui->trajectorySpin};
     ui->sliderOverlayUnaries->setValue(mGuiPrefs.overlayUnaries);
     ui->overlayTrackedPosition->setChecked(mGuiPrefs.overlayTrackedPos);
     ui->overlayBearings->setChecked(mGuiPrefs.overlayBearing);
@@ -92,43 +101,28 @@ void MainWindow::populateGuiDefaults()
 void MainWindow::on_sliderOverlayUnaries_sliderReleased()
 {
     auto value = ui->sliderOverlayUnaries->value();
-    spdlog::debug("GUI: Slider overlay unaries changed: {}", value);
     mGuiPrefs.overlayUnaries = value;
-
-    // TODO
-    /* showFrame(mCurrentFrameNumber); */
+    showFrame(mCurrentFrameNumber);
 }
 
-void MainWindow::on_overlayTrackedPosition_toggled(bool value)
+void MainWindow::on_overlayTrackedPosition_toggled(bool)
 {
-    spdlog::debug("GUI: Overlay tracked pos changed: {}", value);
-
-    // TODO
-    /* showFrame(mCurrentFrameNumber); */
+    showFrame(mCurrentFrameNumber);
 }
 
-void MainWindow::on_overlayBearings_toggled(bool value)
+void MainWindow::on_overlayBearings_toggled(bool)
 {
-    spdlog::debug("GUI: Overlay bearing changed: {}", value);
-
-    // TODO
-    /* showFrame(mCurrentFrameNumber); */
+    showFrame(mCurrentFrameNumber);
 }
 
-void MainWindow::on_overlayTrajectory_toggled(bool value)
+void MainWindow::on_overlayTrajectory_toggled(bool)
 {
-    spdlog::debug("GUI: Overlay trajectory changed: {}", value);
-
-    // TODO
-    /* showFrame(mCurrentFrameNumber); */
+    showFrame(mCurrentFrameNumber);
 }
 
-void MainWindow::on_trajectorySpin_valueChanged(int value)
+void MainWindow::on_trajectorySpin_valueChanged(int)
 {
-    spdlog::debug("GUI: Spin Overlay trajectory changed: {}", value);
-
-    // TODO
-    /* showFrame(mCurrentFrameNumber); */
+    showFrame(mCurrentFrameNumber);
 }
 
 void MainWindow::on_actionExpertMode_toggled(bool value)
@@ -142,17 +136,11 @@ void MainWindow::on_actionExpertMode_toggled(bool value)
 
 void MainWindow::on_actionSave_Results_triggered()
 {
-    /* spdlog::debug("GUI: Save Results triggered"); */
+    spdlog::debug("GUI: Save Results triggered");
 
-    /* saveResults(mResultsFile, mPrefs, mImgFolder, mStartFrameNumber, mEndFrameNumber); */
-    /* if (mManualUnaries.size()) */
-    /*     mManualUnaries.save(mUnFolder); */
-    /* if (mInvisibles.size()) */
-    /*     saveSet(mSetFile, mInvisibles); */
-
-    /* //mManualBearing.save(mOutputPath); */
-
-    /* statusBar()->showMessage("Saved results.", statusDelay); */
+    mHabiTrack.saveResultsFile();
+    mSaved = true;
+    statusBar()->showMessage("Saved results.", statusDelay);
 }
 
 void MainWindow::on_actionLabel_Editor_triggered()
@@ -163,28 +151,24 @@ void MainWindow::on_actionLabel_Editor_triggered()
 
 void MainWindow::on_actionPreferences_triggered()
 {
-    /* PreferencesDialog prefDialog(this, mPrefs); */
-    /* auto code = prefDialog.exec(); */
-    /* if (code == QDialog::Accepted) */
-    /* { */
-    /*     // overwrite current settings if accepted, discard otherwise */
-    /*     mPrefs = prefDialog.getPreferences(); */
-    /*     spdlog::debug("GUI: Changed Preferences to: {}", mPrefs); */
+    PreferencesDialog prefDialog(this, mHabiTrack.getPreferences());
+    auto code = prefDialog.exec();
+    if (code == QDialog::Accepted)
+    {
+        // overwrite current settings if accepted, discard otherwise
+        auto prefs = prefDialog.getPreferences();
+        spdlog::debug("GUI: Changed Preferences to: {}", prefs);
+        mHabiTrack.setPreferences(prefs);
 
-    /*     // TODO: should this be saved implicitly? */
-    /*     saveResults(mResultsFile, mPrefs, mImgFolder, mStartFrameNumber, mEndFrameNumber); */
-    /* } */
+        // TODO: should this be saved implicitly?
+        mHabiTrack.saveResultsFile();
+        mSaved = true;
+    }
 }
 
-void MainWindow::on_sliderFrame_valueChanged(int value)
-{
-    showFrame(value);
-}
+void MainWindow::on_sliderFrame_valueChanged(int value) { showFrame(value); }
 
-void MainWindow::on_spinCurrentFrame_valueChanged(int value)
-{
-    showFrame(value);
-}
+void MainWindow::on_spinCurrentFrame_valueChanged(int value) { showFrame(value); }
 
 void MainWindow::on_buttonPrevFrame_clicked()
 {
@@ -222,7 +206,7 @@ void MainWindow::on_actionNext_Frame_triggered()
 
 void MainWindow::updateSlider()
 {
-    auto blocker = ScopedBlocker{ui->sliderFrame, ui->spinCurrentFrame};
+    auto blocker = ScopedBlocker {ui->sliderFrame, ui->spinCurrentFrame};
     ui->sliderFrame->setValue(mCurrentFrameNumber);
     ui->spinCurrentFrame->setValue(mCurrentFrameNumber);
 }
@@ -230,9 +214,37 @@ void MainWindow::updateSlider()
 void MainWindow::showFrame(std::size_t frame)
 {
     mCurrentFrameNumber = frame;
-    auto img = mViewer.getFrame(frame - 1);
+    auto idx = frame - 1;
+
+    ImageViewer::VisSettings settings;
+    settings.unary = ui->sliderOverlayUnaries->value();
+    settings.detection = ui->overlayTrackedPosition->isChecked();
+    settings.bearing = ui->overlayBearings->isChecked();
+    settings.trajectory = ui->overlayTrajectory->isChecked();
+    settings.trajectoryLength = ui->trajectorySpin->value();
+
+    auto img = mViewer.getFrame(idx, settings);
     auto pixMap = QPixmap::fromImage(QtOpencvCore::img2qimgRaw(img));
     mScene->setPixmap(pixMap);
+
+    // set filename
+    ui->labelFileName->setText(QString::fromStdString(mHabiTrack.images().getFileName(idx)));
+
+    if (mHabiTrack.unaries().size())
+    {
+        auto scene = ui->unaryView->getUnaryScene();
+        auto color = scene->getUnaryColor(idx);
+        auto quality = UnaryScene::unaryQualityToString(scene->getUnaryQuality(idx));
+        ui->qualityLabel->setStyleSheet(
+            QString("color: white; background-color: " + color.name() + ";"));
+        ui->qualityLabel->setText(quality.c_str());
+    }
+    else
+    {
+        ui->qualityLabel->setStyleSheet(QString(""));
+        ui->qualityLabel->setText("<quality>");
+    }
+
     updateSlider();
 }
 
@@ -272,6 +284,8 @@ void MainWindow::openImagesHelper()
     ui->actionPrev_Frame->setEnabled(true);
     ui->actionNext_Frame->setEnabled(true);
 
+    ui->overlayGroup->setEnabled(true);
+
     ui->buttonTrack->setEnabled(true);
     ui->frameTracking->setEnabled(true);
     for (auto& child : ui->frameTracking->findChildren<QWidget*>())
@@ -283,6 +297,7 @@ void MainWindow::openImagesHelper()
     // show first frame
     mCurrentFrameNumber = mHabiTrack.getStartFrame();
     showFrame(mCurrentFrameNumber);
+    ui->graphicsView->zoomToFit();
 }
 
 void MainWindow::on_actionOpenImgFolder_triggered()
@@ -297,6 +312,7 @@ void MainWindow::on_actionOpenImgFolder_triggered()
     mHabiTrack.loadImageFolder(fs::path(imgFolderPath.toStdString()));
     openImagesHelper();
     mBar->setTotal(1);
+    mSaved = false;
 }
 
 void MainWindow::on_actionOpenImgList_triggered()
@@ -314,8 +330,7 @@ void MainWindow::on_actionOpenResultsFile_triggered()
         return;
 
     mHabiTrack.loadResultsFile(resultFile.toStdString());
-
-    // TODO: show start frame number frame
+    openImagesHelper();
 }
 
 void MainWindow::on_buttonStartFrame_clicked()
@@ -327,9 +342,12 @@ void MainWindow::on_buttonStartFrame_clicked()
         return;
     }
     spdlog::debug("GUI: changed start frame to {}", mCurrentFrameNumber);
+
     // TODO: some data structures are no longer valid and should be computed again
     mHabiTrack.setStartFrame(mCurrentFrameNumber);
     ui->labelStartFrame->setText(QString::number(mCurrentFrameNumber));
+
+    mSaved = false;
 }
 
 void MainWindow::on_buttonEndFrame_clicked()
@@ -341,195 +359,198 @@ void MainWindow::on_buttonEndFrame_clicked()
         return;
     }
     spdlog::debug("GUI: changed end frame to {}", mCurrentFrameNumber);
+
     // TODO: some data structures are no longer valid and should be computed again
     mHabiTrack.setEndFrame(mCurrentFrameNumber);
     ui->labelEndFrame->setText(QString::number(mCurrentFrameNumber));
+
+    mSaved = true;
 }
 
 void MainWindow::on_mikeButton_clicked()
 {
+    if (checkRunningThread())
+        return;
+
     on_buttonExtractFeatures_clicked();
     on_buttonExtractTrafos_clicked();
     on_buttonExtractUnaries_clicked();
     on_buttonOptimizeUnaries_clicked();
 }
 
+bool MainWindow::checkRunningThread()
+{
+    if (!mBlockingThread || !mUnaryQualityWatcher)
+        return false;
+
+    if (mBlockingThread->isFinished() || mUnaryQualityWatcher->isRunning())
+    {
+        QMessageBox::warning(this, "Warning", "Wait for current process to finish");
+        return true;
+    }
+
+    return false;
+}
+
 void MainWindow::on_buttonExtractFeatures_clicked()
 {
     spdlog::debug("GUI: Clicked Extract Features");
-    mBlockingThread = QThread::create(&HabiTrack::extractFeatures, &mHabiTrack);
+    if (checkRunningThread())
+        return;
+
+    mBlockingThread
+        = std::unique_ptr<QThread>(QThread::create(&HabiTrack::extractFeatures, &mHabiTrack));
     mBlockingThread->start();
 }
 
 void MainWindow::on_buttonExtractTrafos_clicked()
 {
+    spdlog::debug("GUI: Clicked Extract Trafos");
     if (!mHabiTrack.featureComputed())
     {
         QMessageBox::warning(this, "Warning", "Features need to be computed first");
         return;
     }
 
-    mBlockingThread = QThread::create(&HabiTrack::extractTrafos, &mHabiTrack);
-    connect(mBlockingThread, SIGNAL(finished()), this, SLOT(on_trafosExtracted()));
-    mBlockingThread->start();
+    if (checkRunningThread())
+        return;
 
+    mBlockingThread
+        = std::unique_ptr<QThread>(QThread::create(&HabiTrack::extractTrafos, &mHabiTrack));
+    connect(mBlockingThread.get(), SIGNAL(finished()), this, SLOT(on_trafosExtracted()));
+    mBlockingThread->start();
 }
 
 void MainWindow::on_trafosExtracted()
 {
+    auto size = mHabiTrack.trafos().size();
+    ui->labelNumTrafos->setText(QString::number(size));
 
-    /* auto size = mHabiTrack. */
-    /* auto size = matches::getTrafos(mMatchFolder, GeometricType::Homography).size(); */
-
-    /* ui->labelNumTrafos->setText(QString::number(size)); */
-    QMessageBox::warning(this, "Warning",
-        "Exracted Transformations not a continous chain, Consider increasing feature points.");
+    if (!mHabiTrack.hasUsableTrafos())
+    {
+        QMessageBox::warning(this, "Warning",
+            "Exracted Transformations not a continous chain, Consider increasing feature points.");
+    }
 }
 
 void MainWindow::on_buttonExtractUnaries_clicked()
 {
-    /* spdlog::debug("GUI: Clicked Extract Unaries"); */
-    /* if (!matchesComputed()) */
-    /* { */
-    /*     QMessageBox::warning(this, "Warning", "Transformations need to be computed first"); */
-    /*     return; */
-    /* } */
+    QMutexLocker locker(&mMutex);
+    spdlog::debug("GUI: Clicked Extract Unaries");
+    if (!mHabiTrack.matchesComputed())
+    {
+        QMessageBox::warning(this, "Warning", "Transformations need to be computed first");
+        return;
+    }
 
-    /* auto start = mStartFrameNumber - 1; */
-    /* auto end = mEndFrameNumber; */
-    /* if (unariesComputed()) */
-    /* { */
-    /*     mUnaries = Unaries::fromDir(mImgFolder, mUnFolder, start, end); */
-    /*     mBar->done(); */
-    /* } */
-    /* else */
-    /* { */
-    /*     auto trafos = mPrefs.removeCamMotion */
-    /*         ? matches::getTrafos(mMatchFolder, GeometricType::Homography) */
-    /*         : matches::PairwiseTrafos(); */
+    if (checkRunningThread())
+        return;
 
-    /*     mUnaries = Unaries::compute(mImgFolder, mUnFolder, start, end, mPrefs.removeRedLasers, */
-    /*         mPrefs.unarySubsample, mPrefs.unarySigma, trafos, mPrefs.cacheSize, mBar); */
-    /* } */
-    /* std::vector<double> unaryQuality(mImages.size(), -1); */
-    /* for (auto i = mStartFrameNumber - 1; i < mEndFrameNumber - 1; i++) */
-    /*     unaryQuality[i] = Unaries::getUnaryQuality(mUnaries.at(i)); */
+    mBlockingThread
+        = std::unique_ptr<QThread>(QThread::create(&HabiTrack::extractUnaries, &mHabiTrack));
+    connect(mBlockingThread.get(), SIGNAL(finished()), this, SLOT(on_unariesExtracted()));
+    mBlockingThread->start();
+}
 
-    /* // zero init if existent */
-    /* mManualUnaries = ManualUnaries::fromDir( */
-    /*     mUnFolder, mPrefs.unarySubsample, mPrefs.manualUnarySize, mImages.getImgSize()); */
+void MainWindow::on_unariesExtracted()
+{
+    mViewer.reset();
+    QFuture<std::vector<double>> future
+        = QtConcurrent::run(&mHabiTrack, &HabiTrack::getUnaryQualities);
+    auto watcher = std::make_unique<QFutureWatcher<std::vector<double>>>();
+    watcher->setFuture(future);
 
-    /* setupUnaryScene(unaryQuality); */
-    /* ui->labelNumUnaries->setText(QString::number(mUnaries.size())); */
+    connect(watcher.get(), SIGNAL(finished()), this, SLOT(on_unariesQualitesCalculated()));
+    mUnaryQualityWatcher = std::move(watcher);
+}
+
+void MainWindow::on_unariesQualitesCalculated()
+{
+    auto scene = ui->unaryView->getUnaryScene();
+    auto unaryQualities = mUnaryQualityWatcher->result();
+    scene->setup(unaryQualities, mHabiTrack.getStartFrame(), mHabiTrack.getEndFrame());
+
+    ui->labelNumUnaries->setText(QString::number(mHabiTrack.unaries().size()));
+
+    // set all cunks as not-computing
+    toggleChunk(-1, false);
+
+    for (const auto& manualUnary : mHabiTrack.manualUnaries())
+        scene->setUnaryQuality(manualUnary.first, UnaryQuality::Excellent);
+}
+
+void MainWindow::toggleChunk(int chunk, bool compute)
+{
+    ui->unaryView->getUnaryScene()->toggleChunk(
+        chunk, compute, mHabiTrack.getPreferences().chunkSize, mHabiTrack.getStartFrame());
 }
 
 void MainWindow::on_buttonOptimizeUnaries_clicked()
 {
-    /* { */
-    /*     QMutexLocker locker(&mMutex); */
+    {
+        QMutexLocker locker(&mMutex);
 
-    /*     // save manual unaries if existent */
-    /*     if (mManualUnaries.size()) */
-    /*         mManualUnaries.save(mUnFolder); */
+        spdlog::debug("GUI: Clicked Optimize Unaries");
 
-    /*     spdlog::debug("GUI: Clicked Optimize Unaries"); */
-    /*     if (!unariesComputed()) */
-    /*     { */
-    /*         QMessageBox::warning(this, "Warning", "Unaries need to be computed first"); */
-    /*         return; */
-    /*     } */
+        if (!mHabiTrack.unariesComputed())
+        {
+            QMessageBox::warning(this, "Warning", "Unaries need to be computed first");
+            return;
+        }
 
-    /*     // check queue */
-    /*     // if mDetections empty, then remove all elements form queue and to -1 */
-    /*     int chunk; */
-    /*     if (!mDetections.size()) */
-    /*     { */
-    /*         mDetectionsQueue.clear(); */
-    /*         chunk = -1; */
-    /*     } */
-    /*     else if (mDetectionsQueue.empty()) */
-    /*     { */
-    /*         spdlog::debug("GUI: Optimize Unaries Queue is empty"); */
-    /*         QMessageBox::information( */
-    /*             this, "Information", "No new manual unaries supplied. Nothing to do."); */
-    /*         return; */
-    /*     } */
-    /*     else */
-    /*     { */
-    /*         chunk = mDetectionsQueue.front(); */
-    /*         mDetectionsQueue.pop_front(); */
-    /*     } */
+        // check queue
+        // if mDetections empty, then remove all elements form queue and to -1
+        int chunk;
+        if (!mHabiTrack.detections().size())
+        {
+            mDetectionsQueue = {};
+            chunk = -1;
+        }
+        else if (mDetectionsQueue.empty())
+        {
+            spdlog::debug("GUI: Optimize Unaries Queue is empty");
+            QMessageBox::information(
+                this, "Information", "No new manual unaries supplied. Nothing to do.");
+            return;
+        }
+        else
+        {
+            chunk = mDetectionsQueue.front();
+            mDetectionsQueue.pop();
+        }
 
-    /*     toggleChunkUnaryScene(chunk, true); */
+        toggleChunk(chunk, true);
 
-    /*     // TODO: doesn't work because QtConcurrent::run cannot be cancelled */
-    /*     // cancel if running already */
-    /*     /1* if (mDetectionsWatchers.count(chunk)) *1/ */
-    /*     /1* { *1/ */
-    /*     /1*     mDetectionsWatchers.at(chunk)->cancel(); *1/ */
-    /*     /1*     mDetectionsWatchers.at(chunk)->waitForFinished(); *1/ */
-    /*     /1*     spdlog::debug("Running {}", mDetectionsWatchers.at(chunk)->isRunning()); *1/ */
-    /*     /1*     mDetectionsWatchers.erase(chunk); *1/ */
-    /*     /1* } *1/ */
+        QFuture<void> detectionFuture;
+        if (chunk == -1)
+            detectionFuture = QtConcurrent::run(&mHabiTrack, &HabiTrack::optimizeUnaries);
+        else
+            detectionFuture = QtConcurrent::run(&mHabiTrack, &HabiTrack::optimizeUnaries, chunk);
 
-    /*     Tracker::Settings settings; */
-    /*     settings.subsample = mPrefs.unarySubsample; */
-    /*     settings.pairwiseSize = mPrefs.pairwiseSize; */
-    /*     settings.pairwiseSigma = mPrefs.pairwiseSigma; */
-    /*     settings.manualMultiplier = mPrefs.unaryMultiplier; */
-    /*     settings.smoothBearing = mPrefs.smoothBearing; */
-    /*     settings.windowSize = mPrefs.smoothBearingWindowSize; */
-    /*     settings.outlierTolerance = mPrefs.smoothBearingOutlierTol; */
-    /*     settings.chunkSize = mPrefs.chunkSize; */
+        auto watcher = std::make_unique<QFutureWatcher<void>>();
+        watcher->setFuture(detectionFuture);
 
-    /*     QFuture<Detections> detectionFuture; */
-    /*     auto trafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography); */
-    /*     if (chunk == -1) */
-    /*     { */
-    /*         detectionFuture */
-    /*             = QtConcurrent::run(Tracker::track, mUnaries, mManualUnaries, settings, trafos); */
-    /*     } */
-    /*     else */
-    /*     { */
-    /*         detectionFuture = QtConcurrent::run( */
-    /*             Tracker::track, mUnaries, mManualUnaries, settings, chunk, trafos); */
-    /*     } */
+        connect(watcher.get(), &QFutureWatcher<Detections>::finished, this,
+            [this, chunk]() { this->onDetectionsAvailable(chunk); });
+        mDetectionsWatchers[chunk] = std::move(watcher);
+    }
 
-    /*     auto watcher = std::make_unique<QFutureWatcher<Detections>>(); */
-    /*     watcher->setFuture(detectionFuture); */
-
-    /*     connect(watcher.get(), &QFutureWatcher<Detections>::finished, this, */
-    /*         [this, chunk]() { this->onDetectionsAvailable(chunk); }); */
-    /*     mDetectionsWatchers[chunk] = std::move(watcher); */
-    /* } */
-
-    /* if (!mDetectionsQueue.empty()) */
-    /*     on_buttonOptimizeUnaries_clicked(); */
+    if (!mDetectionsQueue.empty())
+        on_buttonOptimizeUnaries_clicked();
 }
 
 void MainWindow::onDetectionsAvailable(int chunkId)
 {
-    /* // TODO: is the mutex needed? */
-    /* QMutexLocker locker(&mMutex); */
+    QMutexLocker locker(&mMutex);
 
-    /* #ifdef WITH_QT5_MULTIMEDIA */
-    /* QSound::play("qrc:///sounds/notification.wav"); */
-    /* #endif */
+#ifdef WITH_QT5_MULTIMEDIA
+    QSound::play("qrc:///sounds/notification.wav");
+#endif
 
-    /* statusBar()->showMessage("New detections available", statusDelay); */
-
-    /* toggleChunkUnaryScene(chunkId, false); */
-    /* auto newDetections = mDetectionsWatchers.at(chunkId)->result(); */
-    /* spdlog::debug( */
-    /*     "GUI: detections avaiable for chunk {} with size {}", chunkId, newDetections.size()); */
-    /* mDetectionsWatchers.erase(chunkId); */
-
-    /* auto& dd = mDetections.data(); */
-    /* for (auto&& d : newDetections.data()) */
-    /*     dd.insert_or_assign(d.first, std::move(d.second)); */
-
-    /* // save detections */
-    /* mDetections.save(mDetectionsFile); */
+    statusBar()->showMessage("New detections available", statusDelay);
+    toggleChunk(chunkId, false);
+    spdlog::debug("GUI: detections avaiable for chunk {}", chunkId);
+    mDetectionsWatchers.erase(chunkId);
 }
 
 void MainWindow::onTotalChanged(int total)
@@ -551,10 +572,7 @@ void MainWindow::onIsDone()
     ui->progressBar->setValue(ui->progressBar->maximum());
 }
 
-void MainWindow::onStatusChanged(const QString& state)
-{
-    ui->labelProgress->setText(state);
-}
+void MainWindow::onStatusChanged(const QString& state) { ui->labelProgress->setText(state); }
 
 void MainWindow::onPositionChanged(QPointF position)
 {
@@ -638,91 +656,30 @@ void MainWindow::onBearingCleared()
     // TODO: implement
 }
 
-// this is by value by choice, because it needs to be copied and modifed in-place
-void MainWindow::setupUnaryScene(std::vector<double> qualities)
+void MainWindow::closeEvent(QCloseEvent* event)
 {
-    /* mUnaryQualities = qualities; */
+    QMessageBox msgBox;
+    msgBox.setText("You have unsafed changes.");
+    msgBox.setInformativeText("Do you want to save?");
+    msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Save);
+    int ret = msgBox.exec();
 
-    /* auto num = mImages.size(); */
-    /* auto scene = ui->unaryView->getUnaryScene(); */
-    /* scene->setTotalImages(num); */
-
-    /* auto offset = mStartFrameNumber - 1; */
-    /* num = mEndFrameNumber - mStartFrameNumber; */
-    /* std::size_t medSize = 100; */
-    /* mBar->setTotal(num); */
-    /* for (std::size_t i = 0; i < std::ceil(static_cast<double>(num) / medSize); i++) */
-    /* { */
-    /*     auto start = i * medSize + offset; */
-    /*     auto end = std::min((i + 1) * medSize, num) + offset; */
-    /*     auto mid = start + (end - start) / 2; */
-    /*     std::nth_element(std::begin(qualities) + start, std::begin(qualities) + mid, */
-    /*         std::begin(qualities) + end); */
-    /*     auto median = qualities[mid]; */
-
-    /*     std::vector<double> dists; */
-    /*     dists.reserve(end - start); */
-    /*     for (std::size_t j = start; j < end; j++) */
-    /*         dists.push_back(std::abs(mUnaryQualities[j] - median)); */
-
-    /*     std::nth_element(std::begin(dists), std::begin(dists) + dists.size() / 2, std::end(dists)); */
-    /*     auto medianDist = dists[dists.size() / 2]; */
-    /*     /1* spdlog::debug("GUI: Unary low threshold {}", median + 2.0 * medianDist); *1/ */
-    /*     /1* spdlog::debug("GUI: Unary high threshold {}", median + 4.0 * medianDist); *1/ */
-    /*     for (std::size_t j = start; j < end; j++) */
-    /*     { */
-    /*         UnaryQuality qual; */
-    /*         if (mUnaryQualities[j] < (median + 1.5 * medianDist)) */
-    /*             qual = UnaryQuality::Good; */
-    /*         else if (mUnaryQualities[j] < (median + 3.0 * medianDist)) */
-    /*             qual = UnaryQuality::Poor; */
-    /*         else */
-    /*             qual = UnaryQuality::Critical; */
-
-    /*         scene->setUnaryQuality(j, qual); */
-    /*         mUnaryQualityValues[j] = qual; */
-    /*         mBar->inc(); */
-    /*     } */
-    /* } */
-    /* mBar->done(); */
-
-    /* // this only works for continous unaries (which should always be the case when using the gui) */
-    /* // set all cunks on not-computing */
-    /* toggleChunkUnaryScene(-1, false); */
-
-    /* for (const auto& manualUnary : std::as_const(mManualUnaries)) */
-    /*     scene->setUnaryQuality(manualUnary.first, UnaryQuality::Excellent); */
-}
-
-void MainWindow::toggleChunkUnaryScene(int chunkId, bool computing)
-{
-    /* auto numUnaries = mUnaries.size(); */
-    /* auto chunkSize = mPrefs.chunkSize; */
-    /* auto numChunks = Tracker::getNumChunks(numUnaries, chunkSize); */
-
-    /* std::vector<int> chunks; */
-    /* if (chunkId == -1) */
-    /* { */
-    /*     chunks.resize(numChunks); */
-    /*     std::iota(std::begin(chunks), std::end(chunks), 0); */
-    /* } */
-    /* else */
-    /*     chunks = {chunkId}; */
-
-    /* for (auto chunk : chunks) */
-    /* { */
-    /*     UnaryState state; */
-    /*     if (computing) */
-    /*         state = (chunk % 2) ? UnaryState::ComputingAlt : UnaryState::Computing; */
-    /*     else */
-    /*         state = (chunk % 2) ? UnaryState::DefaultAlt : UnaryState::Default; */
-
-    /*     auto end = Tracker::getChunkEnd(chunk, numChunks, chunkSize, numUnaries); */
-    /*     for (std::size_t j = chunk * chunkSize; j < end; j++) */
-    /*         ui->unaryView->getUnaryScene()->setUnaryState(j + mStartFrameNumber - 1, state); */
-    /* } */
-
-    /* ui->unaryView->getUnaryScene()->update(); */
+    switch (ret)
+    {
+    case QMessageBox::Save:
+        mHabiTrack.saveResultsFile();
+        event->accept();
+        break;
+    case QMessageBox::Discard:
+        event->accept();
+        break;
+    case QMessageBox::Cancel:
+        event->ignore();
+        break;
+    default:
+        break;
+    }
 }
 
 } // namespace gui

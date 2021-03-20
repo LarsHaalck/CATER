@@ -38,8 +38,9 @@ public:
     UnaryQuality getUnaryQuality(std::size_t id) const;
     QColor getUnaryColor(std::size_t id) const;
     static std::string unaryQualityToString(UnaryQuality quality);
-public slots:
-    void update();
+
+    void setup(std::vector<double> unaryQualites, std::size_t start, std::size_t end);
+    void toggleChunk(int chunkId, bool computing, int chunkSize, int start);
 
 private:
     QColor unaryQualityToQColor(UnaryQuality quality) const;
@@ -50,13 +51,8 @@ private:
 private:
     std::size_t mNumImages;
 
-    // use map is drawing orders matters (when width is not setup up correctly)
-    /* std::map<std::size_t, UnaryQuality> mUnaryColors; */
-    /* std::map<std::size_t, UnaryState> mUnaryStates; */
-
     // use unordered_map otherwise
     std::unordered_map<std::size_t, UnaryQuality> mUnaryColors;
-    /* std::unordered_map<std::size_t, UnaryState> mUnaryStates; */
     QPen mPen;
 };
 } // namespace gui

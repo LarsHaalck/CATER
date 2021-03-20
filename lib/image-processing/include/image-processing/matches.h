@@ -11,15 +11,19 @@
 #include <opencv2/features2d.hpp>
 #include <vector>
 
+namespace ht
+{
+    using Trafo = cv::Mat;
+    using Trafos = std::vector<cv::Mat>;
+    using Match = cv::DMatch;
+    using Matches = std::vector<cv::DMatch>;
+
+    using PairwiseMatches = std::unordered_map<std::pair<std::size_t, std::size_t>, Matches>;
+    using PairwiseTrafos = std::unordered_map<std::pair<std::size_t, std::size_t>, Trafo>;
+} // namespace ht
+
 namespace ht::matches
 {
-using Trafo = cv::Mat;
-using Trafos = std::vector<cv::Mat>;
-using Match = cv::DMatch;
-using Matches = std::vector<cv::DMatch>;
-
-using PairwiseMatches = std::unordered_map<std::pair<std::size_t, std::size_t>, Matches>;
-using PairwiseTrafos = std::unordered_map<std::pair<std::size_t, std::size_t>, Trafo>;
 
 enum class MatchType
 {

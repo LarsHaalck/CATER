@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 
 Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std::size_t start,
     std::size_t end, bool removeLaser, double subsample, double sigma,
-    const matches::PairwiseTrafos& trafos, std::size_t cacheSize,
+    const PairwiseTrafos& trafos, std::size_t cacheSize,
     std::shared_ptr<BaseProgressBar> cb)
 {
     // make sure folder exits

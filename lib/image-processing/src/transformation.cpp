@@ -158,7 +158,7 @@ cv::Point2d transformPoint(const cv::Point2d& refPosition, const cv::Mat& H, Geo
 {
     return transformPoints({refPosition}, H, type)[0];
 }
-/* cv::Mat concatTo(std::size_t from, std::size_t to, const matches::PairwiseTrafos& trafos, */
+/* cv::Mat concatTo(std::size_t from, std::size_t to, const PairwiseTrafos& trafos, */
 /*     GeometricType type, bool full) */
 /* { */
 /*     assert(from < to && "from should be smaller than to in concatTo()"); */
@@ -175,7 +175,7 @@ cv::Point2d transformPoint(const cv::Point2d& refPosition, const cv::Mat& H, Geo
 /*     return upper; */
 /* } */
 
-/* cv::Mat concatFrom(std::size_t from, std::size_t to, const matches::PairwiseTrafos& trafos, */
+/* cv::Mat concatFrom(std::size_t from, std::size_t to, const PairwiseTrafos& trafos, */
 /*     GeometricType type, bool full) */
 /* { */
 /*     assert(from < to && "from should be smaller than to in concatFrom()"); */

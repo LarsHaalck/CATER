@@ -251,7 +251,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QGroupBox" name="groupBox_5">
+              <widget class="QGroupBox" name="overlayGroup">
                <property name="enabled">
                 <bool>false</bool>
                </property>

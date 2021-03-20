@@ -9,15 +9,13 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#include <tracker/tracker.h>
+
 namespace fs = std::filesystem;
 
 namespace ht
 {
-HabiTrack::HabiTrack()
-{
-    /* mBar = std::make_shared<ProgressStatusBar>(ui->progressBar, ui->labelProgress); */
-}
-
+HabiTrack::HabiTrack() { setTrackerSettings(mPrefs); }
 bool HabiTrack::featureComputed() const
 {
     return Features::isComputed(
@@ -74,19 +72,17 @@ void HabiTrack::loadResultsFile(const fs::path& resultFile)
             }
         }
     }
-    /* if (fs::is_regular_file(mSetFile)) */
-    /*     mInvisibles = loadSet(mSetFile); */
-
 }
 
 void HabiTrack::saveResultsFile()
 {
     saveResults(mResultsFile, mPrefs, mImgFolder, mStartFrameNumber, mEndFrameNumber);
+
     if (mManualUnaries.size())
         mManualUnaries.save(mUnFolder);
 
-    /* if (mInvisibles.size()) */
-    /*     saveSet(mSetFile, mInvisibles); */
+    if (mDetections.size())
+        mDetections.save(mDetectionsFile);
 }
 
 void HabiTrack::setPreferences(const Preferences& prefs)
@@ -94,10 +90,7 @@ void HabiTrack::setPreferences(const Preferences& prefs)
     mPrefs = prefs;
     setTrackerSettings(prefs);
 }
-Preferences HabiTrack::getPreferences() const
-{
-    return mPrefs;
-}
+Preferences HabiTrack::getPreferences() const { return mPrefs; }
 
 void HabiTrack::populatePaths()
 {
@@ -108,9 +101,8 @@ void HabiTrack::populatePaths()
     mMatchFolder = mOutputPath / "matches";
     mUnFolder = mOutputPath / "unaries";
     mDetectionsFile = mOutputPath / "detections.yml";
-    /* mSetFile = mOutputPath / "invisibles.yml"; */
 
-    // TODO: uncomment
+    // TODO: uncomment later
     /* try */
     /* { */
     /*     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>(); */
@@ -164,7 +156,6 @@ std::string HabiTrack::getDateTimeString() const
     return ss.str();
 }
 
-
 void HabiTrack::setTrackerSettings(const Preferences& prefs)
 {
     Tracker::Settings settings;
@@ -181,7 +172,6 @@ void HabiTrack::setTrackerSettings(const Preferences& prefs)
 
 void HabiTrack::setStartFrame(std::size_t frame) { mStartFrameNumber = frame; }
 void HabiTrack::setEndFrame(std::size_t frame) { mEndFrameNumber = frame; }
-
 
 void HabiTrack::extractFeatures()
 {
@@ -204,11 +194,7 @@ void HabiTrack::extractTrafos()
     spdlog::debug("HabiTrack: Clicked Extract Trafos");
 
     if (!featureComputed())
-    {
-        // TODO: exception?
-        spdlog::warn("HabiTrack: Features need to be computed before trafos.");
-        return;
-    }
+        throw HabiTrackException("Features need to be computed before trafos.");
 
     if (matchesComputed())
         mBar->done();
@@ -218,29 +204,14 @@ void HabiTrack::extractTrafos()
             matches::MatchType::Windowed, 2, 0.0, nullptr, mPrefs.cacheSize,
             getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber), mBar);
     }
-
-    auto types = ht::matches::getConnectedTypes(mMatchFolder, ht::GeometricType::Homography,
-        getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber));
-    if (static_cast<unsigned int>(types & ht::GeometricType::Homography))
-        spdlog::info("HabiTrack: Transformations usable for unary extraction.");
-    else
-    {
-        // TODO: exception?
-        spdlog::warn(
-            "HabiTrack: Exracted Transformations not a continous chain, \
-            Consider increasing feature points.");
-    }
 }
 
 void HabiTrack::extractUnaries()
 {
-    spdlog::debug("HabiTrack: Clicked Extract Unaries");
+    spdlog::debug("HabiTrack: Extract Unaries");
+
     if (!matchesComputed())
-    {
-        // TODO: exception?
-        spdlog::warn("HabiTrack: Trafos need to be computed before Unaries.");
-        return;
-    }
+        throw HabiTrackException("Trafos need to be computed before Unaries.");
 
     auto start = mStartFrameNumber - 1;
     auto end = mEndFrameNumber;
@@ -253,72 +224,104 @@ void HabiTrack::extractUnaries()
     {
         auto trafos = mPrefs.removeCamMotion
             ? matches::getTrafos(mMatchFolder, GeometricType::Homography)
-            : matches::PairwiseTrafos();
+            : PairwiseTrafos();
 
         mUnaries = Unaries::compute(mImgFolder, mUnFolder, start, end, mPrefs.removeRedLasers,
             mPrefs.unarySubsample, mPrefs.unarySigma, trafos, mPrefs.cacheSize, mBar);
     }
-
-    /* std::vector<double> unaryQuality(mImages.size(), -1); */
-    /* for (auto i = mStartFrameNumber - 1; i < mEndFrameNumber - 1; i++) */
-    /*     unaryQuality[i] = Unaries::getUnaryQuality(unaries.at(i)); */
 
     // zero init if existent
     mManualUnaries = ManualUnaries::fromDir(
         mUnFolder, mPrefs.unarySubsample, mPrefs.manualUnarySize, mImages.getImgSize());
 }
 
-/* void HabiTrack::optimizeUnaries(int chunk, std::function<void()> callback) */
-/* { */
-/*     spdlog::debug("HabiTrack: Clicked Optimize Unaries"); */
-/*     if (!unariesComputed()) */
-/*     { */
-/*         // TODO: exception? */
-/*         spdlog::warn("HabiTrack: Unaries need to be computed before pptimization."); */
-/*         return; */
-/*     } */
+std::vector<double> HabiTrack::getUnaryQualities()
+{
+    mBar->status("Calculating Unary Qualities");
+    mBar->setTotal(mEndFrameNumber - mStartFrameNumber);
+    std::vector<double> unaryQuality(mImages.size(), -1);
+    for (auto i = mStartFrameNumber; i < mEndFrameNumber - 1; i++)
+    {
+        unaryQuality[i] = Unaries::getUnaryQuality(mUnaries.at(i));
+        mBar->inc();
+    }
+    mBar->done();
+    return unaryQuality;
+}
 
-/*     Detections detections; */
-/*     auto trafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography); */
-/*     if (chunk == -1) */
-/*         detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, trafos); */
-/*     else */
-/*         detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, chunk, trafos); */
+bool HabiTrack::hasUsableTrafos() const
+{
+    auto types = ht::matches::getConnectedTypes(mMatchFolder, ht::GeometricType::Homography,
+        getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber));
 
-/*     auto& dd = mDetections.data(); */
-/*     for (auto&& d : detections.data()) */
-/*         dd.insert_or_assign(d.first, std::move(d.second)); */
-/* } */
+    if (static_cast<unsigned int>(types & ht::GeometricType::Homography))
+    {
+        spdlog::info("HabiTrack: Transformations usable for unary extraction.");
+        return true;
+    }
+    else
+    {
+        spdlog::warn("HabiTrack: Exracted Transformations not a continous chain, \
+            Consider increasing feature points.");
+        return false;
+    }
+}
 
-/* void HabiTrack::optimizeUnaries(int chunk, std::function<void()> callback) */
-/* { */
-/*     spdlog::debug("HabiTrack: Clicked Optimize Unaries"); */
-/*     if (!unariesComputed()) */
-/*     { */
-/*         // TODO: exception? */
-/*         spdlog::warn("HabiTrack: Unaries need to be computed before pptimization."); */
-/*         return; */
-/*     } */
+PairwiseMatches HabiTrack::matches() const
+{
+    return matches::getMatches(mMatchFolder, GeometricType::Homography);
+}
 
-/*     Detections detections; */
-/*     auto trafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography); */
-/*     if (chunk == -1) */
-/*         detections = Tracker::track(unaries, mManualUnaries, mTrackerSettings, trafos); */
-/*     else */
-/*         detections = Tracker::track(unaries, mManualUnaries, mTrackerSettings, chunk, trafos); */
+PairwiseTrafos HabiTrack::trafos() const
+{
+    return matches::getTrafos(mMatchFolder, GeometricType::Homography);
+}
 
-/*     auto& dd = mDetections.data(); */
-/*     for (auto&& d : detections.data()) */
-/*         dd.insert_or_assign(d.first, std::move(d.second)); */
-/* } */
+void HabiTrack::optimizeUnaries()
+{
+    spdlog::debug("HabiTrack: Optimize Unaries");
 
-/* void HabiTrack::runFullPipeline() */
-/* { */
-/*     extractFeatures(); */
-/*     extractTrafos(); */
-/*     extractUnaries(); */
-/*     optimizeUnaries(); */
-/* } */
+    if (mTrafos.empty())
+        mTrafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography);
+
+    if (!unariesComputed())
+        throw HabiTrackException("Unaries need to be computed before optimization.");
+
+    auto detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, mTrafos);
+    auto& dd = mDetections.data();
+    for (auto&& d : detections.data())
+        dd.insert_or_assign(d.first, std::move(d.second));
+}
+
+void HabiTrack::optimizeUnaries(int chunk)
+{
+    spdlog::debug("HabiTrack: Optimize Unaries (chunk {})", chunk);
+
+    if (mTrafos.empty())
+        mTrafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography);
+
+    if (!unariesComputed())
+        throw HabiTrackException("Unaries need to be computed before optimization.");
+
+    if (!mDetections.size())
+    {
+        throw HabiTrackException(
+                "Optimazation of a single chunk should be done after full optimization");
+    }
+
+    auto detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, chunk, mTrafos);
+    auto& dd = mDetections.data();
+    for (auto&& d : detections.data())
+        dd[d.first] = std::move(d.second);
+}
+
+void HabiTrack::runFullPipeline()
+{
+    extractFeatures();
+    extractTrafos();
+    extractUnaries();
+    optimizeUnaries();
+}
 
 /* void HabiTrack::onPositionChanged(QPointF position) */
 /* { */

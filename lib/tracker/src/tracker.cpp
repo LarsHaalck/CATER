@@ -19,7 +19,7 @@ using namespace matches;
 using namespace transformation;
 
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-    const Settings& settings, std::size_t chunk, const matches::PairwiseTrafos& trafos)
+    const Settings& settings, std::size_t chunk, const PairwiseTrafos& trafos)
 {
     auto pairwiseKernel = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
     cv::log(pairwiseKernel, pairwiseKernel);
@@ -46,7 +46,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 
 // TODO: maybe remove this function because of redundancy with the function above
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-    const Settings& settings, const matches::PairwiseTrafos& trafos)
+    const Settings& settings, const PairwiseTrafos& trafos)
 {
     auto pairwiseKernel = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
     cv::log(pairwiseKernel, pairwiseKernel);
@@ -64,10 +64,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     std::vector<cv::Mat> states;
     std::vector<std::future<cv::Mat>> futureStates;
 
-    auto maxThreads = std::thread::hardware_concurrency();
-    maxThreads = (numChunks < maxThreads) ? numChunks : maxThreads;
-    ThreadPool pool(maxThreads);
-
+    ThreadPool pool;
     auto start = std::chrono::system_clock::now();
     for (std::size_t i = 0; i < numChunks; i++)
     {

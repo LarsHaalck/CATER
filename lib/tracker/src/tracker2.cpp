@@ -19,13 +19,13 @@ using namespace matches;
 using namespace transformation;
 
 Detections Tracker2::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-    const Settings& settings, std::size_t, const matches::PairwiseTrafos& trafos)
+    const Settings& settings, std::size_t, const PairwiseTrafos& trafos)
 {
     return Tracker2::track(unaries, manualUnaries, settings, trafos);
 }
 
 Detections Tracker2::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-    const Settings& settings, const matches::PairwiseTrafos&)
+    const Settings& settings, const PairwiseTrafos&)
 {
     spdlog::warn("Interpolation Tracker running");
     auto ids = unaries.getIDs();

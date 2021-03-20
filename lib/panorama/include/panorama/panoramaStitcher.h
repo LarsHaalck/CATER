@@ -44,8 +44,8 @@ public:
         GeometricType type, const cv::Mat& camMat = cv::Mat(),
         const cv::Mat& distCoeffs = cv::Mat());
 
-    void initTrafos(const matches::PairwiseTrafos& trafos);
-    void initTrafosFromMultipleVideos(const matches::PairwiseTrafos& trafos,
+    void initTrafos(const PairwiseTrafos& trafos);
+    void initTrafosFromMultipleVideos(const PairwiseTrafos& trafos,
         const std::vector<std::size_t> sizes,
         const std::vector<std::vector<cv::Mat>>& localOptimalTrafos,
         const std::unordered_map<std::pair<std::size_t, std::size_t>,
@@ -56,10 +56,10 @@ public:
         const std::filesystem::path& centerPath = {}, std::shared_ptr<BaseProgressBar> cb = {});
 
     void globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
-        const matches::PairwiseMatches& matches, std::size_t limitTo = 0,
+        const PairwiseMatches& matches, std::size_t limitTo = 0,
         std::shared_ptr<BaseProgressBar> cb = {});
     void refineNonKeyFrames(const BaseFeatureContainer& fts,
-        const matches::PairwiseMatches& matches, std::size_t limitTo = 0,
+        const PairwiseMatches& matches, std::size_t limitTo = 0,
         std::shared_ptr<BaseProgressBar> cb = {});
     void reintegrate();
 
@@ -72,7 +72,7 @@ private:
     std::vector<std::size_t> sortIdsByResponseProduct(const std::vector<cv::KeyPoint>& ftsI,
         const std::vector<cv::KeyPoint>& ftsJ, const std::vector<float>& weights);
 
-    bool globalOptimize(const BaseFeatureContainer& fts, const matches::PairwiseMatches& matches,
+    bool globalOptimize(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
         FramesMode keyFramesMode, std::size_t limitTo, bool multiThread,
         std::shared_ptr<BaseProgressBar> cb = {});
     cv::Rect2d generateBoundingRect() const;
@@ -93,7 +93,7 @@ private:
 
     std::tuple<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>, std::vector<float>>
     getCorrespondingPoints(std::pair<std::size_t, std::size_t> pair,
-        const matches::Matches& matches, const BaseFeatureContainer& fts);
+        const Matches& matches, const BaseFeatureContainer& fts);
     cv::Point getCenter(const cv::Mat& trafo);
 
     cv::Mat transformBoundingRect(const cv::Mat& trafo) const;

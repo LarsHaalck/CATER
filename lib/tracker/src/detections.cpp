@@ -87,7 +87,7 @@ bool Detections::exists(std::size_t idx) const { return mDetections.count(idx); 
 std::size_t Detections::size() const { return mDetections.size(); }
 
 std::vector<cv::Point2d> Detections::projectTo(std::size_t from, std::size_t to,
-    const matches::PairwiseTrafos& trafos, GeometricType type) const
+    const PairwiseTrafos& trafos, GeometricType type) const
 {
     if (from >= to)
         return {};
@@ -117,7 +117,7 @@ std::vector<cv::Point2d> Detections::projectTo(std::size_t from, std::size_t to,
 }
 
 std::vector<cv::Point2d> Detections::projectFrom(std::size_t from, std::size_t to,
-    const matches::PairwiseTrafos& trafos, GeometricType type) const
+    const PairwiseTrafos& trafos, GeometricType type) const
 {
     if (from >= to)
         return {};
