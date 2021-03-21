@@ -184,12 +184,20 @@ void MainWindow::on_buttonNextFrame_clicked()
 
 void MainWindow::on_actionPrev_Frame_triggered()
 {
+    if (mFrameTimer.elapsed() < 50)
+        return;
+    mFrameTimer.start();
+
     auto block = ScopedBlocker{ui->actionPrev_Frame};
     on_buttonPrevFrame_clicked();
 }
 
 void MainWindow::on_actionNext_Frame_triggered()
 {
+    if (mFrameTimer.elapsed() < 50)
+        return;
+    mFrameTimer.start();
+
     auto block = ScopedBlocker{ui->actionNext_Frame};
     on_buttonNextFrame_clicked();
 }
@@ -291,6 +299,7 @@ void MainWindow::openImagesHelper()
 
     using namespace std::chrono_literals;
     mAutoSaveTimer.start(5min);
+    mFrameTimer.start();
 }
 
 void MainWindow::on_actionOpenImgFolder_triggered()

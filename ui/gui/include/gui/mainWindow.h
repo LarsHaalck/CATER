@@ -140,7 +140,7 @@ private:
     std::size_t mCurrentFrameNumber;
     bool mSaved;
     QTimer mAutoSaveTimer;
-    QTimer mFrameTimer;
+    QElapsedTimer mFrameTimer;
 
     ht::HabiTrack mHabiTrack;
 
