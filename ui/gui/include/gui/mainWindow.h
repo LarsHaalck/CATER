@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QThread>
+#include <QThreadPool>
 
 #include "gui/guiPreferences.h"
 #include "gui/imageViewer.h"
@@ -11,6 +11,7 @@
 #include "gui/unaryGraphicsView.h"
 #include "habitrack/habiTrack.h"
 #include <QFutureWatcher>
+#include <QtConcurrent>
 #include <deque>
 #include <filesystem>
 #include <unordered_set>
@@ -39,12 +40,26 @@ private:
     void showFrame(const cv::Mat& img);
     void updateSlider();
     void setupProgressBar();
-    bool checkRunningThread();
     void toggleChunk(int chunk, bool compute);
+
+    // compute functions
+    template <class Function, class Callback>
+    void enqueue(Function&& func, Callback&& cb)
+    {
+        auto future = QtConcurrent::run(&mThreadQueue, this, func);
+        auto watcher = std::make_unique<QFutureWatcher<void>>();
+        watcher->setFuture(future);
+        connect(watcher.get(), &QFutureWatcher<void>::finished, this, cb);
+        mQueueWatchers.push(std::move(watcher));
+    }
+
+    void extractFeatures();
+    void extractTrafos();
+    void extractUnaries();
+    void extractUnaryQualites();
 
 signals:
     void detectionsAvailable(int chunk);
-
 
 private slots:
     ////////////////////////////////
@@ -68,7 +83,7 @@ private slots:
     ////////////////////////////////
     void on_actionExpertMode_toggled(bool value);
     void on_actionSave_Results_triggered();
-    void on_actionLabel_Editor_triggered();
+    void on_actionLabelEditor_triggered();
     void on_actionPreferences_triggered();
 
     ////////////////////////////////
@@ -79,13 +94,13 @@ private slots:
     void on_actionOpenResultsFile_triggered();
     void on_buttonStartFrame_clicked();
     void on_buttonEndFrame_clicked();
-    void on_mikeButton_clicked();
+    void on_buttonTrack_clicked();
     void on_buttonExtractFeatures_clicked();
+    void on_featuresExtracted();
     void on_buttonExtractTrafos_clicked();
     void on_trafosExtracted();
     void on_buttonExtractUnaries_clicked();
     void on_unariesExtracted();
-    void on_unariesQualitesCalculated();
     void on_buttonOptimizeUnaries_clicked();
 
     ////////////////////////////////
@@ -106,26 +121,38 @@ private slots:
     void onIsDone();
     void onStatusChanged(const QString& string);
 
+    ////////////////////////////////
+    // general
+    ////////////////////////////////
+    void on_actionQuit_triggered();
+
 private:
+    ////////////////////////////////
+    // GUI related
+    ////////////////////////////////
     Ui::MainWindow* ui;
-
-    QString mStartPath; // used for next QFileDialog
-    std::shared_ptr<ProgressStatusBar> mBar;
-
     GuiPreferences mGuiPrefs;
-
+    std::shared_ptr<ProgressStatusBar> mBar;
+    QString mStartPath; // used for next QFileDialog
+    ImageViewer mViewer;
+    TrackerScene* mTrackerScene;
+    UnaryScene* mUnaryScene;
     std::size_t mCurrentFrameNumber;
-    TrackerScene* mScene;
+    bool mSaved;
+    QTimer mAutoSaveTimer;
+    QTimer mFrameTimer;
 
     ht::HabiTrack mHabiTrack;
-    ImageViewer mViewer;
 
-    std::unique_ptr<QThread> mBlockingThread;
-    std::unique_ptr<QFutureWatcher<std::vector<double>>> mUnaryQualityWatcher;
-    bool mSaved;
-
+    ////////////////////////////////
+    // Threading
+    ////////////////////////////////
     QMutex mMutex;
+    QThreadPool mThreadQueue;
+    std::queue<std::unique_ptr<QFutureWatcher<void>>> mQueueWatchers;
+
     std::queue<int> mDetectionsQueue;
+    std::vector<double> mQualities;
     std::unordered_map<int, std::unique_ptr<QFutureWatcher<void>>> mDetectionsWatchers;
 };
 } // namespace gui

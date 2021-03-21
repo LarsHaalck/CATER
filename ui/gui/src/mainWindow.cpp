@@ -33,23 +33,28 @@ namespace gui
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , mHabiTrack()
     , mViewer(mHabiTrack)
     , mSaved(true)
 {
     ui->setupUi(this);
 
-    statusBar()->showMessage("", statusDelay);
+    mThreadQueue.setMaxThreadCount(1);
+
     populateGuiDefaults();
 
     ui->unaryView->setOptimizationFlags(QGraphicsView::DontSavePainterState
         | QGraphicsView::DontAdjustForAntialiasing | QGraphicsView::IndirectPainting);
 
-    // needs to be done after setupUi
-    mScene = ui->graphicsView->getTrackerScene();
+    mTrackerScene = ui->graphicsView->getTrackerScene();
     ui->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
     ui->graphicsView->setFocusPolicy(Qt::NoFocus);
+    mUnaryScene = ui->unaryView->getUnaryScene();
 
+    statusBar()->showMessage("", statusDelay);
+
+    /////////////////////////////////////////////////////////////////////////
+    // connects (some are done in the ui file)
+    /////////////////////////////////////////////////////////////////////////
     setupProgressBar();
 
     connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this,
@@ -63,6 +68,8 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this, SLOT(onBearingCleared()));
 
     connect(this, SIGNAL(detectionsAvailable(int)), this, SLOT(onDetectionsAvailable(int)));
+
+    connect(&mAutoSaveTimer, SIGNAL(timeout()), this, SLOT(on_actionSave_Results_triggered()));
 }
 
 MainWindow::~MainWindow()
@@ -105,32 +112,16 @@ void MainWindow::on_sliderOverlayUnaries_sliderReleased()
     showFrame(mCurrentFrameNumber);
 }
 
-void MainWindow::on_overlayTrackedPosition_toggled(bool)
-{
-    showFrame(mCurrentFrameNumber);
-}
-
-void MainWindow::on_overlayBearings_toggled(bool)
-{
-    showFrame(mCurrentFrameNumber);
-}
-
-void MainWindow::on_overlayTrajectory_toggled(bool)
-{
-    showFrame(mCurrentFrameNumber);
-}
-
-void MainWindow::on_trajectorySpin_valueChanged(int)
-{
-    showFrame(mCurrentFrameNumber);
-}
+void MainWindow::on_overlayTrackedPosition_toggled(bool) { showFrame(mCurrentFrameNumber); }
+void MainWindow::on_overlayBearings_toggled(bool) { showFrame(mCurrentFrameNumber); }
+void MainWindow::on_overlayTrajectory_toggled(bool) { showFrame(mCurrentFrameNumber); }
+void MainWindow::on_trajectorySpin_valueChanged(int) { showFrame(mCurrentFrameNumber); }
 
 void MainWindow::on_actionExpertMode_toggled(bool value)
 {
     spdlog::debug("GUI: Toggled expert mode");
     ui->frameUnary->setVisible(value);
     ui->frameTracking->setVisible(value);
-    ui->framePano->setVisible(value);
     ui->labelExpertMode->setVisible(value);
 }
 
@@ -138,12 +129,15 @@ void MainWindow::on_actionSave_Results_triggered()
 {
     spdlog::debug("GUI: Save Results triggered");
 
-    mHabiTrack.saveResultsFile();
-    mSaved = true;
-    statusBar()->showMessage("Saved results.", statusDelay);
+    if (!mSaved)
+    {
+        mHabiTrack.saveResultsFile();
+        mSaved = true;
+        statusBar()->showMessage("Saved results.", statusDelay);
+    }
 }
 
-void MainWindow::on_actionLabel_Editor_triggered()
+void MainWindow::on_actionLabelEditor_triggered()
 {
     /* LabelDialog labelDialog(this); */
     /* labelDialog.exec(); */
@@ -190,18 +184,14 @@ void MainWindow::on_buttonNextFrame_clicked()
 
 void MainWindow::on_actionPrev_Frame_triggered()
 {
-    // mask action to not overshoot target frame
-    this->ui->actionPrev_Frame->setDisabled(true);
+    auto block = ScopedBlocker{ui->actionPrev_Frame};
     on_buttonPrevFrame_clicked();
-    this->ui->actionPrev_Frame->setDisabled(false);
 }
 
 void MainWindow::on_actionNext_Frame_triggered()
 {
-    // mask action to not overshoot target frame
-    this->ui->actionNext_Frame->setDisabled(true);
+    auto block = ScopedBlocker{ui->actionNext_Frame};
     on_buttonNextFrame_clicked();
-    this->ui->actionNext_Frame->setDisabled(false);
 }
 
 void MainWindow::updateSlider()
@@ -225,16 +215,15 @@ void MainWindow::showFrame(std::size_t frame)
 
     auto img = mViewer.getFrame(idx, settings);
     auto pixMap = QPixmap::fromImage(QtOpencvCore::img2qimgRaw(img));
-    mScene->setPixmap(pixMap);
+    mTrackerScene->setPixmap(pixMap);
 
     // set filename
     ui->labelFileName->setText(QString::fromStdString(mHabiTrack.images().getFileName(idx)));
 
     if (mHabiTrack.unaries().size())
     {
-        auto scene = ui->unaryView->getUnaryScene();
-        auto color = scene->getUnaryColor(idx);
-        auto quality = UnaryScene::unaryQualityToString(scene->getUnaryQuality(idx));
+        auto color = mUnaryScene->getUnaryColor(idx);
+        auto quality = UnaryScene::unaryQualityToString(mUnaryScene->getUnaryQuality(idx));
         ui->qualityLabel->setStyleSheet(
             QString("color: white; background-color: " + color.name() + ";"));
         ui->qualityLabel->setText(quality.c_str());
@@ -279,12 +268,13 @@ void MainWindow::openImagesHelper()
 
     ui->buttonPrevFrame->setEnabled(true);
     ui->buttonNextFrame->setEnabled(true);
-    ui->buttonVisible->setEnabled(true);
-    ui->buttonInvisible->setEnabled(true);
     ui->actionPrev_Frame->setEnabled(true);
     ui->actionNext_Frame->setEnabled(true);
 
     ui->overlayGroup->setEnabled(true);
+
+    ui->actionPreferences->setEnabled(true);
+    ui->actionLabelEditor->setEnabled(true);
 
     ui->buttonTrack->setEnabled(true);
     ui->frameTracking->setEnabled(true);
@@ -298,6 +288,9 @@ void MainWindow::openImagesHelper()
     mCurrentFrameNumber = mHabiTrack.getStartFrame();
     showFrame(mCurrentFrameNumber);
     ui->graphicsView->zoomToFit();
+
+    using namespace std::chrono_literals;
+    mAutoSaveTimer.start(5min);
 }
 
 void MainWindow::on_actionOpenImgFolder_triggered()
@@ -346,7 +339,6 @@ void MainWindow::on_buttonStartFrame_clicked()
     // TODO: some data structures are no longer valid and should be computed again
     mHabiTrack.setStartFrame(mCurrentFrameNumber);
     ui->labelStartFrame->setText(QString::number(mCurrentFrameNumber));
-
     mSaved = false;
 }
 
@@ -363,66 +355,55 @@ void MainWindow::on_buttonEndFrame_clicked()
     // TODO: some data structures are no longer valid and should be computed again
     mHabiTrack.setEndFrame(mCurrentFrameNumber);
     ui->labelEndFrame->setText(QString::number(mCurrentFrameNumber));
-
-    mSaved = true;
+    mSaved = false;
 }
 
-void MainWindow::on_mikeButton_clicked()
+void MainWindow::on_buttonTrack_clicked()
 {
-    if (checkRunningThread())
-        return;
-
     on_buttonExtractFeatures_clicked();
     on_buttonExtractTrafos_clicked();
     on_buttonExtractUnaries_clicked();
     on_buttonOptimizeUnaries_clicked();
 }
 
-bool MainWindow::checkRunningThread()
-{
-    if (!mBlockingThread || !mUnaryQualityWatcher)
-        return false;
-
-    if (mBlockingThread->isFinished() || mUnaryQualityWatcher->isRunning())
-    {
-        QMessageBox::warning(this, "Warning", "Wait for current process to finish");
-        return true;
-    }
-
-    return false;
-}
-
 void MainWindow::on_buttonExtractFeatures_clicked()
 {
-    spdlog::debug("GUI: Clicked Extract Features");
-    if (checkRunningThread())
-        return;
+    QMutexLocker locker(&mMutex);
+    spdlog::debug("GUI: Extract Features");
+    enqueue(&MainWindow::extractFeatures, &MainWindow::on_featuresExtracted);
+}
 
-    mBlockingThread
-        = std::unique_ptr<QThread>(QThread::create(&HabiTrack::extractFeatures, &mHabiTrack));
-    mBlockingThread->start();
+void MainWindow::extractFeatures() { mHabiTrack.extractFeatures(); }
+
+void MainWindow::on_featuresExtracted()
+{
+    // nothing to be done here, only pop the watcher
+    QMutexLocker locker(&mMutex);
+    mQueueWatchers.pop();
 }
 
 void MainWindow::on_buttonExtractTrafos_clicked()
 {
+    QMutexLocker locker(&mMutex);
     spdlog::debug("GUI: Clicked Extract Trafos");
+    enqueue(&MainWindow::extractTrafos, &MainWindow::on_trafosExtracted);
+}
+
+void MainWindow::extractTrafos()
+{
     if (!mHabiTrack.featureComputed())
     {
         QMessageBox::warning(this, "Warning", "Features need to be computed first");
         return;
     }
-
-    if (checkRunningThread())
-        return;
-
-    mBlockingThread
-        = std::unique_ptr<QThread>(QThread::create(&HabiTrack::extractTrafos, &mHabiTrack));
-    connect(mBlockingThread.get(), SIGNAL(finished()), this, SLOT(on_trafosExtracted()));
-    mBlockingThread->start();
+    mHabiTrack.extractTrafos();
 }
 
 void MainWindow::on_trafosExtracted()
 {
+    QMutexLocker locker(&mMutex);
+    mQueueWatchers.pop();
+
     auto size = mHabiTrack.trafos().size();
     ui->labelNumTrafos->setText(QString::number(size));
 
@@ -437,38 +418,28 @@ void MainWindow::on_buttonExtractUnaries_clicked()
 {
     QMutexLocker locker(&mMutex);
     spdlog::debug("GUI: Clicked Extract Unaries");
+    enqueue(&MainWindow::extractUnaries, &MainWindow::on_unariesExtracted);
+}
+
+void MainWindow::extractUnaries()
+{
     if (!mHabiTrack.matchesComputed())
     {
         QMessageBox::warning(this, "Warning", "Transformations need to be computed first");
         return;
     }
-
-    if (checkRunningThread())
-        return;
-
-    mBlockingThread
-        = std::unique_ptr<QThread>(QThread::create(&HabiTrack::extractUnaries, &mHabiTrack));
-    connect(mBlockingThread.get(), SIGNAL(finished()), this, SLOT(on_unariesExtracted()));
-    mBlockingThread->start();
+    mHabiTrack.extractUnaries();
+    mQualities = mHabiTrack.getUnaryQualities();
 }
 
 void MainWindow::on_unariesExtracted()
 {
-    mViewer.reset();
-    QFuture<std::vector<double>> future
-        = QtConcurrent::run(&mHabiTrack, &HabiTrack::getUnaryQualities);
-    auto watcher = std::make_unique<QFutureWatcher<std::vector<double>>>();
-    watcher->setFuture(future);
+    QMutexLocker locker(&mMutex);
+    mQueueWatchers.pop();
 
-    connect(watcher.get(), SIGNAL(finished()), this, SLOT(on_unariesQualitesCalculated()));
-    mUnaryQualityWatcher = std::move(watcher);
-}
-
-void MainWindow::on_unariesQualitesCalculated()
-{
-    auto scene = ui->unaryView->getUnaryScene();
-    auto unaryQualities = mUnaryQualityWatcher->result();
-    scene->setup(unaryQualities, mHabiTrack.getStartFrame(), mHabiTrack.getEndFrame());
+    // TODO: this is very ugly and should be fixed with another watcher
+    mUnaryScene->setup(mQualities, mHabiTrack.getStartFrame(), mHabiTrack.getEndFrame());
+    mQualities.clear();
 
     ui->labelNumUnaries->setText(QString::number(mHabiTrack.unaries().size()));
 
@@ -476,7 +447,7 @@ void MainWindow::on_unariesQualitesCalculated()
     toggleChunk(-1, false);
 
     for (const auto& manualUnary : mHabiTrack.manualUnaries())
-        scene->setUnaryQuality(manualUnary.first, UnaryQuality::Excellent);
+        mUnaryScene->setUnaryQuality(manualUnary.first, UnaryQuality::Excellent);
 }
 
 void MainWindow::toggleChunk(int chunk, bool compute)
@@ -559,7 +530,10 @@ void MainWindow::onTotalChanged(int total)
     ui->progressBar->setMaximum(total);
 }
 
-void MainWindow::onIncremented() { ui->progressBar->setValue(ui->progressBar->value() + 1); }
+void MainWindow::onIncremented()
+{
+    ui->progressBar->setValue(ui->progressBar->value() + 1);
+}
 
 void MainWindow::onIncremented(int inc)
 {
@@ -656,8 +630,16 @@ void MainWindow::onBearingCleared()
     // TODO: implement
 }
 
+void MainWindow::on_actionQuit_triggered() { this->close(); }
+
 void MainWindow::closeEvent(QCloseEvent* event)
 {
+    if (mSaved)
+    {
+        event->accept();
+        return;
+    }
+
     QMessageBox msgBox;
     msgBox.setText("You have unsafed changes.");
     msgBox.setInformativeText("Do you want to save?");

@@ -39,8 +39,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>303</width>
-           <height>1004</height>
+           <width>318</width>
+           <height>821</height>
           </rect>
          </property>
          <property name="maximumSize">
@@ -357,6 +357,16 @@ border: 1px solid red;
                 <string>Processing</string>
                </property>
                <layout class="QGridLayout" name="gridLayout_2">
+                <item row="1" column="0">
+                 <widget class="QPushButton" name="buttonTrack">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="text">
+                   <string>Track</string>
+                  </property>
+                 </widget>
+                </item>
                 <item row="2" column="0">
                  <widget class="QFrame" name="frameTracking">
                   <property name="enabled">
@@ -447,25 +457,6 @@ color: white;
                     </widget>
                    </item>
                    <item>
-                    <widget class="QPushButton" name="mikeButton">
-                     <property name="styleSheet">
-                      <string notr="true">QPushButton:disabled {
-background-color: rgb(0, 209, 0);
-color: darkgray;
-}
-QPushButton {
-background-color: rgb(0, 255, 0);
-color: black;
-}
-
-</string>
-                     </property>
-                     <property name="text">
-                      <string>Track without input</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
                     <widget class="QPushButton" name="buttonOptimizeUnaries">
                      <property name="enabled">
                       <bool>false</bool>
@@ -483,7 +474,7 @@ color: white;
 </string>
                      </property>
                      <property name="text">
-                      <string>Correct tracks</string>
+                      <string>Optimize Unaries</string>
                      </property>
                     </widget>
                    </item>
@@ -506,141 +497,13 @@ color: white;
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="0">
-                 <widget class="QFrame" name="framePano">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">QFrame {
-border: 1px solid red;
-}</string>
-                  </property>
-                  <property name="frameShape">
-                   <enum>QFrame::StyledPanel</enum>
-                  </property>
-                  <property name="frameShadow">
-                   <enum>QFrame::Raised</enum>
-                  </property>
-                  <layout class="QVBoxLayout" name="verticalLayout">
-                   <item>
-                    <widget class="QPushButton" name="buttonKeyFrameSelection">
-                     <property name="enabled">
-                      <bool>false</bool>
-                     </property>
-                     <property name="styleSheet">
-                      <string notr="true">QPushButton:disabled {
-background-color: rgb(209, 0, 0);
-color: lightgray;
-}
-QPushButton {
-background-color: rgb(255, 0, 0);
-color: white;
-}
-
-</string>
-                     </property>
-                     <property name="text">
-                      <string>Key Frame Selection</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QPushButton" name="buttonOptimizeKeyFrames">
-                     <property name="enabled">
-                      <bool>false</bool>
-                     </property>
-                     <property name="styleSheet">
-                      <string notr="true">QPushButton:disabled {
-background-color: rgb(209, 0, 0);
-color: lightgray;
-}
-QPushButton {
-background-color: rgb(255, 0, 0);
-color: white;
-}
-
-</string>
-                     </property>
-                     <property name="text">
-                      <string>Optimize Key Frames</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QPushButton" name="buttonReintegrateFrames">
-                     <property name="enabled">
-                      <bool>false</bool>
-                     </property>
-                     <property name="styleSheet">
-                      <string notr="true">QPushButton:disabled {
-background-color: rgb(209, 0, 0);
-color: lightgray;
-}
-QPushButton {
-background-color: rgb(255, 0, 0);
-color: white;
-}
-
-</string>
-                     </property>
-                     <property name="text">
-                      <string>Reintegrate Frames</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QPushButton" name="buttonOptimizeAllFrames">
-                     <property name="enabled">
-                      <bool>false</bool>
-                     </property>
-                     <property name="styleSheet">
-                      <string notr="true">QPushButton:disabled {
-background-color: rgb(209, 0, 0);
-color: lightgray;
-}
-QPushButton {
-background-color: rgb(255, 0, 0);
-color: white;
-}
-
-</string>
-                     </property>
-                     <property name="text">
-                      <string>Optimize All Frames</string>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QPushButton" name="buttonTrack">
+                <item row="9" column="0">
+                 <widget class="QPushButton" name="buttonPano">
                   <property name="enabled">
                    <bool>false</bool>
                   </property>
                   <property name="text">
-                   <string>Track</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="0">
-                 <widget class="QPushButton" name="buttonGeneratePano">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
-                  <property name="text">
-                   <string>Generate Panorama</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="10" column="0">
-                 <widget class="QPushButton" name="pushButton_13">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
-                  <property name="text">
-                   <string>Export - Combine?</string>
+                   <string>Panorama Wizard...</string>
                   </property>
                  </widget>
                 </item>
@@ -814,29 +677,6 @@ color: white;
                </property>
               </spacer>
              </item>
-             <item>
-              <widget class="QPushButton" name="buttonVisible">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="text">
-                <string>Visible</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="buttonInvisible">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="text">
-                <string>Invisible</string>
-               </property>
-               <property name="shortcut">
-                <string>I</string>
-               </property>
-              </widget>
-             </item>
             </layout>
            </item>
           </layout>
@@ -896,26 +736,24 @@ color: white;
     <addaction name="separator"/>
     <addaction name="actionOpenResultsFile"/>
     <addaction name="actionSave_Results"/>
+    <addaction name="separator"/>
+    <addaction name="actionExport"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
      <string>Tools</string>
     </property>
     <addaction name="actionPreferences"/>
-    <addaction name="actionLabel_Editor"/>
+    <addaction name="actionLabelEditor"/>
     <addaction name="actionExpertMode"/>
     <addaction name="separator"/>
     <addaction name="actionPrev_Frame"/>
     <addaction name="actionNext_Frame"/>
    </widget>
-   <widget class="QMenu" name="menuExport">
-    <property name="title">
-     <string>Export</string>
-    </property>
-   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
-   <addaction name="menuExport"/>
   </widget>
   <action name="actionOpenImgFolder">
    <property name="text">
@@ -942,6 +780,9 @@ color: white;
    </property>
   </action>
   <action name="actionPreferences">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Preferences...</string>
    </property>
@@ -987,9 +828,22 @@ color: white;
     <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="actionLabel_Editor">
+  <action name="actionLabelEditor">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Label Editor...</string>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="text">
+    <string>Export...</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Quit</string>
    </property>
   </action>
  </widget>
