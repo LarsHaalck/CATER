@@ -29,6 +29,7 @@ target_link_libraries(${LIB_NAME}
     PUBLIC
     spdlog::spdlog
     tracker
+    util
 )
 
 if(${OpenMP_CXX_FOUND})

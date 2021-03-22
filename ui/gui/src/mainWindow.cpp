@@ -35,10 +35,9 @@ MainWindow::MainWindow(QWidget* parent)
     , ui(new Ui::MainWindow)
     , mViewer(mHabiTrack)
     , mSaved(true)
+    , mBlocked(false)
 {
     ui->setupUi(this);
-
-    mThreadQueue.setMaxThreadCount(1);
 
     populateGuiDefaults();
 
@@ -51,25 +50,32 @@ MainWindow::MainWindow(QWidget* parent)
     mUnaryScene = ui->unaryView->getUnaryScene();
 
     statusBar()->showMessage("", statusDelay);
-
-    /////////////////////////////////////////////////////////////////////////
-    // connects (some are done in the ui file)
-    /////////////////////////////////////////////////////////////////////////
     setupProgressBar();
 
+    qRegisterMetaType<stdVecDouble>("stdVecDouble");
+
+    /////////////////////////////////////////////////////////////////////////
+    // signal connects (some are done in the ui file)
+    /////////////////////////////////////////////////////////////////////////
     connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this,
-        [=](std::size_t num) { this->showFrame(num + 1); });
+        [&](std::size_t num) { this->showFrame(num + 1); });
 
     connect(this->ui->graphicsView, SIGNAL(positionChanged(QPointF)), this,
-        SLOT(onPositionChanged(QPointF)));
+        SLOT(on_positionChanged(QPointF)));
     connect(this->ui->graphicsView, SIGNAL(bearingChanged(QPointF)), this,
-        SLOT(onBearingChanged(QPointF)));
-    connect(this->ui->graphicsView, SIGNAL(positionCleared()), this, SLOT(onPositionCleared()));
-    connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this, SLOT(onBearingCleared()));
-
-    connect(this, SIGNAL(detectionsAvailable(int)), this, SLOT(onDetectionsAvailable(int)));
+        SLOT(on_bearingChanged(QPointF)));
+    connect(this->ui->graphicsView, SIGNAL(positionCleared()), this, SLOT(on_positionCleared()));
+    connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this, SLOT(on_bearingCleared()));
 
     connect(&mAutoSaveTimer, SIGNAL(timeout()), this, SLOT(on_actionSave_Results_triggered()));
+    connect(this, SIGNAL(toggleChunk(int, bool)), this, SLOT(on_chunkToggled(int, bool)));
+    connect(this, SIGNAL(warn(const QString&)), this, SLOT(on_warn(const QString&)));
+
+    connect(this, SIGNAL(trafosExtracted()), this, SLOT(on_trafosExtracted()));
+    connect(this, SIGNAL(unariesExtracted()), this, SLOT(on_unariesExtracted()));
+    connect(this, SIGNAL(unaryQualitiesExtracted(const std::vector<double>&)), this,
+        SLOT(on_unaryQualitiesExtracted(const std::vector<double>&)));
+    connect(this, SIGNAL(detectionsAvailable(int)), this, SLOT(on_detectionsAvailable(int)));
 }
 
 MainWindow::~MainWindow()
@@ -81,12 +87,12 @@ MainWindow::~MainWindow()
 void MainWindow::setupProgressBar()
 {
     mBar = std::make_shared<ProgressStatusBar>(this);
-    connect(mBar.get(), SIGNAL(totalChanged(int)), this, SLOT(onTotalChanged(int)));
-    connect(mBar.get(), SIGNAL(incremented(int)), this, SLOT(onIncremented(int)));
-    connect(mBar.get(), SIGNAL(incremented()), this, SLOT(onIncremented()));
-    connect(mBar.get(), SIGNAL(isDone()), this, SLOT(onIsDone()));
+    connect(mBar.get(), SIGNAL(totalChanged(int)), this, SLOT(on_totalChanged(int)));
+    connect(mBar.get(), SIGNAL(incremented(int)), this, SLOT(on_incremented(int)));
+    connect(mBar.get(), SIGNAL(incremented()), this, SLOT(on_incremented()));
+    connect(mBar.get(), SIGNAL(isDone()), this, SLOT(on_isDone()));
     connect(mBar.get(), SIGNAL(statusChanged(const QString&)), this,
-        SLOT(onStatusChanged(const QString&)));
+        SLOT(on_statusChanged(const QString&)));
     mHabiTrack.setProgressBar(mBar);
 }
 
@@ -160,8 +166,8 @@ void MainWindow::on_actionPreferences_triggered()
     }
 }
 
+void MainWindow::on_warn(const QString& msg) { QMessageBox::warning(this, "Warning", msg); }
 void MainWindow::on_sliderFrame_valueChanged(int value) { showFrame(value); }
-
 void MainWindow::on_spinCurrentFrame_valueChanged(int value) { showFrame(value); }
 
 void MainWindow::on_buttonPrevFrame_clicked()
@@ -188,7 +194,7 @@ void MainWindow::on_actionPrev_Frame_triggered()
         return;
     mFrameTimer.start();
 
-    auto block = ScopedBlocker{ui->actionPrev_Frame};
+    auto block = ScopedBlocker {ui->actionPrev_Frame};
     on_buttonPrevFrame_clicked();
 }
 
@@ -198,7 +204,7 @@ void MainWindow::on_actionNext_Frame_triggered()
         return;
     mFrameTimer.start();
 
-    auto block = ScopedBlocker{ui->actionNext_Frame};
+    auto block = ScopedBlocker {ui->actionNext_Frame};
     on_buttonNextFrame_clicked();
 }
 
@@ -292,10 +298,7 @@ void MainWindow::openImagesHelper()
     ui->buttonStartFrame->setEnabled(true);
     ui->buttonEndFrame->setEnabled(true);
 
-    // show first frame
     mCurrentFrameNumber = mHabiTrack.getStartFrame();
-    showFrame(mCurrentFrameNumber);
-    ui->graphicsView->zoomToFit();
 
     using namespace std::chrono_literals;
     mAutoSaveTimer.start(5min);
@@ -310,18 +313,14 @@ void MainWindow::on_actionOpenImgFolder_triggered()
     if (imgFolderPath.isEmpty())
         return;
 
-    mBar->setTotal(0);
     mHabiTrack.loadImageFolder(fs::path(imgFolderPath.toStdString()));
     openImagesHelper();
-    mBar->setTotal(1);
+    showFrame(mCurrentFrameNumber);
+    ui->graphicsView->zoomToFit();
     mSaved = false;
 }
 
-void MainWindow::on_actionOpenImgList_triggered()
-{
-    QMessageBox::warning(this, "Warning", "Not implemented yet");
-    return;
-}
+void MainWindow::on_actionOpenImgList_triggered() { emit warn("Not implemented yet"); }
 
 void MainWindow::on_actionOpenResultsFile_triggered()
 {
@@ -333,14 +332,40 @@ void MainWindow::on_actionOpenResultsFile_triggered()
 
     mHabiTrack.loadResultsFile(resultFile.toStdString());
     openImagesHelper();
+
+    enqueue(&MainWindow::loadResults, &MainWindow::on_resultsLoaded);
+}
+
+void MainWindow::loadResults()
+{
+    if (mHabiTrack.matchesComputed())
+        emit trafosExtracted();
+    if (mHabiTrack.unariesComputed())
+    {
+        extractUnaryQualities();
+        emit unariesExtracted();
+    }
+    if (mHabiTrack.detectionsComputed())
+        emit detectionsAvailable(-1);
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(2s);
+
+}
+
+void MainWindow::on_resultsLoaded()
+{
+    QMutexLocker locker(&mMutex);
+    mBlocked = false;
+    showFrame(mCurrentFrameNumber);
+    ui->graphicsView->zoomToFit();
 }
 
 void MainWindow::on_buttonStartFrame_clicked()
 {
     if (mCurrentFrameNumber >= mHabiTrack.getEndFrame())
     {
-        QMessageBox::warning(
-            this, "Warning", "Start frame cannot be equal or greater than end frame");
+        emit warn("Start frame cannot be equal or greater than end frame");
         return;
     }
     spdlog::debug("GUI: changed start frame to {}", mCurrentFrameNumber);
@@ -355,8 +380,7 @@ void MainWindow::on_buttonEndFrame_clicked()
 {
     if (mCurrentFrameNumber <= mHabiTrack.getStartFrame())
     {
-        QMessageBox::warning(
-            this, "Warning", "End frame cannot be equal or smaller than start frame");
+        emit warn("End frame cannot be equal or smaller than start frame");
         return;
     }
     spdlog::debug("GUI: changed end frame to {}", mCurrentFrameNumber);
@@ -367,99 +391,124 @@ void MainWindow::on_buttonEndFrame_clicked()
     mSaved = false;
 }
 
-void MainWindow::on_buttonTrack_clicked()
+void MainWindow::on_buttonTrack_clicked() { enqueue(&MainWindow::track, &MainWindow::on_finished); }
+
+void MainWindow::track()
 {
-    on_buttonExtractFeatures_clicked();
-    on_buttonExtractTrafos_clicked();
-    on_buttonExtractUnaries_clicked();
-    on_buttonOptimizeUnaries_clicked();
+    if (!mHabiTrack.featureLoaded())
+        extractFeatures();
+    extractTrafos();
+    if (!mHabiTrack.unariesLoaded())
+        extractUnaries();
+
+    optimizeUnaries();
+}
+
+bool MainWindow::checkIfBlocked()
+{
+    QMutexLocker locker(&mMutex);
+    if (mBlocked)
+        emit warn("Cannot be started due to running operation");
+    return mBlocked;
 }
 
 void MainWindow::on_buttonExtractFeatures_clicked()
 {
-    QMutexLocker locker(&mMutex);
     spdlog::debug("GUI: Extract Features");
-    enqueue(&MainWindow::extractFeatures, &MainWindow::on_featuresExtracted);
+    enqueue(&MainWindow::extractFeatures, &MainWindow::on_finished);
 }
 
 void MainWindow::extractFeatures() { mHabiTrack.extractFeatures(); }
 
-void MainWindow::on_featuresExtracted()
+void MainWindow::on_finished()
 {
-    // nothing to be done here, only pop the watcher
     QMutexLocker locker(&mMutex);
-    mQueueWatchers.pop();
+    mBlocked = false;
 }
 
 void MainWindow::on_buttonExtractTrafos_clicked()
 {
-    QMutexLocker locker(&mMutex);
     spdlog::debug("GUI: Clicked Extract Trafos");
-    enqueue(&MainWindow::extractTrafos, &MainWindow::on_trafosExtracted);
+    enqueue(&MainWindow::extractTrafos, &MainWindow::on_finished);
 }
 
 void MainWindow::extractTrafos()
 {
-    if (!mHabiTrack.featureComputed())
+    if (!mHabiTrack.featureLoaded())
     {
-        QMessageBox::warning(this, "Warning", "Features need to be computed first");
+        emit warn("Features need to be computed first");
         return;
     }
     mHabiTrack.extractTrafos();
+    emit trafosExtracted();
 }
 
 void MainWindow::on_trafosExtracted()
 {
     QMutexLocker locker(&mMutex);
-    mQueueWatchers.pop();
-
     auto size = mHabiTrack.trafos().size();
     ui->labelNumTrafos->setText(QString::number(size));
 
     if (!mHabiTrack.hasUsableTrafos())
     {
-        QMessageBox::warning(this, "Warning",
+        emit warn(
             "Exracted Transformations not a continous chain, Consider increasing feature points.");
     }
 }
 
 void MainWindow::on_buttonExtractUnaries_clicked()
 {
-    QMutexLocker locker(&mMutex);
     spdlog::debug("GUI: Clicked Extract Unaries");
-    enqueue(&MainWindow::extractUnaries, &MainWindow::on_unariesExtracted);
+    enqueue(&MainWindow::extractUnaries, &MainWindow::on_finished);
 }
 
 void MainWindow::extractUnaries()
 {
     if (!mHabiTrack.matchesComputed())
     {
-        QMessageBox::warning(this, "Warning", "Transformations need to be computed first");
+        emit warn("Transformations need to be computed first");
         return;
     }
     mHabiTrack.extractUnaries();
-    mQualities = mHabiTrack.getUnaryQualities();
+    extractUnaryQualities();
+    emit unariesExtracted();
+}
+
+void MainWindow::extractUnaryQualities()
+{
+    if (!mHabiTrack.unariesLoaded())
+    {
+        emit warn("Unaries need to be loaded first");
+        return;
+    }
+    auto qualities = mHabiTrack.getUnaryQualities();
+    emit unaryQualitiesExtracted(qualities);
+}
+
+void MainWindow::on_unaryQualitiesExtracted(const stdVecDouble& qualities)
+{
+    mUnaryScene->setup(qualities, mHabiTrack.getStartFrame(), mHabiTrack.getEndFrame());
 }
 
 void MainWindow::on_unariesExtracted()
 {
     QMutexLocker locker(&mMutex);
-    mQueueWatchers.pop();
-
-    // TODO: this is very ugly and should be fixed with another watcher
-    mUnaryScene->setup(mQualities, mHabiTrack.getStartFrame(), mHabiTrack.getEndFrame());
-    mQualities.clear();
+    mBlocked = false;
 
     ui->labelNumUnaries->setText(QString::number(mHabiTrack.unaries().size()));
 
     // set all cunks as not-computing
-    toggleChunk(-1, false);
+    emit toggleChunk(-1, false);
 
     for (const auto& manualUnary : mHabiTrack.manualUnaries())
         mUnaryScene->setUnaryQuality(manualUnary.first, UnaryQuality::Excellent);
+
+    // to update unary quality label
+    mViewer.reset();
+    showFrame(mCurrentFrameNumber);
 }
 
-void MainWindow::toggleChunk(int chunk, bool compute)
+void MainWindow::on_chunkToggled(int chunk, bool compute)
 {
     ui->unaryView->getUnaryScene()->toggleChunk(
         chunk, compute, mHabiTrack.getPreferences().chunkSize, mHabiTrack.getStartFrame());
@@ -467,18 +516,25 @@ void MainWindow::toggleChunk(int chunk, bool compute)
 
 void MainWindow::on_buttonOptimizeUnaries_clicked()
 {
+    spdlog::debug("GUI: Clicked Optimize Unaries");
+    if (checkIfBlocked())
+        return;
+
+    mBlocked = true;
+    optimizeUnaries();
+}
+
+void MainWindow::optimizeUnaries()
+{
     {
         QMutexLocker locker(&mMutex);
 
-        spdlog::debug("GUI: Clicked Optimize Unaries");
-
-        if (!mHabiTrack.unariesComputed())
+        if (!mHabiTrack.unariesLoaded())
         {
-            QMessageBox::warning(this, "Warning", "Unaries need to be computed first");
+            emit warn("Unaries need to be computed first");
             return;
         }
 
-        // check queue
         // if mDetections empty, then remove all elements form queue and to -1
         int chunk;
         if (!mHabiTrack.detections().size())
@@ -488,38 +544,29 @@ void MainWindow::on_buttonOptimizeUnaries_clicked()
         }
         else if (mDetectionsQueue.empty())
         {
-            spdlog::debug("GUI: Optimize Unaries Queue is empty");
-            QMessageBox::information(
-                this, "Information", "No new manual unaries supplied. Nothing to do.");
+            emit warn("No new manual unaries supplied. Nothing to do.");
             return;
         }
         else
         {
             chunk = mDetectionsQueue.front();
-            mDetectionsQueue.pop();
+            mDetectionsQueue.pop_front();
         }
-
-        toggleChunk(chunk, true);
-
-        QFuture<void> detectionFuture;
-        if (chunk == -1)
-            detectionFuture = QtConcurrent::run(&mHabiTrack, &HabiTrack::optimizeUnaries);
-        else
-            detectionFuture = QtConcurrent::run(&mHabiTrack, &HabiTrack::optimizeUnaries, chunk);
-
+        auto detectionFuture = QtConcurrent::run(&mHabiTrack, &HabiTrack::optimizeUnaries, chunk);
         auto watcher = std::make_unique<QFutureWatcher<void>>();
         watcher->setFuture(detectionFuture);
 
         connect(watcher.get(), &QFutureWatcher<Detections>::finished, this,
-            [this, chunk]() { this->onDetectionsAvailable(chunk); });
+            [&, chunk]() { emit detectionsAvailable(chunk); });
         mDetectionsWatchers[chunk] = std::move(watcher);
+        emit toggleChunk(chunk, true);
     }
 
     if (!mDetectionsQueue.empty())
-        on_buttonOptimizeUnaries_clicked();
+        optimizeUnaries();
 }
 
-void MainWindow::onDetectionsAvailable(int chunkId)
+void MainWindow::on_detectionsAvailable(int chunkId)
 {
     QMutexLocker locker(&mMutex);
 
@@ -528,110 +575,112 @@ void MainWindow::onDetectionsAvailable(int chunkId)
 #endif
 
     statusBar()->showMessage("New detections available", statusDelay);
-    toggleChunk(chunkId, false);
+    emit toggleChunk(chunkId, false);
     spdlog::debug("GUI: detections avaiable for chunk {}", chunkId);
     mDetectionsWatchers.erase(chunkId);
+
+    ui->labelNumTrackedPos->setText(QString::number(mHabiTrack.detections().size()));
+
+    if (mDetectionsQueue.empty())
+        mBlocked = false;
 }
 
-void MainWindow::onTotalChanged(int total)
+void MainWindow::on_totalChanged(int total)
 {
     ui->progressBar->setValue(0);
     ui->progressBar->setMaximum(total);
 }
 
-void MainWindow::onIncremented()
-{
-    ui->progressBar->setValue(ui->progressBar->value() + 1);
-}
+void MainWindow::on_incremented() { ui->progressBar->setValue(ui->progressBar->value() + 1); }
 
-void MainWindow::onIncremented(int inc)
+void MainWindow::on_incremented(int inc)
 {
     ui->progressBar->setValue(ui->progressBar->value() + inc);
 }
 
-void MainWindow::onIsDone()
+void MainWindow::on_isDone()
 {
     ui->labelProgress->setText("Finished");
     ui->progressBar->setValue(ui->progressBar->maximum());
 }
 
-void MainWindow::onStatusChanged(const QString& state) { ui->labelProgress->setText(state); }
+void MainWindow::on_statusChanged(const QString& state) { ui->labelProgress->setText(state); }
 
-void MainWindow::onPositionChanged(QPointF position)
+void MainWindow::on_positionChanged(QPointF position)
 {
-    /* if (!mUnaries.size()) */
-    /*     return; */
+    if (!mHabiTrack.unaries().size())
+        return;
 
-    /* std::size_t chunk = 0; */
-    /* if (mPrefs.chunkSize) */
-    /* { */
-    /*     chunk = (mCurrentFrameNumber - mStartFrameNumber) / mPrefs.chunkSize; */
-    /*     spdlog::debug("GUI: manual position changed to ({}, {}) on frame {} [chunk {}]", */
-    /*         position.x(), position.y(), mCurrentFrameNumber - 1, chunk); */
-    /* } */
-    /* else */
-    /* { */
-    /*     spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(), */
-    /*         position.x(), position.y(), mCurrentFrameNumber - 1, chunk); */
-    /* } */
+    std::size_t chunkSize = mHabiTrack.getPreferences().chunkSize;
+    std::size_t start = mHabiTrack.getStartFrame();
+    std::size_t chunk = 0;
+    if (chunkSize)
+    {
+        chunk = (mCurrentFrameNumber - start) / chunkSize;
+        spdlog::debug("GUI: manual position changed to ({}, {}) on frame {} [chunk {}]",
+            position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
+    }
+    else
+    {
+        spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(),
+            position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
+    }
 
-    /* // put it in queue if it does not exist */
-    /* if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk) */
-    /*     == std::end(mDetectionsQueue)) */
-    /* { */
-    /*     spdlog::debug("GUI: added chunk {} to queue", chunk); */
-    /*     mDetectionsQueue.push_back(chunk); */
-    /* } */
+    // put it in queue if it does not exist
+    if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk)
+        == std::end(mDetectionsQueue))
+    {
+        spdlog::debug("GUI: added chunk {} to queue", chunk);
+        mDetectionsQueue.push_back(chunk);
+    }
 
-    /* mManualUnaries.insert(mCurrentFrameNumber - 1, QtOpencvCore::qpoint2point(position)); */
+    mHabiTrack.addManualUnary(mCurrentFrameNumber - 1, QtOpencvCore::qpoint2point(position));
 
-    /* ui->unaryView->getUnaryScene()->setUnaryQuality( */
-    /*     mCurrentFrameNumber - 1, UnaryQuality::Excellent); */
-    /* /1* ui->unaryView->getUnaryScene()->update(); *1/ */
-    /* statusBar()->showMessage("Manually added unary", statusDelay); */
-    /* on_buttonNextFrame_clicked(); */
+    ui->unaryView->getUnaryScene()->setUnaryQuality(
+        mCurrentFrameNumber - 1, UnaryQuality::Excellent);
+    statusBar()->showMessage("Manually added unary", statusDelay);
+    on_buttonNextFrame_clicked();
 }
 
-void MainWindow::onBearingChanged(QPointF)
+void MainWindow::on_bearingChanged(QPointF)
 {
     /* spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(), */
     /*     position.y(), mCurrentFrameNumber - 1); */
     // TODO: implement
 }
 
-void MainWindow::onPositionCleared()
+void MainWindow::on_positionCleared()
 {
-    /* if (!mUnaries.size()) */
-    /*     return; */
+    if (!mHabiTrack.unaries().size())
+        return;
 
-    /* std::size_t chunk = 0; */
-    /* if (mPrefs.chunkSize) */
-    /* { */
-    /*     chunk = (mCurrentFrameNumber - mStartFrameNumber) / mPrefs.chunkSize; */
-    /*     spdlog::debug( */
-    /*         "GUI: manual position cleard on frame {} [chunk {}]", mCurrentFrameNumber - 1, chunk); */
-    /* } */
-    /* else */
-    /*     spdlog::debug("GUI: manual position cleard on frame {}", mCurrentFrameNumber - 1); */
+    std::size_t chunkSize = mHabiTrack.getPreferences().chunkSize;
+    std::size_t start = mHabiTrack.getStartFrame();
+    std::size_t chunk = 0;
+    if (chunkSize)
+    {
+        chunk = (mCurrentFrameNumber - start) / chunkSize;
+        spdlog::debug(
+            "GUI: manual position cleard on frame {} [chunk {}]", mCurrentFrameNumber - 1, chunk);
+    }
+    else
+        spdlog::debug("GUI: manual position cleard on frame {}", mCurrentFrameNumber - 1);
 
-    /* // put it in queue if it does not exist */
-    /* if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk) */
-    /*     == std::end(mDetectionsQueue)) */
-    /* { */
-    /*     spdlog::debug("GUI: added chunk {} to queue", chunk); */
-    /*     mDetectionsQueue.push_back(chunk); */
-    /* } */
+    // put it in queue if it does not exist
+    if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk)
+        == std::end(mDetectionsQueue))
+    {
+        spdlog::debug("GUI: added chunk {} to queue", chunk);
+        mDetectionsQueue.push_back(chunk);
+    }
 
-    /* mManualUnaries.clear(mCurrentFrameNumber - 1); */
-    /* showFrame(mCurrentFrameNumber); */
-    /* statusBar()->showMessage("Manual unary cleared", statusDelay); */
-
-    /* ui->unaryView->getUnaryScene()->setUnaryQuality( */
-    /*     mCurrentFrameNumber - 1, mUnaryQualityValues[mCurrentFrameNumber - 1]); */
-    /* ui->unaryView->getUnaryScene()->update(); */
+    mHabiTrack.removeManualUnary(mCurrentFrameNumber - 1);
+    showFrame(mCurrentFrameNumber);
+    statusBar()->showMessage("Manual unary cleared", statusDelay);
+    ui->unaryView->getUnaryScene()->resetUnaryQuality(mCurrentFrameNumber - 1);
 }
 
-void MainWindow::onBearingCleared()
+void MainWindow::on_bearingCleared()
 {
     /* if (!mImages.size()) */
     /*     return; */

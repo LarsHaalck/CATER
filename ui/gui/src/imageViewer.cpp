@@ -66,7 +66,6 @@ void ImageViewer::removeStale(std::pair<std::size_t, std::size_t> range)
     {
         if (it->first < range.first || it->first > range.second)
         {
-            spdlog::debug("ImageViewer: Removing {} from cache", it->first);
             it = mCache.erase(it);
         }
         else
@@ -130,7 +129,6 @@ bool ImageViewer::insertOnMiss(int frameNum)
 
     if (!hit)
     {
-        spdlog::debug("ImageViewer: Adding {} to cache", frameNum);
         auto item = readItem(frameNum);
 
         lock.lock();
@@ -165,11 +163,11 @@ cv::Mat ImageViewer::processItem(int frameNum, const CacheItem& item, const VisS
 {
     std::size_t idx = frameNum;
 
-    cv::Mat frame = item.img; // zero indexed here
+    cv::Mat frame = item.img.clone(); // zero indexed here
 
     // overlay unary
     const auto& manualUnaries = mHabiTrack.manualUnaries();
-    if (settings.unary > 0 && manualUnaries.exists(idx))
+    if (settings.unary > 0 && mHabiTrack.unaries().exists(idx))
     {
         double alpha = static_cast<double>(settings.unary) / 100.0;
 

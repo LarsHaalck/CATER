@@ -327,9 +327,6 @@ border: 1px solid red;
                 </item>
                 <item row="2" column="0">
                  <widget class="QCheckBox" name="overlayTrackedPosition">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
                   <property name="text">
                    <string>Tracked Positions</string>
                   </property>

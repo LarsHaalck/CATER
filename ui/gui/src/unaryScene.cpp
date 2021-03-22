@@ -37,11 +37,26 @@ void UnaryScene::setTotalImages(std::size_t numImages)
 void UnaryScene::setUnaryQuality(std::size_t id, UnaryQuality quality)
 {
     assert(id < mNumImages && "Unary id must be smaller than number of frames in setUnaryQuality");
+
+    if (quality == UnaryQuality::Excellent)
+        mUnaryBackups.insert({id, getUnaryQuality(id)});
+
     mUnaryColors[id] = quality;
 
     auto start = idToX(id);
     auto pen = getPen(unaryQualityToQColor(mUnaryColors[id]));
     this->addLine(start, size_height / 3, start, size_height, pen);
+}
+
+void UnaryScene::resetUnaryQuality(std::size_t id)
+{
+    if (!mUnaryBackups.count(id))
+        setUnaryQuality(id, UnaryQuality::Undefined);
+    else
+    {
+        setUnaryQuality(id, mUnaryBackups[id]);
+        mUnaryBackups.erase(id);
+    }
 }
 
 void UnaryScene::setUnaryState(std::size_t id, UnaryState state)

@@ -1,7 +1,7 @@
 #include "tracker/tracker.h"
 
 #include "tracker/manualUnaries.h"
-#include "tracker/threadPool.h"
+#include "util/threadPool.h"
 #include "tracker/unaries.h"
 #include "image-processing/transformation.h"
 #include "image-processing/util.h"

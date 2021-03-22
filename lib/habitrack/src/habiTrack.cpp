@@ -16,6 +16,7 @@ namespace fs = std::filesystem;
 namespace ht
 {
 HabiTrack::HabiTrack() { setTrackerSettings(mPrefs); }
+
 bool HabiTrack::featureComputed() const
 {
     return Features::isComputed(
@@ -33,6 +34,10 @@ bool HabiTrack::unariesComputed() const
 }
 
 bool HabiTrack::detectionsComputed() const { return fs::is_regular_file(mDetectionsFile); }
+bool HabiTrack::featureLoaded() const { return mFeatures.size(); }
+bool HabiTrack::unariesLoaded() const { return mUnaries.size(); }
+bool HabiTrack::detectionsLoaded() const { return mDetections.size(); }
+/* bool HabiTrack::manualUnariesLoaded() const { return mManualUnaries.size(); } */
 
 void HabiTrack::loadImageFolder(const fs::path& imgFolder)
 {
@@ -277,21 +282,6 @@ PairwiseTrafos HabiTrack::trafos() const
     return matches::getTrafos(mMatchFolder, GeometricType::Homography);
 }
 
-void HabiTrack::optimizeUnaries()
-{
-    spdlog::debug("HabiTrack: Optimize Unaries");
-
-    if (mTrafos.empty())
-        mTrafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography);
-
-    if (!unariesComputed())
-        throw HabiTrackException("Unaries need to be computed before optimization.");
-
-    auto detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, mTrafos);
-    auto& dd = mDetections.data();
-    for (auto&& d : detections.data())
-        dd.insert_or_assign(d.first, std::move(d.second));
-}
 
 void HabiTrack::optimizeUnaries(int chunk)
 {
@@ -303,16 +293,21 @@ void HabiTrack::optimizeUnaries(int chunk)
     if (!unariesComputed())
         throw HabiTrackException("Unaries need to be computed before optimization.");
 
-    if (!mDetections.size())
-    {
-        throw HabiTrackException(
-                "Optimazation of a single chunk should be done after full optimization");
-    }
 
-    auto detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, chunk, mTrafos);
+    Detections detections;
+    if (chunk == -1)
+        detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, mTrafos);
+    else
+        detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, chunk, mTrafos);
+
     auto& dd = mDetections.data();
     for (auto&& d : detections.data())
-        dd[d.first] = std::move(d.second);
+    {
+        if (chunk == -1)
+            dd.insert_or_assign(d.first, std::move(d.second));
+        else
+            dd[d.first] = std::move(d.second);
+    }
 }
 
 void HabiTrack::runFullPipeline()
@@ -322,87 +317,4 @@ void HabiTrack::runFullPipeline()
     extractUnaries();
     optimizeUnaries();
 }
-
-/* void HabiTrack::onPositionChanged(QPointF position) */
-/* { */
-/*     if (!mUnaries.size()) */
-/*         return; */
-
-/*     std::size_t chunk = 0; */
-/*     if (mPrefs.chunkSize) */
-/*     { */
-/*         chunk = (mCurrentFrameNumber - mStartFrameNumber) / mPrefs.chunkSize; */
-/*         spdlog::debug("GUI: manual position changed to ({}, {}) on frame {} [chunk {}]", */
-/*             position.x(), position.y(), mCurrentFrameNumber - 1, chunk); */
-/*     } */
-/*     else */
-/*     { */
-/*         spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(), */
-/*             position.x(), position.y(), mCurrentFrameNumber - 1, chunk); */
-/*     } */
-
-/*     // put it in queue if it does not exist */
-/*     if (std::find(std::begin(detectionsQueue), std::end(detectionsQueue), chunk) */
-/*         == std::end(detectionsQueue)) */
-/*     { */
-/*         spdlog::debug("GUI: added chunk {} to queue", chunk); */
-/*         detectionsQueue.push_back(chunk); */
-/*     } */
-
-/*     mManualUnaries.insert(mCurrentFrameNumber - 1, QtOpencvCore::qpoint2point(position)); */
-
-/*     ui->unaryView->getUnaryScene()->setUnaryQuality( */
-/*         mCurrentFrameNumber - 1, UnaryQuality::Excellent); */
-/*     /1* ui->unaryView->getUnaryScene()->update(); *1/ */
-/*     statusBar()->showMessage("Manually added unary", statusDelay); */
-/*     on_buttonNextFrame_clicked(); */
-/* } */
-
-/* void HabiTrack::onBearingChanged(QPointF) */
-/* { */
-/*     /1* spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(), *1/ */
-/*     /1*     position.y(), mCurrentFrameNumber - 1); *1/ */
-/*     // TODO: implement */
-/* } */
-
-/* void HabiTrack::onPositionCleared() */
-/* { */
-/*     if (!mUnaries.size()) */
-/*         return; */
-
-/*     std::size_t chunk = 0; */
-/*     if (mPrefs.chunkSize) */
-/*     { */
-/*         chunk = (mCurrentFrameNumber - mStartFrameNumber) / mPrefs.chunkSize; */
-/*         spdlog::debug( */
-/*             "GUI: manual position cleard on frame {} [chunk {}]", mCurrentFrameNumber - 1, chunk); */
-/*     } */
-/*     else */
-/*         spdlog::debug("GUI: manual position cleard on frame {}", mCurrentFrameNumber - 1); */
-
-/*     // put it in queue if it does not exist */
-/*     if (std::find(std::begin(detectionsQueue), std::end(detectionsQueue), chunk) */
-/*         == std::end(detectionsQueue)) */
-/*     { */
-/*         spdlog::debug("GUI: added chunk {} to queue", chunk); */
-/*         detectionsQueue.push_back(chunk); */
-/*     } */
-
-/*     mManualUnaries.clear(mCurrentFrameNumber - 1); */
-/*     showFrame(mCurrentFrameNumber); */
-/*     statusBar()->showMessage("Manual unary cleared", statusDelay); */
-
-/*     ui->unaryView->getUnaryScene()->setUnaryQuality( */
-/*         mCurrentFrameNumber - 1, mUnaryQualityValues[mCurrentFrameNumber - 1]); */
-/*     ui->unaryView->getUnaryScene()->update(); */
-/* } */
-
-/* void HabiTrack::onBearingCleared() */
-/* { */
-/*     /1* if (!mImages.size()) *1/ */
-/*     /1*     return; *1/ */
-/*     /1* spdlog::debug("GUI: manual bearing cleared on frame {}", mCurrentFrameNumber - 1); *1/ */
-/*     // TODO: implement */
-/* } */
-
 } // namespace gui

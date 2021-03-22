@@ -11,7 +11,6 @@ set(SOURCES
     src/tracker.cpp
     src/tracker2.cpp
     src/detections.cpp
-    src/threadPool.cpp
 )
 
 ###########################################################################

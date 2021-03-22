@@ -4,7 +4,7 @@
 
 #include "habitrack/preferences.h"
 #include "tracker/tracker.h"
-#include "tracker/threadPool.h"
+#include "util/threadPool.h"
 #include "tracker/detections.h"
 #include "tracker/manualUnaries.h"
 #include "tracker/unaries.h"
@@ -43,6 +43,11 @@ public:
     bool unariesComputed() const;
     bool detectionsComputed() const;
 
+    bool featureLoaded() const;
+    bool unariesLoaded() const;
+    bool detectionsLoaded() const;
+    /* bool manualUnariesLoaded() const; */
+
     void loadImageFolder(const std::filesystem::path& imgFolder);
     void loadResultsFile(const std::filesystem::path& resultFile);
     void saveResultsFile();
@@ -59,18 +64,14 @@ public:
     void extractTrafos();
     void extractUnaries();
     std::vector<double> getUnaryQualities();
+    void optimizeUnaries(int chunkId = -1);
 
     bool hasUsableTrafos() const;
 
-    void optimizeUnaries(int chunkId);
-    void optimizeUnaries();
-
     void runFullPipeline();
-    /* void onPositionChanged(QPointF position); */
-    /* void onBearingChanged(QPointF position); */
-    /* void onPositionCleared(); */
-    /* void onBearingCleared(); */
-    /* void onDetectionsAvailable(int chunkId); */
+
+    void addManualUnary(std::size_t frame, cv::Point pt) { mManualUnaries.insert(frame, pt); }
+    void removeManualUnary(std::size_t frame) { mManualUnaries.clear(frame); }
 
     const Images& images() const { return mImages; }
     const Features& features() const { return mFeatures; }

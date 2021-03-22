@@ -11,10 +11,14 @@
 #include "gui/unaryGraphicsView.h"
 #include "habitrack/habiTrack.h"
 #include <QFutureWatcher>
+#include <QMessageBox>
 #include <QtConcurrent>
 #include <deque>
 #include <filesystem>
 #include <unordered_set>
+
+// needed for qRegisterMetaType
+typedef std::vector<double> stdVecDouble;
 
 namespace Ui
 {
@@ -40,26 +44,39 @@ private:
     void showFrame(const cv::Mat& img);
     void updateSlider();
     void setupProgressBar();
-    void toggleChunk(int chunk, bool compute);
 
-    // compute functions
-    template <class Function, class Callback>
-    void enqueue(Function&& func, Callback&& cb)
+    template <class Function, class Slot>
+    void enqueue(Function&& func, Slot&& slot)
     {
-        auto future = QtConcurrent::run(&mThreadQueue, this, func);
-        auto watcher = std::make_unique<QFutureWatcher<void>>();
-        watcher->setFuture(future);
-        connect(watcher.get(), &QFutureWatcher<void>::finished, this, cb);
-        mQueueWatchers.push(std::move(watcher));
+        if (checkIfBlocked())
+            return;
+        mBlocked = true;
+        mBackgroundThread
+            = std::unique_ptr<QThread>(QThread::create(func, this));
+        connect(mBackgroundThread.get(), &QThread::finished, this, slot);
+        mBackgroundThread->start();
     }
 
+    // compute functions
     void extractFeatures();
     void extractTrafos();
     void extractUnaries();
-    void extractUnaryQualites();
+    void extractUnaryQualities();
+    void optimizeUnaries();
+    void track();
+    bool checkIfBlocked();
+
+    void loadResults();
 
 signals:
+    void toggleChunk(int chunk, bool compute);
+    void warn(const QString& msg);
+
+    void trafosExtracted();
+    void unariesExtracted();
+    void unaryQualitiesExtracted(const stdVecDouble& qualites);
     void detectionsAvailable(int chunk);
+
 
 private slots:
     ////////////////////////////////
@@ -78,6 +95,8 @@ private slots:
     void on_actionPrev_Frame_triggered();
     void on_actionNext_Frame_triggered();
 
+    void on_chunkToggled(int chunk, bool compute);
+
     ////////////////////////////////
     // meta
     ////////////////////////////////
@@ -85,6 +104,8 @@ private slots:
     void on_actionSave_Results_triggered();
     void on_actionLabelEditor_triggered();
     void on_actionPreferences_triggered();
+    void on_warn(const QString& msg);
+    void on_finished();
 
     ////////////////////////////////
     // HabiTrack
@@ -92,34 +113,36 @@ private slots:
     void on_actionOpenImgFolder_triggered();
     void on_actionOpenImgList_triggered();
     void on_actionOpenResultsFile_triggered();
+    void on_resultsLoaded();
     void on_buttonStartFrame_clicked();
     void on_buttonEndFrame_clicked();
     void on_buttonTrack_clicked();
     void on_buttonExtractFeatures_clicked();
-    void on_featuresExtracted();
     void on_buttonExtractTrafos_clicked();
     void on_trafosExtracted();
     void on_buttonExtractUnaries_clicked();
     void on_unariesExtracted();
+    void on_unaryQualitiesExtracted(const stdVecDouble& qualities);
     void on_buttonOptimizeUnaries_clicked();
+
 
     ////////////////////////////////
     // HabiTrack - Interaction
     ////////////////////////////////
-    void onPositionChanged(QPointF position);
-    void onBearingChanged(QPointF position);
-    void onPositionCleared();
-    void onBearingCleared();
-    void onDetectionsAvailable(int chunkId);
+    void on_positionChanged(QPointF position);
+    void on_bearingChanged(QPointF position);
+    void on_positionCleared();
+    void on_bearingCleared();
+    void on_detectionsAvailable(int chunkId);
 
     ////////////////////////////////
     // progressbar slots
     ////////////////////////////////
-    void onTotalChanged(int total);
-    void onIncremented();
-    void onIncremented(int inc);
-    void onIsDone();
-    void onStatusChanged(const QString& string);
+    void on_totalChanged(int total);
+    void on_incremented();
+    void on_incremented(int inc);
+    void on_isDone();
+    void on_statusChanged(const QString& string);
 
     ////////////////////////////////
     // general
@@ -148,12 +171,13 @@ private:
     // Threading
     ////////////////////////////////
     QMutex mMutex;
-    QThreadPool mThreadQueue;
-    std::queue<std::unique_ptr<QFutureWatcher<void>>> mQueueWatchers;
+    /* QThreadPool mThreadQueue; */
+    /* std::queue<std::unique_ptr<QFutureWatcher<void>>> mQueueWatchers; */
 
-    std::queue<int> mDetectionsQueue;
-    std::vector<double> mQualities;
+    std::deque<int> mDetectionsQueue;
     std::unordered_map<int, std::unique_ptr<QFutureWatcher<void>>> mDetectionsWatchers;
+    bool mBlocked;
+    std::unique_ptr<QThread> mBackgroundThread;
 };
 } // namespace gui
 #endif // MAINWINDOW_H

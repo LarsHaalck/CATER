@@ -31,14 +31,11 @@ public:
     UnaryScene(QObject* parent = 0);
     void setTotalImages(std::size_t numImages);
     std::size_t getTotalImages() const { return mNumImages; }
-
     void setUnaryQuality(std::size_t id, UnaryQuality color);
-    void setUnaryState(std::size_t id, UnaryState state);
-
+    void resetUnaryQuality(std::size_t id);
     UnaryQuality getUnaryQuality(std::size_t id) const;
     QColor getUnaryColor(std::size_t id) const;
     static std::string unaryQualityToString(UnaryQuality quality);
-
     void setup(std::vector<double> unaryQualites, std::size_t start, std::size_t end);
     void toggleChunk(int chunkId, bool computing, int chunkSize, int start);
 
@@ -47,12 +44,14 @@ private:
     QColor unaryStateToQColor(UnaryState state) const;
     inline QPen getPen(const QColor& color) const;
     inline double idToX(std::size_t idx) const;
+    void setUnaryState(std::size_t id, UnaryState state);
 
 private:
     std::size_t mNumImages;
 
     // use unordered_map otherwise
     std::unordered_map<std::size_t, UnaryQuality> mUnaryColors;
+    std::unordered_map<std::size_t, UnaryQuality> mUnaryBackups;
     QPen mPen;
 };
 } // namespace gui
