@@ -355,7 +355,6 @@ void MainWindow::loadResults()
 
 void MainWindow::on_resultsLoaded()
 {
-    QMutexLocker locker(&mMutex);
     mBlocked = false;
     showFrame(mCurrentFrameNumber);
     ui->graphicsView->zoomToFit();
@@ -406,7 +405,6 @@ void MainWindow::track()
 
 bool MainWindow::checkIfBlocked()
 {
-    QMutexLocker locker(&mMutex);
     if (mBlocked)
         emit warn("Cannot be started due to running operation");
     return mBlocked;
@@ -422,7 +420,6 @@ void MainWindow::extractFeatures() { mHabiTrack.extractFeatures(); }
 
 void MainWindow::on_finished()
 {
-    QMutexLocker locker(&mMutex);
     mBlocked = false;
 }
 
@@ -445,7 +442,6 @@ void MainWindow::extractTrafos()
 
 void MainWindow::on_trafosExtracted()
 {
-    QMutexLocker locker(&mMutex);
     auto size = mHabiTrack.trafos().size();
     ui->labelNumTrafos->setText(QString::number(size));
 
@@ -492,7 +488,6 @@ void MainWindow::on_unaryQualitiesExtracted(const stdVecDouble& qualities)
 
 void MainWindow::on_unariesExtracted()
 {
-    QMutexLocker locker(&mMutex);
     mBlocked = false;
 
     ui->labelNumUnaries->setText(QString::number(mHabiTrack.unaries().size()));
@@ -526,41 +521,37 @@ void MainWindow::on_buttonOptimizeUnaries_clicked()
 
 void MainWindow::optimizeUnaries()
 {
+    if (!mHabiTrack.unariesLoaded())
     {
-        QMutexLocker locker(&mMutex);
-
-        if (!mHabiTrack.unariesLoaded())
-        {
-            emit warn("Unaries need to be computed first");
-            return;
-        }
-
-        // if mDetections empty, then remove all elements form queue and to -1
-        int chunk;
-        if (!mHabiTrack.detections().size())
-        {
-            mDetectionsQueue = {};
-            chunk = -1;
-        }
-        else if (mDetectionsQueue.empty())
-        {
-            emit warn("No new manual unaries supplied. Nothing to do.");
-            return;
-        }
-        else
-        {
-            chunk = mDetectionsQueue.front();
-            mDetectionsQueue.pop_front();
-        }
-        auto detectionFuture = QtConcurrent::run(&mHabiTrack, &HabiTrack::optimizeUnaries, chunk);
-        auto watcher = std::make_unique<QFutureWatcher<void>>();
-        watcher->setFuture(detectionFuture);
-
-        connect(watcher.get(), &QFutureWatcher<Detections>::finished, this,
-            [&, chunk]() { emit detectionsAvailable(chunk); });
-        mDetectionsWatchers[chunk] = std::move(watcher);
-        emit toggleChunk(chunk, true);
+        emit warn("Unaries need to be computed first");
+        return;
     }
+
+    // if mDetections empty, then remove all elements form queue and to -1
+    int chunk;
+    if (!mHabiTrack.detections().size())
+    {
+        mDetectionsQueue = {};
+        chunk = -1;
+    }
+    else if (mDetectionsQueue.empty())
+    {
+        emit warn("No new manual unaries supplied. Nothing to do.");
+        return;
+    }
+    else
+    {
+        chunk = mDetectionsQueue.front();
+        mDetectionsQueue.pop_front();
+    }
+    auto detectionFuture = QtConcurrent::run(&mHabiTrack, &HabiTrack::optimizeUnaries, chunk);
+    auto watcher = std::make_unique<QFutureWatcher<void>>();
+    watcher->setFuture(detectionFuture);
+
+    connect(watcher.get(), &QFutureWatcher<Detections>::finished, this,
+        [&, chunk]() { emit detectionsAvailable(chunk); });
+    mDetectionsWatchers[chunk] = std::move(watcher);
+    emit toggleChunk(chunk, true);
 
     if (!mDetectionsQueue.empty())
         optimizeUnaries();
@@ -568,7 +559,6 @@ void MainWindow::optimizeUnaries()
 
 void MainWindow::on_detectionsAvailable(int chunkId)
 {
-    QMutexLocker locker(&mMutex);
 
 #ifdef WITH_QT5_MULTIMEDIA
     QSound::play("qrc:///sounds/notification.wav");

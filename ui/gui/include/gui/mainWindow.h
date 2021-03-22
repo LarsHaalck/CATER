@@ -170,10 +170,6 @@ private:
     ////////////////////////////////
     // Threading
     ////////////////////////////////
-    QMutex mMutex;
-    /* QThreadPool mThreadQueue; */
-    /* std::queue<std::unique_ptr<QFutureWatcher<void>>> mQueueWatchers; */
-
     std::deque<int> mDetectionsQueue;
     std::unordered_map<int, std::unique_ptr<QFutureWatcher<void>>> mDetectionsWatchers;
     bool mBlocked;
