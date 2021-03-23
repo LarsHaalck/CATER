@@ -67,7 +67,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this->ui->graphicsView, SIGNAL(positionCleared()), this, SLOT(on_positionCleared()));
     connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this, SLOT(on_bearingCleared()));
 
-    connect(&mAutoSaveTimer, SIGNAL(timeout()), this, SLOT(on_actionSave_Results_triggered()));
+    connect(&mAutoSaveTimer, SIGNAL(timeout()), this, SLOT(saveResults()));
     connect(this, SIGNAL(toggleChunk(int, bool)), this, SLOT(on_chunkToggled(int, bool)));
     connect(this, SIGNAL(warn(const QString&)), this, SLOT(on_warn(const QString&)));
 
@@ -134,8 +134,12 @@ void MainWindow::on_actionExpertMode_toggled(bool value)
 void MainWindow::on_actionSave_Results_triggered()
 {
     spdlog::debug("GUI: Save Results triggered");
+    saveResults(true);
+}
 
-    if (!mSaved)
+void MainWindow::saveResults(bool force)
+{
+    if (!mSaved || force)
     {
         mHabiTrack.saveResultsFile();
         mSaved = true;
@@ -161,8 +165,7 @@ void MainWindow::on_actionPreferences_triggered()
         mHabiTrack.setPreferences(prefs);
 
         // TODO: should this be saved implicitly?
-        mHabiTrack.saveResultsFile();
-        mSaved = true;
+        saveResults(true);
     }
 }
 
@@ -503,7 +506,6 @@ void MainWindow::on_buttonOptimizeUnaries_clicked()
     if (checkIfBlocked())
         return;
 
-    mBlocked = true;
     optimizeUnaries();
 }
 
@@ -532,6 +534,7 @@ void MainWindow::optimizeUnaries()
         chunk = mDetectionsQueue.front();
         mDetectionsQueue.pop_front();
     }
+    mBlocked = true;
     auto detectionFuture = QtConcurrent::run(&mHabiTrack, &HabiTrack::optimizeUnaries, chunk);
     auto watcher = std::make_unique<QFutureWatcher<void>>();
     watcher->setFuture(detectionFuture);
@@ -589,11 +592,16 @@ void MainWindow::on_positionChanged(QPointF position)
     if (!mHabiTrack.unaries().size())
         return;
 
-    std::size_t chunkSize = mHabiTrack.getPreferences().chunkSize;
-    std::size_t start = mHabiTrack.getStartFrame();
-    std::size_t chunk = 0;
-    if (chunkSize)
+    if (auto size = mHabiTrack.images().getImgSize(); position.x() < 0 || position.y() < 0
+        || position.x() > size.width || position.y() > size.height)
     {
+        return;
+    }
+
+    std::size_t chunk = 0;
+    if (auto chunkSize = mHabiTrack.getPreferences().chunkSize; chunkSize)
+    {
+        auto start = mHabiTrack.getStartFrame();
         chunk = (mCurrentFrameNumber - start) / chunkSize;
         spdlog::debug("GUI: manual position changed to ({}, {}) on frame {} [chunk {}]",
             position.x(), position.y(), mCurrentFrameNumber, chunk);
@@ -613,9 +621,9 @@ void MainWindow::on_positionChanged(QPointF position)
     }
 
     mHabiTrack.addManualUnary(mCurrentFrameNumber, QtOpencvCore::qpoint2point(position));
-
     ui->unaryView->getUnaryScene()->setUnaryQuality(mCurrentFrameNumber, UnaryQuality::Excellent);
     statusBar()->showMessage("Manually added unary", statusDelay);
+    mSaved = false;
     on_buttonNextFrame_clicked();
 }
 
@@ -631,11 +639,10 @@ void MainWindow::on_positionCleared()
     if (!mHabiTrack.unaries().size())
         return;
 
-    std::size_t chunkSize = mHabiTrack.getPreferences().chunkSize;
-    std::size_t start = mHabiTrack.getStartFrame();
     std::size_t chunk = 0;
-    if (chunkSize)
+    if (auto chunkSize = mHabiTrack.getPreferences().chunkSize; chunkSize)
     {
+        auto start = mHabiTrack.getStartFrame();
         chunk = (mCurrentFrameNumber - start) / chunkSize;
         spdlog::debug(
             "GUI: manual position cleard on frame {} [chunk {}]", mCurrentFrameNumber, chunk);
@@ -652,9 +659,10 @@ void MainWindow::on_positionCleared()
     }
 
     mHabiTrack.removeManualUnary(mCurrentFrameNumber);
-    showFrame(mCurrentFrameNumber);
-    statusBar()->showMessage("Manual unary cleared", statusDelay);
     ui->unaryView->getUnaryScene()->resetUnaryQuality(mCurrentFrameNumber);
+    statusBar()->showMessage("Manual unary cleared", statusDelay);
+    mSaved = false;
+    showFrame(mCurrentFrameNumber);
 }
 
 void MainWindow::on_bearingCleared()
@@ -685,7 +693,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
     switch (ret)
     {
     case QMessageBox::Save:
-        mHabiTrack.saveResultsFile();
+        saveResults(true);
         event->accept();
         break;
     case QMessageBox::Discard:

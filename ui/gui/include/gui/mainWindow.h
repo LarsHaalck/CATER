@@ -65,8 +65,8 @@ private:
     void optimizeUnaries();
     void track();
     bool checkIfBlocked();
-
     void loadResults();
+    void saveResults(bool force = false);
 
 signals:
     void toggleChunk(int chunk, bool compute);
