@@ -32,7 +32,7 @@ struct Preferences
     int manualUnarySize = 9;
 
     // pairwise, tracking recompute needed
-    int pairwiseSize = 15;
+    int pairwiseSize = 20;
     double pairwiseSigma = 6.0;
 
     // smooth bearing, tracking recompute needed

@@ -1,5 +1,5 @@
-project(habitrack)
 cmake_minimum_required(VERSION 3.5)
+project(habitrack VERSION 0.1)
 
 ###########################################################################
 #                            GLOBAL SETTINGS                              #

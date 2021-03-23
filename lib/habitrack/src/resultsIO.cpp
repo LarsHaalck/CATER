@@ -3,6 +3,8 @@
 #include "spdlog/spdlog.h"
 #include <opencv2/core/persistence.hpp>
 
+#include "version/version.h"
+
 namespace ht
 {
 namespace fs = std::filesystem;
@@ -103,6 +105,7 @@ void saveResults(const fs::path& resultFile, const Preferences& prefs, const fs:
     spdlog::info("Save results file to: {}", resultFile.string());
     cv::FileStorage fs(resultFile.string(), cv::FileStorage::WRITE);
 
+    fs << "version" << HABITRACK_VER;
     fs << "img_folder" << imgFolder.string();
     fs << "start_frame" << static_cast<int>(startFrame);
     fs << "end_frame" << static_cast<int>(endFrame);

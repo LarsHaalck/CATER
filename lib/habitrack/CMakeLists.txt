@@ -30,6 +30,8 @@ target_link_libraries(${LIB_NAME}
     spdlog::spdlog
     tracker
     util
+    PRIVATE
+    version
 )
 
 if(${OpenMP_CXX_FOUND})
@@ -44,4 +46,4 @@ install(TARGETS ${LIB_NAME}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION include)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION .)
