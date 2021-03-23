@@ -58,7 +58,7 @@ MainWindow::MainWindow(QWidget* parent)
     // signal connects (some are done in the ui file)
     /////////////////////////////////////////////////////////////////////////
     connect(ui->unaryView, &UnaryGraphicsView::jumpedToUnary, this,
-        [&](std::size_t num) { this->showFrame(num + 1); });
+        [&](std::size_t num) { this->showFrame(num); });
 
     connect(this->ui->graphicsView, SIGNAL(positionChanged(QPointF)), this,
         SLOT(on_positionChanged(QPointF)));
@@ -167,25 +167,19 @@ void MainWindow::on_actionPreferences_triggered()
 }
 
 void MainWindow::on_warn(const QString& msg) { QMessageBox::warning(this, "Warning", msg); }
-void MainWindow::on_sliderFrame_valueChanged(int value) { showFrame(value); }
-void MainWindow::on_spinCurrentFrame_valueChanged(int value) { showFrame(value); }
+void MainWindow::on_sliderFrame_valueChanged(int value) { showFrame(value - 1); }
+void MainWindow::on_spinCurrentFrame_valueChanged(int value) { showFrame(value - 1); }
 
 void MainWindow::on_buttonPrevFrame_clicked()
 {
-    if (mCurrentFrameNumber > 1)
-    {
-        auto newIdx = mCurrentFrameNumber - 1;
-        showFrame(newIdx);
-    }
+    if (mCurrentFrameNumber > 0)
+        showFrame(mCurrentFrameNumber - 1);
 }
 
 void MainWindow::on_buttonNextFrame_clicked()
 {
-    if (mCurrentFrameNumber < mHabiTrack.images().size())
-    {
-        auto newIdx = mCurrentFrameNumber + 1;
-        showFrame(newIdx);
-    }
+    if (mCurrentFrameNumber < mHabiTrack.images().size() - 1)
+        showFrame(mCurrentFrameNumber + 1);
 }
 
 void MainWindow::on_actionPrev_Frame_triggered()
@@ -211,15 +205,13 @@ void MainWindow::on_actionNext_Frame_triggered()
 void MainWindow::updateSlider()
 {
     auto blocker = ScopedBlocker {ui->sliderFrame, ui->spinCurrentFrame};
-    ui->sliderFrame->setValue(mCurrentFrameNumber);
-    ui->spinCurrentFrame->setValue(mCurrentFrameNumber);
+    ui->sliderFrame->setValue(mCurrentFrameNumber + 1);
+    ui->spinCurrentFrame->setValue(mCurrentFrameNumber + 1);
 }
 
 void MainWindow::showFrame(std::size_t frame)
 {
     mCurrentFrameNumber = frame;
-    auto idx = frame - 1;
-
     ImageViewer::VisSettings settings;
     settings.unary = ui->sliderOverlayUnaries->value();
     settings.detection = ui->overlayTrackedPosition->isChecked();
@@ -227,17 +219,17 @@ void MainWindow::showFrame(std::size_t frame)
     settings.trajectory = ui->overlayTrajectory->isChecked();
     settings.trajectoryLength = ui->trajectorySpin->value();
 
-    auto img = mViewer.getFrame(idx, settings);
+    auto img = mViewer.getFrame(frame, settings);
     auto pixMap = QPixmap::fromImage(QtOpencvCore::img2qimgRaw(img));
     mTrackerScene->setPixmap(pixMap);
 
     // set filename
-    ui->labelFileName->setText(QString::fromStdString(mHabiTrack.images().getFileName(idx)));
+    ui->labelFileName->setText(QString::fromStdString(mHabiTrack.images().getFileName(frame)));
 
     if (mHabiTrack.unaries().size())
     {
-        auto color = mUnaryScene->getUnaryColor(idx);
-        auto quality = UnaryScene::unaryQualityToString(mUnaryScene->getUnaryQuality(idx));
+        auto color = mUnaryScene->getUnaryColor(frame);
+        auto quality = UnaryScene::unaryQualityToString(mUnaryScene->getUnaryQuality(frame));
         ui->qualityLabel->setStyleSheet(
             QString("color: white; background-color: " + color.name() + ";"));
         ui->qualityLabel->setText(quality.c_str());
@@ -274,8 +266,8 @@ void MainWindow::openImagesHelper()
 
     ui->labelFileName->setText(QString::fromStdString(imgs.getFileName(0)));
 
-    ui->labelStartFrame->setText(QString::number(mHabiTrack.getStartFrame()));
-    ui->labelEndFrame->setText(QString::number(mHabiTrack.getEndFrame()));
+    ui->labelStartFrame->setText(QString::number(mHabiTrack.getStartFrame() + 1));
+    ui->labelEndFrame->setText(QString::number(mHabiTrack.getEndFrame() + 1));
     ui->labelNumTrafos->setText(QString::number(0));
     ui->labelNumUnaries->setText(QString::number(0));
     ui->labelNumTrackedPos->setText(QString::number(0));
@@ -350,7 +342,6 @@ void MainWindow::loadResults()
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(2s);
-
 }
 
 void MainWindow::on_resultsLoaded()
@@ -371,7 +362,7 @@ void MainWindow::on_buttonStartFrame_clicked()
 
     // TODO: some data structures are no longer valid and should be computed again
     mHabiTrack.setStartFrame(mCurrentFrameNumber);
-    ui->labelStartFrame->setText(QString::number(mCurrentFrameNumber));
+    ui->labelStartFrame->setText(QString::number(mCurrentFrameNumber + 1));
     mSaved = false;
 }
 
@@ -386,7 +377,7 @@ void MainWindow::on_buttonEndFrame_clicked()
 
     // TODO: some data structures are no longer valid and should be computed again
     mHabiTrack.setEndFrame(mCurrentFrameNumber);
-    ui->labelEndFrame->setText(QString::number(mCurrentFrameNumber));
+    ui->labelEndFrame->setText(QString::number(mCurrentFrameNumber + 1));
     mSaved = false;
 }
 
@@ -418,10 +409,7 @@ void MainWindow::on_buttonExtractFeatures_clicked()
 
 void MainWindow::extractFeatures() { mHabiTrack.extractFeatures(); }
 
-void MainWindow::on_finished()
-{
-    mBlocked = false;
-}
+void MainWindow::on_finished() { mBlocked = false; }
 
 void MainWindow::on_buttonExtractTrafos_clicked()
 {
@@ -608,12 +596,12 @@ void MainWindow::on_positionChanged(QPointF position)
     {
         chunk = (mCurrentFrameNumber - start) / chunkSize;
         spdlog::debug("GUI: manual position changed to ({}, {}) on frame {} [chunk {}]",
-            position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
+            position.x(), position.y(), mCurrentFrameNumber, chunk);
     }
     else
     {
         spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(),
-            position.x(), position.y(), mCurrentFrameNumber - 1, chunk);
+            position.x(), position.y(), mCurrentFrameNumber, chunk);
     }
 
     // put it in queue if it does not exist
@@ -624,10 +612,9 @@ void MainWindow::on_positionChanged(QPointF position)
         mDetectionsQueue.push_back(chunk);
     }
 
-    mHabiTrack.addManualUnary(mCurrentFrameNumber - 1, QtOpencvCore::qpoint2point(position));
+    mHabiTrack.addManualUnary(mCurrentFrameNumber, QtOpencvCore::qpoint2point(position));
 
-    ui->unaryView->getUnaryScene()->setUnaryQuality(
-        mCurrentFrameNumber - 1, UnaryQuality::Excellent);
+    ui->unaryView->getUnaryScene()->setUnaryQuality(mCurrentFrameNumber, UnaryQuality::Excellent);
     statusBar()->showMessage("Manually added unary", statusDelay);
     on_buttonNextFrame_clicked();
 }
@@ -635,7 +622,7 @@ void MainWindow::on_positionChanged(QPointF position)
 void MainWindow::on_bearingChanged(QPointF)
 {
     /* spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(), */
-    /*     position.y(), mCurrentFrameNumber - 1); */
+    /*     position.y(), mCurrentFrameNumber); */
     // TODO: implement
 }
 
@@ -651,10 +638,10 @@ void MainWindow::on_positionCleared()
     {
         chunk = (mCurrentFrameNumber - start) / chunkSize;
         spdlog::debug(
-            "GUI: manual position cleard on frame {} [chunk {}]", mCurrentFrameNumber - 1, chunk);
+            "GUI: manual position cleard on frame {} [chunk {}]", mCurrentFrameNumber, chunk);
     }
     else
-        spdlog::debug("GUI: manual position cleard on frame {}", mCurrentFrameNumber - 1);
+        spdlog::debug("GUI: manual position cleard on frame {}", mCurrentFrameNumber);
 
     // put it in queue if it does not exist
     if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk)
@@ -664,17 +651,17 @@ void MainWindow::on_positionCleared()
         mDetectionsQueue.push_back(chunk);
     }
 
-    mHabiTrack.removeManualUnary(mCurrentFrameNumber - 1);
+    mHabiTrack.removeManualUnary(mCurrentFrameNumber);
     showFrame(mCurrentFrameNumber);
     statusBar()->showMessage("Manual unary cleared", statusDelay);
-    ui->unaryView->getUnaryScene()->resetUnaryQuality(mCurrentFrameNumber - 1);
+    ui->unaryView->getUnaryScene()->resetUnaryQuality(mCurrentFrameNumber);
 }
 
 void MainWindow::on_bearingCleared()
 {
     /* if (!mImages.size()) */
     /*     return; */
-    /* spdlog::debug("GUI: manual bearing cleared on frame {}", mCurrentFrameNumber - 1); */
+    /* spdlog::debug("GUI: manual bearing cleared on frame {}", mCurrentFrameNumber); */
     // TODO: implement
 }
 

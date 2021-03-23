@@ -102,6 +102,7 @@ private:
     std::filesystem::path mUnFolder;
     std::filesystem::path mDetectionsFile;
 
+    // these are INCLUSIVE frame numbers
     std::size_t mStartFrameNumber;
     std::size_t mEndFrameNumber;
 

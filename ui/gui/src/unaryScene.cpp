@@ -151,7 +151,7 @@ void UnaryScene::setup(std::vector<double> qualities, std::size_t start, std::si
 {
     setTotalImages(qualities.size() + 1);
 
-    auto offset = start - 1;
+    auto offset = start;
     auto num = end - start;
     std::size_t medSize = 100;
     for (std::size_t i = 0; i < std::ceil(static_cast<double>(num) / medSize); i++)
@@ -209,7 +209,7 @@ void UnaryScene::toggleChunk(int chunkId, bool computing, int chunkSize, int sta
 
         auto end = Tracker::getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
         for (std::size_t j = chunk * chunkSize; j < end; j++)
-            setUnaryState(j + start - 1, state);
+            setUnaryState(j + start, state);
     }
 }
 } // namespace gui

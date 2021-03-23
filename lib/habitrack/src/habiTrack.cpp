@@ -20,7 +20,7 @@ HabiTrack::HabiTrack() { setTrackerSettings(mPrefs); }
 bool HabiTrack::featureComputed() const
 {
     return Features::isComputed(
-        mImages, mFtFolder, mPrefs.featureType, mStartFrameNumber - 1, mEndFrameNumber);
+        mImages, mFtFolder, mPrefs.featureType, mStartFrameNumber, mEndFrameNumber + 1);
 }
 
 bool HabiTrack::matchesComputed() const
@@ -30,7 +30,7 @@ bool HabiTrack::matchesComputed() const
 
 bool HabiTrack::unariesComputed() const
 {
-    return Unaries::isComputed(mImgFolder, mUnFolder, mStartFrameNumber - 1, mEndFrameNumber);
+    return Unaries::isComputed(mImgFolder, mUnFolder, mStartFrameNumber, mEndFrameNumber + 1);
 }
 
 bool HabiTrack::detectionsComputed() const { return fs::is_regular_file(mDetectionsFile); }
@@ -43,8 +43,8 @@ void HabiTrack::loadImageFolder(const fs::path& imgFolder)
 {
     mImgFolder = imgFolder;
     mImages = Images(mImgFolder);
-    mStartFrameNumber = 1;
-    mEndFrameNumber = mImages.size();
+    mStartFrameNumber = 0;
+    mEndFrameNumber = mImages.size() - 1;
     openImagesHelper();
 }
 
@@ -182,7 +182,7 @@ void HabiTrack::extractFeatures()
 {
     spdlog::debug("HabiTrack: Clicked Extract Features");
 
-    auto start = mStartFrameNumber - 1;
+    auto start = mStartFrameNumber;
     auto end = mEndFrameNumber;
     if (featureComputed())
     {
@@ -207,7 +207,7 @@ void HabiTrack::extractTrafos()
     {
         matches::compute(mMatchFolder, GeometricType::Homography, mFeatures,
             matches::MatchType::Windowed, 2, 0.0, nullptr, mPrefs.cacheSize,
-            getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber), mBar);
+            getContinuousIds(mStartFrameNumber, mEndFrameNumber + 1), mBar);
     }
 }
 
@@ -218,8 +218,8 @@ void HabiTrack::extractUnaries()
     if (!matchesComputed())
         throw HabiTrackException("Trafos need to be computed before Unaries.");
 
-    auto start = mStartFrameNumber - 1;
-    auto end = mEndFrameNumber;
+    auto start = mStartFrameNumber;
+    auto end = mEndFrameNumber + 1;
     if (unariesComputed())
     {
         mUnaries = Unaries::fromDir(mImgFolder, mUnFolder, start, end);
@@ -245,7 +245,7 @@ std::vector<double> HabiTrack::getUnaryQualities()
     mBar->status("Calculating Unary Qualities");
     mBar->setTotal(mEndFrameNumber - mStartFrameNumber);
     std::vector<double> unaryQuality(mImages.size(), -1);
-    for (auto i = mStartFrameNumber; i < mEndFrameNumber - 1; i++)
+    for (auto i = mStartFrameNumber + 1; i < mEndFrameNumber; i++)
     {
         unaryQuality[i] = Unaries::getUnaryQuality(mUnaries.at(i));
         mBar->inc();
@@ -257,7 +257,7 @@ std::vector<double> HabiTrack::getUnaryQualities()
 bool HabiTrack::hasUsableTrafos() const
 {
     auto types = ht::matches::getConnectedTypes(mMatchFolder, ht::GeometricType::Homography,
-        getContinuousIds(mStartFrameNumber - 1, mEndFrameNumber));
+        getContinuousIds(mStartFrameNumber, mEndFrameNumber + 1));
 
     if (static_cast<unsigned int>(types & ht::GeometricType::Homography))
     {
