@@ -66,7 +66,8 @@ private:
     void track();
     bool checkIfBlocked();
     void loadResults();
-    void saveResults(bool force = false);
+
+    void enqueueOptimization();
 
 signals:
     void toggleChunk(int chunk, bool compute);
@@ -76,6 +77,7 @@ signals:
     void unariesExtracted();
     void unaryQualitiesExtracted(const stdVecDouble& qualites);
     void detectionsAvailable(int chunk);
+    void saveResults(bool force);
 
 
 private slots:
@@ -106,6 +108,7 @@ private slots:
     void on_actionPreferences_triggered();
     void on_warn(const QString& msg);
     void on_finished();
+    void on_saveResults(bool force);
 
     ////////////////////////////////
     // HabiTrack

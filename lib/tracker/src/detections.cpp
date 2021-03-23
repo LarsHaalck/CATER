@@ -25,18 +25,15 @@ void Detections::save(const std::filesystem::path& detectionsFile)
         fs << "theta" << d.theta;
         fs << "theta_quality" << d.thetaQuality;
 
-        // TODO: needed when implementing manual bearing corrections
-        /* cv::Point manualThetaPosition; */
-        /* if (trackingData.getManuallySetBearingDirectionPoint( */
-        /*         *it, manualThetaPosition)) */
-        /* { */
-        /*     fs << "manually_set" << true; */
-        /*     fs << "manual_direction_point" << manualThetaPosition; */
-        /* } */
-        /* else */
-        /* { */
-        fs << "manually_set" << false;
-        /* } */
+        if (mManualBearings.count(elem.first))
+        {
+            fs << "manually_set" << true;
+            fs << "manual_direction_point" << mManualBearings[elem.first];
+        }
+        else
+        {
+            fs << "manually_set" << false;
+        }
         fs << "}";
     }
     fs << "]";
@@ -60,16 +57,15 @@ Detections Detections::fromDir(const std::filesystem::path& detectionsFile)
         double thetaQuality;
         (*it)["theta_quality"] >> thetaQuality;
 
-        /* int iManuallySet = (*it)["manually_set"]; */
-        /* bool manuallySet = (iManuallySet == 1) ? true : false; */
+        int iManuallySet = (*it)["manually_set"];
+        bool manuallySet = (iManuallySet == 1) ? true : false;
 
-        /* if (manuallySet) */
-        /* { */
-        /*     cv::Point thetaDirectionPoint; */
-        /*     (*it)["manual_direction_point"] >> thetaDirectionPoint; */
-        /*     retTrackingData.addManuallySetBearingDirectionPoint( */
-        /*         frameNo, QtOpencvCore::point2qpoint(thetaDirectionPoint)); */
-        /* } */
+        if (manuallySet)
+        {
+            cv::Point thetaDirectionPoint;
+            (*it)["manual_direction_point"] >> thetaDirectionPoint;
+            detections.insert(frameNo, thetaDirectionPoint);
+        }
 
         detections.insert(frameNo, {position, theta, thetaQuality});
     }
@@ -81,13 +77,21 @@ void Detections::insert(std::size_t idx, const Detection& detection)
     mDetections.insert({idx, detection});
 }
 
+void Detections::insert(std::size_t idx, const cv::Point& bearingPoint)
+{
+    mManualBearings.insert({idx, bearingPoint});
+}
+
 Detection Detections::at(std::size_t idx) const { return mDetections.at(idx); }
+cv::Point Detections::manualBearingAt(std::size_t idx) const { return mManualBearings.at(idx); }
 
 bool Detections::exists(std::size_t idx) const { return mDetections.count(idx); }
+bool Detections::manualBearingExists(std::size_t idx) const { return mManualBearings.count(idx); }
+
 std::size_t Detections::size() const { return mDetections.size(); }
 
-std::vector<cv::Point2d> Detections::projectTo(std::size_t from, std::size_t to,
-    const PairwiseTrafos& trafos, GeometricType type) const
+std::vector<cv::Point2d> Detections::projectTo(
+    std::size_t from, std::size_t to, const PairwiseTrafos& trafos, GeometricType type) const
 {
     if (from >= to)
         return {};
@@ -116,8 +120,8 @@ std::vector<cv::Point2d> Detections::projectTo(std::size_t from, std::size_t to,
     return points2d;
 }
 
-std::vector<cv::Point2d> Detections::projectFrom(std::size_t from, std::size_t to,
-    const PairwiseTrafos& trafos, GeometricType type) const
+std::vector<cv::Point2d> Detections::projectFrom(
+    std::size_t from, std::size_t to, const PairwiseTrafos& trafos, GeometricType type) const
 {
     if (from >= to)
         return {};

@@ -22,8 +22,15 @@ class Detections
 public:
     Detections() = default;
     void insert(std::size_t idx, const Detection& detection);
+    void insert(std::size_t idx, const cv::Point& bearingPoint);
+
     Detection at(std::size_t idx) const;
+    cv::Point manualBearingAt(std::size_t idx) const;
+
     bool exists(std::size_t idx) const;
+    bool manualBearingExists(std::size_t idx) const;
+    void clearManualBearing(std::size_t idx) { mManualBearings.erase(idx); }
+
     std::size_t size() const;
 
     std::vector<cv::Point2d> projectTo(std::size_t from, std::size_t to,
@@ -40,6 +47,7 @@ public:
 
 private:
     std::map<std::size_t, Detection> mDetections;
+    std::unordered_map<std::size_t, cv::Point> mManualBearings;
 };
 } // namespace ht
 #endif // TRACKER_DETECTIONS_H

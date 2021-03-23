@@ -22,11 +22,12 @@ float scaledGauss2DPDF(
 cv::Mat scaledGauss2D(
     float meanX, float meanY, float sigmaX, float sigmaY, float scale, cv::Size size);
 
-double calcAngle(const cv::Point& p, const cv::Point& p2);
+double calcAngle(const cv::Point2d& p, const cv::Point2d& p2);
+
 cv::Point rotatePointAroundPoint(cv::Point centerPoint, double angle);
 
 template <typename T>
-T normL2(cv::Point_<T> const& pt)
+double normL2(const cv::Point_<T>& pt)
 {
     return std::sqrt(std::pow(pt.x, 2) + std::pow(pt.y, 2));
 }

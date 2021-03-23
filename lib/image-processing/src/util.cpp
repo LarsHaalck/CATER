@@ -1,5 +1,7 @@
 #include "image-processing/util.h"
 
+constexpr double pi() { return std::atan(1)*4; }
+
 namespace ht
 {
 float scaledGauss2DPDF(
@@ -40,31 +42,14 @@ cv::Mat scaledGauss2D(
     return gaussian;
 }
 
-double calcAngle(const cv::Point& p, const cv::Point& p2)
+double calcAngle(const cv::Point2d& p1, const cv::Point2d& p2)
 {
-    cv::Point p1(p.x, 0);
-    cv::Point l1 = p1 - p;
-    cv::Point l2 = p2 - p;
-
-    double norm1 = normL2(l1);
-    double norm2 = normL2(l2);
-
-    double testForNan = (l1.x * l2.x + l1.y * l2.y) / (norm1 * norm2);
-
-    double angle;
-
-    if (testForNan >= 1)
-        angle = 0.0;
-    else if (testForNan <= -1)
-        angle = 180.0;
-    else
-        angle = (acos((l1.x * l2.x + l1.y * l2.y) / (norm1 * norm2)) * 180 / CV_PI);
-
-    double sgn = (l1.x * l2.y) - (l1.y * l2.x);
-
-    if (sgn < 0)
-        angle = 360 - angle;
-    return angle;
+    auto angle = std::atan2(p2.y - p1.y, p2.x - p1.x);
+    // atan2 delivers values in [-pi, pi]
+    // we have to add do (angle + 2pi) % 2pi to fix this
+    // and we have to to (angle + pi/2) % 2pi to rotate the coordinat system
+    // --> do (angle + 5pi/2) % 2pi
+    return std::fmod(angle + 5*pi()/2, 2*pi()) * 180/pi();
 }
 
 cv::Point rotatePointAroundPoint(cv::Point center_point, double angle)
@@ -90,8 +75,8 @@ cv::Point rotatePointAroundPoint(cv::Point center_point, double angle)
     // currently angle is in degree with 0° up, 90° left, 180° down and 270° right.
     // to convert:
     // 1) angle in [0,180]      -> make negative [-0, -180]   (clockwise rotation)
-    // 2) angle in ]180, 360]   -> angle = 360 - angle (so that counter clockwise rotation
-    // is in [0,180]) 3) convert to radian (*pi/180)
+    // 2) angle in ]180, 360]   -> angle = 360 - angle (so that counter clockwise rotation is in [0,180])
+    // 3) convert to radian (*pi/180)
 
     cv::Point rotation_point(center_point.x, center_point.y + y_displacement);
     double radian_angle = angle - 180;

@@ -67,7 +67,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this->ui->graphicsView, SIGNAL(positionCleared()), this, SLOT(on_positionCleared()));
     connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this, SLOT(on_bearingCleared()));
 
-    connect(&mAutoSaveTimer, SIGNAL(timeout()), this, SLOT(saveResults()));
+    connect(&mAutoSaveTimer, &QTimer::timeout, this, [this](){ saveResults(false); } );
     connect(this, SIGNAL(toggleChunk(int, bool)), this, SLOT(on_chunkToggled(int, bool)));
     connect(this, SIGNAL(warn(const QString&)), this, SLOT(on_warn(const QString&)));
 
@@ -76,6 +76,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, SIGNAL(unaryQualitiesExtracted(const std::vector<double>&)), this,
         SLOT(on_unaryQualitiesExtracted(const std::vector<double>&)));
     connect(this, SIGNAL(detectionsAvailable(int)), this, SLOT(on_detectionsAvailable(int)));
+    connect(this, SIGNAL(saveResults(bool)), this, SLOT(on_saveResults(bool)));
 }
 
 MainWindow::~MainWindow()
@@ -134,10 +135,10 @@ void MainWindow::on_actionExpertMode_toggled(bool value)
 void MainWindow::on_actionSave_Results_triggered()
 {
     spdlog::debug("GUI: Save Results triggered");
-    saveResults(true);
+    emit saveResults(true);
 }
 
-void MainWindow::saveResults(bool force)
+void MainWindow::on_saveResults(bool force)
 {
     if (!mSaved || force)
     {
@@ -165,7 +166,7 @@ void MainWindow::on_actionPreferences_triggered()
         mHabiTrack.setPreferences(prefs);
 
         // TODO: should this be saved implicitly?
-        saveResults(true);
+        emit saveResults(true);
     }
 }
 
@@ -564,6 +565,8 @@ void MainWindow::on_detectionsAvailable(int chunkId)
 
     if (mDetectionsQueue.empty())
         mBlocked = false;
+
+    mSaved = false;
 }
 
 void MainWindow::on_totalChanged(int total)
@@ -587,9 +590,29 @@ void MainWindow::on_isDone()
 
 void MainWindow::on_statusChanged(const QString& state) { ui->labelProgress->setText(state); }
 
+void MainWindow::enqueueOptimization()
+{
+    std::size_t chunk = 0;
+    if (auto chunkSize = mHabiTrack.getPreferences().chunkSize; chunkSize)
+    {
+        auto start = mHabiTrack.getStartFrame();
+        chunk = (mCurrentFrameNumber - start) / chunkSize;
+    }
+
+    // put it in queue if it does not exist
+    if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk)
+        == std::end(mDetectionsQueue))
+    {
+        spdlog::debug("GUI: added chunk {} to queue", chunk);
+        mDetectionsQueue.push_back(chunk);
+    }
+}
+
 void MainWindow::on_positionChanged(QPointF position)
 {
-    if (!mHabiTrack.unaries().size())
+    auto start = mHabiTrack.getStartFrame();
+    auto end = mHabiTrack.getEndFrame();
+    if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end)
         return;
 
     if (auto size = mHabiTrack.images().getImgSize(); position.x() < 0 || position.y() < 0
@@ -598,67 +621,39 @@ void MainWindow::on_positionChanged(QPointF position)
         return;
     }
 
-    std::size_t chunk = 0;
-    if (auto chunkSize = mHabiTrack.getPreferences().chunkSize; chunkSize)
-    {
-        auto start = mHabiTrack.getStartFrame();
-        chunk = (mCurrentFrameNumber - start) / chunkSize;
-        spdlog::debug("GUI: manual position changed to ({}, {}) on frame {} [chunk {}]",
-            position.x(), position.y(), mCurrentFrameNumber, chunk);
-    }
-    else
-    {
-        spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(),
-            position.x(), position.y(), mCurrentFrameNumber, chunk);
-    }
-
-    // put it in queue if it does not exist
-    if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk)
-        == std::end(mDetectionsQueue))
-    {
-        spdlog::debug("GUI: added chunk {} to queue", chunk);
-        mDetectionsQueue.push_back(chunk);
-    }
-
+    spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(),
+        position.x(), position.y(), mCurrentFrameNumber);
     mHabiTrack.addManualUnary(mCurrentFrameNumber, QtOpencvCore::qpoint2point(position));
+    enqueueOptimization();
     ui->unaryView->getUnaryScene()->setUnaryQuality(mCurrentFrameNumber, UnaryQuality::Excellent);
     statusBar()->showMessage("Manually added unary", statusDelay);
     mSaved = false;
     on_buttonNextFrame_clicked();
 }
 
-void MainWindow::on_bearingChanged(QPointF)
+void MainWindow::on_bearingChanged(QPointF position)
 {
-    /* spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(), */
-    /*     position.y(), mCurrentFrameNumber); */
-    // TODO: implement
+    auto start = mHabiTrack.getStartFrame();
+    auto end = mHabiTrack.getEndFrame();
+    if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end)
+        return;
+    spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(),
+        position.y(), mCurrentFrameNumber);
+
+    mHabiTrack.addManualBearing(mCurrentFrameNumber, QtOpencvCore::qpoint2point(position));
+    showFrame(mCurrentFrameNumber);
 }
 
 void MainWindow::on_positionCleared()
 {
-    if (!mHabiTrack.unaries().size())
+    auto start = mHabiTrack.getStartFrame();
+    auto end = mHabiTrack.getEndFrame();
+    if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end)
         return;
 
-    std::size_t chunk = 0;
-    if (auto chunkSize = mHabiTrack.getPreferences().chunkSize; chunkSize)
-    {
-        auto start = mHabiTrack.getStartFrame();
-        chunk = (mCurrentFrameNumber - start) / chunkSize;
-        spdlog::debug(
-            "GUI: manual position cleard on frame {} [chunk {}]", mCurrentFrameNumber, chunk);
-    }
-    else
-        spdlog::debug("GUI: manual position cleard on frame {}", mCurrentFrameNumber);
-
-    // put it in queue if it does not exist
-    if (std::find(std::begin(mDetectionsQueue), std::end(mDetectionsQueue), chunk)
-        == std::end(mDetectionsQueue))
-    {
-        spdlog::debug("GUI: added chunk {} to queue", chunk);
-        mDetectionsQueue.push_back(chunk);
-    }
-
+    spdlog::debug("GUI: manual position cleard on frame {}", mCurrentFrameNumber);
     mHabiTrack.removeManualUnary(mCurrentFrameNumber);
+    enqueueOptimization();
     ui->unaryView->getUnaryScene()->resetUnaryQuality(mCurrentFrameNumber);
     statusBar()->showMessage("Manual unary cleared", statusDelay);
     mSaved = false;
@@ -667,10 +662,13 @@ void MainWindow::on_positionCleared()
 
 void MainWindow::on_bearingCleared()
 {
-    /* if (!mImages.size()) */
-    /*     return; */
-    /* spdlog::debug("GUI: manual bearing cleared on frame {}", mCurrentFrameNumber); */
-    // TODO: implement
+    auto start = mHabiTrack.getStartFrame();
+    auto end = mHabiTrack.getEndFrame();
+    if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end)
+        return;
+    spdlog::debug("GUI: manual bearing cleared on frame {}", mCurrentFrameNumber);
+    mHabiTrack.removeManualBearing(mCurrentFrameNumber);
+    showFrame(mCurrentFrameNumber);
 }
 
 void MainWindow::on_actionQuit_triggered() { this->close(); }
@@ -693,7 +691,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
     switch (ret)
     {
     case QMessageBox::Save:
-        saveResults(true);
+        emit saveResults(true);
         event->accept();
         break;
     case QMessageBox::Discard:

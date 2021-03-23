@@ -396,18 +396,14 @@ std::vector<double> Tracker::filterAndNormaliseLengthVec(
         *it /= maxVal;
     }
 
-    // TODO: implement
-    /* // set all manually set bearings to 1 (highest probability) */
-    /* int vecCounter = 0; */
-    /* for (int i = firstFrameUsed; i <= lastFrameUsed; ++i) */
-    /* { */
-    /*     cv::Point manualBearingPoint; */
-    /*     if (trackingData.getManuallySetBearingDirectionPoint(i, manualBearingPoint)) */
-    /*     { */
-    /*         lengthVec.at(vecCounter) = 1.0; */
-    /*     } */
-    /*     vecCounter++; */
-    /* } */
+    // set all manually set bearings to 1 (highest probability)
+    int i = 0;
+    for (const auto& elem : detections.cdata())
+    {
+        if (detections.manualBearingExists(elem.first))
+            lengthVec[i] = 1.0;
+        i++;
+    }
 
     return lengthVec;
 }
