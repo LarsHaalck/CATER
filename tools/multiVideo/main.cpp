@@ -69,8 +69,8 @@ int main(int argc, const char** argv)
     std::vector<Images> imgContainers;
     std::vector<std::vector<std::size_t>> keyFrameList;
     std::vector<std::size_t> sizes;
-    std::vector<matches::PairwiseMatches> matchesIntraList;
-    std::vector<matches::PairwiseMatches> matchesInterList;
+    std::vector<PairwiseMatches> matchesIntraList;
+    std::vector<PairwiseMatches> matchesInterList;
 
     std::vector<Features> ftsOrbSparse;
     std::vector<Features> ftsOrbDense;
