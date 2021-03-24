@@ -50,8 +50,40 @@ void LabelEditor::on_buttonNewLabel_clicked()
     if (id.parent().isValid())
         id = id.parent();
 
-    auto parent = mModel.item(id.row());
+    auto row = id.row();
+    if (!isBlocked(row))
+    {
+        auto confirm = QMessageBox::question(this, "Override Parent?",
+            "Adding sub-labels will reset color and hotkey for parent. Continue?");
+        if (confirm == QMessageBox::No)
+            return;
+        blockResetItem(row);
+    }
+
+    auto parent = mModel.item(row);
     parent->appendRow(getDefaultItems());
+}
+
+void LabelEditor::blockResetItem(int row)
+{
+    // reset color
+    mModel.item(row, 1)->setEditable(false);
+    mModel.item(row, 1)->setText("");
+
+    // reset key
+    mModel.item(row, 2)->setEditable(false);
+    mModel.item(row, 2)->setText("");
+}
+
+void LabelEditor::unblockItem(int row)
+{
+    mModel.item(row, 1)->setEditable(true);
+    mModel.item(row, 2)->setEditable(true);
+}
+
+bool LabelEditor::isBlocked(int row)
+{
+    return !mModel.item(row, 1)->isEditable();
 }
 
 void LabelEditor::on_buttonDelete_clicked()
@@ -68,7 +100,15 @@ void LabelEditor::on_buttonDelete_clicked()
 
 
     for (auto item : ids)
+    {
         mModel.removeRow(item.row(), item.parent());
+
+        if (item.parent().isValid())
+        {
+            auto row = item.parent().row();
+            unblockItem(row);
+        }
+    }
 }
 
 QList<QStandardItem*> LabelEditor::getDefaultItems() const

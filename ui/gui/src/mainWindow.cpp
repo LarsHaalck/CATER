@@ -5,6 +5,7 @@
 #include "gui/preferencesDialog.h"
 #include "gui/qtOpencvCore.h"
 #include "gui/scopedBlocker.h"
+#include "gui/labelEditor.h"
 #include "image-processing/util.h"
 #include <QDate>
 #include <QFileDialog>
@@ -150,8 +151,8 @@ void MainWindow::on_saveResults(bool force)
 
 void MainWindow::on_actionLabelEditor_triggered()
 {
-    /* LabelDialog labelDialog(this); */
-    /* labelDialog.exec(); */
+    LabelEditor label(this);
+    label.exec();
 }
 
 void MainWindow::on_actionPreferences_triggered()

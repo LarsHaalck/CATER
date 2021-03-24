@@ -22,6 +22,12 @@ set(SOURCES
     src/progressStatusBar.cpp
     src/setIO.cpp
     src/imageViewer.cpp
+
+    # label editor
+    src/labelEditor.cpp
+    src/keyDialog.cpp
+    src/keyDelegate.cpp
+    src/colorDelegate.cpp
     resources/resources.qrc
 )
 
@@ -34,6 +40,12 @@ set(GUI_HEADERS
     include/gui/unaryGraphicsView.h
     include/gui/imagesWorker.h
     include/gui/progressStatusBar.h
+
+    # label editor
+    include/gui/labelEditor.h
+    include/gui/keyDialog.h
+    include/gui/keyDelegate.h
+    include/gui/colorDelegate.h
 )
 
 ###########################################################################

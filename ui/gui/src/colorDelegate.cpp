@@ -46,7 +46,10 @@ void ColorDelegate::paint(
 {
     auto variant = index.model()->data(index, Qt::DisplayRole);
     if (!variant.toString().size())
+    {
+        painter->fillRect(option.rect, Qt::DiagCrossPattern);
         return;
+    }
 
     auto color = variant.value<QColor>();
     painter->fillRect(option.rect, color);

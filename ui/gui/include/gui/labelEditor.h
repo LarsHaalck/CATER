@@ -24,6 +24,9 @@ public:
     ~LabelEditor();
 private:
     QList<QStandardItem*> getDefaultItems() const;
+    void blockResetItem(int row);
+    void unblockItem(int row);
+    bool isBlocked(int row);
 
 private slots:
     void on_buttonNewGroup_clicked();
