@@ -22,10 +22,11 @@ class Detections
 public:
     Detections() = default;
     void insert(std::size_t idx, const Detection& detection);
-    void insert(std::size_t idx, const cv::Point& bearingPoint);
+    void insertBearing(std::size_t idx, const cv::Point& bearingPoint);
+    void insertBearing(std::size_t idx, double theta);
 
     Detection at(std::size_t idx) const;
-    cv::Point manualBearingAt(std::size_t idx) const;
+    double manualBearingAt(std::size_t idx) const;
 
     bool exists(std::size_t idx) const;
     bool manualBearingExists(std::size_t idx) const;
@@ -42,12 +43,11 @@ public:
     const std::map<std::size_t, Detection>& cdata() const { return mDetections; }
 
     void save(const std::filesystem::path& detectionsFile);
-
     static Detections fromDir(const std::filesystem::path& detectionsFile);
 
 private:
     std::map<std::size_t, Detection> mDetections;
-    std::unordered_map<std::size_t, cv::Point> mManualBearings;
+    std::unordered_map<std::size_t, double> mManualBearings;
 };
 } // namespace ht
 #endif // TRACKER_DETECTIONS_H

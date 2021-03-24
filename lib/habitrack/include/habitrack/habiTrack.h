@@ -72,8 +72,8 @@ public:
 
     void addManualUnary(std::size_t frame, cv::Point pt) { mManualUnaries.insert(frame, pt); }
     void removeManualUnary(std::size_t frame) { mManualUnaries.clear(frame); }
-    void addManualBearing(std::size_t frame, cv::Point pt) { mManualUnaries.insert(frame, pt); }
-    void removeManualBearing(std::size_t frame) { mManualUnaries.clear(frame); }
+    void addManualBearing(std::size_t frame, cv::Point pt) { mDetections.insertBearing(frame, pt); }
+    void removeManualBearing(std::size_t frame) { mDetections.clearManualBearing(frame); }
 
     const Images& images() const { return mImages; }
     const Features& features() const { return mFeatures; }

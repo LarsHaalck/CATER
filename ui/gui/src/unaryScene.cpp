@@ -50,9 +50,7 @@ void UnaryScene::setUnaryQuality(std::size_t id, UnaryQuality quality)
 
 void UnaryScene::resetUnaryQuality(std::size_t id)
 {
-    if (!mUnaryBackups.count(id))
-        setUnaryQuality(id, UnaryQuality::Undefined);
-    else
+    if (mUnaryBackups.count(id))
     {
         setUnaryQuality(id, mUnaryBackups[id]);
         mUnaryBackups.erase(id);

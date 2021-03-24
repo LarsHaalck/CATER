@@ -193,11 +193,24 @@ cv::Mat ImageViewer::processItem(int frameNum, const CacheItem& item, const VisS
     {
         auto detection = detections.at(idx);
         auto position = detection.position;
-        auto theta = detection.theta;
-        auto dirIndicator = rotatePointAroundPoint(position, theta);
-
         if (settings.bearing)
-            cv::line(frame, position, dirIndicator, cv::Scalar(0, 255, 0), 1);
+        {
+            double theta;
+            cv::Scalar color;
+            if (detections.manualBearingExists(idx))
+            {
+                theta = detections.manualBearingAt(idx);
+                color = cv::Scalar(255, 255, 0);
+            }
+            else
+            {
+                theta = detection.theta;
+                color = cv::Scalar(0, 255, 0);
+            }
+            auto dirIndicator = rotatePointAroundPoint(position, theta);
+            cv::line(frame, position, dirIndicator, color, 1);
+        }
+
 
         // overlay manual unary as well
         if (manualUnaries.exists(idx))
@@ -213,8 +226,7 @@ cv::Mat ImageViewer::processItem(int frameNum, const CacheItem& item, const VisS
             cv::add(frame, unaryColor, frame);
         }
 
-        auto color = cv::Scalar(100, 100, 255);
-        cv::circle(frame, position, 20, color, 2);
+        cv::circle(frame, position, 20, cv::Scalar(100, 100, 255), 2);
     }
 
     // get trajectory

@@ -57,6 +57,10 @@ void TrackerGraphicsView::mouseMoveEvent(QMouseEvent* event)
         QGraphicsView::mouseMoveEvent(event);
 }
 
+// Left click changes manual unary
+// right click deletes manual unary
+// shift left click changes bearing
+// shift right click deletes bearing
 void TrackerGraphicsView::mousePressEvent(QMouseEvent* event)
 {
     if (!event->modifiers().testFlag(Qt::ControlModifier)

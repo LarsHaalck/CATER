@@ -67,7 +67,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this->ui->graphicsView, SIGNAL(positionCleared()), this, SLOT(on_positionCleared()));
     connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this, SLOT(on_bearingCleared()));
 
-    connect(&mAutoSaveTimer, &QTimer::timeout, this, [this](){ saveResults(false); } );
+    /* connect(&mAutoSaveTimer, &QTimer::timeout, this, [this](){ saveResults(false); } ); */
     connect(this, SIGNAL(toggleChunk(int, bool)), this, SLOT(on_chunkToggled(int, bool)));
     connect(this, SIGNAL(warn(const QString&)), this, SLOT(on_warn(const QString&)));
 
@@ -651,7 +651,7 @@ void MainWindow::on_positionCleared()
     if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end)
         return;
 
-    spdlog::debug("GUI: manual position cleard on frame {}", mCurrentFrameNumber);
+    spdlog::debug("GUI: manual position cleared on frame {}", mCurrentFrameNumber);
     mHabiTrack.removeManualUnary(mCurrentFrameNumber);
     enqueueOptimization();
     ui->unaryView->getUnaryScene()->resetUnaryQuality(mCurrentFrameNumber);

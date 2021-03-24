@@ -1,6 +1,7 @@
 #include "tracker/detections.h"
 
 #include "image-processing/transformation.h"
+#include "image-processing/util.h"
 #include <opencv2/imgproc.hpp>
 #include <spdlog/spdlog.h>
 
@@ -28,7 +29,7 @@ void Detections::save(const std::filesystem::path& detectionsFile)
         if (mManualBearings.count(elem.first))
         {
             fs << "manually_set" << true;
-            fs << "manual_direction_point" << mManualBearings[elem.first];
+            fs << "manual_theta" << mManualBearings[elem.first];
         }
         else
         {
@@ -62,9 +63,9 @@ Detections Detections::fromDir(const std::filesystem::path& detectionsFile)
 
         if (manuallySet)
         {
-            cv::Point thetaDirectionPoint;
-            (*it)["manual_direction_point"] >> thetaDirectionPoint;
-            detections.insert(frameNo, thetaDirectionPoint);
+            double manualTheta;
+            (*it)["manual_theta"] >> manualTheta;
+            detections.insertBearing(frameNo, manualTheta);
         }
 
         detections.insert(frameNo, {position, theta, thetaQuality});
@@ -77,13 +78,18 @@ void Detections::insert(std::size_t idx, const Detection& detection)
     mDetections.insert({idx, detection});
 }
 
-void Detections::insert(std::size_t idx, const cv::Point& bearingPoint)
+void Detections::insertBearing(std::size_t idx, const cv::Point& bearingPoint)
 {
-    mManualBearings.insert({idx, bearingPoint});
+    mManualBearings.insert({idx, calcAngle(mDetections[idx].position, bearingPoint)});
+}
+
+void Detections::insertBearing(std::size_t idx, double theta)
+{
+    mManualBearings.insert({idx, theta});
 }
 
 Detection Detections::at(std::size_t idx) const { return mDetections.at(idx); }
-cv::Point Detections::manualBearingAt(std::size_t idx) const { return mManualBearings.at(idx); }
+double Detections::manualBearingAt(std::size_t idx) const { return mManualBearings.at(idx); }
 
 bool Detections::exists(std::size_t idx) const { return mDetections.count(idx); }
 bool Detections::manualBearingExists(std::size_t idx) const { return mManualBearings.count(idx); }
