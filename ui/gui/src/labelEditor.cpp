@@ -1,8 +1,11 @@
 #include "gui/labelEditor.h"
 #include "ui_labelEditor.h"
 
-#include <iostream>
+#include <set>
 #include <QMessageBox>
+#include <QCloseEvent>
+
+#include <iostream>
 
 namespace gui
 {
@@ -21,6 +24,8 @@ LabelEditor::LabelEditor(QWidget* parent)
     ui->treeView->setItemDelegateForColumn(2, &mKeyDelegate);
 
     mModel.setHorizontalHeaderLabels({"Label Name", "Color", "Hot-Key"});
+
+    connect(ui->labelEditorButtonBox, SIGNAL(accepted()), this, SLOT(on_accepted())); 
 }
 
 void LabelEditor::on_buttonNewGroup_clicked()
@@ -124,6 +129,61 @@ LabelEditor::~LabelEditor()
 {
     this->blockSignals(true);
     delete ui;
+}
+
+bool LabelEditor::checkDuplicate() const
+{
+    std::set<QString> keySet;
+    auto insertOrExists = [&](const QString& key)
+    {
+        if (key.size())
+        {
+            if (!keySet.count(key))
+            {
+                keySet.insert(key);
+                return false;
+            }
+            else
+                return true;
+        }
+        return false;
+    };
+
+    bool duplicate = false;
+    for (int r = 0; r < mModel.rowCount(); r++)
+    {
+        auto index = mModel.index(r, 0);
+        auto hotkey = mModel.data(mModel.index(r, 2)).toString();
+        if (insertOrExists(hotkey))
+        {
+            duplicate = true;
+            break;
+        }
+        if (mModel.hasChildren(index))
+        {
+            for (int c = 0; c < mModel.rowCount(index); c++)
+            {
+                hotkey = mModel.data(mModel.index(c, 2, index)).toString();
+                if (insertOrExists(hotkey))
+                {
+                    duplicate = true;
+                    break;
+                }
+            }
+        }
+    }
+    return duplicate;
+}
+
+void LabelEditor::on_accepted()
+{
+    if (checkDuplicate())
+    {
+        QMessageBox::information(this, "Info", "Two or more hotkeys share a hotkey");
+        return;
+    }
+
+    emit accept();
 }
 
 

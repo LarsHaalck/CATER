@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QStandardItemModel>
 #include <QItemSelectionModel>
+#include <set>
 
 #include "gui/colorDelegate.h"
 #include "gui/keyDelegate.h"
@@ -21,17 +22,21 @@ class LabelEditor : public QDialog
 
 public:
     explicit LabelEditor(QWidget* parent = nullptr);
+
     ~LabelEditor();
 private:
     QList<QStandardItem*> getDefaultItems() const;
     void blockResetItem(int row);
     void unblockItem(int row);
     bool isBlocked(int row);
+    bool checkDuplicate() const;
 
 private slots:
     void on_buttonNewGroup_clicked();
     void on_buttonNewLabel_clicked();
     void on_buttonDelete_clicked();
+
+    void on_accepted();
 
 private:
     Ui::LabelEditor* ui;

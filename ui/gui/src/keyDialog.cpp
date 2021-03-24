@@ -5,6 +5,8 @@
 #include <QKeyEvent>
 #include <QPushButton>
 
+#include <iostream>
+
 namespace gui
 {
 KeyDialog::KeyDialog(QWidget* parent)
@@ -38,6 +40,7 @@ void KeyDialog::setKeyName(QString key)
 }
 
 
+// TODO: reject non-alphanumeric keys here
 void KeyDialog::keyPressEvent(QKeyEvent* event)
 {
     if (event->modifiers() != Qt::NoModifier)
