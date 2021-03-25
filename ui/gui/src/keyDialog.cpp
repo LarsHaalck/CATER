@@ -43,7 +43,7 @@ void KeyDialog::setKeyName(QString key)
 // TODO: reject non-alphanumeric keys here
 void KeyDialog::keyPressEvent(QKeyEvent* event)
 {
-    if (event->modifiers() != Qt::NoModifier)
+    if (!event->modifiers().testFlag(Qt::NoModifier))
     {
         QMessageBox::information(this, "Info", "Please don't use modifier keys");
         return;

@@ -22,13 +22,16 @@ set(SOURCES
     src/progressStatusBar.cpp
     src/setIO.cpp
     src/imageViewer.cpp
+    resources/resources.qrc
 
     # label editor
     src/labelEditor.cpp
     src/keyDialog.cpp
     src/keyDelegate.cpp
     src/colorDelegate.cpp
-    resources/resources.qrc
+
+    # label
+    src/labelConfig.cpp
 )
 
 set(GUI_HEADERS
@@ -69,6 +72,7 @@ target_link_libraries(${EXE_NAME}
     progressbar
     cxxopts::cxxopts
     habitrack
+    cereal
 )
 
 if(${QT5_MULTIMEDIA_FOUND})

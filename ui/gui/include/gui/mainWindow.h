@@ -27,7 +27,7 @@ class MainWindow;
 
 namespace gui
 {
-class MainWindow : public QMainWindow
+class MainWindow final : public QMainWindow
 {
     Q_OBJECT
 
@@ -35,7 +35,8 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-    virtual void closeEvent(QCloseEvent* event);
+    void closeEvent(QCloseEvent* event);
+    void keyPressEvent(QKeyEvent* event);
 
 private:
     void populateGuiDefaults();
@@ -66,7 +67,6 @@ private:
     void track();
     bool checkIfBlocked();
     void loadResults();
-
     void enqueueOptimization();
 
 signals:

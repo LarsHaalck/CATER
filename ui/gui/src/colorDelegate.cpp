@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+#include <QEvent>
+
 namespace gui
 {
 ColorDelegate::ColorDelegate(QObject* parent)
@@ -55,5 +57,4 @@ void ColorDelegate::paint(
     painter->fillRect(option.rect, color);
 
 }
-
 } // namespace gui

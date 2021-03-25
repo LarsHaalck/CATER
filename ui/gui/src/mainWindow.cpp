@@ -2,10 +2,10 @@
 #include "ui_mainWindow.h"
 
 #include "gui/imagesWorker.h"
+#include "gui/labelEditor.h"
 #include "gui/preferencesDialog.h"
 #include "gui/qtOpencvCore.h"
 #include "gui/scopedBlocker.h"
-#include "gui/labelEditor.h"
 #include "image-processing/util.h"
 #include <QDate>
 #include <QFileDialog>
@@ -22,6 +22,8 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
+
+#include <QKeyEvent>
 
 using namespace ht;
 namespace fs = std::filesystem;
@@ -638,8 +640,8 @@ void MainWindow::on_bearingChanged(QPointF position)
     auto end = mHabiTrack.getEndFrame();
     if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end)
         return;
-    spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(),
-        position.y(), mCurrentFrameNumber);
+    spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(), position.y(),
+        mCurrentFrameNumber);
 
     mHabiTrack.addManualBearing(mCurrentFrameNumber, QtOpencvCore::qpoint2point(position));
     showFrame(mCurrentFrameNumber);
@@ -704,6 +706,19 @@ void MainWindow::closeEvent(QCloseEvent* event)
     default:
         break;
     }
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+    if (event->modifiers().testFlag(Qt::ControlModifier)
+            && event->modifiers().testFlag(Qt::AltModifier))
+        spdlog::critical("ctrl+alt");
+    else if (event->modifiers().testFlag(Qt::ControlModifier))
+        spdlog::critical("control");
+    else if (event->modifiers().testFlag(Qt::AltModifier))
+        spdlog::critical("alt");
+
+    spdlog::critical("key: {}, text: {}", event->key(), event->text().toStdString());
 }
 
 } // namespace gui
