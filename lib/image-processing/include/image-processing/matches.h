@@ -18,8 +18,8 @@ namespace ht
     using Match = cv::DMatch;
     using Matches = std::vector<cv::DMatch>;
 
-    using PairwiseMatches = std::unordered_map<std::pair<std::size_t, std::size_t>, Matches>;
-    using PairwiseTrafos = std::unordered_map<std::pair<std::size_t, std::size_t>, Trafo>;
+    using PairwiseMatches = std::unordered_map<std::pair<std::size_t, std::size_t>, Matches, hash>;
+    using PairwiseTrafos = std::unordered_map<std::pair<std::size_t, std::size_t>, Trafo, hash>;
 } // namespace ht
 
 namespace ht::matches
@@ -58,7 +58,7 @@ std::pair<Trafos, std::vector<Matches>> computePair(GeometricType geomType,
 
 template <typename T>
 static std::vector<std::pair<std::size_t, std::size_t>> getKeyList(
-    const std::unordered_map<std::pair<std::size_t, std::size_t>, T>& map)
+    const std::unordered_map<std::pair<std::size_t, std::size_t>, T, hash>& map)
 {
     auto keys = std::vector<std::pair<std::size_t, std::size_t>>();
     keys.reserve(map.size());

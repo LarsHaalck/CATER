@@ -3,18 +3,18 @@
 #include "panorama/idTranslator.h"
 #include <spdlog/spdlog.h>
 
-namespace ht::transitions
+namespace ht
 {
-std::unordered_map<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t>>
-getMostProminantTransition(
-    const PairwiseMatches& matches, const std::vector<std::size_t>& sizes)
+using MatchTransitions = std::unordered_map<std::pair<std::size_t, std::size_t>,
+    std::tuple<std::size_t, std::size_t, std::size_t>, hash>;
+
+Transitions
+getMostProminantTransition(const PairwiseMatches& matches, const std::vector<std::size_t>& sizes)
 {
     auto keys = matches::getKeyList(matches);
     ht::Translator translator(sizes);
 
-    std::unordered_map<std::pair<std::size_t, std::size_t>,
-        std::tuple<std::size_t, std::size_t, std::size_t>>
-        transitions;
+    MatchTransitions transitions;
     for (auto& pair : keys)
     {
         auto [idI, idJ] = pair;
@@ -49,9 +49,7 @@ getMostProminantTransition(
 
     auto edges = graph.kruskalMST();
 
-    using Pair = std::pair<std::size_t, std::size_t>;
-    std::unordered_map<Pair, Pair> optimalTransitions;
-
+    Transitions optimalTransitions;
     for (auto blockPair : edges)
     {
         auto [idI, idJ, _] = transitions[blockPair];

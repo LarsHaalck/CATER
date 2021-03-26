@@ -42,7 +42,7 @@ std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
     std::vector<Eigen::VectorXf> prevVisitFlag;
 
     /* std::vector<std::pair<std::size_t, std::size_t>> pairs; */
-    std::unordered_map<std::pair<std::size_t, std::size_t>, double> scores;
+    Scores scores;
 
     auto transId = [&ids](std::size_t i) { return ids.empty() ? i : ids[i]; };
 
@@ -96,9 +96,7 @@ std::vector<std::pair<std::size_t, std::size_t>> MildRecommender::getPairs(
     return pairs;
 }
 
-void MildRecommender::dilatePairList(
-    std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list, std::size_t size,
-    std::size_t window) const
+void MildRecommender::dilatePairList(Scores& list, std::size_t size, std::size_t window) const
 {
     auto w = mDilation;
     auto pairs = matches::getKeyList(list);
@@ -125,9 +123,7 @@ void MildRecommender::dilatePairList(
     }
 }
 
-void MildRecommender::addDiagonal(
-    std::unordered_map<std::pair<std::size_t, std::size_t>, double>& list, std::size_t size,
-    std::size_t window) const
+void MildRecommender::addDiagonal(Scores& list, std::size_t size, std::size_t window) const
 {
     for (std::size_t i = 0; i < size; i++)
     {

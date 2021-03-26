@@ -122,7 +122,7 @@ void PanoramaStitcher::initTrafosFromMultipleVideos(const PairwiseTrafos& trafos
     const std::vector<std::size_t> sizes,
     const std::vector<std::vector<cv::Mat>>& localOptimalTrafos,
     const std::unordered_map<std::pair<std::size_t, std::size_t>,
-        std::pair<std::size_t, std::size_t>>& optimalTransitions)
+        std::pair<std::size_t, std::size_t>, hash>& optimalTransitions)
 {
     for (std::size_t i = 0; i < mKeyFrames.size(); i++)
         mOptimizedTrafos[mKeyFrames[i]] = getIdentity(true);

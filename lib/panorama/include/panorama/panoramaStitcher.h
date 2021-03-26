@@ -6,6 +6,7 @@
 #include "image-processing/geometricType.h"
 #include "image-processing/matches.h"
 #include "image-processing/transformation.h"
+#include "image-processing/pairHash.h"
 
 #include <opencv2/core.hpp>
 #include <unordered_set>
@@ -49,7 +50,7 @@ public:
         const std::vector<std::size_t> sizes,
         const std::vector<std::vector<cv::Mat>>& localOptimalTrafos,
         const std::unordered_map<std::pair<std::size_t, std::size_t>,
-            std::pair<std::size_t, std::size_t>>& optimalTransitions);
+            std::pair<std::size_t, std::size_t>, hash>& optimalTransitions);
     void initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
         const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes);
     std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool blend = false,

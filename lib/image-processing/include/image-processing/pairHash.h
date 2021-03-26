@@ -3,16 +3,16 @@
 
 #include <utility>
 
-namespace std
+namespace ht
 {
-template <>
-struct hash<std::pair<size_t, size_t>>
+struct hash
 {
-    size_t operator()(const std::pair<size_t, size_t>& ids) const
+    template <typename T, typename U>
+    std::size_t operator()(const std::pair<T, U>& pair) const
     {
-        return hash<size_t>()(ids.first) ^ hash<size_t>()(ids.second);
+        return std::hash<T>()(pair.first) ^ std::hash<U>()(pair.second);
     }
 };
-}
+} // namespace ht
 
 #endif // HABITRACK_PAIR_HASH_H

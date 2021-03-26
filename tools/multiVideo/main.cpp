@@ -132,7 +132,7 @@ int main(int argc, const char** argv)
 
     // combined local dense matches and inter video sparse matches
     auto interVidMatches = matches::getMatches(ivlcMatchPath, geomType);
-    auto optimalTransitions = transitions::getMostProminantTransition(interVidMatches, sizes);
+    auto optimalTransitions = getMostProminantTransition(interVidMatches, sizes);
     std::vector<std::vector<cv::Mat>> localOptimalTrafos;
     for (auto path : videoPaths)
         localOptimalTrafos.push_back(PanoramaStitcher::loadTrafos(path / "kfs/opt_trafos.bin"));
