@@ -2,7 +2,7 @@
 #define HABITRACK_TRANSITIONS_H
 
 #include "image-processing/matches.h"
-#include "image-processing/pairHash.h"
+#include "util/pairHash.h"
 
 namespace ht
 {

@@ -3,7 +3,7 @@
 
 #include "image-processing/baseFeatureContainer.h"
 #include "image-processing/geometricType.h"
-#include "image-processing/pairHash.h"
+#include "util/pairHash.h"
 #include "image-processing/pairRecommender.h"
 #include "progressbar/baseProgressBar.h"
 #include <filesystem>

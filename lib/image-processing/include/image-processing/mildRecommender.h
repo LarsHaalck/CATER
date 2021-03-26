@@ -2,7 +2,7 @@
 #define HABITRACK_MILD_RECOMMENDER_H
 
 #include "image-processing/pairRecommender.h"
-#include "image-processing/pairHash.h"
+#include "util/pairHash.h"
 
 #include <memory>
 #include <unordered_map>

@@ -6,7 +6,7 @@
 #include "image-processing/geometricType.h"
 #include "image-processing/matches.h"
 #include "image-processing/transformation.h"
-#include "image-processing/pairHash.h"
+#include "util/pairHash.h"
 
 #include <opencv2/core.hpp>
 #include <unordered_set>

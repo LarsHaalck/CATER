@@ -71,6 +71,7 @@ target_link_libraries(${LIB_NAME}
     opencv_imgcodecs
     opencv_features2d
     opencv_calib3d
+    util
     PRIVATE
     opencv_imgproc
     opencv_highgui
@@ -79,7 +80,6 @@ target_link_libraries(${LIB_NAME}
     mild::mild
     cereal
     io
-    util
 )
 
 if(${WITH_SUPERGLUE})
