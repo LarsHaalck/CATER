@@ -24,25 +24,26 @@ class LabelEditor : public QDialog
 public:
     explicit LabelEditor(QWidget* parent = nullptr);
     ~LabelEditor();
+    void setLabelConfigs(const LabelGroupConfigs& config);
     LabelGroupConfigs getLabelConfigs() const;
 
 private:
-    QList<QStandardItem*> getDefaultItems() const;
-    void blockResetItem(int row);
-    void unblockItem(int row);
-    bool isBlocked(int row);
+    QList<QStandardItem*> getDefaultItems(bool blocked) const;
     QList<QStringList> getElements(int column) const;
     bool checkDuplicate(int column, int level = -1) const;
     bool checkEmpty(int column) const;
     bool validate();
 
     int keyStringToInt(const QString& key) const;
+    QString keyIntToString(int key) const;
 
 private slots:
     void on_buttonNewGroup_clicked();
     void on_buttonNewLabel_clicked();
+    void on_buttonReset_clicked();
     void on_buttonDelete_clicked();
     void on_accepted();
+
 
 private:
     Ui::LabelEditor* ui;

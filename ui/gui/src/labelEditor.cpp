@@ -33,7 +33,7 @@ LabelEditor::LabelEditor(QWidget* parent)
 void LabelEditor::on_buttonNewGroup_clicked()
 {
     QStandardItem* parent = mModel.invisibleRootItem();
-    parent->appendRow(getDefaultItems());
+    parent->appendRow(getDefaultItems(true));
 }
 
 void LabelEditor::on_buttonNewLabel_clicked()
@@ -58,37 +58,29 @@ void LabelEditor::on_buttonNewLabel_clicked()
         id = id.parent();
 
     auto row = id.row();
-    if (!isBlocked(row))
-    {
-        auto confirm = QMessageBox::question(this, "Override Parent?",
-            "Adding sub-labels will reset color and hotkey for parent. Continue?");
-        if (confirm == QMessageBox::No)
-            return;
-        blockResetItem(row);
-    }
-
     auto parent = mModel.item(row);
-    parent->appendRow(getDefaultItems());
+    parent->appendRow(getDefaultItems(false));
 }
 
-void LabelEditor::blockResetItem(int row)
+void LabelEditor::on_buttonReset_clicked()
 {
-    // reset color
-    mModel.item(row, 1)->setEditable(false);
-    mModel.item(row, 1)->setText("");
+    auto ids = mSelectionModel.selectedRows();
+    if (ids.empty())
+    {
+        QMessageBox::information(this, "Info", "Please select a row to reset");
+        return;
+    }
+    auto confirm = QMessageBox::question(
+        this, "Delete?", "Are you sure you want to reset this label? (color and hotkey)");
+    if (confirm == QMessageBox::No)
+        return;
 
-    // reset key
-    mModel.item(row, 2)->setEditable(false);
-    mModel.item(row, 2)->setText("");
+    for (auto item : ids)
+    {
+        mModel.itemFromIndex(mModel.index(item.row(), 1, item.parent()))->setText("");
+        mModel.itemFromIndex(mModel.index(item.row(), 2, item.parent()))->setText("");
+    }
 }
-
-void LabelEditor::unblockItem(int row)
-{
-    mModel.item(row, 1)->setEditable(true);
-    mModel.item(row, 2)->setEditable(true);
-}
-
-bool LabelEditor::isBlocked(int row) { return !mModel.item(row, 1)->isEditable(); }
 
 void LabelEditor::on_buttonDelete_clicked()
 {
@@ -104,20 +96,19 @@ void LabelEditor::on_buttonDelete_clicked()
         return;
 
     for (auto item : ids)
-    {
         mModel.removeRow(item.row(), item.parent());
-        if (item.parent().isValid())
-        {
-            auto row = item.parent().row();
-            unblockItem(row);
-        }
-    }
 }
 
-QList<QStandardItem*> LabelEditor::getDefaultItems() const
+QList<QStandardItem*> LabelEditor::getDefaultItems(bool blocked) const
 {
     auto color = new QStandardItem(QString(""));
     auto key = new QStandardItem(QString(""));
+    if (blocked)
+    {
+        color->setEditable(false);
+        key->setEditable(false);
+    }
+
     return {new QStandardItem(emptyLabelName), color, key};
 }
 
@@ -137,13 +128,10 @@ QList<QStringList> LabelEditor::getElements(int column) const
         auto key = mModel.data(mModel.index(r, column)).toString();
         currList.push_back(key);
 
-        if (mModel.hasChildren(index))
+        for (int c = 0; c < mModel.rowCount(index); c++)
         {
-            for (int c = 0; c < mModel.rowCount(index); c++)
-            {
-                key = mModel.data(mModel.index(c, column, index)).toString();
-                currList.push_back(key);
-            }
+            key = mModel.data(mModel.index(c, column, index)).toString();
+            currList.push_back(key);
         }
         lists.push_back(currList);
     }
@@ -237,6 +225,17 @@ bool LabelEditor::validate()
         return false;
     }
 
+    auto lists = getElements(0);
+    for (const auto& list : lists)
+    {
+        // first element is group name
+        if (list.size() < 3)
+        {
+            QMessageBox::information(this, "Info",
+                    "Every label group must contain at least two labels");
+            return false;
+        }
+    }
     return true;
 }
 
@@ -251,38 +250,58 @@ void LabelEditor::on_accepted()
 
 int LabelEditor::keyStringToInt(const QString& key) const
 {
-    return QKeySequence::fromString(key)[0];
+return QKeySequence::fromString(key)[0];
+}
+
+QString LabelEditor::keyIntToString(int key) const
+{
+    return QKeySequence(key).toString();
+}
+
+void LabelEditor::setLabelConfigs(const LabelGroupConfigs& configs)
+{
+    for (const auto& groupConfig : configs)
+    {
+        auto items = getDefaultItems(true);
+        items[0]->setText(QString::fromStdString(groupConfig.first));
+
+        QStandardItem* root = mModel.invisibleRootItem();
+        root->appendRow(items);
+
+        auto parent = mModel.itemFromIndex(mModel.index(mModel.rowCount() - 1, 0));
+        for (const auto& labelConfig : groupConfig.second)
+        {
+            items = getDefaultItems(false);
+            items[0]->setText(QString::fromStdString(labelConfig.label));
+            items[1]->setText(QString::fromStdString(labelConfig.color));
+            items[2]->setText(keyIntToString(labelConfig.key));
+            parent->appendRow(items);
+        }
+    }
 }
 
 LabelGroupConfigs LabelEditor::getLabelConfigs() const
 {
     LabelGroupConfigs configs;
+
+    // iterate through every group
     for (int r = 0; r < mModel.rowCount(); r++)
     {
-        auto groupConfig = LabelGroupConfig();
+        LabelGroupConfig config;
         auto index = mModel.index(r, 0);
-        if (mModel.hasChildren(index))
-        {
-            for (int c = 0; c < mModel.rowCount(index); c++)
-            {
-                auto name = mModel.data(mModel.index(c, 0, index)).toString().toStdString();
-                auto color = mModel.data(mModel.index(c, 1, index)).toString().toStdString();
-                auto key = mModel.data(mModel.index(c, 2, index)).toString().toStdString();
-                /* groupConfig.insert({name, {color, key}}); */
-            }
-        }
-        else
-        {
-            auto name = mModel.data(mModel.index(r, 0)).toString().toStdString();
-            auto color = mModel.data(mModel.index(r, 1)).toString().toStdString();
-            auto key = mModel.data(mModel.index(r, 2)).toString().toStdString();
-            /* groupConfig.insert({name, {color, key}}); */
-        }
+        auto groupName = mModel.data(index).toString().toStdString();
 
-        /* configs.push_back(std::move(groupConfig)); */
+
+        // iterate through sub-labels
+        for (int c = 0; c < mModel.rowCount(index); c++)
+        {
+            auto name = mModel.data(mModel.index(c, 0, index)).toString().toStdString();
+            auto color = mModel.data(mModel.index(c, 1, index)).toString().toStdString();
+            auto key = keyStringToInt(mModel.data(mModel.index(c, 2, index)).toString());
+            config.push_back({name, color, key});
+        }
+        configs.insert({groupName, std::move(config)});
     }
-
     return configs;
 }
-
 } // namespace gui

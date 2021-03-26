@@ -57,6 +57,13 @@
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="buttonReset">
+       <property name="text">
+        <string>Reset</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="buttonDelete">
        <property name="text">
         <string>Delete</string>
