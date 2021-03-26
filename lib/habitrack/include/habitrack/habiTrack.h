@@ -83,6 +83,8 @@ public:
     PairwiseMatches matches() const;
     PairwiseTrafos trafos() const;
 
+    std::filesystem::path getOutputPath() const { return mOutputPath; }
+
 private:
     void populatePaths();
     void openImagesHelper(const std::filesystem::path& path = {});

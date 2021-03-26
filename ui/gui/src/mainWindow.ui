@@ -757,11 +757,12 @@ color: white;
      <string>Tools</string>
     </property>
     <addaction name="actionPreferences"/>
-    <addaction name="actionLabelEditor"/>
     <addaction name="actionExpertMode"/>
     <addaction name="separator"/>
     <addaction name="actionPrev_Frame"/>
     <addaction name="actionNext_Frame"/>
+    <addaction name="separator"/>
+    <addaction name="actionLabelEditor"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
@@ -841,7 +842,7 @@ color: white;
   </action>
   <action name="actionLabelEditor">
    <property name="enabled">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>Label Editor...</string>

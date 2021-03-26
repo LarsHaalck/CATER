@@ -9,6 +9,9 @@
 #include "gui/progressStatusBar.h"
 #include "gui/trackerScene.h"
 #include "gui/unaryGraphicsView.h"
+#include "gui/labeler.h"
+#include "gui/labelConfig.h"
+
 #include "habitrack/habiTrack.h"
 #include <QFutureWatcher>
 #include <QMessageBox>
@@ -43,6 +46,8 @@ private:
     void openImagesHelper();
     void showFrame(std::size_t frame);
     void showFrame(const cv::Mat& img);
+
+    void updateLabels();
     void updateSlider();
     void setupProgressBar();
 
@@ -165,10 +170,17 @@ private:
     UnaryScene* mUnaryScene;
     std::size_t mCurrentFrameNumber;
     bool mSaved;
+    bool mLabelsSaved;
     QTimer mAutoSaveTimer;
     QElapsedTimer mFrameTimer;
 
     ht::HabiTrack mHabiTrack;
+
+    ////////////////////////////////
+    // Labeling
+    ////////////////////////////////
+    Labeler mLabeler;
+    LabelGroupConfigs mLabelConfigs;
 
     ////////////////////////////////
     // Threading
@@ -177,6 +189,8 @@ private:
     std::unordered_map<int, std::unique_ptr<QFutureWatcher<void>>> mDetectionsWatchers;
     bool mBlocked;
     std::unique_ptr<QThread> mBackgroundThread;
+
+
 };
 } // namespace gui
 #endif // MAINWINDOW_H

@@ -32,6 +32,7 @@ set(SOURCES
 
     # label
     src/labelConfig.cpp
+    src/labeler.cpp
 )
 
 set(GUI_HEADERS
@@ -73,6 +74,7 @@ target_link_libraries(${EXE_NAME}
     cxxopts::cxxopts
     habitrack
     cereal
+    util
 )
 
 if(${QT5_MULTIMEDIA_FOUND})

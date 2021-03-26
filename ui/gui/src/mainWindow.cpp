@@ -24,11 +24,13 @@
 #include <spdlog/spdlog.h>
 
 #include <QKeyEvent>
+#include "gui/labeler.h"
 
 using namespace ht;
 namespace fs = std::filesystem;
 
 constexpr int statusDelay = 2000;
+constexpr int nextInterval = 50;
 
 namespace gui
 {
@@ -38,6 +40,7 @@ MainWindow::MainWindow(QWidget* parent)
     , ui(new Ui::MainWindow)
     , mViewer(mHabiTrack)
     , mSaved(true)
+    , mLabelsSaved(true)
     , mBlocked(false)
 {
     ui->setupUi(this);
@@ -149,12 +152,28 @@ void MainWindow::on_saveResults(bool force)
         mSaved = true;
         statusBar()->showMessage("Saved results.", statusDelay);
     }
+
+    if (!mLabelsSaved || force)
+    {
+        saveLabelGroupConfigs(mHabiTrack.getOutputPath() / "label_config.json", mLabelConfigs);
+        mLabeler.save(mHabiTrack.getOutputPath() / "labels.json");
+        mLabelsSaved = true;
+        statusBar()->showMessage("Saved labels.", statusDelay);
+    }
 }
 
 void MainWindow::on_actionLabelEditor_triggered()
 {
-    LabelEditor label(this);
-    label.exec();
+    LabelEditor editor(this);
+    if (!mLabelConfigs.empty())
+        editor.setLabelConfigs(mLabelConfigs);
+    editor.exec();
+
+    mLabelConfigs = editor.getLabelConfigs();
+
+    mLabeler.init(mHabiTrack.images().size(), mLabelConfigs);
+    mLabeler.initDefaultLabels();
+    mLabelsSaved = false;
 }
 
 void MainWindow::on_actionPreferences_triggered()
@@ -191,7 +210,7 @@ void MainWindow::on_buttonNextFrame_clicked()
 
 void MainWindow::on_actionPrev_Frame_triggered()
 {
-    if (mFrameTimer.elapsed() < 50)
+    if (mFrameTimer.elapsed() < nextInterval)
         return;
     mFrameTimer.start();
 
@@ -201,12 +220,23 @@ void MainWindow::on_actionPrev_Frame_triggered()
 
 void MainWindow::on_actionNext_Frame_triggered()
 {
-    if (mFrameTimer.elapsed() < 50)
+    if (mFrameTimer.elapsed() < nextInterval)
         return;
     mFrameTimer.start();
 
     auto block = ScopedBlocker {ui->actionNext_Frame};
     on_buttonNextFrame_clicked();
+}
+
+
+void MainWindow::updateLabels()
+{
+    auto labels = mLabeler.getLabels(mCurrentFrameNumber);
+    auto sticky = mLabeler.getStickyLabels();
+    ui->labelLabel->setText(labels.first);
+    ui->labelLabel->setToolTip(labels.second);
+    ui->labelSticky->setText(sticky.first);
+    ui->labelSticky->setToolTip(sticky.second);
 }
 
 void MainWindow::updateSlider()
@@ -248,6 +278,8 @@ void MainWindow::showFrame(std::size_t frame)
     }
 
     updateSlider();
+    mLabeler.processSticky(mCurrentFrameNumber);
+    updateLabels();
 }
 
 void MainWindow::openImagesHelper()
@@ -354,8 +386,29 @@ void MainWindow::loadResults()
 void MainWindow::on_resultsLoaded()
 {
     mBlocked = false;
-    showFrame(mCurrentFrameNumber);
     ui->graphicsView->zoomToFit();
+    showFrame(mCurrentFrameNumber);
+
+    auto confirm = QMessageBox::question(
+        this, "Load label config?", "Do you also want load (copy) a label configuration file? ");
+    if (confirm == QMessageBox::No)
+        return;
+
+    QString configFile = QFileDialog::getOpenFileName(
+        this, tr("Open Label Config File (label_config.json)"), mStartPath, "JSON (*.json)");
+    if (configFile.isEmpty())
+        return;
+
+    mLabelConfigs = loadLabelGroupConfigs(configFile.toStdString());
+    mLabeler.init(mHabiTrack.images().size(), mLabelConfigs);
+    mLabeler.initDefaultLabels();
+
+    auto labelFile = mHabiTrack.getOutputPath() / "labels.json";
+    if (fs::exists(labelFile) && fs::is_regular_file(labelFile))
+        mLabeler.load(labelFile);
+
+    updateLabels();
+    mLabelsSaved = false;
 }
 
 void MainWindow::on_buttonStartFrame_clicked()
@@ -710,15 +763,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
 void MainWindow::keyPressEvent(QKeyEvent* event)
 {
-    if (event->modifiers().testFlag(Qt::ControlModifier)
-            && event->modifiers().testFlag(Qt::AltModifier))
-        spdlog::critical("ctrl+alt");
-    else if (event->modifiers().testFlag(Qt::ControlModifier))
-        spdlog::critical("control");
-    else if (event->modifiers().testFlag(Qt::AltModifier))
-        spdlog::critical("alt");
-
-    spdlog::critical("key: {}, text: {}", event->key(), event->text().toStdString());
+    mLabeler.processKeyEvent(mCurrentFrameNumber, event);
+    updateLabels();
 }
 
 } // namespace gui

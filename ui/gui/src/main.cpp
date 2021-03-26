@@ -3,9 +3,6 @@
 #include <spdlog/spdlog.h>
 
 #include <cxxopts.hpp>
-#include <fstream>
-
-#include "gui/labelConfig.h"
 
 int main(int argc, char* argv[])
 {

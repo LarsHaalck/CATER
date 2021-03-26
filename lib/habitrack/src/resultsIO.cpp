@@ -121,11 +121,13 @@ std::tuple<Preferences, std::filesystem::path, std::size_t, std::size_t> loadRes
     auto imgFolder = static_cast<fs::path>(fs["img_folder"]);
     auto startFrame = static_cast<std::size_t>(static_cast<int>(fs["start_frame"]));
     auto endFrame = static_cast<std::size_t>(static_cast<int>(fs["end_frame"]));
+    auto version = static_cast<std::string>(fs["version"]);
     auto prefs = detail::loadPreferences(fs);
 
     spdlog::debug("Img folder: {}", imgFolder.string());
     spdlog::debug("start frame: {}", startFrame);
     spdlog::debug("end frame: {}", endFrame);
+    spdlog::debug("version: {}", version);
     return {prefs, imgFolder, startFrame, endFrame};
 }
 
