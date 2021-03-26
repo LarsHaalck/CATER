@@ -46,15 +46,29 @@ void ColorDelegate::setModelData(
 void ColorDelegate::paint(
     QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
+    if (option.state & QStyle::State_Selected)
+        painter->fillRect(option.rect, option.palette.highlight());
+
     auto variant = index.model()->data(index, Qt::DisplayRole);
+
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+
+    auto center = option.rect.center();
+    auto height = option.rect.height() / 2;
     if (!variant.toString().size())
     {
-        painter->fillRect(option.rect, Qt::DiagCrossPattern);
-        return;
+        painter->setBrush(Qt::Dense6Pattern);
+        painter->drawEllipse(center, height, height);
+    }
+    else
+    {
+        auto color = variant.value<QColor>();
+        painter->setBrush(color);
+        painter->drawEllipse(center, height, height);
     }
 
-    auto color = variant.value<QColor>();
-    painter->fillRect(option.rect, color);
+    painter->restore();
 
 }
 } // namespace gui
