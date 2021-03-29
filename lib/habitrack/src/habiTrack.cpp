@@ -37,7 +37,26 @@ bool HabiTrack::detectionsComputed() const { return fs::is_regular_file(mDetecti
 bool HabiTrack::featureLoaded() const { return mFeatures.size(); }
 bool HabiTrack::unariesLoaded() const { return mUnaries.size(); }
 bool HabiTrack::detectionsLoaded() const { return mDetections.size(); }
-/* bool HabiTrack::manualUnariesLoaded() const { return mManualUnaries.size(); } */
+
+void HabiTrack::unload(bool deleteMatches)
+{
+    mFeatures = {};
+    mUnaries = {};
+    mDetections = {};
+
+    if (deleteMatches)
+    {
+        for (auto& p : fs::directory_iterator(mMatchFolder))
+        {
+            if (p.is_regular_file())
+            {
+                auto file = p.path().filename().string();
+                if (file.rfind("matches.", 0) == 0 || file.rfind("trafos.", 0) == 0)
+                    fs::remove(p);
+            }
+        }
+    }
+}
 
 void HabiTrack::loadImageFolder(const fs::path& imgFolder)
 {
@@ -282,7 +301,6 @@ PairwiseTrafos HabiTrack::trafos() const
     return matches::getTrafos(mMatchFolder, GeometricType::Homography);
 }
 
-
 void HabiTrack::optimizeUnaries(int chunk)
 {
     spdlog::debug("HabiTrack: Optimize Unaries (chunk {})", chunk);
@@ -292,7 +310,6 @@ void HabiTrack::optimizeUnaries(int chunk)
 
     if (!unariesComputed())
         throw HabiTrackException("Unaries need to be computed before optimization.");
-
 
     Detections detections;
     if (chunk == -1)

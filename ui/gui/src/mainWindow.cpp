@@ -23,8 +23,8 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include <QKeyEvent>
 #include "gui/labeler.h"
+#include <QKeyEvent>
 
 using namespace ht;
 namespace fs = std::filesystem;
@@ -83,6 +83,7 @@ MainWindow::MainWindow(QWidget* parent)
         SLOT(on_unaryQualitiesExtracted(const std::vector<double>&)));
     connect(this, SIGNAL(detectionsAvailable(int)), this, SLOT(on_detectionsAvailable(int)));
     connect(this, SIGNAL(saveResults(bool)), this, SLOT(on_saveResults(bool)));
+    connect(this, SIGNAL(breakingBoundaryChange()), this, SLOT(on_breakingBoundaryChange()));
 }
 
 MainWindow::~MainWindow()
@@ -227,7 +228,6 @@ void MainWindow::on_actionNext_Frame_triggered()
     auto block = ScopedBlocker {ui->actionNext_Frame};
     on_buttonNextFrame_clicked();
 }
-
 
 void MainWindow::updateLabels()
 {
@@ -380,19 +380,26 @@ void MainWindow::loadResults()
         emit detectionsAvailable(-1);
 }
 
+bool MainWindow::askContinue(const QString& title, const QString& text)
+{
+    auto confirm = QMessageBox::question(this, title, text);
+    if (confirm == QMessageBox::No)
+        return false;
+    return true;
+}
+
 void MainWindow::on_resultsLoaded()
 {
     mBlocked = false;
     ui->graphicsView->zoomToFit();
     showFrame(mCurrentFrameNumber);
 
-    auto confirm = QMessageBox::question(
-        this, "Load label config?", "Do you also want load (copy) a label configuration file? ");
-    if (confirm == QMessageBox::No)
+    if (!askContinue(
+            "Load label config?", "Do you also want load (copy) a label configuration file?"))
         return;
 
-    QString configFile = QFileDialog::getOpenFileName(
-        this, tr("Open Label Config File (label_config.json)"), mStartPath, "Label-Config (*.json)");
+    QString configFile = QFileDialog::getOpenFileName(this,
+        tr("Open Label Config File (label_config.json)"), mStartPath, "Label-Config (*.json)");
     if (configFile.isEmpty())
         return;
 
@@ -417,10 +424,22 @@ void MainWindow::on_buttonStartFrame_clicked()
     }
     spdlog::debug("GUI: changed start frame to {}", mCurrentFrameNumber);
 
-    // TODO: some data structures are no longer valid and should be computed again
+    bool breaking = false;
+    if (mCurrentFrameNumber < mHabiTrack.getStartFrame())
+    {
+        if (!askContinue("Breaking Change",
+                "Changing the value results in multiple data structures to be invalid. "
+                "Do you want to continue?"))
+            return;
+        breaking = true;
+    }
+
     mHabiTrack.setStartFrame(mCurrentFrameNumber);
     ui->labelStartFrame->setText(QString::number(mCurrentFrameNumber + 1));
     mSaved = false;
+
+    if (breaking)
+        emit breakingBoundaryChange();
 }
 
 void MainWindow::on_buttonEndFrame_clicked()
@@ -432,10 +451,22 @@ void MainWindow::on_buttonEndFrame_clicked()
     }
     spdlog::debug("GUI: changed end frame to {}", mCurrentFrameNumber);
 
-    // TODO: some data structures are no longer valid and should be computed again
+    bool breaking = false;
+    if (mCurrentFrameNumber > mHabiTrack.getEndFrame())
+    {
+        if (!askContinue("Breaking Change",
+                "Changing the value results in multiple data structures to be invalid."
+                "Do you want to continue?"))
+            return;
+        breaking = true;
+    }
+
     mHabiTrack.setEndFrame(mCurrentFrameNumber);
     ui->labelEndFrame->setText(QString::number(mCurrentFrameNumber + 1));
     mSaved = false;
+
+    if (breaking)
+        emit breakingBoundaryChange();
 }
 
 void MainWindow::on_buttonTrack_clicked() { enqueue(&MainWindow::track, &MainWindow::on_tracked); }
@@ -565,6 +596,14 @@ void MainWindow::on_buttonOptimizeUnaries_clicked()
         return;
 
     optimizeUnaries();
+}
+
+void MainWindow::on_breakingBoundaryChange()
+{
+    // unload everything, delete matches
+    mHabiTrack.unload(true);
+    mUnaryScene->clear();
+    openImagesHelper();
 }
 
 void MainWindow::optimizeUnaries()

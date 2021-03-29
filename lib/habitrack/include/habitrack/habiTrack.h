@@ -46,7 +46,8 @@ public:
     bool featureLoaded() const;
     bool unariesLoaded() const;
     bool detectionsLoaded() const;
-    /* bool manualUnariesLoaded() const; */
+
+    void unload(bool deleteMatches = false);
 
     void loadImageFolder(const std::filesystem::path& imgFolder);
     void loadResultsFile(const std::filesystem::path& resultFile);
@@ -115,8 +116,6 @@ private:
     Unaries mUnaries;
     ManualUnaries mManualUnaries;
     Detections mDetections;
-    std::vector<double> mUnaryQualities;
-
     PairwiseTrafos mTrafos;
 };
 } // namespace ht

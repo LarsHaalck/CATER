@@ -51,6 +51,8 @@ private:
     void updateSlider();
     void setupProgressBar();
 
+    bool askContinue(const QString& title, const QString& text);
+
     template <class Function, class Slot>
     void enqueue(Function&& func, Slot&& slot)
     {
@@ -77,6 +79,7 @@ private:
 signals:
     void toggleChunk(int chunk, bool compute);
     void warn(const QString& msg);
+    void breakingBoundaryChange();
 
     void trafosExtracted();
     void unariesExtracted();
@@ -133,6 +136,8 @@ private slots:
     void on_unariesExtracted();
     void on_unaryQualitiesExtracted(const stdVecDouble& qualities);
     void on_buttonOptimizeUnaries_clicked();
+
+    void on_breakingBoundaryChange();
 
 
     ////////////////////////////////
