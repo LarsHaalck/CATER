@@ -20,7 +20,6 @@ set(SOURCES
     src/unaryGraphicsView.cpp
     src/qtOpencvCore.cpp
     src/progressStatusBar.cpp
-    src/setIO.cpp
     src/imageViewer.cpp
     resources/resources.qrc
 
