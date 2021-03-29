@@ -50,6 +50,7 @@ cv::Point rotatePointAroundPoint(cv::Point center_point, double angle)
 {
     int y_displacement = 20;
     /*
+     * https://stackoverflow.com/a/12161405/5924858
      * The easiest approach is to compose three transformations:
      *
      * 1. A translation that brings point 1 to the origin
@@ -74,7 +75,7 @@ cv::Point rotatePointAroundPoint(cv::Point center_point, double angle)
 
     cv::Point rotation_point(center_point.x, center_point.y + y_displacement);
     double radian_angle = angle - 180;
-    radian_angle *= CV_PI / 180; // 3)
+    radian_angle *= CV_PI / 180;
 
     double new_x = center_point.x + (rotation_point.x - center_point.x) * cos(radian_angle)
         - (rotation_point.y - center_point.y) * sin(radian_angle);
