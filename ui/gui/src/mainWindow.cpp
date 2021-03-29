@@ -378,9 +378,6 @@ void MainWindow::loadResults()
     }
     if (mHabiTrack.detectionsComputed())
         emit detectionsAvailable(-1);
-
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(2s);
 }
 
 void MainWindow::on_resultsLoaded()
@@ -395,7 +392,7 @@ void MainWindow::on_resultsLoaded()
         return;
 
     QString configFile = QFileDialog::getOpenFileName(
-        this, tr("Open Label Config File (label_config.json)"), mStartPath, "JSON (*.json)");
+        this, tr("Open Label Config File (label_config.json)"), mStartPath, "Label-Config (*.json)");
     if (configFile.isEmpty())
         return;
 
@@ -441,7 +438,7 @@ void MainWindow::on_buttonEndFrame_clicked()
     mSaved = false;
 }
 
-void MainWindow::on_buttonTrack_clicked() { enqueue(&MainWindow::track, &MainWindow::on_finished); }
+void MainWindow::on_buttonTrack_clicked() { enqueue(&MainWindow::track, &MainWindow::on_tracked); }
 
 void MainWindow::track()
 {
@@ -450,7 +447,11 @@ void MainWindow::track()
     extractTrafos();
     if (!mHabiTrack.unariesLoaded())
         extractUnaries();
+}
 
+void MainWindow::on_tracked()
+{
+    mBlocked = false;
     optimizeUnaries();
 }
 

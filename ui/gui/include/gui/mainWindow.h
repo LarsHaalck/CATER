@@ -125,6 +125,7 @@ private slots:
     void on_buttonStartFrame_clicked();
     void on_buttonEndFrame_clicked();
     void on_buttonTrack_clicked();
+    void on_tracked();
     void on_buttonExtractFeatures_clicked();
     void on_buttonExtractTrafos_clicked();
     void on_trafosExtracted();
