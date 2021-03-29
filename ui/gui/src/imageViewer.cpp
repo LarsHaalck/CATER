@@ -183,7 +183,6 @@ cv::Mat ImageViewer::processItem(int frameNum, const CacheItem& item, const VisS
         cv::split(unaryColor, channels);
         channels[0] = cv::Mat::zeros(unary.size(), CV_8UC1);
         cv::merge(channels, unaryColor);
-        cv::resize(unaryColor, unaryColor, frame.size());
         cv::addWeighted(unaryColor, alpha, frame, (1 - alpha), 0.0, frame);
     }
 
@@ -222,7 +221,6 @@ cv::Mat ImageViewer::processItem(int frameNum, const CacheItem& item, const VisS
             cv::split(unaryColor, channels);
             channels[2] = cv::Mat::zeros(unary.size(), CV_8UC1);
             cv::merge(channels, unaryColor);
-            cv::resize(unaryColor, unaryColor, frame.size());
             cv::add(frame, unaryColor, frame);
         }
 

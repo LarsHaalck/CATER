@@ -38,8 +38,8 @@ public:
 
 private:
     Unaries(const std::filesystem::path& unDir,
-        const std::unordered_map<std::size_t, std::filesystem::path> unFiles, double subsample,
-        double sigma, bool removeCamMotion, const cv::Mat& gaussian);
+        const std::unordered_map<std::size_t, std::filesystem::path> unFiles, cv::Size imgSize,
+        double subsample, double sigma, bool removeCamMotion, const cv::Mat& gaussian);
     static cv::Mat getOOPO1(const cv::Mat& img);
     static void writeChunk(const Images& imgContainer, const std::filesystem::path& unDir,
         std::pair<std::size_t, std::size_t> bounds, const std::vector<cv::Mat>& unaries,
@@ -55,6 +55,7 @@ private:
 private:
     std::filesystem::path mUnDir;
     std::unordered_map<std::size_t, std::filesystem::path> mUnFiles;
+    cv::Size mImgSize;
     double mSubsample;
     double mSigma;
     bool mRemoveCamMotion;

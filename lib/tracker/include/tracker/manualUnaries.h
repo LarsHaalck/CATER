@@ -13,8 +13,11 @@ private:
     double mSubsample;
     int mUnarySize;
     cv::Size mImgSize;
-    std::unordered_map<std::size_t, cv::Point2f> mPoints; // loaded from file
-    std::unordered_map<std::size_t, cv::Mat> mUnaries; // generated from points
+    std::unordered_map<std::size_t, cv::Point2f> mPoints;
+
+    // stores a single centered manual unary embedded in an image three times the size of
+    // the input data (mImgSize) to be able to calculate manual unaries efficiently on the fly
+    cv::Mat mBluePrint;
 
 public:
     ManualUnaries();
@@ -42,6 +45,7 @@ private:
         const std::unordered_map<std::size_t, cv::Point2f>& mPoints);
 
     cv::Mat getUnaryFromPoint(const cv::Point2f& pt) const;
+    cv::Mat getBluePrint();
 };
 } // namespace ht
 #endif // TRACKER_MANUAL_UNARIES_H

@@ -18,9 +18,8 @@ using namespace transformation;
 namespace fs = std::filesystem;
 
 Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std::size_t start,
-    std::size_t end, bool removeLaser, double subsample, double sigma,
-    const PairwiseTrafos& trafos, std::size_t cacheSize,
-    std::shared_ptr<BaseProgressBar> cb)
+    std::size_t end, bool removeLaser, double subsample, double sigma, const PairwiseTrafos& trafos,
+    std::size_t cacheSize, std::shared_ptr<BaseProgressBar> cb)
 {
     // make sure folder exits
     if (!fs::exists(unDir) || !fs::is_directory(unDir))
@@ -149,7 +148,7 @@ Unaries Unaries::fromDir(
     auto size = imgContainer.getImgSize();
     cv::Mat gaussian = scaledGauss2D(center.x, center.y, sigma, sigma, 1.0, size);
     cv::resize(gaussian, gaussian, cv::Size(), subsample, subsample, cv::INTER_LINEAR);
-    return Unaries {unDir, files, subsample, sigma, removeCameraMotion, gaussian};
+    return Unaries {unDir, files, size, subsample, sigma, removeCameraMotion, gaussian};
 }
 
 cv::Mat Unaries::at(std::size_t idx) const
@@ -162,6 +161,7 @@ cv::Mat Unaries::at(std::size_t idx) const
     if (mRemoveCamMotion)
         cv::multiply(unary, mGaussian, unary);
 
+    // unary is saved as 8-Bit image
     unary /= 255.0f;
     unary += 0.0001f;
     return unary;
@@ -176,6 +176,7 @@ cv::Mat Unaries::previewAt(std::size_t idx) const
     unary.convertTo(unary, CV_32FC1);
     cv::multiply(unary, mGaussian, unary);
     unary.convertTo(unary, CV_8UC1);
+    cv::resize(unary, unary, mImgSize);
     return unary;
 }
 
@@ -205,9 +206,11 @@ std::tuple<double, double, bool> Unaries::readProperties(const fs::path& unDir)
 }
 
 Unaries::Unaries(const fs::path& unDir, const std::unordered_map<std::size_t, fs::path> unFiles,
-    double subsample, double sigma, bool removeCameraMotion, const cv::Mat& gaussian)
+    cv::Size imgSize, double subsample, double sigma, bool removeCameraMotion,
+    const cv::Mat& gaussian)
     : mUnDir(unDir)
     , mUnFiles(unFiles)
+    , mImgSize(imgSize)
     , mSubsample(subsample)
     , mSigma(sigma)
     , mRemoveCamMotion(removeCameraMotion)
