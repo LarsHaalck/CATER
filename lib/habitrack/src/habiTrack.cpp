@@ -183,7 +183,7 @@ void HabiTrack::extractFeatures()
     spdlog::debug("HabiTrack: Clicked Extract Features");
 
     auto start = mStartFrameNumber;
-    auto end = mEndFrameNumber;
+    auto end = mEndFrameNumber + 1;
     if (featureComputed())
     {
         mFeatures = Features::fromDir(mImages, mFtFolder, mPrefs.featureType, start, end);
