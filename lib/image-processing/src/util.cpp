@@ -4,24 +4,18 @@ constexpr double pi() { return std::atan(1)*4; }
 
 namespace ht
 {
+float gauss1DPDF(float mean, float sigma, float x)
+{
+    float z = std::pow(x - mean, 2);
+    float n = static_cast<float>(2) * std::pow(sigma, 2);
+    return z / n;
+}
+
 float scaledGauss2DPDF(
     float meanX, float meanY, float sigmaX, float sigmaY, float scale, float x, float y)
 {
-    // calc (x-x0)^2
-    float z1 = std::pow(x - meanX, 2);
-    // calc 2*sigmaX^2
-    float n1 = static_cast<float>(2) * std::pow(sigmaX, 2);
-    // calc z1/n1
-    float s1 = z1 / n1;
-
-    // calc (y-y0)^2
-    float z2 = std::pow(y - meanY, 2);
-    // calc 2*sigmaY^2
-    float n2 = static_cast<float>(2) * std::pow(sigmaY, 2);
-    // calc z2/n2
-    float s2 = z2 / n2;
-
-    // calc A*exp(-(s1+s2))
+    float s1 = gauss1DPDF(meanX, sigmaX, x);
+    float s2 = gauss1DPDF(meanY, sigmaY, y);
     float ret = scale * std::exp(-(s1 + s2));
     return ret;
 }

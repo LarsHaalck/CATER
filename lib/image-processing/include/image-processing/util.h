@@ -16,6 +16,7 @@ inline std::vector<std::size_t> getContinuousIds(std::size_t start, std::size_t 
     return ids;
 }
 
+float gauss1DPDF(float mean, float sigma, float x);
 float scaledGauss2DPDF(
     float meanX, float meanY, float sigmaX, float sigmaY, float scale, float x, float y);
 
