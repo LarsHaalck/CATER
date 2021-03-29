@@ -75,6 +75,7 @@ target_link_libraries(${EXE_NAME}
     habitrack
     cereal
     util
+    io
 )
 
 if(${QT5_MULTIMEDIA_FOUND})

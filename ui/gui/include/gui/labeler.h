@@ -2,8 +2,8 @@
 #define GUI_LABELER_H
 
 #include <filesystem>
+#include <set>
 #include <unordered_map>
-#include <unordered_set>
 
 #include <QKeyEvent>
 
@@ -13,7 +13,16 @@
 namespace gui
 {
 using LabelId = std::pair<std::string, int>;
-using Labels = std::unordered_set<LabelId, ht::hash>;
+
+struct compare_struct
+{
+    bool operator()(const std::pair<std::string, int>& lhs, const std::pair<std::string, int>& rhs) const
+    {
+        return (lhs.first < rhs.first);
+    }
+};
+
+using Labels = std::set<LabelId, compare_struct>;
 
 class Labeler
 {
@@ -31,6 +40,7 @@ public:
 
     void save(const std::filesystem::path& labelFile);
     void load(const std::filesystem::path& labelFile);
+
 private:
     void buildKeyMap();
     void makeSticky(const LabelId& label);
@@ -48,46 +58,4 @@ private:
     std::vector<Labels> mLabels;
 };
 } // namespace gui
-
-namespace cereal
-{
-//! Serializing for std::pair
-template <class Archive>
-void serialize(Archive& archive, std::pair<std::string, int>& labelId)
-{
-    archive(make_nvp("label", labelId.first));
-    archive(make_nvp("value:", labelId.second));
-}
-
-template <class Archive, class T>
-void serialize(Archive& archive, std::pair<std::size_t, T>& test)
-{
-    archive(make_nvp("frame", test.first));
-    archive(make_nvp("labels", test.second));
-}
-
-template <class Archive, class T>
-void save(Archive& archive, const std::vector<T>& vec)
-{
-    archive(make_size_tag(static_cast<size_type>(vec.size())));
-    for (std::size_t i = 0; i < vec.size(); i++)
-        archive(std::make_pair(i, vec[i]));
-}
-
-template <class Archive, class T>
-void load(Archive& archive, std::vector<T>& vec)
-{
-    size_type size;
-    archive(make_size_tag(size));
-    vec.resize(static_cast<std::size_t>(size));
-
-    for(auto&& v : vec)
-    {
-        auto pair = std::pair<std::size_t, T>();
-        archive(pair);
-        v = pair.second;
-    }
-}
-
-} // namespace cereal
 #endif // GUI_LABELER_H

@@ -1,12 +1,9 @@
 #include "gui/labeler.h"
 
 #include <fstream>
-
-#include <cereal/archives/json.hpp>
-#include <cereal/types/string.hpp>
-#include <cereal/types/unordered_set.hpp>
-
 #include <spdlog/spdlog.h>
+
+#include "labelIO.h"
 
 namespace gui
 {
@@ -95,11 +92,10 @@ std::pair<QString, QString> Labeler::getLabels(const Labels& labels) const
         auto color = mConfig.at(label.first)[label.second].color;
         auto name = QString::fromStdString(mConfig.at(label.first)[label.second].label);
         resShort += coloredCircle(color);
-        resLong += QString::fromStdString(label.first) + ": " + name  + "\n";
+        resLong += QString::fromStdString(label.first) + ": " + name + "\n";
     }
     return std::make_pair(resShort, resLong);
 }
-
 
 void Labeler::processKeyEvent(std::size_t frame, QKeyEvent* event)
 {
@@ -127,10 +123,7 @@ void Labeler::processKeyEvent(std::size_t frame, QKeyEvent* event)
     }
 }
 
-bool Labeler::isSticky(const LabelId& label)
-{
-    return mStickyLabels.count(label);
-}
+bool Labeler::isSticky(const LabelId& label) { return mStickyLabels.count(label); }
 
 void Labeler::processSticky(std::size_t frame)
 {
@@ -169,6 +162,7 @@ void processSticky(std::size_t frame);
 void Labeler::save(const std::filesystem::path& labelFile)
 {
     std::ofstream stream(labelFile.string(), std::ofstream::out);
+    ht::io::checkStream(stream, labelFile);
     {
         cereal::JSONOutputArchive archive(stream);
         archive(mLabels);
@@ -178,6 +172,7 @@ void Labeler::save(const std::filesystem::path& labelFile)
 void Labeler::load(const std::filesystem::path& labelFile)
 {
     std::ifstream stream(labelFile.string(), std::ofstream::in);
+    ht::io::checkStream(stream, labelFile);
     {
         cereal::JSONInputArchive archive(stream);
         archive(mLabels);
