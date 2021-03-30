@@ -77,7 +77,7 @@ target_link_libraries(${EXE_NAME}
     io
 )
 
-if(${QT5_MULTIMEDIA_FOUND})
+if(${Qt5Multimedia_FOUND})
     target_link_libraries(${EXE_NAME}
         PRIVATE
         Qt5::Multimedia
