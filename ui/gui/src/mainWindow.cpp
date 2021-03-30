@@ -678,6 +678,7 @@ void MainWindow::on_incremented(int inc)
     ui->progressBar->setValue(ui->progressBar->value() + inc);
 }
 
+// TODO: invalid read in destructor of mainwindow
 void MainWindow::on_isDone()
 {
     ui->labelProgress->setText("Finished");
