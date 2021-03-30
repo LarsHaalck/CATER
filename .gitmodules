@@ -1,0 +1,18 @@
+[submodule "lib/3rdparty/cxxopts"]
+	path = lib/3rdparty/cxxopts
+	url = https://github.com/jarro2783/cxxopts
+[submodule "lib/3rdparty/spdlog"]
+	path = lib/3rdparty/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "lib/3rdparty/MILD"]
+	path = lib/3rdparty/MILD
+	url = https://github.com/LarsHaalck/MILD/
+[submodule "lib/3rdparty/cereal"]
+	path = lib/3rdparty/cereal
+	url = https://github.com/USCiLab/cereal
+[submodule "lib/3rdparty/ceres-solver"]
+	path = lib/3rdparty/ceres-solver
+	url = https://github.com/ceres-solver/ceres-solver
+[submodule "lib/3rdparty/opencv"]
+	path = lib/3rdparty/opencv
+	url = https://github.com/opencv/opencv

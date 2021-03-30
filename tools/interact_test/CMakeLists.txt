@@ -1,5 +1,3 @@
-find_package(cxxopts REQUIRED)
-
 add_executable(interact_test main.cpp kde.cpp)
 target_include_directories(interact_test
     PRIVATE

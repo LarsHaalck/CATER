@@ -235,3 +235,5 @@ dmypy.json
 
 .ccls-cache
 
+lib/3rdparty/*
+

@@ -1,3 +1,5 @@
+find_package(cxxopts REQUIRED)
+
 add_subdirectory(simple_tracker)
 add_subdirectory(singleVideo)
 add_subdirectory(fullVideo)

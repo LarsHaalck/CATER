@@ -5,7 +5,6 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Concurrent REQUIRED)
 find_package(Qt5Multimedia QUIET)
 find_package(cereal REQUIRED)
-find_package(cxxopts REQUIRED)
 
 ###########################################################################
 #                                FILES                                    #
@@ -67,15 +66,20 @@ target_link_libraries(${EXE_NAME}
     PRIVATE
     Qt5::Widgets
     Qt5::Concurrent
-    OpenMP::OpenMP_CXX
     spdlog::spdlog
     progressbar
-    cxxopts::cxxopts
     habitrack
     cereal
     util
     io
 )
+
+if(${OpenMP_CXX_FOUND})
+    target_link_libraries(${EXE_NAME}
+        PRIVATE
+        OpenMP::OpenMP_CXX
+    )
+endif()
 
 if(${Qt5Multimedia_FOUND})
     target_link_libraries(${EXE_NAME}

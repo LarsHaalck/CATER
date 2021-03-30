@@ -2,8 +2,6 @@
 #include <QApplication>
 #include <spdlog/spdlog.h>
 
-#include <cxxopts.hpp>
-
 int main(int argc, char* argv[])
 {
     spdlog::set_level(spdlog::level::debug);

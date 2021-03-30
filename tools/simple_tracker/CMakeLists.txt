@@ -1,5 +1,3 @@
-find_package(cxxopts REQUIRED)
-
 add_executable(simple_tracker main.cpp)
 target_link_libraries(simple_tracker
     PUBLIC
