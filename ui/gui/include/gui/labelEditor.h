@@ -1,5 +1,5 @@
 #ifndef GUI_LABEL_EDITOR_H
-#define GUI_LABEL_EDITOR_HH
+#define GUI_LABEL_EDITOR_H
 
 #include <QDialog>
 #include <QItemSelectionModel>
