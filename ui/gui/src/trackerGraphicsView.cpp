@@ -19,10 +19,7 @@ void TrackerGraphicsView::setScale(const qreal scale)
     this->scale(scale / transform.m11(), scale / transform.m22());
 }
 
-void TrackerGraphicsView::zoomToFit()
-{
-    fitInView(scene()->sceneRect(), Qt::KeepAspectRatio);
-}
+void TrackerGraphicsView::zoomToFit() { fitInView(scene()->sceneRect(), Qt::KeepAspectRatio); }
 
 void TrackerGraphicsView::wheelEvent(QWheelEvent* event)
 {

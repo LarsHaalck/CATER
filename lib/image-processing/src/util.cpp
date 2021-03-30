@@ -1,6 +1,6 @@
 #include "image-processing/util.h"
 
-constexpr double pi() { return std::atan(1)*4; }
+constexpr double pi() { return std::atan(1) * 4; }
 
 namespace ht
 {
@@ -43,7 +43,7 @@ double calcAngle(const cv::Point2d& p1, const cv::Point2d& p2)
     // we have to add do (angle + 2pi) % 2pi to fix this
     // and we have to to (angle + pi/2) % 2pi to rotate the coordinat system
     // --> do (angle + 5pi/2) % 2pi
-    return std::fmod(angle + 5*pi()/2, 2*pi()) * 180/pi();
+    return std::fmod(angle + 5 * pi() / 2, 2 * pi()) * 180 / pi();
 }
 
 cv::Point rotatePointAroundPoint(cv::Point center_point, double angle)

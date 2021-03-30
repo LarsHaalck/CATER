@@ -1,17 +1,16 @@
 #ifndef MODEL_HABITRACK_H
 #define MODEL_HABITRACK_H
 
-
 #include "habitrack/preferences.h"
-#include "tracker/tracker.h"
-#include "util/threadPool.h"
-#include "tracker/detections.h"
-#include "tracker/manualUnaries.h"
-#include "tracker/unaries.h"
 #include "image-processing/features.h"
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
 #include "progressbar/baseProgressBar.h"
+#include "tracker/detections.h"
+#include "tracker/manualUnaries.h"
+#include "tracker/tracker.h"
+#include "tracker/unaries.h"
+#include "util/threadPool.h"
 #include <deque>
 #include <filesystem>
 #include <unordered_set>

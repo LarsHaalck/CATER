@@ -1,10 +1,10 @@
-#include "tracker/manualUnaries.h"
-#include "tracker/tracker2.h"
-#include "tracker/unaries.h"
 #include "image-processing/features.h"
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
 #include "kde.h"
+#include "tracker/manualUnaries.h"
+#include "tracker/tracker2.h"
+#include "tracker/unaries.h"
 
 #include <iostream>
 #include <opencv2/core.hpp>
@@ -26,8 +26,7 @@ std::size_t start_frame = 619;
 std::size_t end_frame = 13724;
 std::size_t chunk = 100;
 
-std::vector<double> random_choice_even(
-    const std::vector<double>& vec, std::size_t n)
+std::vector<double> random_choice_even(const std::vector<double>& vec, std::size_t n)
 {
     std::vector<double> subset;
     subset.reserve(n);
@@ -40,7 +39,6 @@ std::vector<double> random_choice_even(
 
     return subset;
 }
-
 
 int main(int argc, char** argv)
 {
@@ -85,7 +83,6 @@ int main(int argc, char** argv)
         auto frames_subset = random_choice_even(frames_all, k);
 
         spdlog::warn("S {}", frames_subset.size());
-
 
         auto manual_uns_subset = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
         for (auto f : frames_subset)

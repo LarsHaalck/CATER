@@ -231,8 +231,8 @@ bool LabelEditor::validate()
         // first element is group name
         if (list.size() < 3)
         {
-            QMessageBox::information(this, "Info",
-                    "Every label group must contain at least two labels");
+            QMessageBox::information(
+                this, "Info", "Every label group must contain at least two labels");
             return false;
         }
     }
@@ -250,13 +250,10 @@ void LabelEditor::on_accepted()
 
 int LabelEditor::keyStringToInt(const QString& key) const
 {
-return QKeySequence::fromString(key)[0];
+    return QKeySequence::fromString(key)[0];
 }
 
-QString LabelEditor::keyIntToString(int key) const
-{
-    return QKeySequence(key).toString();
-}
+QString LabelEditor::keyIntToString(int key) const { return QKeySequence(key).toString(); }
 
 void LabelEditor::setLabelConfigs(const LabelGroupConfigs& configs)
 {
@@ -290,7 +287,6 @@ LabelGroupConfigs LabelEditor::getLabelConfigs() const
         LabelGroupConfig config;
         auto index = mModel.index(r, 0);
         auto groupName = mModel.data(index).toString().toStdString();
-
 
         // iterate through sub-labels
         for (int c = 0; c < mModel.rowCount(index); c++)

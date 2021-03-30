@@ -8,8 +8,8 @@ namespace ht
 using MatchTransitions = std::unordered_map<std::pair<std::size_t, std::size_t>,
     std::tuple<std::size_t, std::size_t, std::size_t>, hash>;
 
-Transitions
-getMostProminantTransition(const PairwiseMatches& matches, const std::vector<std::size_t>& sizes)
+Transitions getMostProminantTransition(
+    const PairwiseMatches& matches, const std::vector<std::size_t>& sizes)
 {
     auto keys = matches::getKeyList(matches);
     ht::Translator translator(sizes);

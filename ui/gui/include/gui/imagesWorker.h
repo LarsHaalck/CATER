@@ -4,14 +4,12 @@
 #include <QObject>
 #include <filesystem>
 
-
 class ImagesWorker : public QObject
 {
     Q_OBJECT
 
 public:
     ImagesWorker(std::filesystem::path& imgFolder);
-
 
 public slots:
     void doWork()

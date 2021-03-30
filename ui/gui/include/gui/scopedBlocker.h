@@ -27,6 +27,7 @@ public:
                 o->blockSignals(false);
         }
     }
+
 private:
     std::vector<QObject*> mList;
 };

@@ -7,9 +7,6 @@ UnknownGeometricType::UnknownGeometricType(const std::string& type)
     , mType(std::string("Unknown Geometric Type suffix ") + type)
 {
 }
-const char* UnknownGeometricType::what() const throw()
-{
-    return mType.c_str();
-}
+const char* UnknownGeometricType::what() const throw() { return mType.c_str(); }
 
 }

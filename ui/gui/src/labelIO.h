@@ -1,12 +1,12 @@
 #ifndef GUI_LABEL_IO_H
 #define GUI_LABEL_IO_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <cereal/archives/json.hpp>
-#include <cereal/types/string.hpp>
 #include <cereal/types/set.hpp>
+#include <cereal/types/string.hpp>
 
 #include "io/io.h"
 

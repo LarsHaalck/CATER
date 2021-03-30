@@ -56,12 +56,10 @@ public:
     std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool blend = false,
         const std::filesystem::path& centerPath = {}, std::shared_ptr<BaseProgressBar> cb = {});
 
-    void globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
-        const PairwiseMatches& matches, std::size_t limitTo = 0,
-        std::shared_ptr<BaseProgressBar> cb = {});
-    void refineNonKeyFrames(const BaseFeatureContainer& fts,
-        const PairwiseMatches& matches, std::size_t limitTo = 0,
-        std::shared_ptr<BaseProgressBar> cb = {});
+    void globalOptimizeKeyFrames(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
+        std::size_t limitTo = 0, std::shared_ptr<BaseProgressBar> cb = {});
+    void refineNonKeyFrames(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
+        std::size_t limitTo = 0, std::shared_ptr<BaseProgressBar> cb = {});
     void reintegrate();
 
     static std::vector<cv::Mat> loadTrafos(const std::filesystem::path& file);
@@ -93,8 +91,8 @@ private:
         const std::vector<double>& camParams, const std::vector<double>& distParams);
 
     std::tuple<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>, std::vector<float>>
-    getCorrespondingPoints(std::pair<std::size_t, std::size_t> pair,
-        const Matches& matches, const BaseFeatureContainer& fts);
+    getCorrespondingPoints(std::pair<std::size_t, std::size_t> pair, const Matches& matches,
+        const BaseFeatureContainer& fts);
     cv::Point getCenter(const cv::Mat& trafo);
 
     cv::Mat transformBoundingRect(const cv::Mat& trafo) const;

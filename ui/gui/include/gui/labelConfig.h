@@ -1,14 +1,14 @@
 #ifndef GUI_LABELCONFIG_H
 #define GUI_LABELCONFIG_H
 
-#include <cereal/types/string.hpp>
 #include <cereal/types/map.hpp>
+#include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 
-#include <string>
-#include <map>
-#include <vector>
 #include <filesystem>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace gui
 {
@@ -27,7 +27,8 @@ using LabelGroupConfig = std::vector<LabelConfig>;
 using LabelGroupConfigs = std::map<std::string, LabelGroupConfig>;
 
 LabelGroupConfigs loadLabelGroupConfigs(const std::filesystem::path& configFile);
-void saveLabelGroupConfigs(const std::filesystem::path& configFile, const LabelGroupConfigs& configs);
+void saveLabelGroupConfigs(
+    const std::filesystem::path& configFile, const LabelGroupConfigs& configs);
 
 } // namespace gui
 

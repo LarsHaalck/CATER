@@ -159,7 +159,8 @@ ImageViewer::CacheItem ImageViewer::readItem(int frameNumber) const
     return item;
 }
 
-cv::Mat ImageViewer::processItem(int frameNum, const CacheItem& item, const VisSettings& settings) const
+cv::Mat ImageViewer::processItem(
+    int frameNum, const CacheItem& item, const VisSettings& settings) const
 {
     std::size_t idx = frameNum;
 
@@ -209,7 +210,6 @@ cv::Mat ImageViewer::processItem(int frameNum, const CacheItem& item, const VisS
             auto dirIndicator = rotatePointAroundPoint(position, theta);
             cv::line(frame, position, dirIndicator, color, 1);
         }
-
 
         // overlay manual unary as well
         if (manualUnaries.exists(idx))

@@ -69,6 +69,5 @@ void ColorDelegate::paint(
     }
 
     painter->restore();
-
 }
 } // namespace gui

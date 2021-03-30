@@ -1,7 +1,7 @@
 #include "gui/labelConfig.h"
 
-#include <filesystem>
 #include <cereal/archives/json.hpp>
+#include <filesystem>
 #include <fstream>
 
 namespace gui
@@ -17,7 +17,8 @@ LabelGroupConfigs loadLabelGroupConfigs(const std::filesystem::path& configFile)
     return configs;
 }
 
-void saveLabelGroupConfigs(const std::filesystem::path& configFile, const LabelGroupConfigs& configs)
+void saveLabelGroupConfigs(
+    const std::filesystem::path& configFile, const LabelGroupConfigs& configs)
 {
     std::ofstream stream(configFile.string(), std::ofstream::out);
     {

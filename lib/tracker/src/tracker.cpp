@@ -1,12 +1,12 @@
 #include "tracker/tracker.h"
 
-#include "tracker/manualUnaries.h"
-#include "util/threadPool.h"
-#include "tracker/unaries.h"
 #include "image-processing/transformation.h"
 #include "image-processing/util.h"
 #include "spdlog/spdlog.h"
+#include "tracker/manualUnaries.h"
+#include "tracker/unaries.h"
 #include "util/algorithm.h"
+#include "util/threadPool.h"
 #include <chrono>
 #include <future>
 #include <iostream>
@@ -42,7 +42,6 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     spdlog::debug("Elapsed time for chunk {} tracking: {}", chunk, elapsed.count());
     return extractFromStates(states, ids, chunk * chunkSize, settings, trafos);
 }
-
 
 // TODO: maybe remove this function because of redundancy with the function above
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,

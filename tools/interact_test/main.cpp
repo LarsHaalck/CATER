@@ -1,10 +1,10 @@
-#include "tracker/manualUnaries.h"
-#include "tracker/tracker.h"
-#include "tracker/unaries.h"
 #include "image-processing/features.h"
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
 #include "kde.h"
+#include "tracker/manualUnaries.h"
+#include "tracker/tracker.h"
+#include "tracker/unaries.h"
 
 #include <iostream>
 #include <opencv2/core.hpp>
@@ -85,7 +85,6 @@ int main(int argc, char** argv)
     for (const auto& pointPair : manual_uns)
         frames.push_back(pointPair.first);
     std::sort(std::begin(frames), std::end(frames));
-
 
     auto kde = KDE(KDE::BandwidthType::Silverman);
     if (a1 == "b")

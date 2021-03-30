@@ -423,8 +423,7 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
 /* } */
 
 void PanoramaStitcher::globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
-    const PairwiseMatches& matches, std::size_t limitTo,
-    std::shared_ptr<BaseProgressBar> cb)
+    const PairwiseMatches& matches, std::size_t limitTo, std::shared_ptr<BaseProgressBar> cb)
 {
     if (!cb)
         cb = std::make_shared<ProgressBar>();

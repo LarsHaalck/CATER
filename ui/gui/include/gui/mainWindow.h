@@ -6,11 +6,11 @@
 
 #include "gui/guiPreferences.h"
 #include "gui/imageViewer.h"
+#include "gui/labelConfig.h"
+#include "gui/labeler.h"
 #include "gui/progressStatusBar.h"
 #include "gui/trackerScene.h"
 #include "gui/unaryGraphicsView.h"
-#include "gui/labeler.h"
-#include "gui/labelConfig.h"
 
 #include "habitrack/habiTrack.h"
 #include <QFutureWatcher>
@@ -59,8 +59,7 @@ private:
         if (checkIfBlocked())
             return;
         mBlocked = true;
-        mBackgroundThread
-            = std::unique_ptr<QThread>(QThread::create(func, this));
+        mBackgroundThread = std::unique_ptr<QThread>(QThread::create(func, this));
         connect(mBackgroundThread.get(), &QThread::finished, this, slot);
         mBackgroundThread->start();
     }
@@ -86,7 +85,6 @@ signals:
     void unaryQualitiesExtracted(const stdVecDouble& qualites);
     void detectionsAvailable(int chunk);
     void saveResults(bool force);
-
 
 private slots:
     ////////////////////////////////
@@ -138,7 +136,6 @@ private slots:
     void on_buttonOptimizeUnaries_clicked();
 
     void on_breakingBoundaryChange();
-
 
     ////////////////////////////////
     // HabiTrack - Interaction
@@ -195,8 +192,6 @@ private:
     std::unordered_map<int, std::unique_ptr<QFutureWatcher<void>>> mDetectionsWatchers;
     bool mBlocked;
     std::unique_ptr<QThread> mBackgroundThread;
-
-
 };
 } // namespace gui
 #endif // MAINWINDOW_H

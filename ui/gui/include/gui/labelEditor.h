@@ -2,8 +2,8 @@
 #define GUI_LABEL_EDITOR_HH
 
 #include <QDialog>
-#include <QStandardItemModel>
 #include <QItemSelectionModel>
+#include <QStandardItemModel>
 #include <set>
 
 #include "gui/colorDelegate.h"
@@ -43,7 +43,6 @@ private slots:
     void on_buttonReset_clicked();
     void on_buttonDelete_clicked();
     void on_accepted();
-
 
 private:
     Ui::LabelEditor* ui;

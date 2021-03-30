@@ -16,7 +16,8 @@ using LabelId = std::pair<std::string, int>;
 
 struct compare_struct
 {
-    bool operator()(const std::pair<std::string, int>& lhs, const std::pair<std::string, int>& rhs) const
+    bool operator()(
+        const std::pair<std::string, int>& lhs, const std::pair<std::string, int>& rhs) const
     {
         return (lhs.first < rhs.first);
     }

@@ -18,13 +18,14 @@ public:
     explicit KeyDialog(QWidget* parent = nullptr);
     ~KeyDialog();
 
-    void keyPressEvent(QKeyEvent *event);
+    void keyPressEvent(QKeyEvent* event);
 
     int getKey() const { return mKey; }
     QString getKeyName() const { return mKeyName; }
 
     void setKey(int key);
     void setKeyName(QString key);
+
 private:
     Ui::KeyDialog* ui;
     int mKey;

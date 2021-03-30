@@ -13,7 +13,7 @@ struct Preferences
     int cacheSize = 400;
     int chunkSize = 100;
 
-    // colour correction TODO: needed?
+    // colour correction
     bool colourCorrection = false;
     int colourRed = 33;
     int colourGreen = 33;

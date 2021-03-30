@@ -206,7 +206,6 @@ Preferences PreferencesDialog::getPreferences() const
     p.nnRatio = ui->nnRatioSpin->value();
     p.ranscacReproj = ui->maxReprojSpin->value();
 
-
     p.cacheSize = ui->cacheSpin->value();
     p.chunkSize = ui->chunkSpin->value();
 

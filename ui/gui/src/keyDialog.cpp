@@ -1,8 +1,8 @@
 #include "gui/keyDialog.h"
 #include "ui_keyDialog.h"
 
-#include <QMessageBox>
 #include <QKeyEvent>
+#include <QMessageBox>
 #include <QPushButton>
 
 #include <iostream>
@@ -26,7 +26,6 @@ KeyDialog::~KeyDialog()
     delete ui;
 }
 
-
 void KeyDialog::setKey(int key)
 {
     mKey = key;
@@ -38,7 +37,6 @@ void KeyDialog::setKeyName(QString key)
     mKey = QKeySequence::fromString(key)[0];
     ui->key->setText(key);
 }
-
 
 // TODO: reject non-alphanumeric keys here
 void KeyDialog::keyPressEvent(QKeyEvent* event)
