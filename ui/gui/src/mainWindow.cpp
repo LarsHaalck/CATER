@@ -10,9 +10,7 @@
 #include <QDate>
 #include <QFileDialog>
 #include <QMessageBox>
-#ifdef WITH_QT5_MULTIMEDIA
 #include <QSound>
-#endif
 #include <QStatusBar>
 #include <QTime>
 #include <QtConcurrent>
@@ -648,11 +646,7 @@ void MainWindow::optimizeUnaries()
 
 void MainWindow::on_detectionsAvailable(int chunkId)
 {
-
-#ifdef WITH_QT5_MULTIMEDIA
     QSound::play("qrc:///sounds/notification.wav");
-#endif
-
     statusBar()->showMessage("New detections available", statusDelay);
     emit toggleChunk(chunkId, false);
     spdlog::debug("GUI: detections avaiable for chunk {}", chunkId);

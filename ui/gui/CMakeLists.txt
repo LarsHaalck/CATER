@@ -3,7 +3,7 @@
 ###########################################################################
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Concurrent REQUIRED)
-find_package(Qt5Multimedia QUIET)
+find_package(Qt5Multimedia REQUIRED)
 find_package(cereal REQUIRED)
 
 ###########################################################################
@@ -66,6 +66,7 @@ target_link_libraries(${EXE_NAME}
     PRIVATE
     Qt5::Widgets
     Qt5::Concurrent
+    Qt5::Multimedia
     spdlog::spdlog
     progressbar
     habitrack
@@ -79,14 +80,6 @@ if(${OpenMP_CXX_FOUND})
         PRIVATE
         OpenMP::OpenMP_CXX
     )
-endif()
-
-if(${Qt5Multimedia_FOUND})
-    target_link_libraries(${EXE_NAME}
-        PRIVATE
-        Qt5::Multimedia
-    )
-    add_compile_definitions(WITH_QT5_MULTIMEDIA)
 endif()
 
 install(TARGETS ${EXE_NAME}
