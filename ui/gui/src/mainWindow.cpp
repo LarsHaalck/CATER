@@ -485,12 +485,17 @@ void MainWindow::on_tracked()
     optimizeUnaries();
 }
 
-bool MainWindow::checkIfBlocked()
+bool MainWindow::checkIfBlocked(bool withOptimize)
 {
-    if (mBlocked)
+    if (mBlocked || (withOptimize && checkIfOptimzing()))
+    {
         emit warn("Cannot be started due to running operation");
-    return mBlocked;
+        return true;
+    }
+    return false;
 }
+
+bool MainWindow::checkIfOptimzing() { return !mDetectionsWatchers.empty(); }
 
 void MainWindow::on_buttonExtractFeatures_clicked()
 {
@@ -591,7 +596,9 @@ void MainWindow::on_chunkToggled(int chunk, bool compute)
 void MainWindow::on_buttonOptimizeUnaries_clicked()
 {
     spdlog::debug("GUI: Clicked Optimize Unaries");
-    if (checkIfBlocked())
+
+    // check only for blocked variable and allow if only optimizing
+    if (checkIfBlocked(false))
         return;
 
     optimizeUnaries();
@@ -630,7 +637,6 @@ void MainWindow::optimizeUnaries()
         chunk = mDetectionsQueue.front();
         mDetectionsQueue.pop_front();
     }
-    mBlocked = true;
     auto detectionFuture = QtConcurrent::run(&mHabiTrack, &HabiTrack::optimizeUnaries, chunk);
     auto watcher = std::make_unique<QFutureWatcher<void>>();
     watcher->setFuture(detectionFuture);
@@ -653,9 +659,6 @@ void MainWindow::on_detectionsAvailable(int chunkId)
     mDetectionsWatchers.erase(chunkId);
 
     ui->labelNumTrackedPos->setText(QString::number(mHabiTrack.detections().size()));
-
-    if (mDetectionsQueue.empty())
-        mBlocked = false;
 
     mSaved = false;
 }

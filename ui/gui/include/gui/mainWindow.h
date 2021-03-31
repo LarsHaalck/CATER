@@ -71,7 +71,8 @@ private:
     void extractUnaryQualities();
     void optimizeUnaries();
     void track();
-    bool checkIfBlocked();
+    bool checkIfBlocked(bool withOptimize = true);
+    bool checkIfOptimzing();
     void loadResults();
     void enqueueOptimization();
 
