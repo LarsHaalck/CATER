@@ -42,9 +42,9 @@ if(${BUILD_TOOLS})
 endif()
 
 
-include(GNUInstallDirs)
-install(EXPORT habitrack-targets
-    FILE habitrackTargets.cmake
-    NAMESPACE habitrack::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/habitrack
-)
+# include(GNUInstallDirs)
+# install(EXPORT habitrack-targets
+#     FILE habitrackTargets.cmake
+#     NAMESPACE habitrack::
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/habitrack
+# )
