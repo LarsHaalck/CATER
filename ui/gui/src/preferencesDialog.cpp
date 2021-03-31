@@ -23,6 +23,9 @@ void PreferencesDialog::resetGeneralTo(const Preferences& prefs)
 {
     ui->cacheSpin->setValue(prefs.cacheSize);
     ui->chunkSpin->setValue(prefs.chunkSize);
+    ui->radiusSpin->setValue(prefs.detectionRadius);
+    ui->fpsSpin->setValue(prefs.fps);
+    ui->pxMmSpin->setValue(prefs.pixelsPerMm);
 }
 
 void PreferencesDialog::resetColourTo(const Preferences& prefs)
@@ -158,7 +161,7 @@ void PreferencesDialog::on_enableColourCorrection_toggled(bool value)
 
 void PreferencesDialog::on_enableSmoothBearing_toggled(bool value)
 {
-    /* ui->enableSmoothBearing->setChecked(value); */
+    ui->enableSmoothBearing->setChecked(value);
     ui->smoothBearingWindowSpin->setEnabled(value);
     ui->smoothBearingOutlierTolSpin->setEnabled(value);
 }
@@ -171,6 +174,13 @@ void PreferencesDialog::on_removeCamMotion_toggled(bool value)
 Preferences PreferencesDialog::getPreferences() const
 {
     Preferences p;
+    // general
+    p.cacheSize = ui->cacheSpin->value();
+    p.chunkSize = ui->chunkSpin->value();
+    p.detectionRadius = ui->radiusSpin->value();
+    p.fps = ui->fpsSpin->value();
+    p.pixelsPerMm = ui->pxMmSpin->value();
+
     // color
     p.colourCorrection = ui->enableColourCorrection->isChecked();
     p.colourRed = ui->redSpin->value();
@@ -193,9 +203,6 @@ Preferences PreferencesDialog::getPreferences() const
     p.pairwiseSigma = ui->pairwiseSigmaSpin->value();
     p.pairwiseSize = ui->pairwiseSizeSpin->value();
 
-    // panorama
-    // TODO:
-
     // smooth bearing
     p.smoothBearing = ui->enableSmoothBearing->isChecked();
     p.smoothBearingWindowSize = ui->smoothBearingWindowSpin->value();
@@ -206,8 +213,10 @@ Preferences PreferencesDialog::getPreferences() const
     p.nnRatio = ui->nnRatioSpin->value();
     p.ranscacReproj = ui->maxReprojSpin->value();
 
-    p.cacheSize = ui->cacheSpin->value();
-    p.chunkSize = ui->chunkSpin->value();
+    // panorama
+    // TODO:
+
+
 
     return p;
 }

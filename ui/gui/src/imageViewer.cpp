@@ -207,7 +207,7 @@ cv::Mat ImageViewer::processItem(
                 theta = detection.theta;
                 color = cv::Scalar(0, 255, 0);
             }
-            auto dirIndicator = rotatePointAroundPoint(position, theta);
+            auto dirIndicator = rotatePointAroundPoint(position, theta, settings.radius);
             cv::line(frame, position, dirIndicator, color, 1);
         }
 
@@ -224,7 +224,7 @@ cv::Mat ImageViewer::processItem(
             cv::add(frame, unaryColor, frame);
         }
 
-        cv::circle(frame, position, 20, cv::Scalar(100, 100, 255), 2);
+        cv::circle(frame, position, settings.radius, cv::Scalar(100, 100, 255), 2);
     }
 
     // get trajectory

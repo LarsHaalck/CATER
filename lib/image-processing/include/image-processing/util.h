@@ -25,7 +25,7 @@ cv::Mat scaledGauss2D(
 
 double calcAngle(const cv::Point2d& p, const cv::Point2d& p2);
 
-cv::Point rotatePointAroundPoint(cv::Point centerPoint, double angle);
+cv::Point rotatePointAroundPoint(cv::Point centerPoint, double angle, int radius);
 
 template <typename T>
 double normL2(const cv::Point_<T>& pt)

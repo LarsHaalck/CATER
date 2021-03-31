@@ -8,6 +8,9 @@ std::ostream& operator<<(std::ostream& stream, const Preferences& prefs)
     stream << "General: \n";
     stream << "Cache size: " << prefs.cacheSize << "\n";
     stream << "Chunk size: " << prefs.chunkSize << "\n";
+    stream << "Detection Radius: " << prefs.detectionRadius << "\n";
+    stream << "FPS: " << prefs.fps << "\n";
+    stream << "px/mm: " << prefs.pixelsPerMm << "\n";
     stream << "--------------------\n";
     stream << "Colour Correction: \n";
     stream << "Enabled: " << prefs.colourCorrection << "\n";

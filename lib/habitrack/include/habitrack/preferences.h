@@ -11,9 +11,12 @@ struct Preferences
 {
     // general
     int cacheSize = 400;
-    int chunkSize = 100;
+    int chunkSize = 100; // tracking recompute needed
+    int detectionRadius = 20;
+    int fps = 0;
+    int pixelsPerMm = 0;
 
-    // colour correction
+    // colour correction (not implemented)
     bool colourCorrection = false;
     int colourRed = 33;
     int colourGreen = 33;

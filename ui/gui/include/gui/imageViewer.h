@@ -27,6 +27,7 @@ public:
         bool bearing;
         bool trajectory;
         std::size_t trajectoryLength;
+        int radius;
     };
 
 private:

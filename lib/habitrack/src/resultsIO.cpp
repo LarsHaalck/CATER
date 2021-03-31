@@ -17,6 +17,9 @@ namespace detail
         // general
         fs << "cache_size" << prefs.cacheSize;
         fs << "chunk_size" << prefs.chunkSize;
+        fs << "detection_radius" << prefs.detectionRadius;
+        fs << "fps" << prefs.fps;
+        fs << "pixels_per_mm" << prefs.pixelsPerMm;
 
         // colour correction
         fs << "colour_correction" << prefs.colourCorrection;
@@ -60,6 +63,13 @@ namespace detail
         // general
         prefs.cacheSize = node["cache_size"];
         prefs.chunkSize = node["chunk_size"];
+
+        if (!node["detection_radius"].empty())
+            prefs.detectionRadius = node["detection_radius"];
+        if (!node["fps"].empty())
+            prefs.fps = node["fps"];
+        if (!node["pixels_per_mm"].empty())
+            prefs.detectionRadius = node["pixels_per_mm"];
 
         // colour correction
         prefs.colourCorrection = static_cast<bool>(static_cast<int>(node["colour_correction"]));

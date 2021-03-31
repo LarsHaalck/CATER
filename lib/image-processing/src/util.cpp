@@ -46,9 +46,8 @@ double calcAngle(const cv::Point2d& p1, const cv::Point2d& p2)
     return std::fmod(angle + 5 * pi() / 2, 2 * pi()) * 180 / pi();
 }
 
-cv::Point rotatePointAroundPoint(cv::Point center_point, double angle)
+cv::Point rotatePointAroundPoint(cv::Point center_point, double angle, int radius)
 {
-    int y_displacement = 20;
     /*
      * https://stackoverflow.com/a/12161405/5924858
      * The easiest approach is to compose three transformations:
@@ -73,7 +72,7 @@ cv::Point rotatePointAroundPoint(cv::Point center_point, double angle)
     // 2) angle in ]180, 360]   -> angle = 360 - angle (so that counter clockwise rotation is in [0,180])
     // 3) convert to radian (*pi/180)
 
-    cv::Point rotation_point(center_point.x, center_point.y + y_displacement);
+    cv::Point rotation_point(center_point.x, center_point.y + radius);
     double radian_angle = angle - 180;
     radian_angle *= CV_PI / 180;
 

@@ -254,6 +254,7 @@ void MainWindow::showFrame(std::size_t frame)
     settings.bearing = ui->overlayBearings->isChecked();
     settings.trajectory = ui->overlayTrajectory->isChecked();
     settings.trajectoryLength = ui->trajectorySpin->value();
+    settings.radius = mHabiTrack.getPreferences().detectionRadius;
 
     auto img = mViewer.getFrame(frame, settings);
     auto pixMap = QPixmap::fromImage(QtOpencvCore::img2qimgRaw(img));
