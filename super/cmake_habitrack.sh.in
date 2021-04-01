@@ -1,0 +1,10 @@
+cmake \
+    -DEigen3_DIR=${Eigen3_DIR} \
+    -Dspdlog_DIR=${spdlog_DIR} \
+    -Dmild_DIR=${mild_DIR} \
+    -DCeres_DIR=${Ceres_DIR} \
+    -Dcereal_DIR=${cereal_DIR} \
+    -Dcxxopts_DIR=${cxxopts_DIR} \
+    $@
+
+
