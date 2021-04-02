@@ -41,7 +41,6 @@ if(${BUILD_TOOLS})
     add_subdirectory(tools)
 endif()
 
-
 # include(GNUInstallDirs)
 # install(EXPORT habitrack-targets
 #     FILE habitrackTargets.cmake

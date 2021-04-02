@@ -5,6 +5,7 @@ cmake \
     -DCeres_DIR=${Ceres_DIR} \
     -Dcereal_DIR=${cereal_DIR} \
     -Dcxxopts_DIR=${cxxopts_DIR} \
+    -DOpenCV_DIR=${OpenCV_DIR} \
     $@
 
 

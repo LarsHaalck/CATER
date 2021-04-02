@@ -1,8 +1,10 @@
+# cxxopts does not export version correctly
 find_package(cxxopts 2.2.1 CONFIG QUIET)
 
 if(TARGET cxxopts::cxxopts)
-    message(STATUS "Found cxxopts version")
-    add_library(cxxopts_external INTERFACE) # dummy
+    get_property(loc TARGET cxxopts::cxxopts PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "Found cxxopts version ${PACKAGE_VERSION} at ${loc}")
+    add_library(cxxopts_external INTERFACE)
 else()
     message(STATUS "cxxopts could not be located. Building from source...")
     include(ExternalProject)

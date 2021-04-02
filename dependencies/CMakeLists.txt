@@ -14,14 +14,9 @@ include(external/mild)
 include(external/ceres)
 include(external/cereal)
 include(external/cxxopts)
+include(external/opencv)
 
-
-###########################################################################
-#                                 OPTIONS                                 #
-###########################################################################
-# option(BUILD_GUI "Build the graphical user interface" TRUE)
-# option(BUILD_TOOLS "Build tools" TRUE)
-# option(WITH_SUPERGLUE "With SuperGlue/SuperPoint support" FALSE)
+option(BUILD_DEPS_ONLY "Build only dependencies and nothing else (used for development)" FALSE)
 
 set(habitrack_dependencies
     eigen3_external
@@ -30,29 +25,32 @@ set(habitrack_dependencies
     ceres_external
     cereal_external
     cxxopts_external
+    opencv_external
 )
 
-add_library(dummy INTERFACE)
-add_dependencies(dummy eigen3_external)
-
-configure_file(cmake_habitrack.sh.in cmake_habitrack.sh)
-
-# include(ExternalProject)
-# ExternalProject_Add(habitrack
-#     DEPENDS
-#         ${habitrack_dependencies}
-#     SOURCE_DIR
-#         ${PROJECT_SOURCE_DIR}/..
-#     CMAKE_ARGS
-#         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-#         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-#         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-#         -DEigen3_DIR=${Eigen3_DIR}
-#         -Dspdlog_DIR=${spdlog_DIR}
-#         -Dmild_DIR=${mild_DIR}
-#         -DCeres_DIR=${Ceres_DIR}
-#         -Dcereal_DIR=${cereal_DIR}
-#         -Dcxxopts_DIR=${cxxopts_DIR}
-#     BUILD_ALWAYS ON
-#     INSTALL_COMMAND ""
-# )
+if (${BUILD_DEPS_ONLY})
+    add_library(dummy INTERFACE)
+    add_dependencies(dummy ${habitrack_dependencies})
+    configure_file(cmake_habitrack.sh.in cmake_habitrack.sh)
+else ()
+    include(ExternalProject)
+    ExternalProject_Add(habitrack
+        DEPENDS
+            ${habitrack_dependencies}
+        SOURCE_DIR
+            ${PROJECT_SOURCE_DIR}/..
+        CMAKE_ARGS
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DEigen3_DIR=${Eigen3_DIR}
+            -Dspdlog_DIR=${spdlog_DIR}
+            -Dmild_DIR=${mild_DIR}
+            -DCeres_DIR=${Ceres_DIR}
+            -Dcereal_DIR=${cereal_DIR}
+            -Dcxxopts_DIR=${cxxopts_DIR}
+            -DOpenCV_DIR=${OpenCV_DIR}
+        BUILD_ALWAYS ON
+        INSTALL_COMMAND ""
+    )
+endif()

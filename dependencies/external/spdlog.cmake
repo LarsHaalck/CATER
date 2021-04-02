@@ -1,8 +1,9 @@
 find_package(spdlog 1.8.5 CONFIG QUIET)
 
 if(TARGET spdlog::spdlog)
-    message(STATUS "Found spdlog version")
-    add_library(spdlog_external INTERFACE) # dummy
+    get_property(loc TARGET spdlog::spdlog PROPERTY LOCATION)
+    message(STATUS "Found spdlog version ${PACKAGE_VERSION} at ${loc}")
+    add_library(spdlog_external INTERFACE)
 else()
     message(STATUS "spdlog could not be located. Building from source...")
     include(ExternalProject)

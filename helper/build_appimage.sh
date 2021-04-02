@@ -1,23 +1,27 @@
 #!/bin/env sh
 export CC=gcc-10
 export CXX=g++-10
+
+# build dependencies
+mkdir -p buildDeps
+cd buildDeps
+cmake -DBUILD_DEPS_ONLY=ON ../
+make
+cd ../
+
+# build habitrack
 mkdir -p buildApp
 cd buildApp
-cmake \
+../buildDeps/cmake_habitrack \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_GUI=ON \
     -DBUILD_TOOLS=OFF \
     -DWITH_SUPERGLUE=OFF \
-    -Dcxxopts_DIR=${HAB_DEP}/cxxopts/install/lib/cmake/cxxopts \
-    -Dmild_DIR=${HAB_DEP}/MILD/install/cmake \
-    -DCeres_DIR=${HAB_DEP}/Ceres/ \
-    -Dcereal_DIR=${HAB_DEP}/cereal/install/share/cmake/cereal \
-    -Dspdlog_DIR=${HAB_DEP}/spdlog/install/lib/cmake/spdlog \
     -DCMAKE_INSTALL_PREFIX=AppDir \
     ../
-
 make install -j
 
+# build appimage
 linuxdeploy-x86_64.AppImage \
     --appdir AppDir \
     -d "AppDir/share/applications/habitrack-gui.desktop" \

@@ -1,8 +1,9 @@
 find_package(Eigen3 3.3 QUIET)
 
 if(TARGET Eigen3::Eigen)
-    message(STATUS "Found Eigen3 version ${EIGEN3_VERSION_STRING}")
-    add_library(eigen3_external INTERFACE) # dummy
+    get_property(loc TARGET Eigen3::Eigen PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "Found Eigen3 version ${EIGEN3_VERSION_STRING} at ${loc}")
+    add_library(eigen3_external INTERFACE)
 else()
     message(STATUS "Eigen3 could not be located. Building from source...")
     include(ExternalProject)

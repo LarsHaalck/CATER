@@ -1,8 +1,10 @@
-find_package(cereal 1.3.0 CONFIG QUIET)
+# cereal does not export version correctly
+find_package(cereal CONFIG QUIET)
 
 if(TARGET cereal)
-    message(STATUS "Found cereal version")
-    add_library(cereal_external INTERFACE) # dummy
+    get_property(loc TARGET cereal PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "Found cereal at ${loc}")
+    add_library(cereal_external INTERFACE)
 else()
     message(STATUS "cereal could not be located. Building from source...")
     include(ExternalProject)

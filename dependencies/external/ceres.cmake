@@ -1,10 +1,11 @@
 find_package(Ceres 2.0 CONFIG QUIET)
 
-if(TARGET Ceres)
-    message(STATUS "Found ceres version")
+if(TARGET ceres)
+    get_property(loc TARGET ceres PROPERTY LOCATION)
+    message(STATUS "Found Ceres version ${PACKAGE_VERSION} at ${loc}")
     add_library(ceres_external INTERFACE) # dummy
 else()
-    message(STATUS "ceres could not be located. Building from source...")
+    message(STATUS "Ceres could not be located. Building from source...")
     include(ExternalProject)
     ExternalProject_Add(
         ceres_external
@@ -27,5 +28,5 @@ else()
         LOG_BUILD ON
         LOG_INSTALL ON
     )
-    set(Ceres_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/ceres)
+    set(Ceres_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Ceres)
 endif()

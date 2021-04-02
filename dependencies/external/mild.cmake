@@ -1,8 +1,9 @@
 find_package(mild CONFIG QUIET)
 
 if(TARGET mild::mild)
-    message(STATUS "Found mild")
-    add_library(mild_external INTERFACE) # dummy
+    get_property(loc TARGET mild::mild PROPERTY LOCATION)
+    message(STATUS "Found mild at ${loc}")
+    add_library(mild_external INTERFACE)
 else()
     message(STATUS "mild could not be located. Building from source...")
     include(ExternalProject)

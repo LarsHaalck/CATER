@@ -1,25 +1,35 @@
-find_package(ceres 2.0 CONFIG QUIET)
+find_package(OpenCV 4.5 CONFIG QUIET)
 
-if(TARGET ceres)
-    message(STATUS "Found ceres version ${ceres3_VERSION_STRING}")
-    add_library(ceres_external INTERFACE) # dummy
+if(TARGET opencv_core)
+    get_property(loc TARGET opencv_core PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "Found OpenCV version ${OpenCV_VERSION} at ${loc}")
+    add_library(opencv_external INTERFACE) # dummy
 else()
-    message(STATUS "ceres could not be located. Building from source...")
+    message(STATUS "opencv could not be located.
+        Building from source...
+        It is strongly recommended to build OpenCV from source yourself due to
+        many performance-improving dependencies. Check out build_opencv.sh")
+
     include(ExternalProject)
     ExternalProject_Add(
-        ceres_external
-        GIT_REPOSITORY https://github.com/ceres-solver/ceres-solver/
-        GIT_TAG 2.0.0
+        opencv_external
+        DEPENDS eigen3_external
+        GIT_REPOSITORY https://github.com/opencv/opencv
+        GIT_TAG 4.5.1
         CMAKE_ARGS
-          -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-          -DEIGENSPARSE=ON
-          -DBUILD_SHARED_LIBS=ON
-          -DBUILD_TESTING=OFF
-          -DBUILD_EXAMPLES=OFF
-          -DBUILD_BENCHMARKS=OFF
+            -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DEigen3_DIR=${Eigen3_DIR}
+            -DBUILD_WITH_DEBUG_INFO=OFF
+            -DBUILD_TESTS=OFF
+            -DBUILD_PERF_TESTS=OFF
+            -DBUILD_EXAMPLES=OFF
+            -DINSTALL_C_EXAMPLES=OFF
+            -DINSTALL_PYTHON_EXAMPLES=OFF
+            -DOPENCV_GENERATE_SETUPVARS=OFF
+            -DOPENCV_ENABLE_NONFREE=OFF
         LOG_DOWNLOAD ON
         LOG_UPDATE ON
         LOG_PATCH ON
@@ -27,5 +37,5 @@ else()
         LOG_BUILD ON
         LOG_INSTALL ON
     )
-    set(ceres_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/ceres)
+    set(OpenCV_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/opencv)
 endif()
