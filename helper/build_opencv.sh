@@ -1,4 +1,6 @@
 # /usr/bin/env sh
+set -euxo pipefail
+
 VERSION=4.5.1
 
 sudo apt install -y build-essential cmake unzip pkg-config
