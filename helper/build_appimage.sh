@@ -7,7 +7,7 @@ export CXX=g++-10
 # build dependencies
 mkdir -p buildDeps
 cd buildDeps
-cmake -DBUILD_DEPS_ONLY=ON ../
+cmake -DBUILD_DEPS_ONLY=ON ../dependencies
 make
 cd ../
 
