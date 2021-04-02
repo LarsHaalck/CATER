@@ -31,7 +31,7 @@ set(habitrack_dependencies
 if (${BUILD_DEPS_ONLY})
     add_library(dummy INTERFACE)
     add_dependencies(dummy ${habitrack_dependencies})
-    configure_file(cmake_habitrack.sh.in cmake_habitrack.sh)
+    configure_file(cmake_habitrack.in cmake_habitrack)
 else ()
     include(ExternalProject)
     ExternalProject_Add(habitrack

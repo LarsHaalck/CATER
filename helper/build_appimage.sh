@@ -8,7 +8,7 @@ export CXX=g++-10
 mkdir -p buildDeps
 cd buildDeps
 cmake -DBUILD_DEPS_ONLY=ON ../dependencies
-make
+make -j
 cd ../
 
 # build habitrack
