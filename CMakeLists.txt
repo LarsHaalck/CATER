@@ -21,9 +21,9 @@ option(WITH_SUPERGLUE "With SuperGlue/SuperPoint support" FALSE)
 ###########################################################################
 #                       PACKAGES / SUBDIRS                                #
 ###########################################################################
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4.5 REQUIRED)
+find_package(spdlog 1.8.5 REQUIRED)
 find_package(OpenMP QUIET)
-find_package(spdlog REQUIRED)
 
 if(NOT ${OpenMP_CXX_FOUND})
     message(WARNING "Could not find OpenMP; building without...")

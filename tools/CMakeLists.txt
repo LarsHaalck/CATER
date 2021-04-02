@@ -1,4 +1,4 @@
-find_package(cxxopts REQUIRED)
+find_package(cxxopts 2.2.1 REQUIRED)
 
 add_subdirectory(simple_tracker)
 add_subdirectory(singleVideo)

@@ -3,7 +3,7 @@
 ###########################################################################
 find_package(cereal REQUIRED)
 find_package(mild REQUIRED)
-find_package(Eigen3 REQUIRED)
+find_package(Eigen3 3.3 REQUIRED)
 
 if(${WITH_SUPERGLUE})
     find_package(Torch REQUIRED)

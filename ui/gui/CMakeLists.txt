@@ -1,9 +1,9 @@
 ###########################################################################
 #                              DEPENDENCIES                               #
 ###########################################################################
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5Concurrent REQUIRED)
-find_package(Qt5Multimedia REQUIRED)
+find_package(Qt5Widgets 5.10 REQUIRED)
+find_package(Qt5Concurrent 5.10 REQUIRED)
+find_package(Qt5Multimedia 5.10 REQUIRED)
 find_package(cereal REQUIRED)
 
 ###########################################################################
