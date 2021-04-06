@@ -15,6 +15,7 @@ include(external/ceres)
 include(external/cereal)
 include(external/cxxopts)
 include(external/opencv)
+include(external/qt)
 
 option(BUILD_DEPS_ONLY "Build only dependencies and nothing else (used for development)" FALSE)
 
@@ -26,6 +27,8 @@ set(habitrack_dependencies
     cereal_external
     cxxopts_external
     opencv_external
+    qt5base_external
+    qt5multimedia_external
 )
 
 if (${BUILD_DEPS_ONLY})
@@ -50,6 +53,9 @@ else ()
             -Dcereal_DIR=${cereal_DIR}
             -Dcxxopts_DIR=${cxxopts_DIR}
             -DOpenCV_DIR=${OpenCV_DIR}
+            -DQt5Concurrent_DIR=${Qt5Concurrent_DIR}
+            -DQt5Widgets_DIR=${Qt5Widgets_DIR}
+            -DQt5Multimedia_DIR=${Qt5Multimedia_DIR}
         BUILD_ALWAYS ON
         INSTALL_COMMAND ""
     )

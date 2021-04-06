@@ -6,6 +6,9 @@ cmake \
     -Dcereal_DIR=${cereal_DIR} \
     -Dcxxopts_DIR=${cxxopts_DIR} \
     -DOpenCV_DIR=${OpenCV_DIR} \
+    -DQt5Concurrent_DIR=${Qt5Concurrent_DIR} \
+    -DQt5Widgets_DIR=${Qt5Widgets_DIR} \
+    -DQt5Multimedia_DIR=${Qt5Multimedia_DIR} \
     $@
 
 
