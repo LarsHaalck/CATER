@@ -4,6 +4,24 @@
 This project has a CMake superbuild structure, where the "root"-CMakeLists.txt lies in the folder `dependencies`.
 To build the full project from the superbuild simply run the following commands:
 
+## Requirements:
+```
+g++ >= 10.0
+```
+
+## Optional but strongly encouraged:
+Although they are both supplied via the superbuild, it is strongly encouraged to use the package manager of your Linux distro to install these packages.
+This is especially true for OpenCV, which can also be installed using `helper/build_opencv.sh` for Ubuntu 18.
+
+Ubuntu 20 supplies both packages in a version that is recent enough.
+
+```
+OpenCV >= 4.2
+Qt >= 5.10
+```
+
+## Building
+
 ```bash
 mkdir build
 cd build
