@@ -2,7 +2,7 @@
 Download the most recent AppImage from https://github.com/LarsHaalck/habitrack/releases listet under "Assets".
 
 # Building from Source:
-This project has a CMake superbuild structure, where the "root"-CMakeLists.txt lies in the folder `dependencies`.
+This project has a CMake superbuild structure, where the "root"-CMakeLists.txt lies in the folder `super`.
 
 ## Requirements:
 ```
@@ -26,7 +26,7 @@ To build the full project from the superbuild simply run the following commands:
 ```bash
 mkdir build
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release ../dependencies
+cmake -DCMAKE_BUILD_TYPE=Release ../super
 make
 ```
 the binary of the HabiTrack-Gui should be compiled in `build/ui/gui/habitrack-gui`.
