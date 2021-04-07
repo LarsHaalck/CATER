@@ -24,6 +24,10 @@ cd buildApp
 make install -j
 
 # build appimage
+if test -f ../buildDeps/stage/bin/qmake; then
+    export QMAKE=../buildDeps/stage/bin/qmake
+fi
+
 linuxdeploy-x86_64.AppImage \
     --appdir AppDir \
     -d "AppDir/share/applications/habitrack-gui.desktop" \
