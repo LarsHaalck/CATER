@@ -36,4 +36,24 @@ This will just load the files computed in the first run (OpenCV memory issue we 
 
 If RAM is full (and or Swap too) in one of the early stages, try reducing the cache size to 200 in Tools > Preferences (not chunk size).
 
-
+needed packages when installing qt5 from source:
+libx11-dev
+libx11-xcb-dev
+libxext-dev
+libxfixes-dev
+libxi-dev
+libxrender-dev
+libxcb1-dev
+libxcb-glx0-dev
+libxcb-keysyms1-dev
+libxcb-image0-dev
+libxcb-shm0-dev
+libxcb-icccm4-dev
+libxcb-sync0-dev
+libxcb-xfixes0-dev
+libxcb-shape0-dev
+libxcb-randr0-dev
+libxcb-render-util0-dev
+libxcd-xinerama-dev (should be libxcb-xinerama0-dev on ubuntu 18.04)
+libxkbcommon-dev
+libxkbcommon-x11-dev

@@ -56,6 +56,7 @@ else ()
             -DQt5Concurrent_DIR=${Qt5Concurrent_DIR}
             -DQt5Widgets_DIR=${Qt5Widgets_DIR}
             -DQt5Multimedia_DIR=${Qt5Multimedia_DIR}
+            -DCMAKE_INSTALL_RPATH=${CMAKE_INSTALL_RPATH}
         BUILD_ALWAYS ON
         INSTALL_COMMAND ""
     )

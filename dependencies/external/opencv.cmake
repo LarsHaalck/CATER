@@ -37,5 +37,6 @@ else()
         LOG_BUILD ON
         LOG_INSTALL ON
     )
-    set(OpenCV_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/opencv)
+    set(OpenCV_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/opencv4)
+    set(CMAKE_INSTALL_RPATH ${STAGED_INSTALL_PREFIX}/lib)
 endif()

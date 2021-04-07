@@ -35,6 +35,7 @@ else()
     set(Qt5Core_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Core)
     set(Qt5Concurrent_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Concurrent)
     set(Qt5Widgets_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Widgets)
+    set(CMAKE_INSTALL_RPATH ${STAGED_INSTALL_PREFIX}/lib)
 endif()
 
 if(TARGET Qt5::Multimedia)
@@ -67,4 +68,5 @@ else()
         LOG_INSTALL ON
     )
     set(Qt5Multimedia_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Multimedia)
+    set(CMAKE_INSTALL_RPATH ${STAGED_INSTALL_PREFIX}/lib)
 endif()
