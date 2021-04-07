@@ -1,6 +1,6 @@
 find_package(Qt5Widgets 5.10 CONFIG QUIET)
 find_package(Qt5Concurrent 5.10 CONFIG QUIET)
-# find_package(Qt5Multimedia 5.10 CONFIG QUIET)
+find_package(Qt5Multimedia 5.10 CONFIG QUIET)
 
 if(TARGET Qt5::Widgets AND TARGET Qt5::Concurrent)
     get_property(loc TARGET Qt5::Widgets PROPERTY LOCATION)

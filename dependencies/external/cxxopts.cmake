@@ -12,6 +12,7 @@ else()
         cxxopts_external
         GIT_REPOSITORY https://github.com/jarro2783/cxxopts
         GIT_TAG dd45a0801c99d62109aaa29f8c410ba8def2fbf2
+        GIT_SHALLOW TRUE
         CMAKE_ARGS
           -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
           -DCMAKE_BUILD_TYPE=Release

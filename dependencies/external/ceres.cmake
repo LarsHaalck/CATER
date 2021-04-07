@@ -11,6 +11,7 @@ else()
         ceres_external
         GIT_REPOSITORY https://github.com/ceres-solver/ceres-solver/
         GIT_TAG 2.0.0
+        GIT_SHALLOW TRUE
         CMAKE_ARGS
           -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
           -DCMAKE_BUILD_TYPE=Release

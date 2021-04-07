@@ -11,6 +11,7 @@ else()
         spdlog_external
         GIT_REPOSITORY https://github.com/gabime/spdlog
         GIT_TAG v1.8.5
+        GIT_SHALLOW TRUE
         CMAKE_ARGS
           -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
           -DCMAKE_BUILD_TYPE=Release
