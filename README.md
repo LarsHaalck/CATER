@@ -2,7 +2,6 @@
 
 # Building from Source:
 This project has a CMake superbuild structure, where the "root"-CMakeLists.txt lies in the folder `dependencies`.
-To build the full project from the superbuild simply run the following commands:
 
 ## Requirements:
 ```
@@ -21,6 +20,7 @@ Qt >= 5.10
 ```
 
 ## Building
+To build the full project from the superbuild simply run the following commands:
 
 ```bash
 mkdir build
