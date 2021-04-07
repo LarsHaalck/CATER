@@ -1,4 +1,5 @@
 # Using AppImage:
+Download the most recent AppImage from https://github.com/LarsHaalck/habitrack/releases listet under "Assets".
 
 # Building from Source:
 This project has a CMake superbuild structure, where the "root"-CMakeLists.txt lies in the folder `dependencies`.
