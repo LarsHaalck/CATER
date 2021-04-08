@@ -1,4 +1,4 @@
-#include "gui/labelEditor.h"
+#include "labelEditor.h"
 #include "ui_labelEditor.h"
 
 #include <QCloseEvent>

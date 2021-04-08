@@ -7,7 +7,7 @@
 
 #include <QKeyEvent>
 
-#include "gui/labelConfig.h"
+#include "labelConfig.h"
 #include "util/pairHash.h"
 
 namespace gui

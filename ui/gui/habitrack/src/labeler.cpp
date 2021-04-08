@@ -1,4 +1,4 @@
-#include "gui/labeler.h"
+#include "labeler.h"
 
 #include <fstream>
 #include <spdlog/spdlog.h>

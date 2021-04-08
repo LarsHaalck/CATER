@@ -1,4 +1,4 @@
-#include "gui/unaryGraphicsView.h"
+#include "unaryGraphicsView.h"
 
 #include "spdlog/spdlog.h"
 #include <QMouseEvent>

@@ -866,12 +866,12 @@ color: white;
   <customwidget>
    <class>gui::TrackerGraphicsView</class>
    <extends>QWidget</extends>
-   <header>gui/trackerGraphicsView.h</header>
+   <header>trackerGraphicsView.h</header>
   </customwidget>
   <customwidget>
    <class>gui::UnaryGraphicsView</class>
    <extends>QWidget</extends>
-   <header>gui/unaryGraphicsView.h</header>
+   <header>unaryGraphicsView.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

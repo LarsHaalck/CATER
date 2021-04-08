@@ -1,4 +1,4 @@
-#include "gui/preferencesDialog.h"
+#include "preferencesDialog.h"
 #include "ui_preferencesDialog.h"
 #include <QMouseEvent>
 #include <iostream>

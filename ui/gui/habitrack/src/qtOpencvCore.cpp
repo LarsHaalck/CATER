@@ -1,4 +1,4 @@
-#include "gui/qtOpencvCore.h"
+#include "qtOpencvCore.h"
 
 namespace QtOpencvCore
 {

@@ -1,4 +1,4 @@
-#include "gui/keyDialog.h"
+#include "keyDialog.h"
 #include "ui_keyDialog.h"
 
 #include <QKeyEvent>

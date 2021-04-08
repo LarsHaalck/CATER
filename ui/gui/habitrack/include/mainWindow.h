@@ -4,13 +4,13 @@
 #include <QMainWindow>
 #include <QThreadPool>
 
-#include "gui/guiPreferences.h"
-#include "gui/imageViewer.h"
-#include "gui/labelConfig.h"
-#include "gui/labeler.h"
-#include "gui/progressStatusBar.h"
-#include "gui/trackerScene.h"
-#include "gui/unaryGraphicsView.h"
+#include "guiPreferences.h"
+#include "imageViewer.h"
+#include "labelConfig.h"
+#include "labeler.h"
+#include "progressStatusBar.h"
+#include "trackerScene.h"
+#include "unaryGraphicsView.h"
 
 #include "habitrack/habiTrack.h"
 #include <QFutureWatcher>

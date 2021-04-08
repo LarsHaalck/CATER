@@ -1,4 +1,4 @@
-#include "gui/labelConfig.h"
+#include "labelConfig.h"
 
 #include <cereal/archives/json.hpp>
 #include <filesystem>

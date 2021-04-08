@@ -1,11 +1,11 @@
-#include "gui/mainWindow.h"
+#include "mainWindow.h"
 #include "ui_mainWindow.h"
 
-#include "gui/imagesWorker.h"
-#include "gui/labelEditor.h"
-#include "gui/preferencesDialog.h"
-#include "gui/qtOpencvCore.h"
-#include "gui/scopedBlocker.h"
+#include "imagesWorker.h"
+#include "labelEditor.h"
+#include "preferencesDialog.h"
+#include "qtOpencvCore.h"
+#include "scopedBlocker.h"
 #include "image-processing/util.h"
 #include <QDate>
 #include <QFileDialog>
@@ -21,7 +21,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include "gui/labeler.h"
+#include "labeler.h"
 #include <QKeyEvent>
 
 using namespace ht;

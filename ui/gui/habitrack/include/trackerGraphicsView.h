@@ -7,7 +7,7 @@
 #include <QMouseEvent>
 #include <QWheelEvent>
 
-#include "gui/trackerScene.h"
+#include "trackerScene.h"
 
 namespace gui
 {

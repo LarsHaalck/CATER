@@ -3,7 +3,7 @@
 
 #include <QGraphicsView>
 
-#include "gui/unaryScene.h"
+#include "unaryScene.h"
 
 namespace gui
 {

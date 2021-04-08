@@ -1,4 +1,4 @@
-#include "gui/trackerGraphicsView.h"
+#include "trackerGraphicsView.h"
 
 namespace gui
 {

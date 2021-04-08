@@ -1,4 +1,4 @@
-#include "gui/imageViewer.h"
+#include "imageViewer.h"
 
 #include "habitrack/habiTrack.h"
 

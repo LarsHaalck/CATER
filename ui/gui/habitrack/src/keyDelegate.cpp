@@ -1,6 +1,6 @@
-#include "gui/keyDelegate.h"
+#include "keyDelegate.h"
 
-#include "gui/keyDialog.h"
+#include "keyDialog.h"
 
 #include <QPainter>
 #include <iostream>

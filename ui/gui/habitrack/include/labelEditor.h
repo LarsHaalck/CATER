@@ -6,9 +6,9 @@
 #include <QStandardItemModel>
 #include <set>
 
-#include "gui/colorDelegate.h"
-#include "gui/keyDelegate.h"
-#include "gui/labelConfig.h"
+#include "colorDelegate.h"
+#include "keyDelegate.h"
+#include "labelConfig.h"
 
 namespace Ui
 {

@@ -1,4 +1,4 @@
-#include "gui/unaryScene.h"
+#include "unaryScene.h"
 
 #include "colors.h"
 #include "spdlog/spdlog.h"

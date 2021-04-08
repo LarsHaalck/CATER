@@ -1,4 +1,4 @@
-#include "gui/colorDelegate.h"
+#include "colorDelegate.h"
 
 #include <QColorDialog>
 #include <QPainter>
