@@ -216,8 +216,6 @@ Preferences PreferencesDialog::getPreferences() const
     // panorama
     // TODO:
 
-
-
     return p;
 }
 
