@@ -304,8 +304,6 @@ namespace detail
 
         auto trafos = PairwiseTrafos();
 
-        // TODO: is inplace modify via at() thread-safe?
-        // TODO: profile this and check if really faster
         spdlog::info("Computing geometric matches for {}", typeToString(geomType));
 
         cb->status(std::string("Computing Geometric Matches for: ") + typeToString(geomType));
@@ -368,8 +366,6 @@ namespace detail
     Matches putMatchPair(
         cv::Ptr<cv::DescriptorMatcher> descMatcher, const cv::Mat& descI, const cv::Mat& descJ)
     {
-        // TODO: find out the real lower bound here:
-        // knnMatch(2) breaks at least with rows == 3
         if (descI.rows < 5 || descJ.rows < 5)
             return Matches();
 
