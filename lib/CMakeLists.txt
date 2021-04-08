@@ -7,5 +7,3 @@ add_subdirectory(tracker)
 add_subdirectory(panorama)
 add_subdirectory(habitrack)
 add_subdirectory(version)
-
-add_subdirectory(3rdparty)
