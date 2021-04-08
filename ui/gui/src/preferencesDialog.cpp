@@ -28,14 +28,6 @@ void PreferencesDialog::resetGeneralTo(const Preferences& prefs)
     ui->pxMmSpin->setValue(prefs.pixelsPerMm);
 }
 
-void PreferencesDialog::resetColourTo(const Preferences& prefs)
-{
-    ui->enableColourCorrection->setChecked(prefs.colourCorrection);
-    ui->redSpin->setValue(prefs.colourRed);
-    ui->greenSpin->setValue(prefs.colourGreen);
-    ui->blueSpin->setValue(prefs.colourBlue);
-}
-
 void PreferencesDialog::resetFeaturesTo(const Preferences& prefs)
 {
     if (!ui->featureCombo->count())
@@ -61,11 +53,6 @@ void PreferencesDialog::resetPairwiseTo(const Preferences& prefs)
 {
     ui->pairwiseSigmaSpin->setValue(prefs.pairwiseSigma);
     ui->pairwiseSizeSpin->setValue(prefs.pairwiseSize);
-}
-
-void PreferencesDialog::resetPanoramaTo(const Preferences&)
-{
-    // TODO: implement panorama
 }
 
 void PreferencesDialog::resetSmoothBearingTo(const Preferences& prefs)
@@ -96,11 +83,9 @@ ht::FeatureType PreferencesDialog::stringToFeatureType(const QString& string) co
 void PreferencesDialog::initPreferences(const Preferences& prefs)
 {
     resetGeneralTo(prefs);
-    resetColourTo(prefs);
     resetFeaturesTo(prefs);
     resetUnariesTo(prefs);
     resetPairwiseTo(prefs);
-    resetPanoramaTo(prefs);
     resetSmoothBearingTo(prefs);
     resetTransformationTo(prefs);
 }
@@ -110,11 +95,6 @@ void PreferencesDialog::on_resetButton_clicked()
     if (ui->tabWidget->currentWidget()->objectName() == "tabGeneral")
     {
         resetGeneralTo(mPrefsDefaults);
-        return;
-    }
-    if (ui->tabWidget->currentWidget()->objectName() == "tabColour")
-    {
-        resetColourTo(mPrefsDefaults);
         return;
     }
     if (ui->tabWidget->currentWidget()->objectName() == "tabFeatures")
@@ -132,11 +112,6 @@ void PreferencesDialog::on_resetButton_clicked()
         resetPairwiseTo(mPrefsDefaults);
         return;
     }
-    if (ui->tabWidget->currentWidget()->objectName() == "tabPanorama")
-    {
-        resetPanoramaTo(mPrefsDefaults);
-        return;
-    }
     if (ui->tabWidget->currentWidget()->objectName() == "tabSmoothBearing")
     {
         resetSmoothBearingTo(mPrefsDefaults);
@@ -150,14 +125,6 @@ void PreferencesDialog::on_resetButton_clicked()
 }
 
 void PreferencesDialog::on_resetAllButton_clicked() { initPreferences(mPrefsDefaults); }
-
-void PreferencesDialog::on_enableColourCorrection_toggled(bool value)
-{
-    /* ui->enableColourCorrection->setChecked(value); */
-    ui->redSpin->setEnabled(value);
-    ui->greenSpin->setEnabled(value);
-    ui->blueSpin->setEnabled(value);
-}
 
 void PreferencesDialog::on_enableSmoothBearing_toggled(bool value)
 {
@@ -180,12 +147,6 @@ Preferences PreferencesDialog::getPreferences() const
     p.detectionRadius = ui->radiusSpin->value();
     p.fps = ui->fpsSpin->value();
     p.pixelsPerMm = ui->pxMmSpin->value();
-
-    // color
-    p.colourCorrection = ui->enableColourCorrection->isChecked();
-    p.colourRed = ui->redSpin->value();
-    p.colourGreen = ui->greenSpin->value();
-    p.colourBlue = ui->blueSpin->value();
 
     // features
     p.featureType = stringToFeatureType(ui->featureCombo->currentText());
@@ -212,9 +173,6 @@ Preferences PreferencesDialog::getPreferences() const
     p.removeCamMotion = ui->removeCamMotion->isChecked();
     p.nnRatio = ui->nnRatioSpin->value();
     p.ranscacReproj = ui->maxReprojSpin->value();
-
-    // panorama
-    // TODO:
 
     return p;
 }

@@ -25,11 +25,9 @@ private:
     void initPreferences(const ht::Preferences& pefs);
 
     void resetGeneralTo(const ht::Preferences& prefs);
-    void resetColourTo(const ht::Preferences& prefs);
     void resetFeaturesTo(const ht::Preferences& prefs);
     void resetUnariesTo(const ht::Preferences& prefs);
     void resetPairwiseTo(const ht::Preferences& prefs);
-    void resetPanoramaTo(const ht::Preferences& prefs);
     void resetSmoothBearingTo(const ht::Preferences& prefs);
     void resetTransformationTo(const ht::Preferences& prefs);
 
@@ -39,7 +37,6 @@ private slots:
     void on_resetButton_clicked();
     void on_resetAllButton_clicked();
 
-    void on_enableColourCorrection_toggled(bool value);
     void on_enableSmoothBearing_toggled(bool value);
     void on_removeCamMotion_toggled(bool value);
 

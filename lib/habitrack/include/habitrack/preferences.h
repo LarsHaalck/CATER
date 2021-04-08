@@ -16,12 +16,6 @@ struct Preferences
     int fps = 0;
     int pixelsPerMm = 0;
 
-    // colour correction (not implemented)
-    bool colourCorrection = false;
-    int colourRed = 33;
-    int colourGreen = 33;
-    int colourBlue = 33;
-
     // features
     ht::FeatureType featureType = ht::FeatureType::ORB;
     int numFeatures = 500;

@@ -21,12 +21,6 @@ namespace detail
         fs << "fps" << prefs.fps;
         fs << "pixels_per_mm" << prefs.pixelsPerMm;
 
-        // colour correction
-        fs << "colour_correction" << prefs.colourCorrection;
-        fs << "colour_red" << prefs.colourRed;
-        fs << "colour_green" << prefs.colourGreen;
-        fs << "colour_blue" << prefs.colourBlue;
-
         // features
         fs << "feature_type" << prefs.featureType;
         fs << "num_features" << prefs.numFeatures;
@@ -70,12 +64,6 @@ namespace detail
             prefs.fps = node["fps"];
         if (!node["pixels_per_mm"].empty())
             prefs.detectionRadius = node["pixels_per_mm"];
-
-        // colour correction
-        prefs.colourCorrection = static_cast<bool>(static_cast<int>(node["colour_correction"]));
-        prefs.colourRed = node["colour_red"];
-        prefs.colourGreen = node["colour_green"];
-        prefs.colourBlue = node["colour_blue"];
 
         // features
         prefs.featureType = static_cast<ht::FeatureType>(static_cast<int>(node["feature_type"]));

@@ -12,12 +12,6 @@ std::ostream& operator<<(std::ostream& stream, const Preferences& prefs)
     stream << "FPS: " << prefs.fps << "\n";
     stream << "px/mm: " << prefs.pixelsPerMm << "\n";
     stream << "--------------------\n";
-    stream << "Colour Correction: \n";
-    stream << "Enabled: " << prefs.colourCorrection << "\n";
-    stream << "Red: " << prefs.colourRed << "\n";
-    stream << "Green: " << prefs.colourGreen << "\n";
-    stream << "Blue: " << prefs.colourBlue << "\n";
-    stream << "--------------------\n";
     stream << "Unary Settings: \n";
     stream << "Subsample: " << prefs.unarySubsample << "\n";
     stream << "Sigma: " << prefs.unarySigma << "\n";

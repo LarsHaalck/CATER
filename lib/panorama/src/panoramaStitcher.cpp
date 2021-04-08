@@ -11,7 +11,7 @@
 #include "similarityGlobalOptimizer.h"
 #include "util/algorithm.h"
 #include "util/stopWatch.h"
-#include "util/tinycolormap.hpp"
+#include "util/tinycolormap.h"
 
 #include <Eigen/Dense>
 #include <ceres/ceres.h>
