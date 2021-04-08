@@ -63,7 +63,7 @@ namespace detail
         if (!node["fps"].empty())
             prefs.fps = node["fps"];
         if (!node["pixels_per_mm"].empty())
-            prefs.detectionRadius = node["pixels_per_mm"];
+            prefs.pixelsPerMm = node["pixels_per_mm"];
 
         // features
         prefs.featureType = static_cast<ht::FeatureType>(static_cast<int>(node["feature_type"]));
