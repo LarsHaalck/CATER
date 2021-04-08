@@ -46,6 +46,7 @@ private:
     void buildKeyMap();
     void makeSticky(const LabelId& label);
     bool isSticky(const LabelId& label);
+    bool isStickyEqual(const LabelId& label);
     void insertLabel(const LabelId& label, Labels& labels);
     std::pair<QString, QString> getLabels(const Labels& labels) const;
 

@@ -125,6 +125,12 @@ void Labeler::processKeyEvent(std::size_t frame, QKeyEvent* event)
 
 bool Labeler::isSticky(const LabelId& label) { return mStickyLabels.count(label); }
 
+// check not only if group exists but also if the label is equal
+bool Labeler::isStickyEqual(const LabelId& label)
+{
+    return (isSticky(label) && ((*mStickyLabels.find(label)).second == label.second));
+}
+
 void Labeler::processSticky(std::size_t frame)
 {
     for (const auto& sticky : mStickyLabels)
@@ -133,7 +139,7 @@ void Labeler::processSticky(std::size_t frame)
 
 void Labeler::makeSticky(const LabelId& label)
 {
-    if (isSticky(label))
+    if (isStickyEqual(label))
         mStickyLabels.erase(label);
     else
         insertLabel(label, mStickyLabels);
@@ -141,19 +147,9 @@ void Labeler::makeSticky(const LabelId& label)
 
 void Labeler::insertLabel(const LabelId& label, Labels& labels)
 {
-    auto del = LabelId("", -1);
-    for (const auto& elem : labels)
-    {
-        if (elem.first == label.first)
-        {
-            del = elem;
-            break;
-        }
-    }
-
-    if (del.second != -1)
-        labels.erase(del);
-
+    // erase if already existing
+    if (auto it = labels.find(label); it != std::end(labels))
+        labels.erase(it);
     labels.insert(label);
 }
 
