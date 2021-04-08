@@ -1,5 +1,7 @@
 #include "panorama/keyFrames.h"
 
+#include "image-processing/util.h"
+#include "util/algorithm.h"
 #include "util/stopWatch.h"
 
 #include <opencv2/core.hpp>
@@ -169,7 +171,7 @@ namespace detail
             auto ptI = ftsI[geomMatches[i].queryIdx].pt;
             auto ptJ = ftsJ[geomMatches[i].trainIdx].pt;
 
-            distances.push_back(l2Dist(ptI, ptJ));
+            distances.push_back(euclidianDist(ptI, ptJ));
             srcFiltered.push_back(ptI);
             dstFiltered.push_back(ptJ);
         }
@@ -178,7 +180,8 @@ namespace detail
         if (srcFiltered.size() < 10)
             return std::make_pair(0.0f, 0);
 
-        return std::make_pair(getMedian(distances), distances.size());
+        return std::make_pair(
+            median_fast(std::begin(distances), std::end(distances)), distances.size());
     }
 
     double calcReprojError(const std::vector<cv::Point2f>& ptsSrc, std::vector<cv::Point2f>& ptsDst,
@@ -198,7 +201,7 @@ namespace detail
 
         double error = 0;
         for (std::size_t i = 0; i < ptsSrc.size(); i++)
-            error = l2Dist(transSrc[i], ptsDst[i]);
+            error += euclidianDist(transSrc[i], ptsDst[i]);
 
         return error / ptsSrc.size();
     }

@@ -16,6 +16,40 @@ auto mean(InputIt first, InputIt last) -> typename InputIt::value_type
     return sum / static_cast<T>(std::distance(first, last));
 }
 
+// copy by value, so we can sort in-place
+template <typename T>
+T median(std::vector<T> vec)
+{
+    using sizeT = typename std::vector<T>::size_type;
+    sizeT size = vec.size();
+    if (size == 0)
+        return 0;
+
+    std::sort(std::begin(vec), std::end(vec));
+
+    if (size % 2 == 0)
+        return (vec[size / 2 - 1] + vec[size / 2]) / 2;
+    else
+        return vec[size / 2];
+}
+
+// nth_element modifies in unpredictable ways
+template <typename InputIt>
+auto median_fast(InputIt first, InputIt last) -> typename InputIt::value_type
+{
+    auto size = std::distance(first, last);
+    auto half = size / 2;
+    std::nth_element(first, first + half, last);
+    auto med = first + half;
+
+    if (size % 2 == 0)
+    {
+        auto max_it = max_element(first, first + half);
+        return (*med + *max_it) / 2;
+    }
+    return (*med);
+}
+
 template <typename InputIt>
 auto std_dev(InputIt first, InputIt last) -> typename InputIt::value_type
 {

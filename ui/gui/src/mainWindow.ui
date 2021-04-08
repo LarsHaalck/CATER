@@ -92,21 +92,21 @@
                 <item row="12" column="1">
                  <widget class="QLabel" name="labelNumTrackedPos">
                   <property name="text">
-                   <string>&lt;num&gt;</string>
+                   <string/>
                   </property>
                  </widget>
                 </item>
                 <item row="0" column="1">
                  <widget class="QLabel" name="labelFileName">
                   <property name="text">
-                   <string>&lt;fileName&gt;</string>
+                   <string/>
                   </property>
                  </widget>
                 </item>
                 <item row="5" column="1">
                  <widget class="QLabel" name="labelStartFrame">
                   <property name="text">
-                   <string>&lt;num&gt;</string>
+                   <string/>
                   </property>
                  </widget>
                 </item>
@@ -120,7 +120,7 @@
                 <item row="2" column="1">
                  <widget class="QLabel" name="labelLabel">
                   <property name="text">
-                   <string>&lt;label&gt;</string>
+                   <string/>
                   </property>
                  </widget>
                 </item>
@@ -134,7 +134,7 @@
                 <item row="11" column="1">
                  <widget class="QLabel" name="labelNumUnaries">
                   <property name="text">
-                   <string>&lt;num&gt;</string>
+                   <string/>
                   </property>
                  </widget>
                 </item>
@@ -144,7 +144,7 @@
                    <string notr="true"/>
                   </property>
                   <property name="text">
-                   <string>&lt;quality&gt;</string>
+                   <string/>
                   </property>
                  </widget>
                 </item>
@@ -158,7 +158,7 @@
                 <item row="6" column="1">
                  <widget class="QLabel" name="labelEndFrame">
                   <property name="text">
-                   <string>&lt;num&gt;</string>
+                   <string/>
                   </property>
                  </widget>
                 </item>
@@ -193,7 +193,7 @@
                 <item row="10" column="1">
                  <widget class="QLabel" name="labelNumTrafos">
                   <property name="text">
-                   <string>&lt;num&gt;</string>
+                   <string/>
                   </property>
                  </widget>
                 </item>
@@ -228,7 +228,7 @@
                 <item row="3" column="1">
                  <widget class="QLabel" name="labelSticky">
                   <property name="text">
-                   <string>&lt;sticky&gt;</string>
+                   <string/>
                   </property>
                  </widget>
                 </item>

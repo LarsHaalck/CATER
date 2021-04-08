@@ -26,34 +26,6 @@ namespace detail
     double calcReprojError(const std::vector<cv::Point2f>& ptsSrc, std::vector<cv::Point2f>& ptsDst,
         const cv::Mat& trafo);
 
-    inline float l2Dist(const cv::KeyPoint& pt0, const cv::KeyPoint& pt1)
-    {
-        return (pt0.pt.x - pt1.pt.x) * (pt0.pt.x - pt1.pt.x)
-            + (pt0.pt.y - pt1.pt.y) * (pt0.pt.y - pt1.pt.y);
-    }
-
-    inline float l2Dist(const cv::Point2f& pt0, const cv::Point2f& pt1)
-    {
-        return (pt0.x - pt1.x) * (pt0.x - pt1.x) + (pt0.y - pt1.y) * (pt0.y - pt1.y);
-    }
-
-    // TODO: maybe move this to utils?
-    // pass by copy because of sorting
-    template <typename T>
-    T getMedian(std::vector<T> vec)
-    {
-        using sizeT = typename std::vector<T>::size_type;
-        sizeT size = vec.size();
-        if (size == 0)
-            return 0;
-        std::sort(std::begin(vec), std::end(vec));
-
-        if (size % 2 == 0)
-            return (vec[size / 2 - 1] + vec[size / 2]) / 2;
-        else
-            return vec[size / 2];
-    }
-
     void writeToFile(const std::filesystem::path& file, const std::vector<std::size_t>& keyFrames);
     std::vector<std::size_t> loadFromFile(const std::filesystem::path& file);
 }

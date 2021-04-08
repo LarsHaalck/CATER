@@ -11,6 +11,7 @@ struct GuiPreferences
     bool overlayTrajectory = false;
     int overlayTrajectoryWindow = 10;
 
+    // TODO: should be disabled later
     bool enableExpertView = true; // enables more buttons in the processing group
 };
 } // namespace gui

@@ -4,6 +4,7 @@
 #include "spdlog/spdlog.h"
 
 #include "tracker/tracker.h"
+#include "util/algorithm.h"
 #include <QLinearGradient>
 #include <ostream>
 
@@ -156,24 +157,21 @@ void UnaryScene::setup(std::vector<double> qualities, std::size_t start, std::si
     {
         auto currStart = i * medSize + offset;
         auto currEnd = std::min((i + 1) * medSize, num) + offset;
-        auto mid = currStart + (currEnd - currStart) / 2;
-        std::nth_element(std::begin(qualities) + currStart, std::begin(qualities) + mid,
-            std::begin(qualities) + currEnd);
-        auto median = qualities[mid];
+        auto currMedian = median(
+            std::vector(std::begin(qualities) + currStart, std::begin(qualities) + currEnd));
 
         std::vector<double> dists;
         dists.reserve(currEnd - currStart);
         for (std::size_t j = currStart; j < currEnd; j++)
-            dists.push_back(std::abs(qualities[j] - median));
+            dists.push_back(std::abs(qualities[j] - currMedian));
 
-        std::nth_element(std::begin(dists), std::begin(dists) + dists.size() / 2, std::end(dists));
-        auto medianDist = dists[dists.size() / 2];
+        auto medianDist = median_fast(std::begin(dists), std::end(dists));
         for (std::size_t j = currStart; j < currEnd; j++)
         {
             UnaryQuality qual;
-            if (qualities[j] < (median + 1.5 * medianDist))
+            if (qualities[j] < (currMedian + 1.5 * medianDist))
                 qual = UnaryQuality::Good;
-            else if (qualities[j] < (median + 3.0 * medianDist))
+            else if (qualities[j] < (currMedian + 3.0 * medianDist))
                 qual = UnaryQuality::Poor;
             else
                 qual = UnaryQuality::Critical;

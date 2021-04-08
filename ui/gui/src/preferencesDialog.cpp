@@ -76,7 +76,7 @@ ht::FeatureType PreferencesDialog::stringToFeatureType(const QString& string) co
     if (string == "SIFT")
         return ht::FeatureType::SIFT;
 
-    // TODO: this should throw an exception
+    // cannot happen
     return ht::FeatureType::SIFT;
 }
 
