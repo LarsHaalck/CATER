@@ -15,7 +15,6 @@ set(SOURCES
     src/unaryScene.cpp
     src/unaryGraphicsView.cpp
     src/qtOpencvCore.cpp
-    src/progressStatusBar.cpp
     src/imageViewer.cpp
     resources/resources.qrc
 
@@ -38,7 +37,6 @@ set(GUI_HEADERS
     include/unaryScene.h
     include/unaryGraphicsView.h
     include/imagesWorker.h
-    include/progressStatusBar.h
 
     # label editor
     include/labelEditor.h
@@ -70,6 +68,7 @@ target_link_libraries(${EXE_NAME}
     cereal
     util
     io
+    common-gui
 )
 
 if(${OpenMP_CXX_FOUND})

@@ -30,8 +30,10 @@ target_link_libraries(${EXE_NAME}
     spdlog::spdlog
     progressbar
     habitrack
+    panorama
     util
     io
+    common-gui
 )
 
 if(${OpenMP_CXX_FOUND})

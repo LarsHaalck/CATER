@@ -1,7 +1,7 @@
 #include "habitrack/habiTrack.h"
 
 #include "image-processing/util.h"
-#include "resultsIO.h"
+#include "habitrack/resultsIO.h"
 #include <algorithm>
 #include <chrono>
 #include <iostream>

@@ -173,12 +173,18 @@ cv::Mat Images::at(std::size_t idx) const
 
 std::size_t Images::size() const { return mImageFiles.size(); }
 
-std::filesystem::path Images::getFileName(std::size_t idx) const
+fs::path Images::getFileName(std::size_t idx) const
 {
     assert(idx < size() && "idx out of range in Images::getFileName()");
     auto file = mImageFiles[idx];
     auto path = fs::path(file);
     return path.filename();
+}
+
+void Images::clip(std::size_t start, std::size_t end)
+{
+    std::vector<fs::path> newImgFiles(std::begin(mImageFiles) + start, std::begin(mImageFiles) + end);
+    mImageFiles.swap(newImgFiles);
 }
 
 ImageCache Images::getCache(std::size_t maxChunkSize, const size_t_vec& ids) const

@@ -357,7 +357,7 @@ void MainWindow::on_actionOpenResultsFile_triggered()
 {
     spdlog::debug("GUI: Triggered Open results file");
     QString resultFile = QFileDialog::getOpenFileName(
-        this, tr("Open Image File List"), mStartPath, "YAML (*.yml)");
+        this, tr("Open Results"), mStartPath, "YAML (*.yml)");
     if (resultFile.isEmpty())
         return;
 

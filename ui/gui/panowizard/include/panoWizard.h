@@ -1,7 +1,10 @@
 #ifndef PANOWIZARD_H
 #define PANOWIZARD_H
 
-#include <QMainWindow>
+#include <QWizard>
+#include <filesystem>
+
+#include "gui/progressStatusBar.h"
 
 namespace Ui {
 class PanoWizard;
@@ -10,16 +13,38 @@ class PanoWizard;
 namespace gui
 {
 
-class PanoWizard : public QMainWindow
+class PanoWizard : public QWizard
 {
     Q_OBJECT
-
 public:
     explicit PanoWizard(QWidget *parent = nullptr);
     ~PanoWizard();
 
 private:
+    void processSingle(const std::filesystem::path& resFile);
+    void process();
+
+private slots:
+    void on_load();
+    void on_newid(int id);
+    void on_processEvent(int id);
+
+    ////////////////////////////////
+    // progressbar slots
+    ////////////////////////////////
+    void on_totalChanged(int total);
+    void on_incremented();
+    void on_incremented(int inc);
+    void on_isDone();
+    void on_statusChanged(const QString& string);
+
+signals:
+    void processEvent(int);
+
+private:
     Ui::PanoWizard *ui;
+    std::vector<std::filesystem::path> mResFiles;
+    std::shared_ptr<ProgressStatusBar> mBar;
 };
 
 } // namespace gui

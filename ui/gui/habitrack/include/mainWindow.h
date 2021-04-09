@@ -8,7 +8,7 @@
 #include "imageViewer.h"
 #include "labelConfig.h"
 #include "labeler.h"
-#include "progressStatusBar.h"
+#include "gui/progressStatusBar.h"
 #include "trackerScene.h"
 #include "unaryGraphicsView.h"
 

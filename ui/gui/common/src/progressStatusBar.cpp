@@ -1,4 +1,4 @@
-#include "progressStatusBar.h"
+#include "gui/progressStatusBar.h"
 
 namespace gui
 {

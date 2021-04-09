@@ -39,6 +39,8 @@ public:
     cv::Point2f getCenter() const override;
     std::filesystem::path getFileName(std::size_t idx) const;
 
+    void clip(std::size_t start, std::size_t end);
+
 private:
     void fillImageFilesFromFolder(const std::filesystem::path& path);
     void fillImageFilesFromFile(const std::filesystem::path& path);
