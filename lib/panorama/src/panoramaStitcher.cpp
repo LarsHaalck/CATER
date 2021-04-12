@@ -978,7 +978,14 @@ void PanoramaStitcher::repairIntriniscs(
 /*     return imgJ; */
 /* } */
 
-std::vector<cv::Mat> PanoramaStitcher::loadTrafos(const fs::path& file)
+void PanoramaStitcher::loadTrafos(const fs::path& file)
+{
+    mOptimizedTrafos = getTrafos(file);
+    if (mType == GeometricType::Isometry)
+        buildParamsVector();
+}
+
+std::vector<cv::Mat> PanoramaStitcher::getTrafos(const fs::path& file)
 {
     std::vector<cv::Mat> trafos;
     std::ifstream stream(file.string(), std::ios::in | std::ios::binary);

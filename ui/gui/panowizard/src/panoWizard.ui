@@ -90,6 +90,9 @@
       </item>
       <item row="4" column="2">
        <widget class="QComboBox" name="comboFt">
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
         <item>
          <property name="text">
           <string>ORB</string>
@@ -224,36 +227,16 @@
          </size>
         </property>
         <property name="currentIndex">
-         <number>6</number>
+         <number>0</number>
         </property>
         <item>
          <property name="text">
-          <string>Feature Computation</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Keyframe Calculation</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Feature Matching</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Panorama Initialization</string>
+          <string>Initialization</string>
          </property>
         </item>
         <item>
          <property name="text">
           <string>Global Optimization</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Reintegration</string>
          </property>
         </item>
         <item>

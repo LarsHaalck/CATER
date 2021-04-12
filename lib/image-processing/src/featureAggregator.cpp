@@ -7,6 +7,9 @@ FeatureAggregator::FeatureAggregator(const std::vector<Features>& ftContainers)
     , mNumImgs()
     , mNumImgsVec()
 {
+    if (ftContainers.empty())
+        return;
+
     [[maybe_unused]] auto size = mFtContainers[0].getImageSize();
     [[maybe_unused]] auto ftType = mFtContainers[0].getFeatureType();
     for ([[maybe_unused]] const auto& c : mFtContainers)

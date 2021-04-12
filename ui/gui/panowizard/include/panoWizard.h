@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "gui/progressStatusBar.h"
+#include "panorama/panoramaEngine.h"
 
 namespace Ui {
 class PanoWizard;
@@ -21,8 +22,10 @@ public:
     ~PanoWizard();
 
 private:
-    void processSingle(const std::filesystem::path& resFile);
     void process();
+    ht::PanoramaSettings getSettings() const;
+    void processSingle(const std::filesystem::path& resFile);
+    void processMultiple();
 
 private slots:
     void on_load();

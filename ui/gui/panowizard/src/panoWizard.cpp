@@ -7,19 +7,11 @@
 #include <spdlog/spdlog.h>
 
 #include "habitrack/resultsIO.h"
-
-#include "image-processing/features.h"
 #include "image-processing/images.h"
-#include "image-processing/matches.h"
-#include "image-processing/mildRecommender.h"
-#include "image-processing/superGlue.h"
-#include "panorama/keyFrameRecommender.h"
-#include "panorama/keyFrames.h"
-#include "panorama/panoramaStitcher.h"
+
+#include "panorama/panoramaEngine.h"
 
 namespace fs = std::filesystem;
-auto ORB = ht::FeatureType::ORB;
-auto SIM = ht::GeometricType::Similarity;
 
 using namespace ht;
 
@@ -72,7 +64,6 @@ void PanoWizard::on_newid(int id)
         return;
 
     auto title = this->page(id)->objectName();
-    spdlog::critical("id: {}, title: {}", id, title.toStdString());
     if (title == "pageProgress")
         this->button(QWizard::BackButton)->setEnabled(false);
     else
@@ -83,8 +74,13 @@ void PanoWizard::on_newid(int id)
 
 void PanoWizard::on_processEvent(int id)
 {
-    ui->labelVideo->setText(QString("Video: ") + QString::number(id + 1) + QString("/")
-        + QString::number(mResFiles.size()));
+    if (id > 0)
+    {
+        ui->labelVideo->setText(QString("Video: ") + QString::number(id + 1) + QString("/")
+                + QString::number(mResFiles.size()));
+    }
+    else
+        ui->labelVideo->setText("Inter-Video Panorama");
 }
 
 void PanoWizard::process()
@@ -94,9 +90,14 @@ void PanoWizard::process()
         emit processEvent(i);
         processSingle(mResFiles[i]);
     }
+
+    emit processEvent(-1);
+    if (mResFiles.size() > 1)
+        processMultiple();
 }
 
-void PanoWizard::processSingle(const fs::path& resFile)
+
+PanoramaSettings PanoWizard::getSettings() const
 {
     auto force = ui->checkForce->isChecked();
     auto stage = ui->comboStage->currentIndex();
@@ -110,152 +111,54 @@ void PanoWizard::processSingle(const fs::path& resFile)
     else if (ui->comboFt->currentText() == "SuperPoint")
         ftType = FeatureType::SuperPoint;
 
+    PanoramaSettings settings;
+    settings.force = force;
+    settings.stage = stage;
+    settings.cacheSize = cacheSize;
+    settings.rows = rows;
+    settings.cols = cols;
+    settings.numFts = numFts;
+    settings.ftType = ftType;
+
+    return settings;
+}
+
+void PanoWizard::processSingle(const fs::path& resFile)
+{
+    PanoramaSettings settings = getSettings();
     auto resTuple = loadResults(resFile);
     auto imgFolder = std::get<1>(resTuple);
 
     auto start = std::get<2>(resTuple);
     auto end = std::get<3>(resTuple);
-    auto images = Images(imgFolder);
-    images.clip(start, end + 1);
 
-    auto basePath = resFile.parent_path() / "panorama";
-    fs::create_directories(basePath);
+    Images images(imgFolder);
+    images.clip(start, end);
+    PanoramaEngine::stitchPano(images, resFile.parent_path() / "panorama", settings, mBar);
+}
 
-    // calc features for all frames
-    auto ftPath = basePath / "fts";
-    auto features = Features();
-    if (Features::isComputed(images, ftPath, ORB) && !force)
-        features = Features::fromDir(images, ftPath, ORB);
-    else
-        features = Features::compute(images, ftPath, ORB, numFts, cacheSize, size_t_vec(), mBar);
+void PanoWizard::processMultiple()
+{
+    PanoramaSettings settings = getSettings();
+    std::vector<Images> images;
+    std::vector<fs::path> data;
 
-    if (stage < 1)
-        return;
-
-    // select key frames
-    auto kfPath = basePath / "key_frames.yml";
-    std::vector<std::size_t> keyFrames;
-    if (KeyFrames::isComputed(kfPath) && !force)
-        keyFrames = KeyFrames::fromDir(kfPath);
-    else
-        keyFrames = KeyFrames::compute(features, SIM, kfPath, 0.3, 0.5, mBar);
-
-    if (stage < 2)
-        return;
-
-    // calculate matches between keyframes and intermediate frames via KeyFrameRecommender
-    auto kfIntraPath = basePath / "kfs/maches_intra";
-    auto kfRecommender = std::make_unique<KeyFrameRecommender>(keyFrames);
-    if (!matches::isComputed(kfIntraPath, SIM) || force)
+    for (const auto& resFile : mResFiles)
     {
-        matches::compute(kfIntraPath, SIM, features, matches::MatchType::Strategy, 0, 0.0,
-            std::move(kfRecommender), cacheSize, size_t_vec(), mBar);
+        auto resTuple = loadResults(resFile);
+        auto imgFolder = std::get<1>(resTuple);
+
+        auto start = std::get<2>(resTuple);
+        auto end = std::get<3>(resTuple);
+        Images currImgs(imgFolder);
+        currImgs.clip(start, end);
+
+        images.push_back(currImgs);
+        data.push_back(resFile.parent_path() / "panorama");
     }
 
-    // calculate matches between keyframes via exhaustive matching
-    auto kfInterPath = basePath / "kfs/maches_inter";
-    auto featuresDensePath = basePath / "kfs/fts";
-
-    auto featuresDense = Features();
-    if (Features::isComputed(images, featuresDensePath, ORB, keyFrames) && !force)
-        featuresDense = Features::fromDir(images, featuresDensePath, ORB, keyFrames);
-    else
-    {
-        featuresDense = Features::compute(
-            images, featuresDensePath, ORB, 4 * numFts, cacheSize, keyFrames, mBar);
-    }
-
-    // window is 4 because ceil(1 / 0.3) seems like a sensible default
-    auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
-    if (ftType == FeatureType::SuperPoint)
-    {
-        if (Features::isComputed(images, featuresDensePath, ftType, keyFrames) && !force)
-        {
-            featuresDense = Features::fromDir(images, featuresDensePath, ftType, keyFrames);
-        }
-        else
-        {
-            featuresDense = matches::SuperGlue("/data/arbeit/sg/indoor", 800)
-                                .compute(images, featuresDensePath, kfInterPath, SIM,
-                                    matches::MatchType::Strategy, 4, 0.0,
-                                    std::move(mildRecommender), cacheSize, keyFrames, mBar);
-        }
-    }
-    else if (ftType == FeatureType::SIFT)
-    {
-        auto featuresSift = Features();
-        if (Features::isComputed(images, featuresDensePath, ftType, keyFrames) && !force)
-        {
-            featuresSift = Features::fromDir(images, featuresDensePath, ftType, keyFrames);
-        }
-        else
-        {
-            featuresSift = Features::compute(
-                images, featuresDensePath, ftType, 4 * numFts, cacheSize, keyFrames, mBar);
-
-            if (!matches::isComputed(kfInterPath, SIM) || force)
-            {
-                matches::compute(kfInterPath, SIM, featuresSift, matches::MatchType::Strategy, 4,
-                    0.0, std::move(mildRecommender), cacheSize, keyFrames, mBar);
-            }
-        }
-        featuresDense = std::move(featuresSift);
-    }
-    else
-    {
-        if (!matches::isComputed(kfInterPath, SIM) || force)
-        {
-            matches::compute(kfInterPath, SIM, featuresDense, matches::MatchType::Strategy, 4, 0.0,
-                std::move(mildRecommender), cacheSize, keyFrames, mBar);
-        }
-    }
-
-    // panoramas can only be calculated from theses Types
-    GeometricType useableTypes = matches::getConnectedTypes(kfInterPath, SIM, keyFrames);
-    auto typeList = typeToTypeList(useableTypes);
-    for (auto type : typeList)
-        spdlog::info("Usable type for PanoramaSticher: {}", type);
-
-    if (stage < 3)
-        return;
-
-    auto stitcher = PanoramaStitcher(images, keyFrames, SIM);
-
-    // init trafos of keyframes by concatenating them
-    stitcher.initTrafos(matches::getTrafos(kfInterPath, SIM));
-    auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), false, {}, mBar));
-    cv::imwrite((basePath / "pano0.png").string(), pano);
-
-    if (stage < 4)
-        return;
-
-    // globally optimized these keyframe tranformations and write them for later IVLC
-    stitcher.globalOptimizeKeyFrames(featuresDense, matches::getMatches(kfInterPath, SIM), 0, mBar);
-    stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
-    pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows), false, {}, mBar));
-    cv::imwrite((basePath / "pano1.png").string(), pano);
-
-    if (stage < 5)
-        return;
-
-    // reintegrate by geodesic interpolation of frames between keyframes
-    stitcher.reintegrate();
-    pano = std::get<0>(
-        stitcher.stitchPano(cv::Size(cols, rows), false, basePath / "reint_centers.yml", mBar));
-    cv::imwrite((basePath / "pano2.png").string(), pano);
-    stitcher.writeTrafos(basePath / "reint_trafos.yml", WriteType::Readable);
-
-    if (stage < 6)
-        return;
-
-    // refine all keyframes
-    stitcher.refineNonKeyFrames(features, matches::getMatches(kfIntraPath, SIM), 50, mBar);
-    stitcher.writeTrafos(basePath / "opt_trafos.bin");
-    pano = std::get<0>(
-        stitcher.stitchPano(cv::Size(cols, rows), false, basePath / "opt_centers.yml", mBar));
-    cv::imwrite((basePath / "pano3.png").string(), pano);
-
-    stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
+    auto outFolder = mResFiles[0].parent_path() / "panorama_combined";
+    PanoramaEngine::stitchMultiPano(images, data, outFolder, settings, mBar);
 }
 
 void PanoWizard::on_totalChanged(int total)

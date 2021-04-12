@@ -62,7 +62,9 @@ public:
         std::size_t limitTo = 0, std::shared_ptr<BaseProgressBar> cb = {});
     void reintegrate();
 
-    static std::vector<cv::Mat> loadTrafos(const std::filesystem::path& file);
+    void loadTrafos(const std::filesystem::path& file);
+    static std::vector<cv::Mat> getTrafos(const std::filesystem::path& file);
+
     void writeTrafos(const std::filesystem::path& file, WriteType writeType = WriteType::Binary);
 
 private:
