@@ -77,7 +77,7 @@ void PanoWizard::on_processEvent(int id)
     if (id > 0)
     {
         ui->labelVideo->setText(QString("Video: ") + QString::number(id + 1) + QString("/")
-                + QString::number(mResFiles.size()));
+            + QString::number(mResFiles.size()));
     }
     else
         ui->labelVideo->setText("Inter-Video Panorama");
@@ -95,7 +95,6 @@ void PanoWizard::process()
     if (mResFiles.size() > 1)
         processMultiple();
 }
-
 
 PanoramaSettings PanoWizard::getSettings() const
 {
@@ -134,7 +133,7 @@ void PanoWizard::processSingle(const fs::path& resFile)
 
     Images images(imgFolder);
     images.clip(start, end);
-    PanoramaEngine::stitchPano(images, resFile.parent_path() / "panorama", settings, mBar);
+    PanoramaEngine::runSingle(images, resFile.parent_path() / "panorama", settings, mBar);
 }
 
 void PanoWizard::processMultiple()
@@ -158,7 +157,7 @@ void PanoWizard::processMultiple()
     }
 
     auto outFolder = mResFiles[0].parent_path() / "panorama_combined";
-    PanoramaEngine::stitchMultiPano(images, data, outFolder, settings, mBar);
+    PanoramaEngine::runMulti(images, data, outFolder, settings, mBar);
 }
 
 void PanoWizard::on_totalChanged(int total)

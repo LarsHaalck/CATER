@@ -2,9 +2,8 @@
 #include <memory>
 #include <numeric>
 
-
-#include "panorama/panoramaEngine.h"
 #include "image-processing/images.h"
+#include "panorama/panoramaEngine.h"
 
 #include "cxxopts.hpp"
 
@@ -30,11 +29,10 @@ int main(int argc, const char** argv)
 
     cxxopts::Options options("multi", "");
     options.show_positional_help();
-    options.add_options()("folders", "folders", cxxopts::value(videoPaths))("g,feature",
-        "feature type 0: ORB, 1: SIFT, 2: SuperPoint",
-        cxxopts::value(featureInt))("f", "force", cxxopts::value(force))(
-        "k, cols", "cols", cxxopts::value(cols))("l, rows", "rows", cxxopts::value(rows))(
-        "s,stage", "0: init, 1: opt: 2: refined", cxxopts::value(stage));
+    options.add_options()("folders", "folders", cxxopts::value(videoPaths))(
+        "g,feature", "feature type 0: ORB, 1: SIFT, 2: SuperPoint", cxxopts::value(featureInt))("f",
+        "force", cxxopts::value(force))("k, cols", "cols", cxxopts::value(cols))("l, rows", "rows",
+        cxxopts::value(rows))("s,stage", "0: init, 1: opt: 2: refined", cxxopts::value(stage));
 
     options.parse_positional({"folders"});
 
@@ -70,7 +68,7 @@ int main(int argc, const char** argv)
         imgContainers.push_back(images);
     }
 
-    PanoramaEngine::stitchMultiPano(imgContainers, videoPaths, basePath, settings);
+    PanoramaEngine::runMulti(imgContainers, videoPaths, basePath, settings);
 
     return 0;
 }

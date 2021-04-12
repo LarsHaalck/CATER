@@ -73,7 +73,7 @@ int main(int argc, const char** argv)
 
     // load images
     auto images = Images(basePath / "imgs");
-    PanoramaEngine::stitchPano(images, basePath, settings);
+    PanoramaEngine::runSingle(images, basePath, settings);
 
     return 0;
 }

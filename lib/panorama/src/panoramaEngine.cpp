@@ -25,7 +25,7 @@ namespace PanoramaEngine
     auto ORB = ht::FeatureType::ORB;
     auto SIM = ht::GeometricType::Similarity;
 
-    void stitchPano(const Images& images, const std::filesystem::path& dataFolder,
+    void runSingle(const Images& images, const std::filesystem::path& dataFolder,
         const PanoramaSettings& settings, std::shared_ptr<BaseProgressBar> mBar)
     {
         auto basePath = dataFolder;
@@ -171,7 +171,7 @@ namespace PanoramaEngine
         cv::imwrite((basePath / "pano2_opt_dense.png").string(), pano);
     }
 
-    void stitchMultiPano(const std::vector<Images>& imgContainers,
+    void runMulti(const std::vector<Images>& imgContainers,
         const std::vector<std::filesystem::path>& dataFolders,
         const std::filesystem::path& outFolder, const PanoramaSettings& settings,
         std::shared_ptr<BaseProgressBar> mBar)

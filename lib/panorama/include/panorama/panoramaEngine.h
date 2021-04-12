@@ -20,10 +20,10 @@ struct PanoramaSettings
 
 namespace PanoramaEngine
 {
-    void stitchPano(const Images& images, const std::filesystem::path& dataFolder,
+    void runSingle(const Images& images, const std::filesystem::path& dataFolder,
         const PanoramaSettings& settings, std::shared_ptr<BaseProgressBar> mBar = {});
 
-    void stitchMultiPano(const std::vector<Images>& images,
+    void runMulti(const std::vector<Images>& images,
         const std::vector<std::filesystem::path>& dataFolders,
         const std::filesystem::path& outFolder, const PanoramaSettings& settings,
         std::shared_ptr<BaseProgressBar> mBar = {});
