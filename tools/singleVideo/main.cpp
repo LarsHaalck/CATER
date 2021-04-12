@@ -14,8 +14,6 @@
 using namespace ht;
 namespace fs = std::filesystem;
 
-auto ORB = ht::FeatureType::ORB;
-
 int main(int argc, const char** argv)
 {
     /* spdlog::set_level(spdlog::level::debug); */
