@@ -36,3 +36,10 @@ linuxdeploy-x86_64.AppImage \
     --output appimage \
     --plugin qt
 
+linuxdeploy-x86_64.AppImage \
+    --appdir AppDir \
+    -d "AppDir/share/applications/panowizard.desktop" \
+    -i "AppDir/share/icons/hicolor/128x128/apps/panowizard.png" \
+    -e "AppDir/bin/panowizard" \
+    --output appimage \
+    --plugin qt

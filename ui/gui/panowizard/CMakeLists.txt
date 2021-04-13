@@ -46,3 +46,7 @@ endif()
 install(TARGETS ${EXE_NAME}
     DESTINATION bin
 )
+
+install(FILES resources/panowizard.desktop DESTINATION share/applications)
+install(FILES resources/panowizard.png
+    DESTINATION share/icons/hicolor/128x128/apps)
