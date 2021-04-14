@@ -1,16 +1,16 @@
 #include "habitrack/habiTrack.h"
 
-#include "image-processing/util.h"
 #include "habitrack/resultsIO.h"
-#include "progressbar/progressBar.h"
+#include "image-processing/util.h"
+#include "io/io.h"
+#include "tracker/tracker.h"
 #include <algorithm>
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
-
-#include <tracker/tracker.h>
 
 namespace fs = std::filesystem;
 
@@ -149,7 +149,7 @@ void HabiTrack::populatePaths()
     }
     catch (const spdlog::spdlog_ex& ex)
     {
-        std::cout << "Log initialization failed: " << ex.what() << std::endl;
+        std::cerr << "Log initialization failed: " << ex.what();
     }
 }
 
@@ -337,5 +337,37 @@ void HabiTrack::runFullPipeline()
     extractTrafos();
     extractUnaries();
     optimizeUnaries();
+}
+
+void HabiTrack::exportDetections(const std::filesystem::path& csvFile, bool smooth) const
+{
+    /* auto first = std::begin(mDetections.cdata())->first; */
+    std::vector<cv::Point> pts;
+    for (const auto& elem : mDetections.cdata())
+        pts.push_back(elem.second.position);
+
+    smoothBoundaries(pts);
+
+    /* std::ofstream stream(csvFile.string(), std::ios::out); */
+    /* io::checkStream(stream, csvFile); */
+    /* for (const auto& [id, d] : mDetections.cdata()) */
+    /*     stream << id << "," << d.position.x << "," << d.position.y << "\n"; */
+
+}
+
+std::vector<cv::Point> HabiTrack::smoothBoundaries(const std::vector<cv::Point>& pts) const
+{
+    std::size_t w = 10;
+    auto ptsSmoothed = pts;
+    auto cs = mPrefs.chunkSize;
+    auto numUns = mUnaries.size();
+    auto numChunks = Tracker::getNumChunks(numUns, cs);
+    for (std::size_t i = 1; i < numChunks; i++)
+    {
+        auto prevEnd = Tracker::getChunkEnd(i - 1, numChunks, cs, numUns);
+
+        for (std::size_t j = prevEnd - w; j < prevEnd + 2*w; j++)
+            /* ptsSmoothed[j] */
+    }
 }
 } // namespace gui

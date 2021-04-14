@@ -85,12 +85,16 @@ public:
 
     std::filesystem::path getOutputPath() const { return mOutputPath; }
 
+    void exportDetections(const std::filesystem::path& csvFile, bool smooth) const;
+
 private:
     void populatePaths();
     void openImagesHelper(const std::filesystem::path& path = {});
     std::string getDateTimeString() const;
 
     void setTrackerSettings(const Preferences& prefs);
+
+    std::vector<cv::Point> smoothBoundaries(const std::vector<cv::Point>& pts) const;
 
 private:
     std::shared_ptr<BaseProgressBar> mBar;

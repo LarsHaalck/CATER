@@ -1,14 +1,17 @@
 #include "mainWindow.h"
 #include "ui_mainWindow.h"
 
+#include "image-processing/util.h"
 #include "imagesWorker.h"
 #include "labelEditor.h"
+#include "labeler.h"
 #include "preferencesDialog.h"
 #include "qtOpencvCore.h"
 #include "scopedBlocker.h"
-#include "image-processing/util.h"
+#include "ui_exportDialog.h"
 #include <QDate>
 #include <QFileDialog>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QSound>
 #include <QStatusBar>
@@ -20,9 +23,6 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
-
-#include "labeler.h"
-#include <QKeyEvent>
 
 using namespace ht;
 namespace fs = std::filesystem;
@@ -192,6 +192,29 @@ void MainWindow::on_actionPreferences_triggered()
     }
 }
 
+void MainWindow::on_actionExport_triggered()
+{
+    if (!mHabiTrack.detections().size())
+    {
+        emit warn("No detections to export yet");
+        return;
+    }
+
+    QDialog dialog;
+    Ui::ExportDialog uiDialog;
+    uiDialog.setupUi(&dialog);
+
+    connect(uiDialog.buttonFile, &QPushButton::clicked, this, [&dialog, &uiDialog]() {
+        auto filename = QFileDialog::getSaveFileName(
+            &dialog, "Export file for detections", QString(), "CSV (*.csv)");
+        uiDialog.labelFile->setText(filename);
+    });
+    dialog.exec();
+
+    mHabiTrack.exportDetections(
+        uiDialog.labelFile->text().toStdString(), uiDialog.checkBoxSmooth->isChecked());
+}
+
 void MainWindow::on_warn(const QString& msg) { QMessageBox::warning(this, "Warning", msg); }
 void MainWindow::on_sliderFrame_valueChanged(int value) { showFrame(value - 1); }
 void MainWindow::on_spinCurrentFrame_valueChanged(int value) { showFrame(value - 1); }
@@ -320,6 +343,7 @@ void MainWindow::openImagesHelper()
 
     ui->actionPreferences->setEnabled(true);
     ui->actionLabelEditor->setEnabled(true);
+    ui->actionExport->setEnabled(true);
 
     ui->buttonTrack->setEnabled(true);
     ui->frameTracking->setEnabled(true);
@@ -356,8 +380,8 @@ void MainWindow::on_actionOpenImgList_triggered() { emit warn("Not implemented y
 void MainWindow::on_actionOpenResultsFile_triggered()
 {
     spdlog::debug("GUI: Triggered Open results file");
-    QString resultFile = QFileDialog::getOpenFileName(
-        this, tr("Open Results"), mStartPath, "YAML (*.yml)");
+    QString resultFile
+        = QFileDialog::getOpenFileName(this, tr("Open Results"), mStartPath, "YAML (*.yml)");
     if (resultFile.isEmpty())
         return;
 

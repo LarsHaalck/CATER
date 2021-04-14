@@ -113,6 +113,7 @@ private slots:
     void on_actionSave_Results_triggered();
     void on_actionLabelEditor_triggered();
     void on_actionPreferences_triggered();
+    void on_actionExport_triggered();
     void on_warn(const QString& msg);
     void on_finished();
     void on_saveResults(bool force);
