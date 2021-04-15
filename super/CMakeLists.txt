@@ -14,6 +14,7 @@ include(external/mild)
 include(external/ceres)
 include(external/cereal)
 include(external/cxxopts)
+include(external/fitpackpp)
 include(external/opencv)
 include(external/qt)
 
@@ -26,6 +27,7 @@ set(habitrack_dependencies
     ceres_external
     cereal_external
     cxxopts_external
+    fitpackpp_external
     opencv_external
     qt5base_external
     qt5multimedia_external
@@ -52,6 +54,7 @@ else ()
             -DCeres_DIR=${Ceres_DIR}
             -Dcereal_DIR=${cereal_DIR}
             -Dcxxopts_DIR=${cxxopts_DIR}
+            -Dfitpackpp_DIR=${fitpackpp_DIR}
             -DOpenCV_DIR=${OpenCV_DIR}
             -DQt5Concurrent_DIR=${Qt5Concurrent_DIR}
             -DQt5Widgets_DIR=${Qt5Widgets_DIR}
