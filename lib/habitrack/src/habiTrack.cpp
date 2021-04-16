@@ -1,5 +1,6 @@
 #include "habitrack/habiTrack.h"
 
+#include "fitpackpp/BSplineCurve.h"
 #include "habitrack/resultsIO.h"
 #include "image-processing/util.h"
 #include "io/io.h"
@@ -342,22 +343,69 @@ void HabiTrack::runFullPipeline()
 void HabiTrack::exportDetections(const std::filesystem::path& csvFile, bool smooth) const
 {
     /* auto first = std::begin(mDetections.cdata())->first; */
+    std::vector<std::size_t> ids;
     std::vector<cv::Point> pts;
     for (const auto& elem : mDetections.cdata())
+    {
+        ids.push_back(elem.first);
         pts.push_back(elem.second.position);
+    }
 
-    smoothBoundaries(pts);
+    if (smooth)
+        pts = smoothBoundaries(pts);
 
-    /* std::ofstream stream(csvFile.string(), std::ios::out); */
-    /* io::checkStream(stream, csvFile); */
-    /* for (const auto& [id, d] : mDetections.cdata()) */
-    /*     stream << id << "," << d.position.x << "," << d.position.y << "\n"; */
+    std::ofstream stream(csvFile.string(), std::ios::out);
+    io::checkStream(stream, csvFile);
+    for (std::size_t i = 0; i < ids.size(); i++)
+        stream << pts[i].x << "," << pts[i].y << "," << ids[i] << "\n";
+}
+std::vector<double> HabiTrack::getSimpleWeights(int w) const
+{
+    double k = 3;
+    auto weights = std::vector<double>(w);
+    std::generate(std::begin(weights), std::end(weights),
+        [n = w, k]() mutable { return std::pow((0.9 * n--), k); });
+    weights.reserve(2 * w);
+    weights.insert(std::end(weights), std::rbegin(weights), std::rend(weights));
+    return weights;
+}
 
+std::vector<double> HabiTrack::getCauchyWeights(int w) const
+{
+    double gamma = std::sqrt(1 / (std::exp(10) - 1));
+    double sigma = 1;
+
+    gamma = std::pow(gamma, 2);
+    sigma = 2 * std::pow(sigma, 2);
+
+    auto x = std::vector<double>(2 * w);
+    std::iota(std::begin(x), std::end(x), -w);
+
+    std::vector<double> weights(2 * w);
+    std::transform(std::begin(x), std::end(x), std::begin(weights), [gamma, sigma](double x) {
+        return std::log(1 + 1 / gamma)
+            - std::log(1 + (std::exp(-(std::pow(x, 2) / (sigma))) / gamma));
+    });
+
+    return weights;
 }
 
 std::vector<cv::Point> HabiTrack::smoothBoundaries(const std::vector<cv::Point>& pts) const
 {
     std::size_t w = 10;
+
+    using namespace fitpackpp;
+    std::vector<double> x;
+    std::vector<double> y;
+    x.reserve(pts.size());
+    y.reserve(pts.size());
+
+    for (const auto& pt : pts)
+    {
+        x.push_back(pt.x);
+        y.push_back(pt.y);
+    }
+
     auto ptsSmoothed = pts;
     auto cs = mPrefs.chunkSize;
     auto numUns = mUnaries.size();
@@ -366,8 +414,25 @@ std::vector<cv::Point> HabiTrack::smoothBoundaries(const std::vector<cv::Point>&
     {
         auto prevEnd = Tracker::getChunkEnd(i - 1, numChunks, cs, numUns);
 
-        for (std::size_t j = prevEnd - w; j < prevEnd + 2*w; j++)
-            /* ptsSmoothed[j] */
+        auto ids = std::vector<double>(2 * w);
+        std::iota(std::begin(ids), std::end(ids), prevEnd - w);
+
+        /* auto weights = getSimpleWeights(w); */
+        auto weights = getCauchyWeights(w);
+
+        auto splX = BSplineCurve::splrep(ids,
+            Vec(std::begin(x) + ids.front(), std::begin(x) + ids.back() + 1), weights, {}, {}, 3);
+        auto splY = BSplineCurve::splrep(ids,
+            Vec(std::begin(y) + ids.front(), std::begin(y) + ids.back() + 1), weights, {}, {}, 3);
+
+        auto xSmoothed = splX(ids);
+        auto ySmoothed = splY(ids);
+
+        std::transform(std::begin(xSmoothed), std::end(xSmoothed), std::begin(ySmoothed),
+            std::begin(ptsSmoothed) + ids.front(),
+            [](double x, double y) { return cv::Point(std::round(x), std::round(y)); });
     }
+
+    return ptsSmoothed;
 }
 } // namespace gui
