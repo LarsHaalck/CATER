@@ -9,8 +9,8 @@
 
 namespace cereal
 {
-template <class Archive>
-void serialize(Archive& archive, cv::Point2f& pt)
+template <class Archive, class T>
+void serialize(Archive& archive, cv::Point_<T>& pt)
 {
     archive(make_nvp("x", pt.x), make_nvp("y", pt.y));
 }

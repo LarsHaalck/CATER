@@ -1,8 +1,13 @@
 #include "image-processing/util.h"
 
+#include "image-processing/idTranslator.h"
+#include "util/tinycolormap.h"
+
+#include <opencv2/imgproc.hpp>
+
 constexpr double pi() { return std::atan(1) * 4; }
 
-namespace ht
+namespace ht::util
 {
 float gauss1DPDF(float mean, float sigma, float x)
 {
@@ -82,6 +87,50 @@ cv::Point rotatePointAroundPoint(cv::Point center_point, double angle, int radiu
         + (rotation_point.y - center_point.y) * cos(radian_angle);
 
     return cv::Point(static_cast<int>(new_x), static_cast<int>(new_y));
+}
+
+void highlightImg(cv::Mat& img)
+{
+    for (int r = 0; r < img.rows; r++)
+    {
+        for (int c = 0; c < img.cols; c++)
+        {
+            img.at<cv::Vec3b>(r, c)[1] += 50;
+        }
+    }
+}
+
+cv::Mat overlayPoints(
+    const cv::Mat& img, const std::vector<cv::Point2d>& pts, const std::vector<std::size_t>& sizes)
+{
+    cv::Mat pano = img.clone();
+    namespace tcm = tinycolormap;
+    auto Viridis = tcm::ColormapType::Viridis;
+
+    Translator translator;
+    if (!sizes.empty())
+        translator = Translator(sizes);
+
+    for (std::size_t i = 0; i < pts.size(); i++)
+    {
+        tcm::Color tcm_color(0, 0, 0);
+        if (!sizes.empty())
+        {
+            auto vidId = translator.globalToLocal(i).first;
+            tcm_color = tcm::GetColor(static_cast<double>(vidId) / (sizes.size() - 1), Viridis);
+        }
+        else
+        {
+            tcm_color = tcm::GetColor(static_cast<double>(i) / (pts.size() - 1), Viridis);
+        }
+
+        auto color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255);
+        if (!sizes.empty() && translator.globalToLocal(i).second > 0)
+            cv::line(pano, pts[i - 1], pts[i], color, 4);
+        else if (sizes.empty() && i > 0)
+            cv::line(pano, pts[i - 1], pts[i], color, 4);
+    }
+    return pano;
 }
 
 } // namespace ht

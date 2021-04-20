@@ -2,12 +2,14 @@
 
 #include "image-processing/featureAggregator.h"
 #include "image-processing/features.h"
+#include "image-processing/idTranslator.h"
 #include "image-processing/imageAggregator.h"
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
 #include "image-processing/mildRecommender.h"
 #include "image-processing/superGlue.h"
-#include "panorama/idTranslator.h"
+#include "image-processing/util.h"
+#include "io/ptsIO.h"
 #include "panorama/keyFrameRecommender.h"
 #include "panorama/keyFrames.h"
 #include "panorama/panoramaStitcher.h"
@@ -26,7 +28,8 @@ namespace PanoramaEngine
     auto SIM = ht::GeometricType::Similarity;
 
     void runSingle(const Images& images, const std::filesystem::path& dataFolder,
-        const PanoramaSettings& settings, std::shared_ptr<BaseProgressBar> mBar)
+        const PanoramaSettings& settings, const std::vector<cv::Point>& overlayPts,
+        std::shared_ptr<BaseProgressBar> mBar)
     {
         auto basePath = dataFolder;
         fs::create_directories(basePath);
@@ -130,9 +133,14 @@ namespace PanoramaEngine
 
         // init trafos of keyframes by concatenating them
         stitcher.initTrafos(matches::getTrafos(kfInterPath, SIM));
-        auto pano = std::get<0>(
-            stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, {}, mBar));
-        cv::imwrite((basePath / "pano0_init.png").string(), pano);
+        auto panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
+        cv::imwrite((basePath / "pano0_init.png").string(), std::get<0>(panoTuple));
+
+        /* if (overlay) */
+        /* { */
+        /*     detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple), */
+        /*         basePath / "pano0_init"); */
+        /* } */
 
         if (settings.stage < 1)
             return;
@@ -149,9 +157,9 @@ namespace PanoramaEngine
         // reintegrate by geodesic interpolation of frames between keyframes
         stitcher.reintegrate();
 
-        pano = std::get<0>(stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false,
-            basePath / "opt_centers_sparse.yml", mBar));
-        cv::imwrite((basePath / "pano1_opt_sparse.png").string(), pano);
+        panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
+        cv::imwrite((basePath / "pano1_opt_sparse.png").string(), std::get<0>(panoTuple));
+        /* io::savePoints(basePath / "opt_centers_sparse.csv", std::get<1>(panoTuple)); */
 
         if (settings.stage < 2)
             return;
@@ -166,16 +174,17 @@ namespace PanoramaEngine
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
         }
-        pano = std::get<0>(stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false,
-            basePath / "opt_centers_dense.yml", mBar));
-        cv::imwrite((basePath / "pano2_opt_dense.png").string(), pano);
+        panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
+        cv::imwrite((basePath / "pano2_opt_dense.png").string(), std::get<0>(panoTuple));
+        /* io::savePoints(basePath / "opt_centers_dense.csv", std::get<1>(panoTuple)); */
     }
 
     void runMulti(const std::vector<Images>& imgContainers,
         const std::vector<std::filesystem::path>& dataFolders,
         const std::filesystem::path& outFolder, const PanoramaSettings& settings,
-        std::shared_ptr<BaseProgressBar> mBar)
+        const std::vector<cv::Point>& overlayPts, std::shared_ptr<BaseProgressBar> mBar)
     {
+        /* bool overlay = !overlayPts.empty(); */
         std::vector<std::vector<std::size_t>> keyFrameList;
         std::vector<std::size_t> sizes;
         std::vector<PairwiseMatches> matchesIntraList;
@@ -256,9 +265,8 @@ namespace PanoramaEngine
         stitcher.initTrafosFromMultipleVideos(
             matches::getTrafos(ivlcMatchPath, SIM), sizes, localOptimalTrafos, optimalTransitions);
 
-        auto pano = std::get<0>(
-            stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, {}, mBar));
-        cv::imwrite(basePath / "combined0_init.png", pano);
+        auto panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
+        cv::imwrite(basePath / "combined0_init.png", std::get<0>(panoTuple));
 
         if (settings.stage < 1)
             return;
@@ -277,9 +285,9 @@ namespace PanoramaEngine
         }
 
         stitcher.reintegrate();
-        pano = std::get<0>(stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false,
-            basePath / "opt_centers_sparse.yml", mBar));
-        cv::imwrite(basePath / "combined1_opt_sparse.png", pano);
+        panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
+        cv::imwrite(basePath / "combined1_opt_sparse.png", std::get<0>(panoTuple));
+        /* io::savePoints(basePath / "opt_centers_sparse.csv", std::get<1>(panoTuple)); */
 
         if (settings.stage < 2)
             return;
@@ -295,10 +303,27 @@ namespace PanoramaEngine
                 stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
         }
 
-        pano = std::get<0>(stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false,
-            basePath / "opt_centers_dense.yml", mBar));
-        cv::imwrite(basePath / "combined2_opt_dense.png", pano);
+        panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
+        cv::imwrite(basePath / "combined2_opt_dense.png", std::get<0>(panoTuple));
+        /* io::savePoints(basePath / "opt_centers_dense.csv", std::get<1>(panoTuple)); */
     }
 
+    namespace detail
+    {
+
+        void overlay(const cv::Mat& img, const std::vector<cv::Point>& pts,
+            const std::vector<cv::Mat>& trafos, const std::filesystem::path& filename)
+        {
+            auto transPts = transformation::zipTransform(pts, trafos, SIM);
+            auto pano = util::overlayPoints(img, transPts);
+
+            /* auto path = filename; */
+            /* io::savePoints(filename + ".csv", pano); */
+
+            /* cv::imwrite(filename, pano); */
+        }
+    } // namespace detail
+
 } // namespace PanoramaEngine
+
 } // namespace ht

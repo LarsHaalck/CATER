@@ -207,7 +207,7 @@ cv::Mat ImageViewer::processItem(
                 theta = detection.theta;
                 color = cv::Scalar(0, 255, 0);
             }
-            auto dirIndicator = rotatePointAroundPoint(position, theta, settings.radius);
+            auto dirIndicator = util::rotatePointAroundPoint(position, theta, settings.radius);
             cv::line(frame, position, dirIndicator, color, 1);
         }
 

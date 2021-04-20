@@ -149,7 +149,7 @@ int main(int argc, const char** argv)
     for (auto type : typeList)
         std::cout << type << std::endl;
 
-    auto keyFrames = getContinuousIds(0, images.size());
+    auto keyFrames = util::getContinuousIds(0, images.size());
     auto geomPano = GeometricType::Similarity;
     auto stitcher = PanoramaStitcher(images, keyFrames, geomPano);
 
@@ -169,8 +169,7 @@ int main(int argc, const char** argv)
     stitcher.writeTrafos(basePath / "opt_trafos.bin");
     if (showResults)
     {
-        auto pano = std::get<0>(
-            stitcher.stitchPano(cv::Size(cols, rows), false, basePath / "opt_centers.yml"));
+        auto pano = std::get<0>(stitcher.stitchPano(cv::Size(cols, rows)));
         cv::imwrite((basePath / "pano1.png").string(), pano);
     }
 

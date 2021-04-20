@@ -7,7 +7,7 @@
 #include <opencv2/core.hpp>
 #include <vector>
 
-namespace ht
+namespace ht::util
 {
 inline std::vector<std::size_t> getContinuousIds(std::size_t start, std::size_t end)
 {
@@ -26,6 +26,7 @@ cv::Mat scaledGauss2D(
 double calcAngle(const cv::Point2d& p, const cv::Point2d& p2);
 
 cv::Point rotatePointAroundPoint(cv::Point centerPoint, double angle, int radius);
+void highlightImg(cv::Mat& img);
 
 template <typename T>
 double normL2(const cv::Point_<T>& pt)
@@ -38,6 +39,9 @@ T euclidianDist(const cv::Point_<T>& pt0, const cv::Point_<T>& pt1)
 {
     return std::sqrt(std::pow(pt0.x - pt1.x, 2) + std::pow(pt0.y - pt1.y, 2));
 }
+
+cv::Mat overlayPoints(const cv::Mat& img, const std::vector<cv::Point2d>& pts,
+    const std::vector<std::size_t>& sizes = {});
 
 } // namespace ht
 #endif // HABITRACK_UTIL_H

@@ -146,7 +146,7 @@ Unaries Unaries::fromDir(
 
     auto center = imgContainer.getCenter();
     auto size = imgContainer.getImgSize();
-    cv::Mat gaussian = scaledGauss2D(center.x, center.y, sigma, sigma, 1.0, size);
+    cv::Mat gaussian = util::scaledGauss2D(center.x, center.y, sigma, sigma, 1.0, size);
     cv::resize(gaussian, gaussian, cv::Size(), subsample, subsample, cv::INTER_LINEAR);
     return Unaries {unDir, files, size, subsample, sigma, removeCameraMotion, gaussian};
 }

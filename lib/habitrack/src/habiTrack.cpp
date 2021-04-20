@@ -231,7 +231,7 @@ void HabiTrack::extractTrafos()
     {
         matches::compute(mMatchFolder, GeometricType::Homography, mFeatures,
             matches::MatchType::Windowed, 2, 0.0, nullptr, mPrefs.cacheSize,
-            getContinuousIds(mStartFrameNumber, mEndFrameNumber + 1), mBar);
+            util::getContinuousIds(mStartFrameNumber, mEndFrameNumber + 1), mBar);
     }
 }
 
@@ -281,7 +281,7 @@ std::vector<double> HabiTrack::getUnaryQualities()
 bool HabiTrack::hasUsableTrafos() const
 {
     auto types = ht::matches::getConnectedTypes(mMatchFolder, ht::GeometricType::Homography,
-        getContinuousIds(mStartFrameNumber, mEndFrameNumber + 1));
+        util::getContinuousIds(mStartFrameNumber, mEndFrameNumber + 1));
 
     if (static_cast<unsigned int>(types & ht::GeometricType::Homography))
     {

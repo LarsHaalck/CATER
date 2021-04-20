@@ -65,11 +65,20 @@ void PanoWizard::on_newid(int id)
 
     auto title = this->page(id)->objectName();
     if (title == "pageProgress")
+    {
         this->button(QWizard::BackButton)->setEnabled(false);
+        this->button(QWizard::FinishButton)->setEnabled(false);
+    }
     else
         return;
 
-    QtConcurrent::run(this, &PanoWizard::process);
+    if (!mResFiles.empty())
+    {
+        connect(&mWatcher, &QFutureWatcher<void>::finished,
+            [&]() { this->button(QWizard::FinishButton)->setEnabled(true); });
+        QFuture<void> future = QtConcurrent::run(this, &PanoWizard::process);
+        mWatcher.setFuture(future);
+    }
 }
 
 void PanoWizard::on_processEvent(int id)
@@ -91,9 +100,11 @@ void PanoWizard::process()
         processSingle(mResFiles[i]);
     }
 
-    emit processEvent(-1);
     if (mResFiles.size() > 1)
+    {
+        emit processEvent(-1);
         processMultiple();
+    }
 }
 
 PanoramaSettings PanoWizard::getSettings() const
@@ -133,7 +144,8 @@ void PanoWizard::processSingle(const fs::path& resFile)
 
     Images images(imgFolder);
     images.clip(start, end);
-    PanoramaEngine::runSingle(images, resFile.parent_path() / "panorama", settings, mBar);
+
+    PanoramaEngine::runSingle(images, resFile.parent_path() / "panorama", settings, {}, mBar);
 }
 
 void PanoWizard::processMultiple()
@@ -157,7 +169,7 @@ void PanoWizard::processMultiple()
     }
 
     auto outFolder = mResFiles[0].parent_path() / "panorama_combined";
-    PanoramaEngine::runMulti(images, data, outFolder, settings, mBar);
+    PanoramaEngine::runMulti(images, data, outFolder, settings, {}, mBar);
 }
 
 void PanoWizard::on_totalChanged(int total)

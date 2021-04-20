@@ -1,4 +1,4 @@
-#include "panorama/idTranslator.h"
+#include "image-processing/idTranslator.h"
 
 #include <numeric>
 

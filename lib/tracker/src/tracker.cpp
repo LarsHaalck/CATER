@@ -320,8 +320,8 @@ std::pair<double, double> Tracker::calcBearingAndQuality(std::size_t lastIdx, st
 {
     auto transLastPos
         = transformPoint(lastPos, trafos.at({lastIdx, idx}), GeometricType::Homography);
-    auto theta = calcAngle(transLastPos, pos);
-    auto thetaQuality = euclidianDist<double>(transLastPos, pos);
+    auto theta = util::calcAngle(transLastPos, pos);
+    auto thetaQuality = util::euclidianDist<double>(transLastPos, pos);
     return {theta, thetaQuality};
 }
 

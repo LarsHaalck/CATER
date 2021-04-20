@@ -53,8 +53,9 @@ public:
             std::pair<std::size_t, std::size_t>, hash>& optimalTransitions);
     void initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
         const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes);
-    std::tuple<cv::Mat, cv::Mat, cv::Mat> stitchPano(cv::Size targetSize, bool blend = false,
-        const std::filesystem::path& centerPath = {}, std::shared_ptr<BaseProgressBar> cb = {});
+
+    std::tuple<cv::Mat, std::vector<cv::Mat>> stitchPano(cv::Size targetSize,
+        bool blend = false, std::shared_ptr<BaseProgressBar> cb = {}) const;
 
     void globalOptimizeKeyFrames(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
         std::size_t limitTo = 0, std::shared_ptr<BaseProgressBar> cb = {});
@@ -69,7 +70,6 @@ public:
 
 private:
     void buildParamsVector();
-    void highlightImg(cv::Mat& img);
     std::vector<std::size_t> sortIdsByResponseProduct(const std::vector<cv::KeyPoint>& ftsI,
         const std::vector<cv::KeyPoint>& ftsJ, const std::vector<float>& weights);
 
@@ -79,7 +79,6 @@ private:
     cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
         const cv::Mat& trafo, cv::Rect2d currRect = cv::Rect2d()) const;
-    /* cv::Mat draw(const cv::Mat& trafo, std::size_t idI, std::size_t idJ); */
 
     void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, const cv::Point2f& ptJ,
         cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
@@ -95,7 +94,7 @@ private:
     std::tuple<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>, std::vector<float>>
     getCorrespondingPoints(std::pair<std::size_t, std::size_t> pair, const Matches& matches,
         const BaseFeatureContainer& fts);
-    cv::Point getCenter(const cv::Mat& trafo);
+    /* cv::Point2d getCenter(const cv::Mat& trafo); */
 
     cv::Mat transformBoundingRect(const cv::Mat& trafo) const;
     cv::Mat interpolateTrafo(double alpha, const cv::Mat& mat1, const cv::Mat& mat2) const;
@@ -109,7 +108,7 @@ private:
     std::vector<std::size_t> mKeyFrames;
     std::unordered_set<std::size_t> mKeyFramesSet;
     GeometricType mType;
-    std::vector<std::size_t> mSizes; // only used for IVLC
+    /* std::vector<std::size_t> mSizes; // only used for IVLC */
 
     cv::Mat mCamMat;
     cv::Mat mCamMatInv;
@@ -117,6 +116,8 @@ private:
 
     std::vector<cv::Mat> mOptimizedTrafos;
     std::vector<std::vector<double>> mOptimizedParams; // use for isometries and similaries
+
+    bool mReintegrated;
 };
 } // namespace ht
 #endif // HABITRACK_PANORAMA_STITCHER_H

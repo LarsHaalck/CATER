@@ -1,6 +1,8 @@
 #include "panorama/transitions.h"
+
+#include "image-processing/idTranslator.h"
 #include "mst.h"
-#include "panorama/idTranslator.h"
+
 #include <spdlog/spdlog.h>
 
 namespace ht

@@ -2,6 +2,7 @@
 #define PANOWIZARD_H
 
 #include <QWizard>
+#include <QFutureWatcher>
 #include <filesystem>
 
 #include "gui/progressStatusBar.h"
@@ -48,6 +49,7 @@ private:
     Ui::PanoWizard *ui;
     std::vector<std::filesystem::path> mResFiles;
     std::shared_ptr<ProgressStatusBar> mBar;
+    QFutureWatcher<void> mWatcher;
 };
 
 } // namespace gui

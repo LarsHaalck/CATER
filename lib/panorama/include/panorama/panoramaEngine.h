@@ -21,12 +21,19 @@ struct PanoramaSettings
 namespace PanoramaEngine
 {
     void runSingle(const Images& images, const std::filesystem::path& dataFolder,
-        const PanoramaSettings& settings, std::shared_ptr<BaseProgressBar> mBar = {});
+        const PanoramaSettings& settings, const std::vector<cv::Point>& overlayPts = {},
+        std::shared_ptr<BaseProgressBar> mBar = {});
 
     void runMulti(const std::vector<Images>& images,
         const std::vector<std::filesystem::path>& dataFolders,
         const std::filesystem::path& outFolder, const PanoramaSettings& settings,
-        std::shared_ptr<BaseProgressBar> mBar = {});
+        const std::vector<cv::Point>& overlayPts = {}, std::shared_ptr<BaseProgressBar> mBar = {});
+
+    namespace detail
+    {
+        void overlay(const cv::Mat& img, const std::vector<cv::Point>& pts,
+            const std::vector<cv::Mat>& trafos, const std::filesystem::path& filename);
+    } // namespace detail
 } // namespace PanoramaEngine
 } // namespace ht
 

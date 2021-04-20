@@ -112,7 +112,7 @@ cv::Mat ManualUnaries::getBluePrint()
 {
     auto center = 1.5 * cv::Point2f(mImgSize.width, mImgSize.height);
     auto size = cv::Size(3 * mImgSize.width, 3 * mImgSize.height);
-    cv::Mat gaussian = scaledGauss2D(center.x, center.y, mUnarySize, mUnarySize, 1.0, size);
+    cv::Mat gaussian = util::scaledGauss2D(center.x, center.y, mUnarySize, mUnarySize, 1.0, size);
     cv::resize(gaussian, gaussian, cv::Size(), mSubsample, mSubsample, cv::INTER_LINEAR);
     return gaussian;
 }

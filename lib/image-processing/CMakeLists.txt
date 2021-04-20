@@ -39,6 +39,8 @@ set(SOURCES
     src/transformation.cpp
     src/mildRecommender.cpp
 
+    src/idTranslator.cpp
+
     # misc
     src/util.cpp
 )

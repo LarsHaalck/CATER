@@ -6,12 +6,11 @@
 #include "io/io.h"
 #include "io/matIO.h"
 #include "isometryGlobalOptimizer.h"
-#include "panorama/idTranslator.h"
+#include "image-processing/idTranslator.h"
 #include "progressbar/progressBar.h"
 #include "similarityGlobalOptimizer.h"
 #include "util/algorithm.h"
 #include "util/stopWatch.h"
-#include "util/tinycolormap.h"
 
 #include <Eigen/Dense>
 #include <ceres/ceres.h>
@@ -33,20 +32,6 @@ using namespace ht::matches;
 using namespace ht::transformation;
 using namespace ht::io;
 
-/* namespace cv */
-/* { */
-/* void cv::dline(cv::Mat& img, Point pt1, Point pt2, const Scalar& color, int thickness = 1) */
-/* { */
-/*     LineIterator it(img, pt1, pt2, 8); // get a line iterator */
-/*     for (int i = 0; i < it.count; i++, it++) */
-/*     { */
-/*         if (i % 5 != 0) */
-/*             (*it)[0] = 200; */
-/*     } */
-/* } */
-
-/* } */
-
 namespace ht
 {
 PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
@@ -56,12 +41,13 @@ PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
     , mKeyFrames(keyFrames)
     , mKeyFramesSet(std::begin(keyFrames), std::end(keyFrames))
     , mType(type)
-    , mSizes()
+    /* , mSizes() */
     , mCamMat(camMat)
     , mCamMatInv()
     , mDistCoeffs(distCoeffs)
     , mOptimizedTrafos(mImages.size(), cv::Mat())
     , mOptimizedParams(mImages.size(), std::vector<double>(3, -11))
+    , mReintegrated(false)
 {
     if (mCamMat.empty())
     {
@@ -107,7 +93,7 @@ void PanoramaStitcher::initTrafos(const PairwiseTrafos& trafos)
 void PanoramaStitcher::initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
     const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes)
 {
-    mSizes = sizes;
+    /* mSizes = sizes; */
     Translator translator(sizes);
     auto lower = translator.localToGlobal(std::make_pair(currBlock, static_cast<std::size_t>(0)));
     auto upper = lower + sizes[currBlock];
@@ -197,13 +183,13 @@ cv::Mat PanoramaStitcher::transformBoundingRect(const cv::Mat& trafo) const
     return cornersTrafo;
 }
 
-cv::Point PanoramaStitcher::getCenter(const cv::Mat& trafo)
-{
-    auto cornersTrafo = transformBoundingRect(trafo);
-    cv::Point2f p0(cornersTrafo.at<double>(0, 0), cornersTrafo.at<double>(0, 1));
-    cv::Point2f p1(cornersTrafo.at<double>(3, 0), cornersTrafo.at<double>(3, 1));
-    return 0.5 * (p0 + p1);
-}
+/* cv::Point2d PanoramaStitcher::getCenter(const cv::Mat& trafo) */
+/* { */
+/*     auto cornersTrafo = transformBoundingRect(trafo); */
+/*     cv::Point2d p0(cornersTrafo.at<double>(0, 0), cornersTrafo.at<double>(0, 1)); */
+/*     cv::Point2d p1(cornersTrafo.at<double>(3, 0), cornersTrafo.at<double>(3, 1)); */
+/*     return 0.5 * (p0 + p1); */
+/* } */
 
 void PanoramaStitcher::buildParamsVector()
 {
@@ -221,19 +207,9 @@ void PanoramaStitcher::buildParamsVector()
     }
 }
 
-void PanoramaStitcher::highlightImg(cv::Mat& img)
-{
-    for (int r = 0; r < img.rows; r++)
-    {
-        for (int c = 0; c < img.cols; c++)
-        {
-            img.at<cv::Vec3b>(r, c)[1] += 50;
-        }
-    }
-}
 
-std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targetSize, bool blend,
-    const fs::path& centerPath, std::shared_ptr<BaseProgressBar> cb)
+std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(cv::Size targetSize,
+    bool blend, std::shared_ptr<BaseProgressBar> cb) const
 {
     auto rect = generateBoundingRect();
     rect.width = rect.width - rect.x;
@@ -254,10 +230,6 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
     cv::detail::MultiBandBlender blender(false, 5);
     blender.prepare(cv::Rect(0, 0, newSize.width, newSize.height));
 
-    /* cv::detail::GainCompensator gainCompensator; */
-    /* if (gain) */
-    /*     prepareCompensator(gainCompensator); */
-
     spdlog::info("Stitching Panorama");
 
     if (!cb)
@@ -267,16 +239,12 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
 
     // here we start from 0 instead of 1 because we explicitly added the identity trafo
     cv::Mat img0;
-    std::vector<cv::Point> centersTrans;
-    centersTrans.reserve(mKeyFrames.size());
+    std::vector<cv::Mat> trafos;
     PreciseStopWatch timer;
     for (std::size_t i = 0; i < mKeyFrames.size(); i++)
     {
         auto currId = mKeyFrames[i];
         cv::Mat currImg = mImages.at(mKeyFrames[i]);
-
-        /* if (gain) */
-        /*     gainCompensator.apply(i, cv::Point(0, 0), currImg, cv::Mat()); */
 
         cv::Mat mask(currImg.size(), CV_8UC1, cv::Scalar(255));
 
@@ -285,26 +253,21 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
         cv::undistort(currImg, undistImg, mCamMat, mDistCoeffs, mCamMat);
         cv::undistort(mask, undistMask, mCamMat, mDistCoeffs, mCamMat);
 
-        auto currTrafo = scaleMat * transMat * mCamMat * mOptimizedTrafos[currId] * mCamMatInv;
+        auto preTrafo = scaleMat * transMat * mCamMat;
+        auto currTrafo = preTrafo * mOptimizedTrafos[currId] * mCamMatInv;
         cv::Mat warpedMask, warped;
         cv::warpPerspective(undistMask, warpedMask, currTrafo, newSize);
         cv::warpPerspective(undistImg, warped, currTrafo, newSize);
 
-        // DEBUG
-        if (!centerPath.empty())
+        if (mReintegrated && i > 0)
         {
-            if (i > 0)
+            for (std::size_t j = mKeyFrames[i - 1] + 1; j < mKeyFrames[i]; j++)
             {
-                for (std::size_t j = mKeyFrames[i - 1] + 1; j < mKeyFrames[i]; j++)
-                {
-                    auto interpTrafo
-                        = scaleMat * transMat * mCamMat * mOptimizedTrafos[j] * mCamMatInv;
-                    centersTrans.push_back(getCenter(interpTrafo));
-                }
+                auto interpTrafo = preTrafo * mOptimizedTrafos[j] * mCamMatInv;
+                trafos.push_back(interpTrafo);
             }
-            centersTrans.push_back(getCenter(currTrafo));
         }
-        // DEBUG
+        trafos.push_back(currTrafo);
 
         if (blend)
             blender.feed(warped, warpedMask, cv::Point(0, 0));
@@ -313,23 +276,9 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
             if (i == 0)
                 img0 = warped;
             warped.copyTo(img0, warpedMask);
-
-            // DEBUG
-            /* cv::namedWindow("current pano", cv::WINDOW_NORMAL); */
-            /* cv::imshow("bla", img0); */
-            /* std::cout << mKeyFrames[i] << std::endl; */
-            /* while (cv::waitKey(0) != 27) */
-            /* { */
-            /* } */
-            // DEBUG
         }
         cb->inc();
     }
-
-    /* auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>(); */
-    /* cb->status("Finished"); */
-    /* cb->done(); */
-    /* spdlog::info("Stitched panoram in {} ms", elapsed_time); */
 
     cv::Mat pano;
     if (blend)
@@ -341,86 +290,8 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> PanoramaStitcher::stitchPano(cv::Size targ
     else
         pano = img0;
 
-    if (!centerPath.empty())
-    {
-        namespace tcm = tinycolormap;
-        auto Viridis = tcm::ColormapType::Viridis;
-
-        Translator translator;
-        if (!mSizes.empty())
-            translator = Translator(mSizes);
-
-        for (std::size_t i = 0; i < centersTrans.size(); i++)
-        {
-            tcm::Color tcm_color(0, 0, 0);
-            if (!mSizes.empty())
-            {
-                auto vidId = translator.globalToLocal(i).first;
-                tcm_color
-                    = tcm::GetColor(static_cast<double>(vidId) / (mSizes.size() - 1), Viridis);
-            }
-            else
-            {
-                tcm_color
-                    = tcm::GetColor(static_cast<double>(i) / (centersTrans.size() - 1), Viridis);
-            }
-            /* tcm_color = tcm::GetColor(0.5, Viridis); // greenish */
-            /* tcm_color = tcm::GetColor(1.0, Viridis); // yellow */
-            auto color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255);
-
-            /* if (Translator(mSizes).globalToLocal(i).first == mSizes.size() - 1) */
-            /* { */
-            /*     cv::dline(pano, centersTrans[i - 1], centersTrans[i], color, 4); */
-            /*     continue; */
-            /* } */
-
-            if (!mSizes.empty() && translator.globalToLocal(i).second > 0)
-                cv::line(pano, centersTrans[i - 1], centersTrans[i], color, 4);
-            else if (mSizes.empty() && i > 0)
-                cv::line(pano, centersTrans[i - 1], centersTrans[i], color, 4);
-
-            /* auto marker = cv::MarkerTypes::MARKER_SQUARE; */
-            /* if (isKeyFrame(i)) */
-            /* { */
-            /*     marker = cv::MarkerTypes::MARKER_DIAMOND; */
-            /*     tcm_color = tcm::GetColor(0.0, Viridis); */
-            /*     color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255); */
-            /*     cv::drawMarker(pano, centersTrans[i], color, marker, 15, 2, cv::LineTypes::FILLED); */
-            /* } */
-            /* else if (i % 1 == 0) */
-            /* { */
-            /*     marker = cv::MarkerTypes::MARKER_CROSS; */
-            /*     tcm_color = tcm::GetColor(1.0, Viridis); */
-            /*     color = cv::Scalar(tcm_color.b() * 255, tcm_color.g() * 255, tcm_color.r() * 255); */
-            /*     cv::drawMarker(pano, centersTrans[i], color, marker, 15, 2, cv::LineTypes::FILLED); */
-            /* } */
-        }
-
-        // DEBUG
-        cv::FileStorage fs(centerPath.string(), cv::FileStorage::WRITE);
-        fs << "pos" << centersTrans;
-        fs.release();
-        // DEBUG
-    }
-    return std::make_tuple(pano, scaleMat, transMat);
+    return std::make_tuple(pano, trafos);
 }
-
-/* void PanoramaStitcher::prepareCompensator(cv::detail::GainCompensator& c) const */
-/* { */
-/*     std::vector<cv::UMat> imgs; */
-/*     for (std::size_t i = 0; i < mKeyFrames.size(); i++) */
-/*     { */
-/*         auto img = mImages.at(mKeyFrames[i]); */
-/*         cv::UMat uimg; */
-/*         img.copyTo(uimg); */
-/*         imgs.push_back(uimg); */
-/*     } */
-/*     auto pts = std::vector<cv::Point>(imgs.size(), cv::Point(0, 0)); */
-/*     auto mask = cv::UMat(imgs[0].rows, imgs[0].cols, CV_8U, cv::Scalar(255)); */
-/*     auto masks = std::vector<std::pair<cv::UMat, uchar>>( */
-/*         imgs.size(), std::make_pair(mask, 255)); */
-/*     c.feed(pts, imgs, masks); */
-/* } */
 
 void PanoramaStitcher::globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
     const PairwiseMatches& matches, std::size_t limitTo, std::shared_ptr<BaseProgressBar> cb)
@@ -692,6 +563,7 @@ void PanoramaStitcher::reintegrate()
                 = interpolateTrafo(alpha, mOptimizedTrafos[prevKf], mOptimizedTrafos[currKf]);
         }
     }
+    mReintegrated = true;
 }
 
 std::tuple<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>, std::vector<float>>
@@ -947,36 +819,6 @@ void PanoramaStitcher::repairIntriniscs(
     mDistCoeffs.at<double>(1, 0) = invertedDistParams[1];
     mDistCoeffs.at<double>(4, 0) = invertedDistParams[4];
 }
-
-/* cv::Mat PanoramaStitcher::draw(const cv::Mat& trafo, size_t idI, size_t idJ) */
-/* { */
-/*     auto pair = std::make_pair(idI, idJ); */
-/*     auto imgJ = mImages.at(idJ); */
-/*     auto matches = mMatches[pair]; */
-/*     auto [ftsI, ftsJ] = getCorrespondingPoints(pair, matches); */
-
-/*     std::vector<cv::Point2f> ptsI, ptsITrans; */
-/*     ptsI.reserve(ftsI.size()); */
-/*     for (const auto& kp : ftsI) */
-/*         ptsI.push_back(kp.pt); */
-
-/*     cv::perspectiveTransform(ptsI, ptsITrans, trafo); */
-
-/*     for (size_t i = 0; i < ptsI.size(); i++) */
-/*     { */
-/*         cv::drawMarker(imgJ, ftsJ[i].pt, cv::Scalar(0, 255, 0)); */
-/*         cv::drawMarker(imgJ, ptsITrans[i], cv::Scalar(0, 0, 255)); */
-/*         cv::line(imgJ, ftsJ[i].pt, ptsITrans[i], cv::Scalar(0, 255, 255)); */
-/*     } */
-
-/*     cv::putText(imgJ, std::to_string(idI) + " to " + std::to_string(idJ), cv::Point(200, 200), */
-/*         cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0)); */
-
-/*     cv::imshow("bla", imgJ); */
-/*     while (cv::waitKey(0) != 27) { } */
-
-/*     return imgJ; */
-/* } */
 
 void PanoramaStitcher::loadTrafos(const fs::path& file)
 {

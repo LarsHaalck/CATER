@@ -171,7 +171,7 @@ namespace detail
             auto ptI = ftsI[geomMatches[i].queryIdx].pt;
             auto ptJ = ftsJ[geomMatches[i].trainIdx].pt;
 
-            distances.push_back(euclidianDist(ptI, ptJ));
+            distances.push_back(util::euclidianDist(ptI, ptJ));
             srcFiltered.push_back(ptI);
             dstFiltered.push_back(ptJ);
         }
@@ -201,7 +201,7 @@ namespace detail
 
         double error = 0;
         for (std::size_t i = 0; i < ptsSrc.size(); i++)
-            error += euclidianDist(transSrc[i], ptsDst[i]);
+            error += util::euclidianDist(transSrc[i], ptsDst[i]);
 
         return error / ptsSrc.size();
     }

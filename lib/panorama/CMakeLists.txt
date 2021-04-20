@@ -20,7 +20,6 @@ set(SOURCES
     src/similarityGlobalOptimizer.cpp
     src/isometryGlobalOptimizer.cpp
 
-    src/idTranslator.cpp
     src/transitions.cpp
     src/mst.cpp
 )

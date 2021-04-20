@@ -81,6 +81,23 @@
     </item>
     <item>
      <layout class="QGridLayout" name="gridLayout">
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item row="7" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Force Recompute</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>Cache Size</string>
+        </property>
+       </widget>
+      </item>
       <item row="7" column="2">
        <widget class="QCheckBox" name="checkForce">
         <property name="text">
@@ -88,68 +105,24 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="2">
-       <widget class="QComboBox" name="comboFt">
-        <property name="currentIndex">
-         <number>1</number>
-        </property>
-        <item>
-         <property name="text">
-          <string>ORB</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>SIFT</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>SuperPoint</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="label_8">
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>Min Coverage</string>
+         <string>Minimum Height</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QSpinBox" name="spinWidth">
-        <property name="minimum">
-         <number>100</number>
-        </property>
-        <property name="maximum">
-         <number>99999</number>
-        </property>
-        <property name="singleStep">
-         <number>10</number>
-        </property>
-        <property name="value">
-         <number>2000</number>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>Feature Type</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
-       <widget class="QSpinBox" name="spinCache">
-        <property name="maximum">
-         <number>9999</number>
-        </property>
-        <property name="value">
-         <number>200</number>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="2">
-       <widget class="QSpinBox" name="spinNumFts">
-        <property name="maximum">
-         <number>10000</number>
-        </property>
-        <property name="value">
-         <number>500</number>
+      <item row="13" column="0">
+       <widget class="QLabel" name="label_13">
+        <property name="text">
+         <string>Smooth Detection Boundaries</string>
         </property>
        </widget>
       </item>
@@ -163,17 +136,10 @@
         </property>
        </widget>
       </item>
-      <item row="9" column="0">
-       <widget class="QLabel" name="label_4">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>Last Stage</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_9">
-        <property name="text">
-         <string>Feature Type</string>
+         <string>Minimum Width</string>
         </property>
        </widget>
       </item>
@@ -184,37 +150,13 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+      <item row="2" column="2">
+       <widget class="QSpinBox" name="spinCache">
+        <property name="maximum">
+         <number>9999</number>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Minimum Width</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_6">
-        <property name="text">
-         <string>Cache Size</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Minimum Height</string>
+        <property name="value">
+         <number>200</number>
         </property>
        </widget>
       </item>
@@ -246,17 +188,76 @@
         </item>
        </widget>
       </item>
-      <item row="7" column="0">
-       <widget class="QLabel" name="label_5">
-        <property name="text">
-         <string>Force Recompute</string>
+      <item row="10" column="0" colspan="3">
+       <widget class="Line" name="line_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
+       </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="QComboBox" name="comboFt">
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>ORB</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>SIFT</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>SuperPoint</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item row="3" column="0" colspan="3">
        <widget class="Line" name="line">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="13" column="2">
+       <widget class="QCheckBox" name="checkSmooth">
+        <property name="text">
+         <string>smooth</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QSpinBox" name="spinWidth">
+        <property name="minimum">
+         <number>100</number>
+        </property>
+        <property name="maximum">
+         <number>99999</number>
+        </property>
+        <property name="singleStep">
+         <number>10</number>
+        </property>
+        <property name="value">
+         <number>2000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="label_8">
+        <property name="text">
+         <string>Min Coverage</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Last Stage</string>
         </property>
        </widget>
       </item>
@@ -274,6 +275,60 @@
         <property name="value">
          <number>2000</number>
         </property>
+       </widget>
+      </item>
+      <item row="12" column="0">
+       <widget class="QLabel" name="label_12">
+        <property name="text">
+         <string>Overlay Options</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="2">
+       <widget class="QSpinBox" name="spinNumFts">
+        <property name="maximum">
+         <number>10000</number>
+        </property>
+        <property name="value">
+         <number>500</number>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="12" column="2">
+       <widget class="QComboBox" name="comboBox">
+        <item>
+         <property name="text">
+          <string>None</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Detections</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Camera Centers</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Detections + Centers</string>
+         </property>
+        </item>
        </widget>
       </item>
      </layout>

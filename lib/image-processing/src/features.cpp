@@ -88,8 +88,8 @@ Features Features::compute(const Images& imgContainer, const std::filesystem::pa
     assert(end <= imgContainer.size()
         && "start must be > 0 and end must be smaller than number of images in "
            "Features::compute()");
-    return compute(imgContainer, ftDir, type, numFeatures, cacheSize, getContinuousIds(start, end),
-        std::move(cb));
+    return compute(imgContainer, ftDir, type, numFeatures, cacheSize,
+        util::getContinuousIds(start, end), std::move(cb));
 }
 
 bool Features::isComputed(const Images& imgContainer, const std::filesystem::path& ftDir,
@@ -136,7 +136,7 @@ bool Features::isComputed(const Images& imgContainer, const std::filesystem::pat
 bool Features::isComputed(const Images& imgContainer, const std::filesystem::path& ftDir,
     FeatureType type, std::size_t start, std::size_t end)
 {
-    return isComputed(imgContainer, ftDir, type, getContinuousIds(start, end));
+    return isComputed(imgContainer, ftDir, type, util::getContinuousIds(start, end));
 }
 
 Features Features::fromDir(const Images& imgContainer, const std::filesystem::path& ftDir,
@@ -163,7 +163,7 @@ Features Features::fromDir(const Images& imgContainer, const std::filesystem::pa
 Features Features::fromDir(const Images& imgContainer, const fs::path& ftDir, FeatureType type,
     std::size_t start, std::size_t end)
 {
-    return fromDir(imgContainer, ftDir, type, getContinuousIds(start, end));
+    return fromDir(imgContainer, ftDir, type, util::getContinuousIds(start, end));
 }
 
 FeatureType Features::getTypeFromFile(const fs::path& file)

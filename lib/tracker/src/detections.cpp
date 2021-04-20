@@ -80,7 +80,7 @@ void Detections::insert(std::size_t idx, const Detection& detection)
 
 void Detections::insertBearing(std::size_t idx, const cv::Point& bearingPoint)
 {
-    mManualBearings.insert({idx, calcAngle(mDetections[idx].position, bearingPoint)});
+    mManualBearings.insert({idx, util::calcAngle(mDetections[idx].position, bearingPoint)});
 }
 
 void Detections::insertBearing(std::size_t idx, double theta)
