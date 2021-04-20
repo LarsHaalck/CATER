@@ -2,6 +2,7 @@
 
 #include "image-processing/util.h"
 #include "habitrack/resultsIO.h"
+#include "progressbar/progressBar.h"
 #include <algorithm>
 #include <chrono>
 #include <iostream>
@@ -15,7 +16,11 @@ namespace fs = std::filesystem;
 
 namespace ht
 {
-HabiTrack::HabiTrack() { setTrackerSettings(mPrefs); }
+HabiTrack::HabiTrack()
+    : mBar(std::make_shared<ProgressBar>())
+{
+    setTrackerSettings(mPrefs);
+}
 
 bool HabiTrack::featureComputed() const
 {
