@@ -8,8 +8,8 @@
 
 #include "habitrack/resultsIO.h"
 #include "image-processing/images.h"
-
 #include "panorama/panoramaEngine.h"
+#include "tracker/detections.h"
 
 namespace fs = std::filesystem;
 
@@ -121,6 +121,11 @@ PanoramaSettings PanoWizard::getSettings() const
     else if (ui->comboFt->currentText() == "SuperPoint")
         ftType = FeatureType::SuperPoint;
 
+    auto overlay = ui->comboOverlay->currentText().toStdString();
+    auto overlayCenters = (overlay.find("Centers") != std::string::npos);
+    auto overlayPoints = (overlay.find("Detections") != std::string::npos);
+    auto smooth = ui->checkSmooth->isChecked();
+
     PanoramaSettings settings;
     settings.force = force;
     settings.stage = stage;
@@ -129,6 +134,9 @@ PanoramaSettings PanoWizard::getSettings() const
     settings.cols = cols;
     settings.numFts = numFts;
     settings.ftType = ftType;
+    settings.overlayCenters = overlayCenters;
+    settings.overlayPoints = overlayPoints;
+    settings.smooth = smooth;
 
     return settings;
 }
@@ -145,7 +153,12 @@ void PanoWizard::processSingle(const fs::path& resFile)
     Images images(imgFolder);
     images.clip(start, end);
 
-    PanoramaEngine::runSingle(images, resFile.parent_path() / "panorama", settings, {}, mBar);
+    std::vector<cv::Point> pts;
+    if (settings.overlayCenters)
+        pts = getDetections(resFile);
+
+    PanoramaEngine::runSingle(images, resFile.parent_path() / "panorama", settings, pts,
+        std::get<0>(resTuple).chunkSize, mBar);
 }
 
 void PanoWizard::processMultiple()
@@ -154,6 +167,8 @@ void PanoWizard::processMultiple()
     std::vector<Images> images;
     std::vector<fs::path> data;
 
+    std::vector<cv::Point> pts;
+    std::vector<std::size_t> chunkSizes;
     for (const auto& resFile : mResFiles)
     {
         auto resTuple = loadResults(resFile);
@@ -166,10 +181,18 @@ void PanoWizard::processMultiple()
 
         images.push_back(currImgs);
         data.push_back(resFile.parent_path() / "panorama");
+
+        if (settings.overlayCenters)
+        {
+            auto currPts = getDetections(resFile);
+            pts.insert(std::end(pts), std::begin(currPts), std::end(currPts));
+        }
+
+        chunkSizes.push_back(std::get<0>(resTuple).chunkSize);
     }
 
     auto outFolder = mResFiles[0].parent_path() / "panorama_combined";
-    PanoramaEngine::runMulti(images, data, outFolder, settings, {}, mBar);
+    PanoramaEngine::runMulti(images, data, outFolder, settings, pts, chunkSizes, mBar);
 }
 
 void PanoWizard::on_totalChanged(int total)
@@ -193,4 +216,19 @@ void PanoWizard::on_isDone()
 
 void PanoWizard::on_statusChanged(const QString& state) { ui->labelProgress->setText(state); }
 
+std::vector<cv::Point> PanoWizard::getDetections(const fs::path& resFile)
+{
+    auto detectionsFile = resFile.parent_path() / "detections.yml";
+    if (fs::is_regular_file(detectionsFile))
+    {
+        auto dets = Detections::fromDir(detectionsFile);
+        auto data = dets.data();
+        std::vector<cv::Point> vec(dets.size());
+        std::transform(std::begin(data), std::end(data), std::begin(vec),
+            [](auto pair) { return pair.second.position; });
+        return vec;
+    }
+    else
+        return {};
+}
 } // namespace gui

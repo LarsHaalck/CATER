@@ -26,6 +26,7 @@ private:
     void process();
     ht::PanoramaSettings getSettings() const;
     void processSingle(const std::filesystem::path& resFile);
+    std::vector<cv::Point> getDetections(const std::filesystem::path& resFile);
     void processMultiple();
 
 private slots:

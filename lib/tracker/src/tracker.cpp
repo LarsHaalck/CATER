@@ -30,11 +30,11 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     if (chunkSize == 0)
         chunkSize = numUnaries;
 
-    auto numChunks = getNumChunks(numUnaries, chunkSize);
+    auto numChunks = util::getNumChunks(numUnaries, chunkSize);
     spdlog::debug("Single chunk tracking of chunk {}", chunk);
 
     auto start = std::chrono::system_clock::now();
-    std::size_t boundary = getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
+    std::size_t boundary = util::getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
     auto states = truncatedMaxSum(
         chunk * chunkSize, boundary, ids, unaries, manualUnaries, settings, pairwiseKernel);
     auto end = std::chrono::system_clock::now();
@@ -56,7 +56,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     if (chunkSize == 0)
         chunkSize = numUnaries;
 
-    auto numChunks = getNumChunks(numUnaries, chunkSize);
+    auto numChunks = util::getNumChunks(numUnaries, chunkSize);
     spdlog::debug("Number of unaries for tracking: {}", numUnaries);
     spdlog::debug("Number of chunks for (parallel) tracking: {}", numChunks);
 
@@ -67,7 +67,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     auto start = std::chrono::system_clock::now();
     for (std::size_t i = 0; i < numChunks; i++)
     {
-        std::size_t end = getChunkEnd(i, numChunks, chunkSize, numUnaries);
+        std::size_t end = util::getChunkEnd(i, numChunks, chunkSize, numUnaries);
         auto future = pool.enqueue(truncatedMaxSum, i * chunkSize, end, ids, unaries, manualUnaries,
             settings, pairwiseKernel);
         futureStates.push_back(std::move(future));
@@ -85,23 +85,6 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     cv::Mat bestStates;
     cv::vconcat(states.data(), states.size(), bestStates);
     return extractFromStates(bestStates, ids, 0, settings, trafos);
-}
-
-std::size_t Tracker::getNumChunks(std::size_t numUnaries, std::size_t chunkSize)
-{
-    if (chunkSize == 0)
-        chunkSize = numUnaries;
-
-    auto numChunks = std::max(numUnaries / chunkSize, static_cast<std::size_t>(1));
-    return numChunks;
-}
-
-std::size_t Tracker::getChunkEnd(
-    std::size_t chunk, std::size_t numChunks, std::size_t chunkSize, std::size_t numUnaries)
-{
-    if (chunk == numChunks - 1)
-        return numUnaries;
-    return std::min(numUnaries, (chunk + 1) * chunkSize);
 }
 
 cv::Mat Tracker::getPairwiseKernel(int size, double sigma)

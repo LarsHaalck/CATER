@@ -5,6 +5,7 @@
 
 #include "tracker/tracker.h"
 #include "util/algorithm.h"
+#include "image-processing/util.h"
 #include <QLinearGradient>
 #include <ostream>
 
@@ -184,7 +185,7 @@ void UnaryScene::setup(std::vector<double> qualities, std::size_t start, std::si
 void UnaryScene::toggleChunk(int chunkId, bool computing, int chunkSize, int start)
 {
     auto numUnaries = mUnaryColors.size();
-    auto numChunks = Tracker::getNumChunks(numUnaries, chunkSize);
+    auto numChunks = util::getNumChunks(numUnaries, chunkSize);
 
     std::vector<int> chunks;
     if (chunkId == -1)
@@ -203,7 +204,7 @@ void UnaryScene::toggleChunk(int chunkId, bool computing, int chunkSize, int sta
         else
             state = (chunk % 2) ? UnaryState::DefaultAlt : UnaryState::Default;
 
-        auto end = Tracker::getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
+        auto end = util::getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
         for (std::size_t j = chunk * chunkSize; j < end; j++)
             setUnaryState(j + start, state);
     }

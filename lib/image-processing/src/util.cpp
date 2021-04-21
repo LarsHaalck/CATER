@@ -1,5 +1,6 @@
 #include "image-processing/util.h"
 
+#include "fitpackpp/BSplineCurve.h"
 #include "image-processing/idTranslator.h"
 #include "util/tinycolormap.h"
 
@@ -101,7 +102,7 @@ void highlightImg(cv::Mat& img)
 }
 
 cv::Mat overlayPoints(
-    const cv::Mat& img, const std::vector<cv::Point2d>& pts, const std::vector<std::size_t>& sizes)
+    const cv::Mat& img, const std::vector<cv::Point>& pts, const std::vector<std::size_t>& sizes)
 {
     cv::Mat pano = img.clone();
     namespace tcm = tinycolormap;
@@ -131,6 +132,103 @@ cv::Mat overlayPoints(
             cv::line(pano, pts[i - 1], pts[i], color, 4);
     }
     return pano;
+}
+
+namespace detail
+{
+    std::vector<double> getSimpleWeights(int w)
+    {
+        double k = 3;
+        auto weights = std::vector<double>(w);
+        std::generate(std::begin(weights), std::end(weights),
+            [n = w, k]() mutable { return std::pow((0.9 * n--), k); });
+        weights.reserve(2 * w);
+        weights.insert(std::end(weights), std::rbegin(weights), std::rend(weights));
+        return weights;
+    }
+
+    std::vector<double> getCauchyWeights(int w)
+    {
+        double gamma = std::sqrt(1 / (std::exp(10) - 1));
+        double sigma = 1;
+
+        gamma = std::pow(gamma, 2);
+        sigma = 2 * std::pow(sigma, 2);
+
+        auto x = std::vector<double>(2 * w);
+        std::iota(std::begin(x), std::end(x), -w);
+
+        std::vector<double> weights(2 * w);
+        std::transform(std::begin(x), std::end(x), std::begin(weights), [gamma, sigma](double x) {
+            return std::log(1 + 1 / gamma)
+                - std::log(1 + (std::exp(-(std::pow(x, 2) / (sigma))) / gamma));
+        });
+
+        return weights;
+    }
+} // namespace detail
+
+std::vector<cv::Point> smoothBoundaries(const std::vector<cv::Point>& pts, std::size_t boundarySize)
+{
+    std::size_t w = 10;
+
+    using namespace fitpackpp;
+    std::vector<double> x;
+    std::vector<double> y;
+    x.reserve(pts.size());
+    y.reserve(pts.size());
+
+    for (const auto& pt : pts)
+    {
+        x.push_back(pt.x);
+        y.push_back(pt.y);
+    }
+
+    auto ptsSmoothed = pts;
+    auto cs = boundarySize;
+    auto numUns = pts.size();
+    auto numChunks = getNumChunks(numUns, cs);
+    for (std::size_t i = 1; i < numChunks; i++)
+    {
+        auto prevEnd = getChunkEnd(i - 1, numChunks, cs, numUns);
+
+        auto ids = std::vector<double>(2 * w);
+        std::iota(std::begin(ids), std::end(ids), prevEnd - w);
+
+        /* auto weights = getSimpleWeights(w); */
+        auto weights = detail::getCauchyWeights(w);
+
+        auto splX = BSplineCurve::splrep(ids,
+            Vec(std::begin(x) + ids.front(), std::begin(x) + ids.back() + 1), weights, {}, {}, 3);
+        auto splY = BSplineCurve::splrep(ids,
+            Vec(std::begin(y) + ids.front(), std::begin(y) + ids.back() + 1), weights, {}, {}, 3);
+
+        auto xSmoothed = splX(ids);
+        auto ySmoothed = splY(ids);
+
+        std::transform(std::begin(xSmoothed), std::end(xSmoothed), std::begin(ySmoothed),
+            std::begin(ptsSmoothed) + ids.front(),
+            [](double x, double y) { return cv::Point(std::round(x), std::round(y)); });
+    }
+
+    return ptsSmoothed;
+}
+
+std::size_t getNumChunks(std::size_t size, std::size_t chunkSize)
+{
+    if (chunkSize == 0)
+        chunkSize = size;
+
+    auto numChunks = std::max(size / chunkSize, static_cast<std::size_t>(1));
+    return numChunks;
+}
+
+std::size_t getChunkEnd(
+    std::size_t chunk, std::size_t numChunks, std::size_t chunkSize, std::size_t size)
+{
+    if (chunk == numChunks - 1)
+        return size;
+    return std::min(size, (chunk + 1) * chunkSize);
 }
 
 } // namespace ht

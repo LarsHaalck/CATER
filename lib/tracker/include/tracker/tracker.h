@@ -32,9 +32,6 @@ public:
         const Settings& settings, std::size_t chunk, const PairwiseTrafos& trafos);
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
         const Settings& settings, const PairwiseTrafos& trafos);
-    static std::size_t getNumChunks(std::size_t numUnaries, std::size_t chunkSize);
-    static std::size_t getChunkEnd(
-        std::size_t chunk, std::size_t numChunks, std::size_t chunkSize, std::size_t numUnaries);
 
 private:
     static cv::Mat getPairwiseKernel(int size, double sigma);

@@ -40,8 +40,30 @@ T euclidianDist(const cv::Point_<T>& pt0, const cv::Point_<T>& pt1)
     return std::sqrt(std::pow(pt0.x - pt1.x, 2) + std::pow(pt0.y - pt1.y, 2));
 }
 
-cv::Mat overlayPoints(const cv::Mat& img, const std::vector<cv::Point2d>& pts,
+cv::Mat overlayPoints(const cv::Mat& img, const std::vector<cv::Point>& pts,
     const std::vector<std::size_t>& sizes = {});
+
+std::vector<cv::Point> smoothBoundaries(
+    const std::vector<cv::Point>& pts, std::size_t boundarySize);
+
+template <typename T>
+std::vector<cv::Point> round(const std::vector<cv::Point_<T>>& pts)
+{
+    std::vector<cv::Point> ptsRounded(pts.size());
+    std::transform(std::begin(pts), std::end(pts), std::begin(ptsRounded),
+        [](auto pt) { return cv::Point(std::round(pt.x), std::round(pt.y)); });
+    return ptsRounded;
+}
+
+std::size_t getNumChunks(std::size_t size, std::size_t chunkSize);
+std::size_t getChunkEnd(
+    std::size_t chunk, std::size_t numChunks, std::size_t chunkSize, std::size_t size);
+
+namespace detail
+{
+    std::vector<double> getSimpleWeights(int w);
+    std::vector<double> getCauchyWeights(int w);
+} // namespace detail
 
 } // namespace ht
 #endif // HABITRACK_UTIL_H

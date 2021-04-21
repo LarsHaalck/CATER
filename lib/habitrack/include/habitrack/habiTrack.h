@@ -94,10 +94,6 @@ private:
 
     void setTrackerSettings(const Preferences& prefs);
 
-    std::vector<double> getSimpleWeights(int w) const;
-    std::vector<double> getCauchyWeights(int w) const;
-    std::vector<cv::Point> smoothBoundaries(const std::vector<cv::Point>& pts) const;
-
 private:
     std::shared_ptr<BaseProgressBar> mBar;
 

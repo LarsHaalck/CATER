@@ -29,7 +29,7 @@ namespace PanoramaEngine
 
     void runSingle(const Images& images, const std::filesystem::path& dataFolder,
         const PanoramaSettings& settings, const std::vector<cv::Point>& overlayPts,
-        std::shared_ptr<BaseProgressBar> mBar)
+        std::size_t chunkSize, std::shared_ptr<BaseProgressBar> mBar)
     {
         auto basePath = dataFolder;
         fs::create_directories(basePath);
@@ -136,12 +136,6 @@ namespace PanoramaEngine
         auto panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite((basePath / "pano0_init.png").string(), std::get<0>(panoTuple));
 
-        /* if (overlay) */
-        /* { */
-        /*     detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple), */
-        /*         basePath / "pano0_init"); */
-        /* } */
-
         if (settings.stage < 1)
             return;
 
@@ -159,7 +153,9 @@ namespace PanoramaEngine
 
         panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite((basePath / "pano1_opt_sparse.png").string(), std::get<0>(panoTuple));
-        /* io::savePoints(basePath / "opt_centers_sparse.csv", std::get<1>(panoTuple)); */
+
+        detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
+            basePath / "pano1_opt_sparse", settings, images.getCenter(), {chunkSize}, {});
 
         if (settings.stage < 2)
             return;
@@ -176,15 +172,17 @@ namespace PanoramaEngine
         }
         panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite((basePath / "pano2_opt_dense.png").string(), std::get<0>(panoTuple));
-        /* io::savePoints(basePath / "opt_centers_dense.csv", std::get<1>(panoTuple)); */
+
+        detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
+            basePath / "pano2_opt_dense", settings, images.getCenter(), {chunkSize}, {});
     }
 
     void runMulti(const std::vector<Images>& imgContainers,
         const std::vector<std::filesystem::path>& dataFolders,
         const std::filesystem::path& outFolder, const PanoramaSettings& settings,
-        const std::vector<cv::Point>& overlayPts, std::shared_ptr<BaseProgressBar> mBar)
+        const std::vector<cv::Point>& overlayPts, const std::vector<std::size_t>& chunkSizes,
+        std::shared_ptr<BaseProgressBar> mBar)
     {
-        /* bool overlay = !overlayPts.empty(); */
         std::vector<std::vector<std::size_t>> keyFrameList;
         std::vector<std::size_t> sizes;
         std::vector<PairwiseMatches> matchesIntraList;
@@ -287,7 +285,10 @@ namespace PanoramaEngine
         stitcher.reintegrate();
         panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite(basePath / "combined1_opt_sparse.png", std::get<0>(panoTuple));
-        /* io::savePoints(basePath / "opt_centers_sparse.csv", std::get<1>(panoTuple)); */
+
+        detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
+            basePath / "pano0_opt_sparse", settings, combinedImgContainer.getCenter(), chunkSizes,
+            sizes);
 
         if (settings.stage < 2)
             return;
@@ -305,22 +306,64 @@ namespace PanoramaEngine
 
         panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite(basePath / "combined2_opt_dense.png", std::get<0>(panoTuple));
-        /* io::savePoints(basePath / "opt_centers_dense.csv", std::get<1>(panoTuple)); */
+
+        detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
+            basePath / "pano0_opt_sparse", settings, combinedImgContainer.getCenter(), chunkSizes,
+            sizes);
     }
 
     namespace detail
     {
 
         void overlay(const cv::Mat& img, const std::vector<cv::Point>& pts,
-            const std::vector<cv::Mat>& trafos, const std::filesystem::path& filename)
+            const std::vector<cv::Mat>& trafos, const std::filesystem::path& filename,
+            const PanoramaSettings& settings, cv::Point2d imgCenter,
+            const std::vector<std::size_t>& chunkSizes, const std::vector<std::size_t>& sizes)
         {
-            auto transPts = transformation::zipTransform(pts, trafos, SIM);
-            auto pano = util::overlayPoints(img, transPts);
+            if (settings.overlayCenters)
+            {
+                auto transPts
+                    = util::round(transformation::zipTransform<double>({imgCenter}, trafos, SIM));
+                if (settings.smooth)
+                    transPts = smooth(transPts, chunkSizes, sizes);
 
-            /* auto path = filename; */
-            /* io::savePoints(filename + ".csv", pano); */
+                auto pano = util::overlayPoints(img, transPts);
+                cv::imwrite(filename.string() + "_centers.png", pano);
+                io::savePoints(filename.string() + "_centers.csv", transPts);
+            }
+            if (settings.overlayPoints)
+            {
+                auto transPts = util::round(transformation::zipTransform(pts, trafos, SIM));
+                if (settings.smooth)
+                    transPts = smooth(transPts, chunkSizes, sizes);
 
-            /* cv::imwrite(filename, pano); */
+                auto pano = util::overlayPoints(img, transPts);
+                cv::imwrite(filename.string() + "_detections.png", pano);
+                io::savePoints(filename.string() + "_detections.csv", transPts);
+            }
+        }
+
+        std::vector<cv::Point> smooth(const std::vector<cv::Point>& pts,
+            const std::vector<std::size_t>& chunkSizes, const std::vector<std::size_t>& sizes)
+        {
+            auto ptsSmoothed = pts;
+            if (chunkSizes.size() == 1)
+                ptsSmoothed = util::smoothBoundaries(ptsSmoothed, chunkSizes[0]);
+            else
+            {
+                Translator translator(sizes);
+                for (std::size_t i = 0; i < sizes.size(); i++)
+                {
+                    auto global = translator.localToGlobal({i, 0});
+                    auto currPts = std::vector<cv::Point>(std::begin(ptsSmoothed) + global,
+                        std::begin(ptsSmoothed) + global + sizes[i]);
+                    util::smoothBoundaries(currPts, chunkSizes[i]);
+
+                    std::copy(
+                        std::begin(currPts), std::end(currPts), std::begin(ptsSmoothed) + global);
+                }
+            }
+            return ptsSmoothed;
         }
     } // namespace detail
 
