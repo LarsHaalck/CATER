@@ -18,7 +18,7 @@ std::ostream& operator<<(std::ostream& stream, const Preferences& prefs)
     stream << "Remove Red Lasers: " << prefs.removeRedLasers << "\n";
     stream << "Suppress: " << prefs.unarySuppress << "\n";
     stream << "Manual Multiplier: " << prefs.unaryMultiplier << "\n";
-    stream << "Manual unary size" << prefs.manualUnarySize << "\n";
+    stream << "Manual unary size: " << prefs.manualUnarySize << "\n";
     stream << "--------------------\n";
     stream << "Pairwise Settings: \n";
     stream << "Size: " << prefs.pairwiseSize << "\n";

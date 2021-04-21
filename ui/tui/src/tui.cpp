@@ -4,8 +4,6 @@
 
 constexpr char prompt[] = "HabiTrack >>> ";
 
-namespace fs = std::filesystem;
-
 namespace tui
 {
 Tui::Tui(int, char**) { }
@@ -37,6 +35,8 @@ int Tui::parse(const std::string& response)
         return 0;
     else if (cmd == "open")
         openImages(args);
+    else if (cmd == "load")
+        loadResults(args);
     else if (cmd == "start")
         setStart(args);
     else if (cmd == "end")
@@ -63,8 +63,6 @@ int Tui::parse(const std::string& response)
 
     return 0;
 }
-
-void Tui::openImages(const fs::path& imgPath) { mHabiTrack.loadImageFolder(imgPath); }
 
 void Tui::prefs(const std::string& args)
 {
@@ -134,14 +132,4 @@ void Tui::prefs(const std::string& args)
 
     mHabiTrack.setPreferences(currPrefs);
 }
-
-
-void Tui::track()
-{
-    extractFeatures();
-    extractTrafos();
-    extractUnaries();
-    optimize();
-}
-
 } // namespace tui
