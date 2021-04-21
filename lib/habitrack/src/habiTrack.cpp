@@ -4,6 +4,7 @@
 #include "image-processing/util.h"
 #include "io/io.h"
 #include "tracker/tracker.h"
+#include "progressbar/progressBar.h"
 #include <algorithm>
 #include <chrono>
 #include <fstream>
