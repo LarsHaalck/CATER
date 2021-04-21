@@ -83,7 +83,7 @@ void PanoWizard::on_newid(int id)
 
 void PanoWizard::on_processEvent(int id)
 {
-    if (id > 0)
+    if (id >= 0)
     {
         ui->labelVideo->setText(QString("Video: ") + QString::number(id + 1) + QString("/")
             + QString::number(mResFiles.size()));
