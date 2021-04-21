@@ -327,7 +327,7 @@ namespace PanoramaEngine
                 if (settings.smooth)
                     transPts = smooth(transPts, chunkSizes, sizes);
 
-                auto pano = util::overlayPoints(img, transPts);
+                auto pano = util::overlayPoints(img, transPts, sizes);
                 cv::imwrite(filename.string() + "_centers.png", pano);
                 io::savePoints(filename.string() + "_centers.csv", transPts);
             }
@@ -337,7 +337,7 @@ namespace PanoramaEngine
                 if (settings.smooth)
                     transPts = smooth(transPts, chunkSizes, sizes);
 
-                auto pano = util::overlayPoints(img, transPts);
+                auto pano = util::overlayPoints(img, transPts, sizes);
                 cv::imwrite(filename.string() + "_detections.png", pano);
                 io::savePoints(filename.string() + "_detections.csv", transPts);
             }
