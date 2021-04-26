@@ -118,7 +118,12 @@ std::vector<cv::Point2d> Detections::projectTo(
 
     for (std::size_t i = from; i < to; i++)
     {
-        auto currTrafo = makeFull(trafos.at({i, i + 1}));
+        cv::Mat currTrafo;
+        if (trafos.count({i, i + 1}))
+            currTrafo = makeFull(trafos.at({i, i + 1}));
+        else
+            currTrafo = getIdentity(true);
+
         for (std::size_t k = from; k <= i; k++)
             points2d[k - from] = transformPoint(points2d[k - from], currTrafo, type);
     }
@@ -151,7 +156,12 @@ std::vector<cv::Point2d> Detections::projectFrom(
 
     for (std::size_t i = from; i < to; i++)
     {
-        auto currTrafo = invert(trafos.at({i, i + 1}), type, true);
+        cv::Mat currTrafo;
+        if (trafos.count({i, i + 1}))
+            currTrafo = invert(trafos.at({i, i + 1}), type, true);
+        else
+            currTrafo = getIdentity(true);
+
         for (std::size_t k = i; k < to; k++)
             points2d[k - from] = transformPoint(points2d[k - from], currTrafo, type);
     }

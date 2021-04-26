@@ -66,7 +66,7 @@ void HabiTrack::unload(bool deleteMatches)
 
 void HabiTrack::loadImageFolder(const fs::path& imgFolder)
 {
-    mImgFolder = imgFolder;
+    mImgFolder = fs::absolute(imgFolder);
     mImages = Images(mImgFolder);
     mStartFrameNumber = 0;
     mEndFrameNumber = mImages.size() - 1;
