@@ -10,6 +10,7 @@ else()
     include(ExternalProject)
     ExternalProject_Add(
         cereal_external
+        DEPENDS eigen3_external
         GIT_REPOSITORY https://github.com/USCiLab/cereal
         GIT_TAG v1.3.0
         GIT_SHALLOW TRUE

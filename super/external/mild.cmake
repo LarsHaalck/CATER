@@ -12,7 +12,7 @@ else()
         DEPENDS
             eigen3_external
         GIT_REPOSITORY https://github.com/LarsHaalck/MILD/
-        GIT_TAG c86a7c9eee91d7b82ab5100052b5ddc43f287acd
+        GIT_SHALLOW ON
         CMAKE_ARGS
           -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
           -DCMAKE_BUILD_TYPE=Release

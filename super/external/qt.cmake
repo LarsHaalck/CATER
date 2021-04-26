@@ -59,7 +59,7 @@ else()
         URL https://download.qt.io/official_releases/qt/5.15/5.15.2/submodules/qtmultimedia-everywhere-src-5.15.2.tar.xz
         URL_MD5 591e3c3322742eaf76bc6f91dce59e42
         CONFIGURE_COMMAND
-            ${STAGED_INSTALL_PREFIX}/bin/qmake <SOURCE_DIR>
+            ${qmake} <SOURCE_DIR>
         LOG_DOWNLOAD ON
         LOG_UPDATE ON
         LOG_PATCH ON

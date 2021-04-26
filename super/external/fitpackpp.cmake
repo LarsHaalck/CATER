@@ -10,7 +10,7 @@ else()
     ExternalProject_Add(
         fitpackpp_external
         GIT_REPOSITORY https://github.com/LarsHaalck/fitpackpp
-        GIT_TAG 14fac733d7c5df83f60657610331fee82fbecff3
+        GIT_SHALLOW ON
         CMAKE_ARGS
           -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
           -DCMAKE_BUILD_TYPE=Release

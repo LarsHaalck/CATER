@@ -1,101 +1,17 @@
-# FROM ubuntu:20.04
-# FROM nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
-FROM nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
+FROM ubuntu:hirsute
 
 RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive apt install -y \
-    build-essential \
-    wget \
-    tar \
-    git \
-    unzip \
-    libceres-dev \
-    liblapacke-dev \
-    libopenblas-dev \
-    libbtbb-dev \
-    ffmpeg \
-    libdc1394-22-dev \
-    libavcodec-dev \
-    libavformat-dev \
-    libavutil-dev \
-    libswscale-dev \
-    libavresample-dev \
-    libx264-dev \
-    ca-certificates \
-    gnupg \
-    software-properties-common \
-    qt5-default \
-    && rm -rf /var/lib/apt/lists/*
+    DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        git \
+        gfortran \
+        libopencv-dev \
+        qtbase5-dev \
+        qtbase5-private-dev \
+        libqt5multimedia5 \
+        libqt5multimedia5-plugins \
+        ca-certificates
 
-RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
-RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main' \
-    && apt update && apt install -y cmake \
-    && rm -rf /var/lib/apt/lists/*
 
-RUN add-apt-repository ppa:ubuntu-toolchain-r/test \
-    && apt update \
-    && apt install -y gcc-10 g++-10 \
-    && rm -rf /var/lib/apt/lists/*
-
-ENV CC gcc-10
-ENV CXX g++-10
-RUN cd /tmp \
-    && wget https://download.pytorch.org/libtorch/cu110/libtorch-cxx11-abi-shared-with-deps-1.7.1%2Bcu110.zip \
-    && unzip libtorch-cxx11-abi-shared-with-deps-1.7.1+cu110.zip \
-    && mv libtorch/include/* /usr/local/include \
-    && mv libtorch/lib/* /usr/local/lib \
-    && mv libtorch/share/* /usr/local/share \
-    && rm -rf /tmp/*
-
-RUN cd /tmp \
-    && wget -O opencv.tar.gz https://github.com/opencv/opencv/archive/4.4.0.tar.gz \
-    && tar xf opencv.tar.gz \
-    && mv opencv-4.4.0 opencv \
-    && cd opencv \
-    && ln -s /usr/include/lapacke.h /usr/include/x86_64-linux-gnu \
-    && sed -i 's/SET(Open_BLAS_INCLUDE_SEARCH_PATHS/SET(Open_BLAS_INCLUDE_SEARCH_PATHS\n  \/usr\/include\/x86_64-linux-gnu/g' cmake/OpenCVFindOpenBLAS.cmake \
-    && sed -i 's/SET(Open_BLAS_LIB_SEARCH_PATHS/SET(Open_BLAS_INCLUDE_SEARCH_PATHS\n  \/usr\/lib\/x86_64-linux-gnu/g' cmake/OpenCVFindOpenBLAS.cmake \
-    && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DWITH_OPENCL=ON \
-        -DWITH_OPENGL=ON \
-        -DWITH_TBB=ON \
-        -DBUILD_WITH_DEBUG_INFO=OFF \
-        -DBUILD_TESTS=OFF \
-        -DBUILD_PERF_TESTS=OFF \
-        -DBUILD_EXAMPLES=OFF \
-        -DINSTALL_C_EXAMPLES=OFF \
-        -DINSTALL_PYTHON_EXAMPLES=OFF \
-        -DOPENCV_GENERATE_PKGCONFIG=ON \
-        -DOPENCV_JNI_INSTALL_PATH=lib \
-        -DOPENCV_GENERATE_SETUPVARS=OFF \
-        ../ \
-    && make install -j4 && rm -rf /tmp/*
-
-RUN cd /tmp \
-    && git clone https://github.com/LarsHaalck/MILD \
-    && cd MILD && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ../ \
-    && make && make install \
-    && rm -rf /tmp/*
-
-RUN cd /tmp \
-    && git clone https://github.com/LarsHaalck/cereal \
-    && cd cereal && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DJUST_INSTALL_CEREAL=ON ../ \
-    && make install -j \
-    && rm -rf /tmp/*
-
-RUN cd /tmp \
-    && git clone https://github.com/jarro2783/cxxopts \
-    && cd cxxopts && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ../ \
-    && make install -j \
-    && rm -rf /tmp/*
-
-RUN cd /tmp \
-    && git clone https://github.com/gabime/spdlog \
-    && cd spdlog && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ../ \
-    && make install -j \
-    && rm -rf /tmp/*
+# vi: ft=dockerfile

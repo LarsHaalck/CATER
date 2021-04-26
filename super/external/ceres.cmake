@@ -9,6 +9,7 @@ else()
     include(ExternalProject)
     ExternalProject_Add(
         ceres_external
+        DEPENDS eigen3_external
         GIT_REPOSITORY https://github.com/ceres-solver/ceres-solver/
         GIT_TAG 2.0.0
         GIT_SHALLOW TRUE
@@ -22,6 +23,7 @@ else()
           -DBUILD_TESTING=OFF
           -DBUILD_EXAMPLES=OFF
           -DBUILD_BENCHMARKS=OFF
+          -DMINIGLOG=ON
         LOG_DOWNLOAD ON
         LOG_UPDATE ON
         LOG_PATCH ON
