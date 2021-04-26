@@ -9,7 +9,7 @@ RUN apt update && \
         libopencv-dev \
         qtbase5-dev \
         qtbase5-private-dev \
-        libqt5multimedia5 \
+        qtmultimedia5-dev \
         libqt5multimedia5-plugins \
         ca-certificates
 

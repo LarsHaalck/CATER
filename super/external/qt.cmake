@@ -2,16 +2,18 @@ find_package(Qt5Widgets 5.10 CONFIG QUIET)
 find_package(Qt5Concurrent 5.10 CONFIG QUIET)
 find_package(Qt5Multimedia 5.10 CONFIG QUIET)
 
-if(TARGET Qt5::Widgets AND TARGET Qt5::Concurrent)
+if(TARGET Qt5::Widgets AND TARGET Qt5::Concurrent AND TARGET Qt5::Multimedia)
     get_property(loc TARGET Qt5::Widgets PROPERTY LOCATION)
-    message(STATUS "Found Qt5Widgets version ${PACKAGE_VERSION} at ${loc}")
-
+    message(STATUS "Found Qt5Widgets at ${loc}")
     get_property(loc TARGET Qt5::Concurrent PROPERTY LOCATION)
-    message(STATUS "Found Qt5Concurrent version ${PACKAGE_VERSION} at ${loc}")
+    message(STATUS "Found Qt5Concurrent at ${loc}")
+    get_property(loc TARGET Qt5::Multimedia PROPERTY LOCATION)
+    message(STATUS "Found Qt5Multimedia at ${loc}")
 
     add_library(qt5base_external INTERFACE)
+    add_library(qt5multimedia_external INTERFACE)
 else()
-    message(STATUS "Qt5Widgets or Qt5Concurrent could not be located. Building from source...")
+    message(STATUS "Qt5Widgets, Qt5Concurrent or Qt5Multimedia could not be located. Building from source...")
     find_program(MAKE_EXE NAMES gmake nmake make)
 
     include(ExternalProject)
@@ -32,27 +34,8 @@ else()
         LOG_BUILD ON
         LOG_INSTALL ON
     )
-    set(Qt5Core_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Core)
-    set(Qt5Concurrent_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Concurrent)
-    set(Qt5Widgets_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Widgets)
-    set(CMAKE_INSTALL_RPATH ${STAGED_INSTALL_PREFIX}/lib)
-endif()
 
-if(TARGET Qt5::Multimedia)
-    get_property(loc TARGET Qt5::Multimedia PROPERTY LOCATION)
-    message(STATUS "Found Qt5Multimedia version ${PACKAGE_VERSION} at ${loc}")
-    add_library(qt5multimedia_external INTERFACE)
-else()
-    message(STATUS "Qt5Multimedia could not be located. Building from source...")
-
-    find_package(Qt5Core 5.10 CONFIG QUIET)
-    if(TARGET Qt5::qmake)
-        set(qmake $<TARGET_FILE:Qt5::qmake>)
-    else()
-        set(qmake ${STAGED_INSTALL_PREFIX}/bin/qmake)
-    endif()
-
-    include(ExternalProject)
+    set(qmake ${STAGED_INSTALL_PREFIX}/bin/qmake)
     ExternalProject_Add(
         qt5multimedia_external
         DEPENDS qt5base_external
@@ -67,6 +50,9 @@ else()
         LOG_BUILD ON
         LOG_INSTALL ON
     )
+    set(Qt5Core_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Core)
+    set(Qt5Concurrent_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Concurrent)
+    set(Qt5Widgets_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Widgets)
     set(Qt5Multimedia_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt5Multimedia)
     set(CMAKE_INSTALL_RPATH ${STAGED_INSTALL_PREFIX}/lib)
 endif()
