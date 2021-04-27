@@ -342,7 +342,6 @@ void HabiTrack::runFullPipeline()
 
 void HabiTrack::exportDetections(const std::filesystem::path& csvFile, bool smooth) const
 {
-    /* auto first = std::begin(mDetections.cdata())->first; */
     std::vector<std::size_t> ids;
     std::vector<cv::Point> pts;
     for (const auto& elem : mDetections.cdata())

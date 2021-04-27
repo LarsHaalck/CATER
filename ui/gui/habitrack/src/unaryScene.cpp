@@ -170,7 +170,9 @@ void UnaryScene::setup(std::vector<double> qualities, std::size_t start, std::si
         for (std::size_t j = currStart; j < currEnd; j++)
         {
             UnaryQuality qual;
-            if (qualities[j] < (currMedian + 1.5 * medianDist))
+            if (qualities[j] == 0.0)
+                qual = UnaryQuality::Critical;
+            else if (qualities[j] < (currMedian + 1.5 * medianDist))
                 qual = UnaryQuality::Good;
             else if (qualities[j] < (currMedian + 3.0 * medianDist))
                 qual = UnaryQuality::Poor;

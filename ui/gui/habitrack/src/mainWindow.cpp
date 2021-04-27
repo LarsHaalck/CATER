@@ -493,7 +493,13 @@ void MainWindow::on_buttonEndFrame_clicked()
         emit breakingBoundaryChange();
 }
 
-void MainWindow::on_buttonTrack_clicked() { enqueue(&MainWindow::track, &MainWindow::on_tracked); }
+void MainWindow::on_buttonTrack_clicked()
+{
+    if (!checkIfOptimzing())
+        enqueue(&MainWindow::track, &MainWindow::on_tracked);
+    else
+        on_tracked();
+}
 
 void MainWindow::track()
 {
