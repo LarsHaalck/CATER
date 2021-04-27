@@ -32,7 +32,10 @@ int Tui::parse(const std::string& response)
     }
 
     if (cmd == "exit" || cmd.empty() || cmd == "#")
+    {
+        std::cout << std::endl;
         return 0;
+    }
     else if (cmd == "open")
         openImages(args);
     else if (cmd == "load")
