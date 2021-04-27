@@ -62,7 +62,7 @@ If memory is full in one of the early stages, try reducing the cache size from 2
 
 # Download
 ## Using AppImage:
-Download the most recent AppImage from https://github.com/LarsHaalck/habitrack/releases listet under "Assets".
+Download the most recent AppImage from https://github.com/LarsHaalck/habitrack/releases listet under "Assets". You have to "allow executing file as program".  Right click on AppImage, then select Permissions tabe then select the Execute option. 
 
 ## Building from Source:
 This project has a CMake superbuild structure, where the "root"-CMakeLists.txt lies in the folder `super`.
