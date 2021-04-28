@@ -5,21 +5,34 @@
 
 namespace ht
 {
+enum class PanoramaStage
+{
+    Initialization,
+    Optimization,
+    Refinement
+};
+std::ostream& operator<<(std::ostream& stream, const PanoramaStage& stage);
+
 struct PanoramaSettings
 {
-    bool force;
-    int stage;
-    int cacheSize;
-    int rows;
-    int cols;
-    int numFts;
-    FeatureType ftType;
-    bool overlayCenters;
-    bool overlayPoints;
-    bool smooth;
+    int rows = 2000;
+    int cols = 2000;
+    int cacheSize = 200;
+
+    FeatureType ftType = FeatureType::ORB;
+    int numFts = 500;
+    double minCoverage = 0.0;
+    bool force = false;
+    PanoramaStage stage = PanoramaStage::Refinement;
+
+    bool overlayCenters = false;
+    bool overlayPoints = false;
+    bool smooth = false;
 
     bool writeReadable = false;
+
 };
+std::ostream& operator<<(std::ostream& stream, const PanoramaSettings& prefs);
 
 namespace PanoramaEngine
 {

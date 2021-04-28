@@ -29,6 +29,11 @@ private:
     void optimize() { mHabiTrack.optimizeUnaries(); }
     void track() { mHabiTrack.runFullPipeline(); }
 
+    void addPanorama(const std::string& args);
+    void listPanorama();
+    void generatePanorama();
+    void panoramaPrefs(const std::string& args);
+
     template <typename OutputIt>
     void extractWords(const std::string& string, OutputIt out)
     {
@@ -45,6 +50,7 @@ private:
 
 private:
     ht::HabiTrack mHabiTrack;
+    std::vector<std::filesystem::path> mPanoFiles;
 };
 
 } // namespace tui

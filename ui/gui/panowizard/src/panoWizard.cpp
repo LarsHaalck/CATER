@@ -35,6 +35,8 @@ PanoWizard::PanoWizard(QWidget* parent)
         SLOT(on_statusChanged(const QString&)));
 
     connect(this, SIGNAL(processEvent(int)), this, SLOT(on_processEvent(int)));
+
+    populateDefaults();
 }
 
 PanoWizard::~PanoWizard() { delete ui; }
@@ -107,19 +109,34 @@ void PanoWizard::process()
     }
 }
 
+void PanoWizard::populateDefaults()
+{
+    PanoramaSettings settings;
+    ui->spinHeight->setValue(settings.rows);
+    ui->spinWidth->setValue(settings.cols);
+    ui->spinCache->setValue(settings.cacheSize);
+
+    ui->comboFt->setCurrentIndex(static_cast<int>(settings.ftType));
+    ui->spinNumFts->setValue(settings.numFts);
+    ui->spinCoverage->setValue(settings.minCoverage);
+    ui->checkForce->setChecked(settings.force);
+    ui->comboStage->setCurrentIndex(static_cast<int>(settings.stage));
+
+    ui->comboOverlay->setCurrentIndex((settings.overlayCenters << 1) | settings.overlayPoints);
+    ui->checkSmooth->setChecked(settings.smooth);
+}
+
 PanoramaSettings PanoWizard::getSettings() const
 {
-    auto force = ui->checkForce->isChecked();
-    auto stage = ui->comboStage->currentIndex();
-    int cacheSize = ui->spinCache->value();
     int rows = ui->spinHeight->value();
     int cols = ui->spinWidth->value();
+    int cacheSize = ui->spinCache->value();
+
+    auto ftType = static_cast<FeatureType>(ui->comboFt->currentIndex());
     int numFts = ui->spinNumFts->value();
-    auto ftType = FeatureType::ORB;
-    if (ui->comboFt->currentText() == "SIFT")
-        ftType = FeatureType::SIFT;
-    else if (ui->comboFt->currentText() == "SuperPoint")
-        ftType = FeatureType::SuperPoint;
+    double coverage = ui->spinCoverage->value();
+    auto force = ui->checkForce->isChecked();
+    auto stage = ui->comboStage->currentIndex();
 
     auto overlay = ui->comboOverlay->currentText().toStdString();
     auto overlayCenters = (overlay.find("Centers") != std::string::npos);
@@ -127,13 +144,16 @@ PanoramaSettings PanoWizard::getSettings() const
     auto smooth = ui->checkSmooth->isChecked();
 
     PanoramaSettings settings;
-    settings.force = force;
-    settings.stage = stage;
-    settings.cacheSize = cacheSize;
     settings.rows = rows;
     settings.cols = cols;
-    settings.numFts = numFts;
+    settings.cacheSize = cacheSize;
+
     settings.ftType = ftType;
+    settings.numFts = numFts;
+    settings.minCoverage = coverage;
+    settings.force = force;
+    settings.stage = static_cast<PanoramaStage>(stage);
+
     settings.overlayCenters = overlayCenters;
     settings.overlayPoints = overlayPoints;
     settings.smooth = smooth;

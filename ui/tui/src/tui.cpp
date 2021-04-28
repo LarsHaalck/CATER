@@ -4,6 +4,8 @@
 
 constexpr char prompt[] = "HabiTrack >>> ";
 
+namespace fs = std::filesystem;
+
 namespace tui
 {
 Tui::Tui(int, char**) { }
@@ -58,6 +60,14 @@ int Tui::parse(const std::string& response)
         optimize();
     else if (cmd == "track")
         track();
+    else if (cmd == "panorama_add")
+        addPanorama(args);
+    else if (cmd == "panorama_list")
+        listPanorama();
+    else if (cmd == "panorama_gen")
+        generatePanorama();
+    else if (cmd == "panorama_prefs")
+        panoramaPrefs(args);
     else
     {
         std::cout << "Unknown Command: " << cmd << "\n";
@@ -135,4 +145,29 @@ void Tui::prefs(const std::string& args)
 
     mHabiTrack.setPreferences(currPrefs);
 }
+
+void Tui::addPanorama(const std::string& args)
+{
+    if (std::find(std::begin(mPanoFiles), std::end(mPanoFiles), args) == std::end(mPanoFiles))
+        return;
+
+    if (!fs::is_regular_file(args))
+        return;
+
+    mPanoFiles.push_back(args);
+}
+
+void Tui::listPanorama()
+{
+    std::cout << "Added results files: \n";
+    for (const auto& f : mPanoFiles)
+        std::cout << f << std::endl;
+}
+
+void Tui::generatePanorama()
+{
+
+}
+
+void Tui::panoramaPrefs(const std::string& args) { }
 } // namespace tui

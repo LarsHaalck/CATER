@@ -156,7 +156,7 @@
          <number>9999</number>
         </property>
         <property name="value">
-         <number>200</number>
+         <number>0</number>
         </property>
        </widget>
       </item>
@@ -169,7 +169,7 @@
          </size>
         </property>
         <property name="currentIndex">
-         <number>2</number>
+         <number>0</number>
         </property>
         <item>
          <property name="text">
@@ -198,7 +198,7 @@
       <item row="4" column="2">
        <widget class="QComboBox" name="comboFt">
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <item>
          <property name="text">
@@ -243,7 +243,7 @@
          <number>10</number>
         </property>
         <property name="value">
-         <number>2000</number>
+         <number>100</number>
         </property>
        </widget>
       </item>
@@ -273,7 +273,7 @@
          <number>10</number>
         </property>
         <property name="value">
-         <number>2000</number>
+         <number>100</number>
         </property>
        </widget>
       </item>
@@ -290,7 +290,7 @@
          <number>10000</number>
         </property>
         <property name="value">
-         <number>500</number>
+         <number>0</number>
         </property>
        </widget>
       </item>

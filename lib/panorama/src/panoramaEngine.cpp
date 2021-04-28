@@ -22,6 +22,49 @@ namespace fs = std::filesystem;
 namespace ht
 {
 
+std::ostream& operator<<(std::ostream& stream, const PanoramaStage& stage)
+{
+    switch (stage)
+    {
+    case PanoramaStage::Initialization:
+        stream << "Initialization\n";
+        break;
+    case PanoramaStage::Optimization:
+        stream << "Optimization\n";
+        break;
+    case PanoramaStage::Refinement:
+        stream << "Refinement\n";
+        break;
+    default:
+        stream << "Undefined\n";
+        break;
+    }
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const PanoramaSettings& settings)
+{
+    stream << "Panorama Settings: \n";
+    stream << "General: \n";
+    stream << "rows" << settings.rows << "\n";
+    stream << "cols" << settings.cols << "\n";
+    stream << "cacheSize" << settings.cacheSize << "\n";
+    stream << "--------------------\n";
+    stream << "ftType" << settings.ftType << "\n";
+    stream << "numFts" << settings.numFts << "\n";
+    stream << "minCoverqage" << settings.minCoverage << "\n";
+    stream << "force" << settings.force << "\n";
+    stream << "stage" << settings.stage << "\n";
+    stream << "--------------------\n";
+    stream << "overlayCenters" << settings.overlayCenters << "\n";
+    stream << "overlayPoints" << settings.overlayPoints << "\n";
+    stream << "smooth" << settings.smooth << "\n";
+    stream << "--------------------\n";
+    stream << "writeReadable" << settings.writeReadable << "\n";
+    stream << "====================\n";
+    return stream;
+}
+
 namespace PanoramaEngine
 {
     auto ORB = ht::FeatureType::ORB;
@@ -136,7 +179,7 @@ namespace PanoramaEngine
         auto panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite((basePath / "pano0_init.png").string(), std::get<0>(panoTuple));
 
-        if (settings.stage < 1)
+        if (settings.stage < PanoramaStage::Optimization)
             return;
 
         // globally optimized these keyframe tranformations and write them for later IVLC
@@ -157,7 +200,7 @@ namespace PanoramaEngine
         detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
             basePath / "pano1_opt_sparse", settings, images.getCenter(), {chunkSize}, {});
 
-        if (settings.stage < 2)
+        if (settings.stage < PanoramaStage::Refinement)
             return;
 
         // refine all keyframes
@@ -266,7 +309,7 @@ namespace PanoramaEngine
         auto panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite(basePath / "combined0_init.png", std::get<0>(panoTuple));
 
-        if (settings.stage < 1)
+        if (settings.stage < PanoramaStage::Optimization)
             return;
 
         if (fs::exists(basePath / "opt_trafos_sparse.bin") && !settings.force)
@@ -290,7 +333,7 @@ namespace PanoramaEngine
             basePath / "pano0_opt_sparse", settings, combinedImgContainer.getCenter(), chunkSizes,
             sizes);
 
-        if (settings.stage < 2)
+        if (settings.stage < PanoramaStage::Refinement)
             return;
 
         if (fs::exists(basePath / "opt_trafos.bin") && !settings.force)

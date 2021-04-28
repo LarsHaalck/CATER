@@ -29,6 +29,8 @@ private:
     std::vector<cv::Point> getDetections(const std::filesystem::path& resFile);
     void processMultiple();
 
+    void populateDefaults();
+
 private slots:
     void on_load();
     void on_newid(int id);

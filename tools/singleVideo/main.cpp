@@ -64,7 +64,7 @@ int main(int argc, const char** argv)
 
     PanoramaSettings settings;
     settings.force = force;
-    settings.stage = stage;
+    settings.stage = static_cast<PanoramaStage>(stage);
     settings.cacheSize = cacheSize;
     settings.rows = rows;
     settings.cols = cols;

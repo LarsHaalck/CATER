@@ -42,8 +42,8 @@ struct Preferences
     double nnRatio = 0.8;
     double ranscacReproj = 3.0;
 
-    friend std::ostream& operator<<(std::ostream& stream, const ht::Preferences& prefs);
 };
+std::ostream& operator<<(std::ostream& stream, const Preferences& prefs);
 } // namespace ht
 
 #endif // MODEL_PREFERENCES_H
