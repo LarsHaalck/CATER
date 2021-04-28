@@ -65,6 +65,9 @@ Images::Images(
 
 void Images::setImgSize()
 {
+    if (mImageFiles.empty())
+        return;
+
     auto firstImg = at(0);
     mImgSize = firstImg.size();
     if (mResize[0] > 0 && mResize[1] > 0)
@@ -77,7 +80,7 @@ void Images::setImgSize()
 void Images::fillImageFilesFromFolder(const fs::path& path)
 {
     spdlog::info("Loading images from folder: {}", path.string());
-    for (const auto& p : fs::recursive_directory_iterator(path))
+    for (const auto& p : fs::directory_iterator(path))
     {
         if (p.is_regular_file())
         {

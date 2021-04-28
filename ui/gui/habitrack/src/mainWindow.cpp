@@ -71,7 +71,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this->ui->graphicsView, SIGNAL(positionCleared()), this, SLOT(on_positionCleared()));
     connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this, SLOT(on_bearingCleared()));
 
-    /* connect(&mAutoSaveTimer, &QTimer::timeout, this, [this](){ saveResults(false); } ); */
+    connect(&mAutoSaveTimer, &QTimer::timeout, this, [this](){ saveResults(false); } );
     connect(this, SIGNAL(toggleChunk(int, bool)), this, SLOT(on_chunkToggled(int, bool)));
     connect(this, SIGNAL(warn(const QString&)), this, SLOT(on_warn(const QString&)));
 
@@ -187,7 +187,6 @@ void MainWindow::on_actionPreferences_triggered()
         spdlog::debug("GUI: Changed Preferences to: {}", prefs);
         mHabiTrack.setPreferences(prefs);
 
-        // TODO: should this be saved implicitly?
         emit saveResults(true);
     }
 }
@@ -369,6 +368,12 @@ void MainWindow::on_actionOpenImgFolder_triggered()
         return;
 
     mHabiTrack.loadImageFolder(fs::path(imgFolderPath.toStdString()));
+    if (!mHabiTrack.images().size())
+    {
+        emit warn("No images were loaded. The selected folder contained no image files");
+        return;
+    }
+
     openImagesHelper();
     showFrame(mCurrentFrameNumber);
     ui->graphicsView->zoomToFit();
@@ -627,6 +632,7 @@ void MainWindow::on_chunkToggled(int chunk, bool compute)
 void MainWindow::on_buttonOptimizeUnaries_clicked()
 {
     spdlog::debug("GUI: Clicked Optimize Unaries");
+    emit saveResults(true);
 
     // check only for blocked variable and allow if only optimizing
     if (checkIfBlocked(false))
@@ -747,7 +753,7 @@ void MainWindow::on_positionChanged(QPointF position)
     }
 
     spdlog::debug("GUI: manual position changed to ({}, {}) on frame {}", position.x(),
-        position.x(), position.y(), mCurrentFrameNumber);
+        position.y(), mCurrentFrameNumber);
     mHabiTrack.addManualUnary(mCurrentFrameNumber, QtOpencvCore::qpoint2point(position));
     enqueueOptimization();
     ui->unaryView->getUnaryScene()->setUnaryQuality(mCurrentFrameNumber, UnaryQuality::Excellent);

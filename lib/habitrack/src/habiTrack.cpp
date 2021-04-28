@@ -68,6 +68,9 @@ void HabiTrack::loadImageFolder(const fs::path& imgFolder)
 {
     mImgFolder = fs::absolute(imgFolder);
     mImages = Images(mImgFolder);
+    if (!mImages.size())
+        return;
+
     mStartFrameNumber = 0;
     mEndFrameNumber = mImages.size() - 1;
     openImagesHelper();
