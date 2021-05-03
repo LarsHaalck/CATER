@@ -71,7 +71,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this->ui->graphicsView, SIGNAL(positionCleared()), this, SLOT(on_positionCleared()));
     connect(this->ui->graphicsView, SIGNAL(bearingCleared()), this, SLOT(on_bearingCleared()));
 
-    connect(&mAutoSaveTimer, &QTimer::timeout, this, [this](){ saveResults(false); } );
+    connect(&mAutoSaveTimer, &QTimer::timeout, this, [this]() { saveResults(false); });
     connect(this, SIGNAL(toggleChunk(int, bool)), this, SLOT(on_chunkToggled(int, bool)));
     connect(this, SIGNAL(warn(const QString&)), this, SLOT(on_warn(const QString&)));
 

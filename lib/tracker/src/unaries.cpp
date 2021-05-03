@@ -76,7 +76,6 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
                 }
                 else
                     diff = cv::Mat::zeros(ref_gray.size(), ref_gray.type());
-
             }
             else
                 diff = ref_gray - next_gray;

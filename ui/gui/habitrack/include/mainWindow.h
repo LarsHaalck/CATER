@@ -4,11 +4,11 @@
 #include <QMainWindow>
 #include <QThreadPool>
 
+#include "gui/progressStatusBar.h"
 #include "guiPreferences.h"
 #include "imageViewer.h"
 #include "labelConfig.h"
 #include "labeler.h"
-#include "gui/progressStatusBar.h"
 #include "trackerScene.h"
 #include "unaryGraphicsView.h"
 

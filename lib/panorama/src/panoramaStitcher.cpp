@@ -2,11 +2,11 @@
 
 #include "affinityGlobalOptimizer.h"
 #include "homographyGlobalOptimizer.h"
+#include "image-processing/idTranslator.h"
 #include "image-processing/isometry.h"
 #include "io/io.h"
 #include "io/matIO.h"
 #include "isometryGlobalOptimizer.h"
-#include "image-processing/idTranslator.h"
 #include "progressbar/progressBar.h"
 #include "similarityGlobalOptimizer.h"
 #include "util/algorithm.h"
@@ -207,9 +207,8 @@ void PanoramaStitcher::buildParamsVector()
     }
 }
 
-
-std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(cv::Size targetSize,
-    bool blend, std::shared_ptr<BaseProgressBar> cb) const
+std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(
+    cv::Size targetSize, bool blend, std::shared_ptr<BaseProgressBar> cb) const
 {
     auto rect = generateBoundingRect();
     rect.width = rect.width - rect.x;

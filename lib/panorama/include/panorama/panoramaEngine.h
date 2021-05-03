@@ -30,7 +30,6 @@ struct PanoramaSettings
     bool smooth = false;
 
     bool writeReadable = false;
-
 };
 std::ostream& operator<<(std::ostream& stream, const PanoramaSettings& prefs);
 

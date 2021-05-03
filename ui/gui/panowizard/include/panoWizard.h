@@ -1,14 +1,15 @@
 #ifndef PANOWIZARD_H
 #define PANOWIZARD_H
 
-#include <QWizard>
 #include <QFutureWatcher>
+#include <QWizard>
 #include <filesystem>
 
 #include "gui/progressStatusBar.h"
 #include "panorama/panoramaEngine.h"
 
-namespace Ui {
+namespace Ui
+{
 class PanoWizard;
 }
 
@@ -19,7 +20,7 @@ class PanoWizard : public QWizard
 {
     Q_OBJECT
 public:
-    explicit PanoWizard(QWidget *parent = nullptr);
+    explicit PanoWizard(QWidget* parent = nullptr);
     ~PanoWizard();
 
 private:
@@ -49,7 +50,7 @@ signals:
     void processEvent(int);
 
 private:
-    Ui::PanoWizard *ui;
+    Ui::PanoWizard* ui;
     std::vector<std::filesystem::path> mResFiles;
     std::shared_ptr<ProgressStatusBar> mBar;
     QFutureWatcher<void> mWatcher;

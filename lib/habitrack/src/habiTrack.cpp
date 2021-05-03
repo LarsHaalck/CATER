@@ -3,8 +3,8 @@
 #include "habitrack/resultsIO.h"
 #include "image-processing/util.h"
 #include "io/io.h"
-#include "tracker/tracker.h"
 #include "progressbar/progressBar.h"
+#include "tracker/tracker.h"
 #include <algorithm>
 #include <chrono>
 #include <fstream>

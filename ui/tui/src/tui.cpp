@@ -164,10 +164,7 @@ void Tui::listPanorama()
         std::cout << f << std::endl;
 }
 
-void Tui::generatePanorama()
-{
-
-}
+void Tui::generatePanorama() { }
 
 void Tui::panoramaPrefs(const std::string& args) { }
 } // namespace tui

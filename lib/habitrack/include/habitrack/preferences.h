@@ -41,7 +41,6 @@ struct Preferences
     bool removeCamMotion = true;
     double nnRatio = 0.8;
     double ranscacReproj = 3.0;
-
 };
 std::ostream& operator<<(std::ostream& stream, const Preferences& prefs);
 } // namespace ht

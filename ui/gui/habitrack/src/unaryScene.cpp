@@ -3,9 +3,9 @@
 #include "colors.h"
 #include "spdlog/spdlog.h"
 
+#include "image-processing/util.h"
 #include "tracker/tracker.h"
 #include "util/algorithm.h"
-#include "image-processing/util.h"
 #include <QLinearGradient>
 #include <ostream>
 

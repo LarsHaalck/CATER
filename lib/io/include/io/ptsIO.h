@@ -1,11 +1,10 @@
 #ifndef HT_PTS_IO_H
 #define HT_PTS_IO_H
 
-
 #include "io/io.h"
-#include <opencv2/core.hpp>
-#include <fstream>
 #include <filesystem>
+#include <fstream>
+#include <opencv2/core.hpp>
 
 namespace ht::io
 {

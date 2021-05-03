@@ -186,7 +186,8 @@ fs::path Images::getFileName(std::size_t idx) const
 
 void Images::clip(std::size_t start, std::size_t end)
 {
-    std::vector<fs::path> newImgFiles(std::begin(mImageFiles) + start, std::begin(mImageFiles) + end);
+    std::vector<fs::path> newImgFiles(
+        std::begin(mImageFiles) + start, std::begin(mImageFiles) + end);
     mImageFiles.swap(newImgFiles);
 }
 
