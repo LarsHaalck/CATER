@@ -46,21 +46,21 @@ std::ostream& operator<<(std::ostream& stream, const PanoramaSettings& settings)
 {
     stream << "Panorama Settings: \n";
     stream << "General: \n";
-    stream << "rows" << settings.rows << "\n";
-    stream << "cols" << settings.cols << "\n";
-    stream << "cacheSize" << settings.cacheSize << "\n";
+    stream << "rows: " << settings.rows << "\n";
+    stream << "cols: " << settings.cols << "\n";
+    stream << "cacheSize: " << settings.cacheSize << "\n";
     stream << "--------------------\n";
-    stream << "ftType" << settings.ftType << "\n";
-    stream << "numFts" << settings.numFts << "\n";
-    stream << "minCoverqage" << settings.minCoverage << "\n";
-    stream << "force" << settings.force << "\n";
-    stream << "stage" << settings.stage << "\n";
+    stream << "ftType: " << settings.ftType << "\n";
+    stream << "numFts: " << settings.numFts << "\n";
+    stream << "minCoverage: " << settings.minCoverage << "\n";
+    stream << "force: " << settings.force << "\n";
+    stream << "stage: " << settings.stage << "\n";
     stream << "--------------------\n";
-    stream << "overlayCenters" << settings.overlayCenters << "\n";
-    stream << "overlayPoints" << settings.overlayPoints << "\n";
-    stream << "smooth" << settings.smooth << "\n";
+    stream << "overlayCenters: " << settings.overlayCenters << "\n";
+    stream << "overlayPoints: " << settings.overlayPoints << "\n";
+    stream << "smooth: " << settings.smooth << "\n";
     stream << "--------------------\n";
-    stream << "writeReadable" << settings.writeReadable << "\n";
+    stream << "writeReadable: " << settings.writeReadable << "\n";
     stream << "====================\n";
     return stream;
 }

@@ -28,6 +28,7 @@ target_link_libraries(${EXE_NAME}
     cereal
     util
     io
+    panorama
 )
 
 if(${OpenMP_CXX_FOUND})

@@ -79,17 +79,16 @@ int Tui::parse(const std::string& response)
 
 void Tui::prefs(const std::string& args)
 {
-    if (args.empty())
+    std::vector<std::string> words;
+    extractWords(args, std::back_inserter(words));
+
+    if (words.empty() || words.size() % 2 != 0)
     {
         std::cout << mHabiTrack.getPreferences() << std::endl;
         return;
     }
 
     auto currPrefs = mHabiTrack.getPreferences();
-
-    std::vector<std::string> words;
-    extractWords(args, std::back_inserter(words));
-
     for (std::size_t i = 0; i <= words.size() / 2; i += 2)
     {
         if (words[i] == "cacheSize")
@@ -164,7 +163,84 @@ void Tui::listPanorama()
         std::cout << f << std::endl;
 }
 
-void Tui::generatePanorama() { }
+void Tui::generatePanorama()
+{
+    ht::Images images = mHabiTrack.images();
+    images.clip(mHabiTrack.getStartFrame(), mHabiTrack.getEndFrame());
 
-void Tui::panoramaPrefs(const std::string& args) { }
+    std::vector<cv::Point> pts;
+    if (mPanoSettings.overlayCenters)
+        pts = getDetections();
+
+    ht::PanoramaEngine::runSingle(images, mHabiTrack.getOutputPath() / "panorama", mPanoSettings,
+        pts, mHabiTrack.getPreferences().chunkSize);
+}
+
+std::vector<cv::Point> Tui::getDetections() const
+{
+    auto dets = mHabiTrack.detections();
+    auto data = dets.cdata();
+    std::vector<cv::Point> vec(dets.size());
+    std::transform(std::begin(data), std::end(data), std::begin(vec),
+        [](auto pair) { return pair.second.position; });
+    return vec;
+}
+
+void Tui::panoramaPrefs(const std::string& args)
+{
+    std::vector<std::string> words;
+    extractWords(args, std::back_inserter(words));
+
+    if (words.empty() || words.size() % 2 != 0)
+    {
+        std::cout << mPanoSettings << std::endl;
+        return;
+    }
+
+    for (std::size_t i = 0; i <= words.size() / 2; i += 2)
+    {
+        if (words[i] == "rows")
+            mPanoSettings.rows = std::stoi(words[i + 1]);
+        else if (words[i] == "cols")
+            mPanoSettings.cols = std::stoi(words[i + 1]);
+        else if (words[i] == "cacheSize")
+            mPanoSettings.cacheSize = std::stoi(words[i + 1]);
+        else if (words[i] == "ftType")
+        {
+            if (words[i + 1] == "ORB")
+                mPanoSettings.ftType = ht::FeatureType::ORB;
+            else if (words[i + 1] == "SIFT")
+                mPanoSettings.ftType = ht::FeatureType::SIFT;
+            else if (words[i + 1] == "SuperPoint")
+                mPanoSettings.ftType = ht::FeatureType::SuperPoint;
+        }
+        else if (words[i] == "numFts")
+            mPanoSettings.numFts = std::stoi(words[i + 1]);
+        else if (words[i] == "minCoverage")
+            mPanoSettings.minCoverage = std::stod(words[i + 1]);
+        else if (words[i] == "force")
+            mPanoSettings.force = std::stoi(words[i + 1]);
+        else if (words[i] == "stage")
+        {
+            if (words[i + 1] == "Initialization")
+                mPanoSettings.stage = ht::PanoramaStage::Initialization;
+            else if (words[i + 1] == "Optimization")
+                mPanoSettings.stage = ht::PanoramaStage::Optimization;
+            else if (words[i + 1] == "Refinement")
+                mPanoSettings.stage = ht::PanoramaStage::Refinement;
+        }
+
+        else if (words[i] == "overlayCenters")
+            mPanoSettings.overlayCenters = std::stoi(words[i + 1]);
+        else if (words[i] == "overlayPoints")
+            mPanoSettings.overlayPoints = std::stoi(words[i + 1]);
+        else if (words[i] == "smooth")
+            mPanoSettings.smooth = std::stoi(words[i + 1]);
+
+        else if (words[i] == "writeReadable")
+            mPanoSettings.writeReadable = std::stoi(words[i + 1]);
+
+    }
+
+}
 } // namespace tui

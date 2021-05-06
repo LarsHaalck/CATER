@@ -5,6 +5,7 @@
 #include <string>
 
 #include "habitrack/habiTrack.h"
+#include "panorama/panoramaEngine.h"
 
 namespace tui
 {
@@ -29,6 +30,8 @@ private:
     void optimize() { mHabiTrack.optimizeUnaries(); }
     void track() { mHabiTrack.runFullPipeline(); }
 
+    std::vector<cv::Point> getDetections() const;
+
     void addPanorama(const std::string& args);
     void listPanorama();
     void generatePanorama();
@@ -51,6 +54,7 @@ private:
 private:
     ht::HabiTrack mHabiTrack;
     std::vector<std::filesystem::path> mPanoFiles;
+    ht::PanoramaSettings mPanoSettings;
 };
 
 } // namespace tui
