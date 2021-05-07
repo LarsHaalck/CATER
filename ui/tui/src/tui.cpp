@@ -89,7 +89,7 @@ void Tui::prefs(const std::string& args)
     }
 
     auto currPrefs = mHabiTrack.getPreferences();
-    for (std::size_t i = 0; i <= words.size() / 2; i += 2)
+    for (std::size_t i = 0; i < words.size(); i += 2)
     {
         if (words[i] == "cacheSize")
             currPrefs.cacheSize = std::stoi(words[i + 1]);
@@ -197,7 +197,7 @@ void Tui::panoramaPrefs(const std::string& args)
         return;
     }
 
-    for (std::size_t i = 0; i <= words.size() / 2; i += 2)
+    for (std::size_t i = 0; i < words.size(); i += 2)
     {
         if (words[i] == "rows")
             mPanoSettings.rows = std::stoi(words[i + 1]);
