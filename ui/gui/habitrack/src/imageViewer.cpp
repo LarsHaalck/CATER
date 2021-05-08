@@ -254,6 +254,9 @@ cv::Mat ImageViewer::processItem(
         }
     }
 
+    /* std::stringstream filename; */
+    /* filename << std::setw(3) << std::setfill('0') << idx; */
+    /* cv::imwrite(std::string("out/") + std::string("detections_") + filename.str() + ".png", frame); */
     return frame;
 }
 
