@@ -13,6 +13,10 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+/* #include <image-processing/transformation.h> */
+/* #include <opencv2/highgui.hpp> */
+/* #include <opencv2/imgproc.hpp> */
+
 namespace fs = std::filesystem;
 
 namespace ht
@@ -105,6 +109,23 @@ void HabiTrack::loadResultsFile(const fs::path& resultFile)
             }
         }
     }
+
+    /* auto trafs = trafos(); */
+    /* for (int i = 0; i < 150; i++) */
+    /* { */
+    /*     auto currImg = mImages.at(i); */
+    /*     cv::Mat trafo = transformation::getIdentity(true); */
+    /*     for (int j = i; j >= 1; j--) */
+    /*     { */
+    /*         trafo = transformation::invert( */
+    /*                 trafs.at({j - 1, j}), GeometricType::Homography) * trafo; */
+    /*     } */
+    /*     cv::warpPerspective(currImg, currImg, trafo, currImg.size()); */
+
+    /*     std::stringstream filename; */
+    /*     filename << std::setw(3) << std::setfill('0') << i; */
+    /*     cv::imwrite(std::string("out/") + std::string("wrap_") + filename.str() + ".png", currImg); */
+    /* } */
 }
 
 void HabiTrack::saveResultsFile()
