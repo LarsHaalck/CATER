@@ -171,7 +171,7 @@ void PanoWizard::processSingle(const fs::path& resFile)
     auto end = std::get<3>(resTuple);
 
     Images images(imgFolder);
-    images.clip(start, end);
+    images.clip(start, end + 1);
 
     std::vector<cv::Point> pts;
     if (settings.overlayCenters)
@@ -197,7 +197,7 @@ void PanoWizard::processMultiple()
         auto start = std::get<2>(resTuple);
         auto end = std::get<3>(resTuple);
         Images currImgs(imgFolder);
-        currImgs.clip(start, end);
+        currImgs.clip(start, end + 1);
 
         images.push_back(currImgs);
         data.push_back(resFile.parent_path() / "panorama");

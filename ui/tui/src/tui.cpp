@@ -166,7 +166,7 @@ void Tui::listPanorama()
 void Tui::generatePanorama()
 {
     ht::Images images = mHabiTrack.images();
-    images.clip(mHabiTrack.getStartFrame(), mHabiTrack.getEndFrame());
+    images.clip(mHabiTrack.getStartFrame(), mHabiTrack.getEndFrame() + 1);
 
     std::vector<cv::Point> pts;
     if (mPanoSettings.overlayCenters)
