@@ -11,7 +11,8 @@ RUN apt update && \
         qtbase5-private-dev \
         qtmultimedia5-dev \
         libqt5multimedia5-plugins \
-        ca-certificates
+        ca-certificates \
+        gdb
 
 
 # vi: ft=dockerfile
