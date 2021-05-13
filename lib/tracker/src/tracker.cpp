@@ -301,11 +301,15 @@ Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<s
 std::pair<double, double> Tracker::calcBearingAndQuality(std::size_t lastIdx, std::size_t idx,
     cv::Point lastPos, cv::Point pos, const PairwiseTrafos& trafos)
 {
-    auto transLastPos
-        = transformPoint(lastPos, trafos.at({lastIdx, idx}), GeometricType::Homography);
-    auto theta = util::calcAngle(transLastPos, pos);
-    auto thetaQuality = util::euclidianDist<double>(transLastPos, pos);
-    return {theta, thetaQuality};
+    if (trafos.count({lastIdx, idx}) > 0)
+    {
+        auto transLastPos
+            = transformPoint(lastPos, trafos.at({lastIdx, idx}), GeometricType::Homography);
+        auto theta = util::calcAngle(transLastPos, pos);
+        auto thetaQuality = util::euclidianDist<double>(transLastPos, pos);
+        return {theta, thetaQuality};
+    }
+    return {0, -1};
 }
 
 void Tracker::smoothBearing(Detections& detections, const Settings& settings)

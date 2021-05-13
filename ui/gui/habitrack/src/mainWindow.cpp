@@ -564,12 +564,6 @@ void MainWindow::on_trafosExtracted()
 {
     auto size = mHabiTrack.trafos().size();
     ui->labelNumTrafos->setText(QString::number(size));
-
-    if (!mHabiTrack.hasUsableTrafos())
-    {
-        emit warn(
-            "Exracted Transformations not a continous chain, Consider increasing feature points.");
-    }
 }
 
 void MainWindow::on_buttonExtractUnaries_clicked()
