@@ -29,72 +29,104 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
 
     auto numImgs = end - start;
 
-    // get pairs for consecutive frames
-    std::vector<std::pair<std::size_t, std::size_t>> pairs;
-    pairs.reserve(numImgs - 1);
-    for (std::size_t i = start; i < end - 1; i++)
-        pairs.push_back({i, i + 1});
-
-    auto cache = imgContainer.getPairwiseCache(cacheSize, pairs);
-    spdlog::info("Computing unaries");
-
     if (!cb)
         cb = std::make_shared<ProgressBar>();
     cb->status("Computing Unaries");
-    cb->setTotal(cache.getNumChunks());
-    for (std::size_t i = 0; i < cache.getNumChunks(); i++)
+    cb->setTotal(numImgs);
+
+    std::vector<cv::Mat> unaries(numImgs);
+    for (std::size_t i = start + 1; i < end - 1; i++)
     {
-        auto chunk = cache.getChunk(i);
-        auto lower = cache.getChunkBounds(i).first;
-        spdlog::debug("Got chunk {}/{} with size {}", i + 1, cache.getNumChunks(), chunk.size());
+        /* cv::Mat dm2; */
+        /* if (start >= 2) */
+        /*     dm2 = imgContainer.at(i - 2); */
 
-        std::vector<cv::Mat> unaries(cache.getChunkSize(i));
-#pragma omp parallel for
-        for (std::size_t k = 0; k < cache.getChunkSize(i); k++)
+        cv::Mat o1;
+
+        /* auto ref = imgContainer.at(i); */
+        /* if (removeLaser) */
+        /*     o1 = getOOPO1(ref); */
+        /* cv::cvtColor(ref, ref, cv::COLOR_BGR2GRAY); */
+
+        /* cv::Mat dm1; */
+        /* if (i > start) */
+        /* { */
+        /*     dm1 = imgContainer.at(i - 1); */
+        /*     if (removeLaser) */
+        /*         o1 += getOOPO1(dm1); */
+        /*     cv::cvtColor(dm1, dm1, cv::COLOR_BGR2GRAY); */
+
+        /*     auto trafo = makeFull(trafos.at({i - 1, i})); */
+        /*     cv::Mat mask(dm1.size(), CV_8UC1, cv::Scalar(255)); */
+        /*     cv::warpPerspective(dm1, dm1, trafo, dm1.size()); */
+        /*     cv::warpPerspective(mask, mask, trafo, dm1.size()); */
+
+        /*     dm1 = ref - dm1; */
+        /*     cv::bitwise_and(dm1, mask, dm1); */
+        /* } */
+
+        /* cv::Mat dp1; */
+        /* if (i < end - 1) */
+        /* { */
+        /*     dp1 = imgContainer.at(i + 1); */
+        /*     if (removeLaser) */
+        /*         o1 += getOOPO1(dp1); */
+        /*     cv::cvtColor(dp1, dp1, cv::COLOR_BGR2GRAY); */
+
+        /*     auto trafo = invert(trafos.at({i, i + 1}), GeometricType::Homography); */
+        /*     cv::Mat mask(dp1.size(), CV_8UC1, cv::Scalar(255)); */
+        /*     cv::warpPerspective(dp1, dp1, trafo, dp1.size()); */
+        /*     cv::warpPerspective(mask, mask, trafo, dp1.size()); */
+
+        /*     dp1 = ref - dp1; */
+        /*     cv::bitwise_and(dp1, mask, dp1); */
+        /* } */
+
+        /* cv::Mat diff = dp1; */
+        /* if (!dm1.empty()) */
+            /* cv::add(diff, dm1, diff); */
+            /* diff = dm1; */
+            /* cv::multiply(diff, dm1, diff); */
+            /* cv::add(diff, dm1, diff); */
+
+
+        // dm1
+        auto dm1 = imgContainer.at(i - 1);
+        auto dp1 = imgContainer.at(i + 1);
+        if (removeLaser)
         {
-            auto currPair = pairs[lower + k];
-            auto ref = chunk[currPair.first];
-            auto next = chunk[currPair.second];
-            cv::Mat ref_gray, next_gray;
-            cv::cvtColor(ref, ref_gray, cv::COLOR_BGR2GRAY);
-            cv::cvtColor(next, next_gray, cv::COLOR_BGR2GRAY);
-
-            cv::Mat diff;
-            if (!trafos.empty())
-            {
-                if (trafos.count(currPair))
-                {
-                    auto trafo = invert(trafos.at(currPair), GeometricType::Homography);
-
-                    cv::Mat next_mask(next.size(), CV_8UC1, cv::Scalar(255));
-                    cv::Mat next_warped, next_warped_mask;
-                    cv::warpPerspective(next_gray, next_warped, trafo, next.size());
-                    cv::warpPerspective(next_mask, next_warped_mask, trafo, next.size());
-
-                    diff = ref_gray - next_warped;
-                    cv::bitwise_and(diff, next_warped_mask, diff);
-                }
-                else
-                    diff = cv::Mat::zeros(ref_gray.size(), ref_gray.type());
-            }
-            else
-                diff = ref_gray - next_gray;
-
-            if (removeLaser)
-            {
-                cv::Mat o1ref = getOOPO1(ref);
-                cv::Mat o1next = getOOPO1(next);
-                cv::Mat o1 = o1ref + o1next;
-                diff = diff - o1;
-            }
-            cv::Mat resizedUnary;
-            cv::resize(diff, resizedUnary, cv::Size(), subsample, subsample, cv::INTER_LINEAR);
-            spdlog::debug("Unary computed of image {}", currPair.first);
-            unaries[k] = resizedUnary;
+            o1 = getOOPO1(dm1);
+            o1 += getOOPO1(dp1);
         }
-        writeChunk(imgContainer, unDir, cache.getChunkBounds(i), unaries, start);
+        cv::cvtColor(dm1, dm1, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(dp1, dp1, cv::COLOR_BGR2GRAY);
+
+        cv::Mat trafo = trafos.at({i, i + 1}) * makeFull(trafos.at({i - 1, i}));
+        cv::Mat mask(dm1.size(), CV_8UC1, cv::Scalar(255));
+        cv::warpPerspective(dm1, dm1, trafo, dm1.size());
+        cv::warpPerspective(mask, mask, trafo, dm1.size());
+
+        cv::Mat diff = dp1 - dm1;
+        cv::bitwise_and(diff, mask, diff);
+
+        trafo = invert(trafos.at({i, i + 1}), GeometricType::Homography);
+        mask = cv::Mat(diff.size(), CV_8UC1, cv::Scalar(255));
+        cv::warpPerspective(diff, diff, trafo, diff.size());
+        cv::warpPerspective(mask, mask, trafo, diff.size());
+
+        cv::bitwise_and(diff, mask, diff);
+
+        if (removeLaser)
+            diff = diff - o1;
+
+        cv::Mat resizedUnary;
+        cv::resize(diff, resizedUnary, cv::Size(), subsample, subsample, cv::INTER_LINEAR);
+        spdlog::debug("Unary computed of image {}", i);
+        unaries[i] = resizedUnary;
         cb->inc();
     }
+    unaries[0] = unaries[1];
+    writeChunk(imgContainer, unDir, {start, end - 1}, unaries, start);
     cb->done();
     writeProperties(unDir, subsample, sigma, !trafos.empty());
 
@@ -105,6 +137,95 @@ Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std:
     spdlog::warn("Unaries were not computed sucessfully");
     return Unaries {};
 }
+
+/* Unaries Unaries::compute(const Images& imgContainer, const fs::path& unDir, std::size_t start, */
+/*     std::size_t end, bool removeLaser, double subsample, double sigma, const PairwiseTrafos& trafos, */
+/*     std::size_t cacheSize, std::shared_ptr<BaseProgressBar> cb) */
+/* { */
+/*     // make sure folder exits */
+/*     if (!fs::exists(unDir) || !fs::is_directory(unDir)) */
+/*         fs::create_directories(unDir); */
+
+/*     end = std::min(imgContainer.size(), end); */
+
+/*     auto numImgs = end - start; */
+
+/*     // get pairs for consecutive frames */
+/*     std::vector<std::pair<std::size_t, std::size_t>> pairs; */
+/*     pairs.reserve(numImgs - 1); */
+/*     for (std::size_t i = start; i < end - 1; i++) */
+/*         pairs.push_back({i, i + 1}); */
+
+/*     auto cache = imgContainer.getPairwiseCache(cacheSize, pairs); */
+/*     spdlog::info("Computing unaries"); */
+
+/*     if (!cb) */
+/*         cb = std::make_shared<ProgressBar>(); */
+/*     cb->status("Computing Unaries"); */
+/*     cb->setTotal(cache.getNumChunks()); */
+/*     for (std::size_t i = 0; i < cache.getNumChunks(); i++) */
+/*     { */
+/*         auto chunk = cache.getChunk(i); */
+/*         auto lower = cache.getChunkBounds(i).first; */
+/*         spdlog::debug("Got chunk {}/{} with size {}", i + 1, cache.getNumChunks(), chunk.size()); */
+
+/*         std::vector<cv::Mat> unaries(cache.getChunkSize(i)); */
+/* #pragma omp parallel for */
+/*         for (std::size_t k = 0; k < cache.getChunkSize(i); k++) */
+/*         { */
+/*             auto currPair = pairs[lower + k]; */
+/*             auto ref = chunk[currPair.first]; */
+/*             auto next = chunk[currPair.second]; */
+/*             cv::Mat ref_gray, next_gray; */
+/*             cv::cvtColor(ref, ref_gray, cv::COLOR_BGR2GRAY); */
+/*             cv::cvtColor(next, next_gray, cv::COLOR_BGR2GRAY); */
+
+/*             cv::Mat diff; */
+/*             if (!trafos.empty()) */
+/*             { */
+/*                 if (trafos.count(currPair)) */
+/*                 { */
+/*                     auto trafo = invert(trafos.at(currPair), GeometricType::Homography); */
+
+/*                     cv::Mat next_mask(next.size(), CV_8UC1, cv::Scalar(255)); */
+/*                     cv::Mat next_warped, next_warped_mask; */
+/*                     cv::warpPerspective(next_gray, next_warped, trafo, next.size()); */
+/*                     cv::warpPerspective(next_mask, next_warped_mask, trafo, next.size()); */
+
+/*                     diff = ref_gray - next_warped; */
+/*                     cv::bitwise_and(diff, next_warped_mask, diff); */
+/*                 } */
+/*                 else */
+/*                     diff = cv::Mat::zeros(ref_gray.size(), ref_gray.type()); */
+/*             } */
+/*             else */
+/*                 diff = ref_gray - next_gray; */
+
+/*             if (removeLaser) */
+/*             { */
+/*                 cv::Mat o1ref = getOOPO1(ref); */
+/*                 cv::Mat o1next = getOOPO1(next); */
+/*                 cv::Mat o1 = o1ref + o1next; */
+/*                 diff = diff - o1; */
+/*             } */
+/*             cv::Mat resizedUnary; */
+/*             cv::resize(diff, resizedUnary, cv::Size(), subsample, subsample, cv::INTER_LINEAR); */
+/*             spdlog::debug("Unary computed of image {}", currPair.first); */
+/*             unaries[k] = resizedUnary; */
+/*         } */
+/*         writeChunk(imgContainer, unDir, cache.getChunkBounds(i), unaries, start); */
+/*         cb->inc(); */
+/*     } */
+/*     cb->done(); */
+/*     writeProperties(unDir, subsample, sigma, !trafos.empty()); */
+
+/*     // sanity check */
+/*     if (isComputed(imgContainer, unDir, start, end)) */
+/*         return Unaries::fromDir(imgContainer, unDir, start, end); */
+
+/*     spdlog::warn("Unaries were not computed sucessfully"); */
+/*     return Unaries {}; */
+/* } */
 
 bool Unaries::isComputed(
     const Images& imgContainer, const fs::path& unDir, std::size_t start, std::size_t end)
