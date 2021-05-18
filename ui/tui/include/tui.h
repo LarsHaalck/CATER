@@ -30,7 +30,7 @@ private:
     void optimize() { mHabiTrack.optimizeUnaries(); }
     void track() { mHabiTrack.runFullPipeline(); }
 
-    std::vector<cv::Point> getDetections() const;
+    std::vector<cv::Point> getDetections(const ht::HabiTrack& habitrack) const;
 
     void addPanorama(const std::string& args);
     void listPanorama();

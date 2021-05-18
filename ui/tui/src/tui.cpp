@@ -60,13 +60,13 @@ int Tui::parse(const std::string& response)
         optimize();
     else if (cmd == "track")
         track();
-    else if (cmd == "panorama_add")
+    else if (cmd == "pano_add")
         addPanorama(args);
-    else if (cmd == "panorama_list")
+    else if (cmd == "pano_list")
         listPanorama();
-    else if (cmd == "panorama_gen")
+    else if (cmd == "pano_gen")
         generatePanorama();
-    else if (cmd == "panorama_prefs")
+    else if (cmd == "pano_prefs")
         panoramaPrefs(args);
     else
     {
@@ -147,11 +147,14 @@ void Tui::prefs(const std::string& args)
 
 void Tui::addPanorama(const std::string& args)
 {
-    if (std::find(std::begin(mPanoFiles), std::end(mPanoFiles), args) == std::end(mPanoFiles))
+    if (std::find(std::begin(mPanoFiles), std::end(mPanoFiles), args) != std::end(mPanoFiles))
         return;
 
     if (!fs::is_regular_file(args))
+    {
+        std::cout << "Passed argument is not a file" << std::endl;
         return;
+    }
 
     mPanoFiles.push_back(args);
 }
@@ -165,20 +168,43 @@ void Tui::listPanorama()
 
 void Tui::generatePanorama()
 {
-    ht::Images images = mHabiTrack.images();
-    images.clip(mHabiTrack.getStartFrame(), mHabiTrack.getEndFrame() + 1);
+    std::vector<ht::Images> images;
+    std::vector<fs::path> data;
 
     std::vector<cv::Point> pts;
-    if (mPanoSettings.overlayCenters)
-        pts = getDetections();
+    std::vector<std::size_t> chunkSizes;
+    for (auto resFile : mPanoFiles)
+    {
+        ht::HabiTrack habitrack;
+        habitrack.loadResultsFile(resFile);
+        ht::Images currImages = habitrack.images();
+        currImages.clip(habitrack.getStartFrame(), habitrack.getEndFrame() + 1);
 
-    ht::PanoramaEngine::runSingle(images, mHabiTrack.getOutputPath() / "panorama", mPanoSettings,
-        pts, mHabiTrack.getPreferences().chunkSize);
+        std::vector<cv::Point> currPts;
+        if (mPanoSettings.overlayPoints)
+            currPts = getDetections(habitrack);
+
+        auto outPath = habitrack.getOutputPath() / "panorama";
+        ht::PanoramaEngine::runSingle(
+            currImages, outPath, mPanoSettings, currPts, habitrack.getPreferences().chunkSize);
+
+        images.push_back(currImages);
+        data.push_back(outPath);
+        pts.insert(std::end(pts), std::begin(currPts), std::end(currPts));
+
+        chunkSizes.push_back(habitrack.getPreferences().chunkSize);
+    }
+
+    if (mPanoFiles.size() <= 1)
+        return;
+
+    auto outFolder = mPanoFiles[0].parent_path() / "panorama_combined";
+    ht::PanoramaEngine::runMulti(images, data, outFolder, mPanoSettings, pts, chunkSizes);
 }
 
-std::vector<cv::Point> Tui::getDetections() const
+std::vector<cv::Point> Tui::getDetections(const ht::HabiTrack& habitrack) const
 {
-    auto dets = mHabiTrack.detections();
+    auto dets = habitrack.detections();
     auto data = dets.cdata();
     std::vector<cv::Point> vec(dets.size());
     std::transform(std::begin(data), std::end(data), std::begin(vec),
@@ -239,8 +265,6 @@ void Tui::panoramaPrefs(const std::string& args)
 
         else if (words[i] == "writeReadable")
             mPanoSettings.writeReadable = std::stoi(words[i + 1]);
-
     }
-
 }
 } // namespace tui

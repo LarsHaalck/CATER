@@ -174,7 +174,7 @@ void PanoWizard::processSingle(const fs::path& resFile)
     images.clip(start, end + 1);
 
     std::vector<cv::Point> pts;
-    if (settings.overlayCenters)
+    if (settings.overlayPoints)
         pts = getDetections(resFile);
 
     PanoramaEngine::runSingle(images, resFile.parent_path() / "panorama", settings, pts,
@@ -202,7 +202,7 @@ void PanoWizard::processMultiple()
         images.push_back(currImgs);
         data.push_back(resFile.parent_path() / "panorama");
 
-        if (settings.overlayCenters)
+        if (settings.overlayPoints)
         {
             auto currPts = getDetections(resFile);
             pts.insert(std::end(pts), std::begin(currPts), std::end(currPts));
