@@ -41,13 +41,13 @@ std::vector<cv::Point2d> zipTransform(
         for (std::size_t i = 0; i < Hs.size(); i++)
         {
             auto ptId = (i < points.size()) ? i : points.size() - 1;
-            ptsTrans.push_back(transformPoint(points[ptId], Hs[i], type));
+            ptsTrans[i] = transformPoint(points[ptId], Hs[i], type);
         }
     }
     else
     {
         for (std::size_t i = 0; i < Hs.size(); i++)
-            ptsTrans.push_back(transformPoint(points[0], Hs[i], type));
+            ptsTrans[i] = transformPoint(points[0], Hs[i], type);
     }
 
     return ptsTrans;
