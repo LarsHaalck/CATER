@@ -20,7 +20,7 @@ private:
     void prefs(const std::string& args);
 
     void openImages(const std::filesystem::path& imgPath) { mHabiTrack.loadImageFolder(imgPath); }
-    void loadResults(const std::filesystem::path& resFile) { mHabiTrack.loadResultsFile(resFile); }
+    void loadResults(const std::filesystem::path& resFile);
     void setStart(const std::string& args) { mHabiTrack.setStartFrame(std::stoul(args)); }
     void setEnd(const std::string& args) { mHabiTrack.setEndFrame(std::stoul(args)); }
     void save() { mHabiTrack.saveResultsFile(); }

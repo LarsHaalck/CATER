@@ -77,6 +77,12 @@ int Tui::parse(const std::string& response)
     return 0;
 }
 
+void Tui::loadResults(const std::filesystem::path& resFile)
+{
+    mHabiTrack.loadResultsFile(resFile);
+    addPanorama(resFile);
+}
+
 void Tui::prefs(const std::string& args)
 {
     std::vector<std::string> words;
