@@ -35,12 +35,14 @@ std::vector<cv::Point2d> zipTransform(
     assert((points.size() <= Hs.size() || points.size() == 1)
         && "Size of points and trafos does not match or points size is not 1 in zipTransform");
 
-    std::vector<cv::Point2d> ptsTrans;
-    ptsTrans.reserve(Hs.size());
+    std::vector<cv::Point2d> ptsTrans(Hs.size());
     if (points.size() != 1)
     {
-        for (std::size_t i = 0; i < points.size(); i++)
-            ptsTrans.push_back(transformPoint(points[i], Hs[i], type));
+        for (std::size_t i = 0; i < Hs.size(); i++)
+        {
+            auto ptId = (i < points.size()) ? i : points.size() - 1;
+            ptsTrans.push_back(transformPoint(points[ptId], Hs[i], type));
+        }
     }
     else
     {
