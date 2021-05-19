@@ -330,7 +330,7 @@ namespace PanoramaEngine
         cv::imwrite(basePath / "combined1_opt_sparse.png", std::get<0>(panoTuple));
 
         detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
-            basePath / "pano0_opt_sparse", settings, combinedImgContainer.getCenter(), chunkSizes,
+            basePath / "combined1_opt_sparse", settings, combinedImgContainer.getCenter(), chunkSizes,
             sizes);
 
         if (settings.stage < PanoramaStage::Refinement)
@@ -351,7 +351,7 @@ namespace PanoramaEngine
         cv::imwrite(basePath / "combined2_opt_dense.png", std::get<0>(panoTuple));
 
         detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
-            basePath / "pano0_opt_sparse", settings, combinedImgContainer.getCenter(), chunkSizes,
+            basePath / "combined2_opt_dense", settings, combinedImgContainer.getCenter(), chunkSizes,
             sizes);
     }
 
