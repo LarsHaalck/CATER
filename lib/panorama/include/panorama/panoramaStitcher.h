@@ -42,7 +42,7 @@ class PanoramaStitcher
 {
 public:
     PanoramaStitcher(const BaseImageContainer& images, const std::vector<size_t>& keyFrames,
-        GeometricType type, const cv::Mat& camMat = cv::Mat(),
+        GeometricType type, bool temporalConsistency = false, const cv::Mat& camMat = cv::Mat(),
         const cv::Mat& distCoeffs = cv::Mat());
 
     void initTrafos(const PairwiseTrafos& trafos);
@@ -83,6 +83,8 @@ private:
     void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, const cv::Point2f& ptJ,
         cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
         std::vector<double>* paramsI, std::vector<double>* paramsJ, float response, float weight);
+    void addTemporalConsistencyLoss(ceres::Problem& problem, cv::Mat* trafoI, cv::Mat* trafoJ);
+
     void reconstructTrafos(FramesMode framesMode);
 
     std::vector<double> getCamParameterization() const;
@@ -109,6 +111,8 @@ private:
     std::unordered_set<std::size_t> mKeyFramesSet;
     GeometricType mType;
     /* std::vector<std::size_t> mSizes; // only used for IVLC */
+
+    bool mTmpConst;
 
     cv::Mat mCamMat;
     cv::Mat mCamMatInv;

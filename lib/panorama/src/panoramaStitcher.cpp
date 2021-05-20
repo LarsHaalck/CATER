@@ -9,6 +9,7 @@
 #include "isometryGlobalOptimizer.h"
 #include "progressbar/progressBar.h"
 #include "similarityGlobalOptimizer.h"
+#include "similarityTemporalConsistencyOptimizer.h"
 #include "util/algorithm.h"
 #include "util/stopWatch.h"
 
@@ -35,13 +36,13 @@ using namespace ht::io;
 namespace ht
 {
 PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
-    const std::vector<size_t>& keyFrames, GeometricType type, const cv::Mat& camMat,
-    const cv::Mat& distCoeffs)
+    const std::vector<size_t>& keyFrames, GeometricType type, bool temporalConsistency,
+    const cv::Mat& camMat, const cv::Mat& distCoeffs)
     : mImages(images)
     , mKeyFrames(keyFrames)
     , mKeyFramesSet(std::begin(keyFrames), std::end(keyFrames))
     , mType(type)
-    /* , mSizes() */
+    , mTmpConst(temporalConsistency)
     , mCamMat(camMat)
     , mCamMatInv()
     , mDistCoeffs(distCoeffs)
@@ -505,6 +506,7 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
             addFunctor(problem, ftsI[k].pt, ftsJ[k].pt, trafoI, trafoJ, camParams.data(),
                 distParams.data(), paramsI, paramsJ, ftsI[k].response * ftsJ[k].response, w);
         }
+
         if (framesMode == FramesMode::AllFrames && isKeyFrame(idI))
         {
             // TODO: check if iso
@@ -518,6 +520,21 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
 
         if (cb)
             cb->inc();
+    }
+
+    if (mTmpConst && framesMode == FramesMode::AllFrames)
+    {
+        for (std::size_t i = 0; i < mOptimizedTrafos.size() - 1; i++)
+        {
+            cv::Mat* trafoI = &mOptimizedTrafos[i];
+            cv::Mat* trafoJ = &mOptimizedTrafos[i + 1];
+            addTemporalConsistencyLoss(problem, trafoI, trafoJ);
+
+            if (isKeyFrame(i))
+                problem.SetParameterBlockConstant(trafoI->ptr<double>(0));
+            if (isKeyFrame(i + 1))
+                problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
+        }
     }
 
     if (cb)
@@ -678,6 +695,29 @@ void PanoramaStitcher::addFunctor(ceres::Problem& problem, const cv::Point2f& pt
     }
     default:
         break;
+    }
+}
+
+void PanoramaStitcher::addTemporalConsistencyLoss(
+    ceres::Problem& problem, cv::Mat* trafoI, cv::Mat* trafoJ)
+{
+    switch (mType)
+    {
+    case GeometricType::Similarity:
+    {
+        using Functor = SimilarityTemporalConsistencyFunctor;
+        Functor* functor = new Functor();
+
+        problem.AddResidualBlock(new ceres::AutoDiffCostFunction<Functor, 5, 6, 6>(functor),
+            new ceres::ScaledLoss(new ceres::HuberLoss(1.0), 0.01, ceres::Ownership::TAKE_OWNERSHIP),
+            trafoI->ptr<double>(0), trafoJ->ptr<double>(0));
+        break;
+    }
+    default:
+    {
+        spdlog::warn("Temporal Consistency not implemented for {}", mType);
+        break;
+    }
     }
 }
 
