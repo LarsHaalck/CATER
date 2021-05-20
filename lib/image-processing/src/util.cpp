@@ -199,9 +199,9 @@ std::vector<cv::Point> smoothBoundaries(const std::vector<cv::Point>& pts, std::
         auto weights = detail::getCauchyWeights(w);
 
         auto splX = BSplineCurve::splrep(ids,
-            Vec(std::begin(x) + ids.front(), std::begin(x) + ids.back() + 1), weights, {}, {}, 3);
+            Vec(std::begin(x) + ids.front(), std::begin(x) + ids.back() + 1), weights, {}, {}, 1);
         auto splY = BSplineCurve::splrep(ids,
-            Vec(std::begin(y) + ids.front(), std::begin(y) + ids.back() + 1), weights, {}, {}, 3);
+            Vec(std::begin(y) + ids.front(), std::begin(y) + ids.back() + 1), weights, {}, {}, 1);
 
         auto xSmoothed = splX(ids);
         auto ySmoothed = splY(ids);
