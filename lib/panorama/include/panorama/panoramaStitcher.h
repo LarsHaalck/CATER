@@ -83,7 +83,8 @@ private:
     void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, const cv::Point2f& ptJ,
         cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
         std::vector<double>* paramsI, std::vector<double>* paramsJ, float response, float weight);
-    void addTemporalConsistencyLoss(ceres::Problem& problem, cv::Mat* trafoI, cv::Mat* trafoJ);
+    void addTemporalConsistencyLoss(
+        ceres::Problem& problem, cv::Mat* trafo0, cv::Mat* trafo1, cv::Mat* trafo2);
 
     void reconstructTrafos(FramesMode framesMode);
 

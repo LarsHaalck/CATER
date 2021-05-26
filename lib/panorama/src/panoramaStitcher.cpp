@@ -355,7 +355,7 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
     std::vector<bool> res(boundedMatches.size());
     PreciseStopWatch timer;
 // optimization problems might have very different sizes so use dynamic scheduling
-#pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < boundedMatches.size(); i++)
     {
         res[i] = globalOptimize(fts, boundedMatches[i], FramesMode::AllFrames, limitTo, false);
@@ -477,9 +477,16 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         cb->setTotal(matches.size());
     }
 
+    std::size_t start = mOptimizedTrafos.size();
+    std::size_t end = 0;
     for (const auto& [pair, match] : matches)
     {
         auto [idI, idJ] = pair;
+        if (idI < start || idJ < start)
+            start = std::min(idI, idJ);
+        if (idI > end || idJ > end)
+            end = std::max(idI, idJ);
+
         cv::Mat* trafoI = &mOptimizedTrafos[idI];
         cv::Mat* trafoJ = &mOptimizedTrafos[idJ];
         std::vector<double>* paramsI = &mOptimizedParams[idI];
@@ -522,18 +529,22 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
             cb->inc();
     }
 
-    if (mTmpConst && framesMode == FramesMode::AllFrames)
+    if (true && framesMode == FramesMode::AllFrames)
     {
-        for (std::size_t i = 0; i < mOptimizedTrafos.size() - 1; i++)
+        spdlog::debug("Regularizing between {} and {}", start, end);
+        for (std::size_t i = start; i < end - 2; i++)
         {
-            cv::Mat* trafoI = &mOptimizedTrafos[i];
-            cv::Mat* trafoJ = &mOptimizedTrafos[i + 1];
-            addTemporalConsistencyLoss(problem, trafoI, trafoJ);
+            cv::Mat* trafo0 = &mOptimizedTrafos[i];
+            cv::Mat* trafo1 = &mOptimizedTrafos[i + 1];
+            cv::Mat* trafo2 = &mOptimizedTrafos[i + 2];
+            addTemporalConsistencyLoss(problem, trafo0, trafo1, trafo2);
 
             if (isKeyFrame(i))
-                problem.SetParameterBlockConstant(trafoI->ptr<double>(0));
+                problem.SetParameterBlockConstant(trafo0->ptr<double>(0));
             if (isKeyFrame(i + 1))
-                problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
+                problem.SetParameterBlockConstant(trafo1->ptr<double>(0));
+            if (isKeyFrame(i + 2))
+                problem.SetParameterBlockConstant(trafo2->ptr<double>(0));
         }
     }
 
@@ -699,7 +710,7 @@ void PanoramaStitcher::addFunctor(ceres::Problem& problem, const cv::Point2f& pt
 }
 
 void PanoramaStitcher::addTemporalConsistencyLoss(
-    ceres::Problem& problem, cv::Mat* trafoI, cv::Mat* trafoJ)
+    ceres::Problem& problem, cv::Mat* trafo0, cv::Mat* trafo1, cv::Mat* trafo2)
 {
     switch (mType)
     {
@@ -708,9 +719,10 @@ void PanoramaStitcher::addTemporalConsistencyLoss(
         using Functor = SimilarityTemporalConsistencyFunctor;
         Functor* functor = new Functor();
 
-        problem.AddResidualBlock(new ceres::AutoDiffCostFunction<Functor, 5, 6, 6>(functor),
-            new ceres::ScaledLoss(new ceres::HuberLoss(1.0), 0.01, ceres::Ownership::TAKE_OWNERSHIP),
-            trafoI->ptr<double>(0), trafoJ->ptr<double>(0));
+        problem.AddResidualBlock(new ceres::AutoDiffCostFunction<Functor, 5, 6, 6, 6>(functor),
+            new ceres::ScaledLoss(
+                new ceres::HuberLoss(1.0), 100, ceres::Ownership::TAKE_OWNERSHIP),
+            trafo0->ptr<double>(0), trafo1->ptr<double>(0), trafo2->ptr<double>(0));
         break;
     }
     default:
