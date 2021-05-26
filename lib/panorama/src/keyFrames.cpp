@@ -177,7 +177,7 @@ namespace detail
         }
 
         /* double reprojError = calcReprojError(srcFiltered, dstFiltered, trafo); */
-        if (srcFiltered.size() < 10)
+        if (srcFiltered.size() < 30)
             return std::make_pair(0.0f, 0);
 
         return std::make_pair(

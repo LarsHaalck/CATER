@@ -16,7 +16,7 @@ namespace fs = std::filesystem;
 
 int main(int argc, const char** argv)
 {
-    /* spdlog::set_level(spdlog::level::debug); */
+    spdlog::set_level(spdlog::level::debug);
 
     fs::path basePath;
     bool showResults = false;
@@ -70,6 +70,7 @@ int main(int argc, const char** argv)
     settings.cols = cols;
     settings.numFts = numFts;
     settings.ftType = ftType;
+    settings.overlayCenters = true;
 
     // load images
     auto images = Images(basePath / "imgs");
