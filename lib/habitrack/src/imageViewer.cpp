@@ -1,4 +1,4 @@
-#include "imageViewer.h"
+#include "habitrack/imageViewer.h"
 
 #include "habitrack/habiTrack.h"
 
@@ -13,23 +13,31 @@ constexpr int right = k * left;
 
 using namespace ht;
 
-namespace gui
+namespace ht
 {
-ImageViewer::ImageViewer(const HabiTrack& habiTrack)
+ImageViewer::ImageViewer(const HabiTrack& habiTrack, bool disableCaching)
     : mHabiTrack(habiTrack)
+    , mTrafos()
     , mCachedUnaries(false)
     , mCurrent(-1)
     , mCache()
     , mQuit(false)
 {
-    mThread = std::thread(&ImageViewer::rebuildCache, this);
+    if (!disableCaching)
+        mThread = std::thread(&ImageViewer::rebuildCache, this);
+
+    if (mHabiTrack.matchesComputed())
+        mTrafos = mHabiTrack.trafos();
 }
 
 ImageViewer::~ImageViewer()
 {
     mQuit = true;
     mCondition.notify_all();
-    mThread.join();
+
+    // not joinable when caching is disabled
+    if (mThread.joinable())
+        mThread.join();
 }
 
 cv::Mat ImageViewer::getFrame(int frameNum, const VisSettings& settings)
@@ -55,6 +63,7 @@ cv::Mat ImageViewer::getFrame(int frameNum, const VisSettings& settings)
 
 void ImageViewer::reset()
 {
+    mTrafos = mHabiTrack.trafos();
     removeStale({mHabiTrack.images().size(), 0});
     mCondition.notify_all();
 }
@@ -212,7 +221,7 @@ cv::Mat ImageViewer::processItem(
         }
 
         // overlay manual unary as well
-        if (manualUnaries.exists(idx))
+        if (settings.showManual && manualUnaries.exists(idx))
         {
             auto unary = manualUnaries.previewUnaryAt(idx);
             cv::Mat unaryColor;
@@ -236,7 +245,7 @@ cv::Mat ImageViewer::processItem(
             start = idx - win;
 
         auto track
-            = detections.projectTo(start, idx, mHabiTrack.trafos(), GeometricType::Homography);
+            = detections.projectTo(start, idx, mTrafos, GeometricType::Homography);
         for (std::size_t i = 1; i < track.size(); ++i)
         {
             cv::Point pre = track.at(i - 1);
@@ -245,7 +254,7 @@ cv::Mat ImageViewer::processItem(
         }
 
         track = detections.projectFrom(
-            idx, idx + win, mHabiTrack.trafos(), GeometricType::Homography);
+            idx, idx + win, mTrafos, GeometricType::Homography);
         for (std::size_t i = 1; i < track.size(); ++i)
         {
             cv::Point pre = track.at(i - 1);
@@ -260,4 +269,4 @@ cv::Mat ImageViewer::processItem(
     return frame;
 }
 
-} // namespace gui
+} // namespace ht

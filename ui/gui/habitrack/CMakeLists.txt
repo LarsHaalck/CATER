@@ -15,7 +15,6 @@ set(SOURCES
     src/unaryScene.cpp
     src/unaryGraphicsView.cpp
     src/qtOpencvCore.cpp
-    src/imageViewer.cpp
     resources/resources.qrc
 
     # label editor
@@ -36,7 +35,6 @@ set(GUI_HEADERS
     include/trackerGraphicsView.h
     include/unaryScene.h
     include/unaryGraphicsView.h
-    include/imagesWorker.h
 
     # label editor
     include/labelEditor.h

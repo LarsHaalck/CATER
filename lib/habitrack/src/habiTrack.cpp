@@ -1,6 +1,7 @@
 #include "habitrack/habiTrack.h"
 
 #include "habitrack/resultsIO.h"
+#include "habitrack/imageViewer.h"
 #include "image-processing/util.h"
 #include "io/io.h"
 #include "progressbar/progressBar.h"
@@ -9,6 +10,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <opencv2/videoio.hpp>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -35,6 +37,8 @@ bool HabiTrack::featureComputed() const
 
 bool HabiTrack::matchesComputed() const
 {
+    if (mMatchFolder.empty())
+        return false;
     return matches::isComputed(mMatchFolder, GeometricType::Homography);
 }
 
@@ -126,6 +130,32 @@ void HabiTrack::loadResultsFile(const fs::path& resultFile)
     /*     filename << std::setw(3) << std::setfill('0') << i; */
     /*     cv::imwrite(std::string("out/") + std::string("wrap_") + filename.str() + ".png", currImg); */
     /* } */
+}
+
+void HabiTrack::generateVideo(const fs::path& videoFilename) const
+{
+    auto fps = mPrefs.fps > 0 ? mPrefs.fps : 25;
+    cv::VideoWriter video(
+        videoFilename, cv::VideoWriter::fourcc('m', 'p', '4', 'v'), fps, mImages.getImgSize());
+
+    if (!video.isOpened())
+        spdlog::critical("Could not write video, {} could not be opened", videoFilename);
+
+    ImageViewer::VisSettings settings;
+    settings.trajectory = true;
+    settings.trajectoryLength = fps;
+    settings.showManual = false;
+    ImageViewer viewer(*this, true);
+
+    mBar->status("Exporting Video");
+    mBar->setTotal(mEndFrameNumber - mStartFrameNumber);
+    for (auto i = mStartFrameNumber; i <= mEndFrameNumber; i++)
+    {
+        auto frame = viewer.getFrame(i, settings);
+        video.write(frame);
+        mBar->inc();
+    }
+    mBar->done();
 }
 
 void HabiTrack::saveResultsFile()

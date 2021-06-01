@@ -1,5 +1,5 @@
-#ifndef GUI_IMAGE_VIEWER_H
-#define GUI_IMAGE_VIEWER_H
+#ifndef HT_IMAGE_VIEWER_H
+#define HT_IMAGE_VIEWER_H
 
 #include <atomic>
 #include <condition_variable>
@@ -8,13 +8,14 @@
 #include <unordered_map>
 
 #include <opencv2/core.hpp>
+#include "image-processing/matchesTypes.h"
 
 namespace ht
 {
 class HabiTrack;
 }
 
-namespace gui
+namespace ht
 {
 class ImageViewer
 {
@@ -22,12 +23,13 @@ class ImageViewer
 public:
     struct VisSettings
     {
-        int unary;
-        bool detection;
-        bool bearing;
-        bool trajectory;
-        std::size_t trajectoryLength;
-        int radius;
+        int unary = 0;
+        bool showManual = true;
+        bool detection = true;
+        bool bearing = true;
+        bool trajectory = false;
+        std::size_t trajectoryLength = 0;
+        int radius = 20;
     };
 
 private:
@@ -38,7 +40,7 @@ private:
     };
 
 public:
-    ImageViewer(const ht::HabiTrack& habiTrack);
+    ImageViewer(const ht::HabiTrack& habiTrack, bool disableCaching = false);
     ~ImageViewer();
 
     cv::Mat getFrame(int frameNum, const VisSettings& settings);
@@ -55,6 +57,7 @@ private:
 
 private:
     const ht::HabiTrack& mHabiTrack;
+    PairwiseTrafos mTrafos;
 
     bool mCachedUnaries;
 
@@ -67,5 +70,5 @@ private:
     std::thread mThread;
 };
 
-} // namespace gui
-#endif // GUI_IMAGE_VIEWER_H
+} // namespace ht
+#endif // HT_IMAGE_VIEWER_H

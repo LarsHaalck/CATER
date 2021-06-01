@@ -6,13 +6,13 @@
 
 #include "gui/progressStatusBar.h"
 #include "guiPreferences.h"
-#include "imageViewer.h"
 #include "labelConfig.h"
 #include "labeler.h"
 #include "trackerScene.h"
 #include "unaryGraphicsView.h"
 
 #include "habitrack/habiTrack.h"
+#include "habitrack/imageViewer.h"
 #include <QFutureWatcher>
 #include <QMessageBox>
 #include <QtConcurrent>
@@ -76,6 +76,8 @@ private:
     void loadResults();
     void enqueueOptimization();
 
+    void generateVideo();
+
 signals:
     void toggleChunk(int chunk, bool compute);
     void warn(const QString& msg);
@@ -114,6 +116,7 @@ private slots:
     void on_actionLabelEditor_triggered();
     void on_actionPreferences_triggered();
     void on_actionExport_triggered();
+    void on_actionExport_Video_triggered();
     void on_warn(const QString& msg);
     void on_finished();
     void on_saveResults(bool force);
@@ -170,7 +173,6 @@ private:
     GuiPreferences mGuiPrefs;
     std::shared_ptr<ProgressStatusBar> mBar;
     QString mStartPath; // used for next QFileDialog
-    ImageViewer mViewer;
     TrackerScene* mTrackerScene;
     UnaryScene* mUnaryScene;
     std::size_t mCurrentFrameNumber;
@@ -180,6 +182,8 @@ private:
     QElapsedTimer mFrameTimer;
 
     ht::HabiTrack mHabiTrack;
+    QString mVideoFile;
+    ht::ImageViewer mViewer;
 
     ////////////////////////////////
     // Labeling

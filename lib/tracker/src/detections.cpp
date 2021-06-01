@@ -116,7 +116,8 @@ std::vector<cv::Point2d> Detections::projectTo(
     for (std::size_t i = from; i < to; i++)
         points2d.push_back(mDetections.at(i).position);
 
-    for (std::size_t i = from; i < to; i++)
+    cv::Mat trafo = getIdentity(true);
+    for (int i = static_cast<int>(to) - 1; i >= static_cast<int>(from); i--)
     {
         cv::Mat currTrafo;
         if (trafos.count({i, i + 1}))
@@ -124,8 +125,8 @@ std::vector<cv::Point2d> Detections::projectTo(
         else
             currTrafo = getIdentity(true);
 
-        for (std::size_t k = from; k <= i; k++)
-            points2d[k - from] = transformPoint(points2d[k - from], currTrafo, type);
+        trafo = trafo * currTrafo;
+        points2d[i - from] = transformPoint(points2d[i - from], trafo, type);
     }
 
     return points2d;
@@ -154,6 +155,7 @@ std::vector<cv::Point2d> Detections::projectFrom(
             points2d.push_back(mDetections.at(i).position);
     }
 
+    cv::Mat trafo = getIdentity(true);
     for (std::size_t i = from; i < to; i++)
     {
         cv::Mat currTrafo;
@@ -162,8 +164,8 @@ std::vector<cv::Point2d> Detections::projectFrom(
         else
             currTrafo = getIdentity(true);
 
-        for (std::size_t k = i; k < to; k++)
-            points2d[k - from] = transformPoint(points2d[k - from], currTrafo, type);
+        trafo = trafo * currTrafo;
+        points2d[i - from] = transformPoint(points2d[i - from], trafo, type);
     }
 
     return points2d;

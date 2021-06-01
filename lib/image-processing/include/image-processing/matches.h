@@ -4,23 +4,12 @@
 #include "image-processing/baseFeatureContainer.h"
 #include "image-processing/geometricType.h"
 #include "image-processing/pairRecommender.h"
+#include "image-processing/matchesTypes.h"
 #include "progressbar/baseProgressBar.h"
-#include "util/pairHash.h"
 #include <filesystem>
 #include <opencv2/core.hpp>
 #include <opencv2/features2d.hpp>
 #include <vector>
-
-namespace ht
-{
-using Trafo = cv::Mat;
-using Trafos = std::vector<cv::Mat>;
-using Match = cv::DMatch;
-using Matches = std::vector<cv::DMatch>;
-
-using PairwiseMatches = std::unordered_map<std::pair<std::size_t, std::size_t>, Matches, hash>;
-using PairwiseTrafos = std::unordered_map<std::pair<std::size_t, std::size_t>, Trafo, hash>;
-} // namespace ht
 
 namespace ht::matches
 {

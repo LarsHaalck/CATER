@@ -749,6 +749,7 @@ color: white;
     <addaction name="actionSave_Results"/>
     <addaction name="separator"/>
     <addaction name="actionExport"/>
+    <addaction name="actionExport_Video"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
@@ -862,6 +863,14 @@ color: white;
   <action name="actionQuit">
    <property name="text">
     <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionExport_Video">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Export Video...</string>
    </property>
   </action>
  </widget>

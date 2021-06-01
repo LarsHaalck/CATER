@@ -5,6 +5,7 @@ set(SOURCES
     src/preferences.cpp
     src/habiTrack.cpp
     src/resultsIO.cpp
+    src/imageViewer.cpp
 )
 
 ###########################################################################

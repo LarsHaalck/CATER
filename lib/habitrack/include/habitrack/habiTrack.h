@@ -75,6 +75,8 @@ public:
     void addManualBearing(std::size_t frame, cv::Point pt) { mDetections.insertBearing(frame, pt); }
     void removeManualBearing(std::size_t frame) { mDetections.clearManualBearing(frame); }
 
+    void generateVideo(const std::filesystem::path& videofile) const;
+
     const Images& images() const { return mImages; }
     const Features& features() const { return mFeatures; }
     const Unaries& unaries() const { return mUnaries; }

@@ -2,7 +2,6 @@
 #include "ui_mainWindow.h"
 
 #include "image-processing/util.h"
-#include "imagesWorker.h"
 #include "labelEditor.h"
 #include "labeler.h"
 #include "preferencesDialog.h"
@@ -36,9 +35,10 @@ namespace gui
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , mViewer(mHabiTrack)
     , mSaved(true)
     , mLabelsSaved(true)
+    , mHabiTrack()
+    , mViewer(mHabiTrack)
     , mBlocked(false)
 {
     ui->setupUi(this);
@@ -214,6 +214,25 @@ void MainWindow::on_actionExport_triggered()
         uiDialog.labelFile->text().toStdString(), uiDialog.checkBoxSmooth->isChecked());
 }
 
+void MainWindow::on_actionExport_Video_triggered()
+{
+    mVideoFile = QFileDialog::getSaveFileName(this, tr("Video File"), mStartPath, "MP4 (*.mp4)");
+    if (mVideoFile.isEmpty())
+        return;
+    enqueue(&MainWindow::generateVideo, &MainWindow::on_finished);
+}
+
+void MainWindow::generateVideo()
+{
+    if (!mHabiTrack.detections().size())
+    {
+        emit warn("No detections to export yet");
+        return;
+    }
+
+    mHabiTrack.generateVideo(mVideoFile.toStdString());
+}
+
 void MainWindow::on_warn(const QString& msg) { QMessageBox::warning(this, "Warning", msg); }
 void MainWindow::on_sliderFrame_valueChanged(int value) { showFrame(value - 1); }
 void MainWindow::on_spinCurrentFrame_valueChanged(int value) { showFrame(value - 1); }
@@ -270,7 +289,7 @@ void MainWindow::updateSlider()
 void MainWindow::showFrame(std::size_t frame)
 {
     mCurrentFrameNumber = frame;
-    ImageViewer::VisSettings settings;
+    ht::ImageViewer::VisSettings settings;
     settings.unary = ui->sliderOverlayUnaries->value();
     settings.detection = ui->overlayTrackedPosition->isChecked();
     settings.bearing = ui->overlayBearings->isChecked();
@@ -343,6 +362,7 @@ void MainWindow::openImagesHelper()
     ui->actionPreferences->setEnabled(true);
     ui->actionLabelEditor->setEnabled(true);
     ui->actionExport->setEnabled(true);
+    ui->actionExport_Video->setEnabled(true);
 
     ui->buttonTrack->setEnabled(true);
     ui->frameTracking->setEnabled(true);
