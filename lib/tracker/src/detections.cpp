@@ -105,11 +105,10 @@ std::vector<cv::Point2d> Detections::projectTo(
     // find first existing index
     for (std::size_t i = from; i < to; i++)
     {
-        if (mDetections.count(i))
-        {
-            from = i;
+        if (!mDetections.count(i))
+            from++;
+        else
             break;
-        }
     }
 
     std::vector<cv::Point2d> points2d;
@@ -139,13 +138,12 @@ std::vector<cv::Point2d> Detections::projectFrom(
         return {};
 
     // find last existing index
-    for (std::size_t i = from; i < to; i++)
+    for (int i = to - 1; i >= 0; i++)
     {
         if (!mDetections.count(i))
-        {
-            to = i - 1;
+            to--;
+        else
             break;
-        }
     }
 
     std::vector<cv::Point2d> points2d;
