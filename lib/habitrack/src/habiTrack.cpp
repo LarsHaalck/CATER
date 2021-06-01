@@ -134,7 +134,7 @@ void HabiTrack::loadResultsFile(const fs::path& resultFile)
 
 void HabiTrack::generateVideo(const fs::path& videoFilename) const
 {
-    auto fps = mPrefs.fps > 0 ? mPrefs.fps : 25;
+    auto fps = mPrefs.fps > 0 ? mPrefs.fps : 50;
     cv::VideoWriter video(
         videoFilename, cv::VideoWriter::fourcc('m', 'p', '4', 'v'), fps, mImages.getImgSize());
 
