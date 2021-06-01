@@ -29,6 +29,7 @@ private:
     void extractUnaries() { mHabiTrack.extractUnaries(); }
     void optimize() { mHabiTrack.optimizeUnaries(); }
     void track() { mHabiTrack.runFullPipeline(); }
+    void video(const std::filesystem::path& videoFile) { mHabiTrack.generateVideo(videoFile); }
 
     std::vector<cv::Point> getDetections(const ht::HabiTrack& habitrack) const;
 

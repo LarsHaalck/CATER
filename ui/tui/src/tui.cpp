@@ -60,6 +60,8 @@ int Tui::parse(const std::string& response)
         optimize();
     else if (cmd == "track")
         track();
+    else if (cmd == "video")
+        video(args);
     else if (cmd == "pano_add")
         addPanorama(args);
     else if (cmd == "pano_list")
