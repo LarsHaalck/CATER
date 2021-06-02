@@ -140,7 +140,7 @@ std::vector<cv::Point2d> Detections::projectFrom(
     // find last existing index
     for (int i = to - 1; i >= 0; i++)
     {
-        if (!mDetections.count(i))
+        if (!mDetections.count(i) && to > 0)
             to--;
         else
             break;
