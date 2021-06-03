@@ -39,4 +39,4 @@ for label in args.labels:
     data = np.c_[data[:min], is_label[label][:min]]
     header = header + "," + label
 
-np.savetxt("zipped.csv", data, delimiter=',', header=header)
+np.savetxt("zipped.csv", data, delimiter=',', fmt="%i", header=header)
