@@ -757,7 +757,7 @@ void MainWindow::on_positionChanged(QPointF position)
 {
     auto start = mHabiTrack.getStartFrame();
     auto end = mHabiTrack.getEndFrame();
-    if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end)
+    if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
         return;
 
     if (auto size = mHabiTrack.images().getImgSize(); position.x() < 0 || position.y() < 0
@@ -780,7 +780,7 @@ void MainWindow::on_bearingChanged(QPointF position)
 {
     auto start = mHabiTrack.getStartFrame();
     auto end = mHabiTrack.getEndFrame();
-    if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end)
+    if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
         return;
     spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(), position.y(),
         mCurrentFrameNumber);
@@ -793,7 +793,7 @@ void MainWindow::on_positionCleared()
 {
     auto start = mHabiTrack.getStartFrame();
     auto end = mHabiTrack.getEndFrame();
-    if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end)
+    if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
         return;
 
     spdlog::debug("GUI: manual position cleared on frame {}", mCurrentFrameNumber);
@@ -809,7 +809,7 @@ void MainWindow::on_bearingCleared()
 {
     auto start = mHabiTrack.getStartFrame();
     auto end = mHabiTrack.getEndFrame();
-    if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end)
+    if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
         return;
     spdlog::debug("GUI: manual bearing cleared on frame {}", mCurrentFrameNumber);
     mHabiTrack.removeManualBearing(mCurrentFrameNumber);
