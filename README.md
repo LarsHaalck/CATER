@@ -23,11 +23,12 @@ right click | Remove manual correction at current frame
 
 ### Labeling
 
-Keymap           | Function
---------         | -------------
-\<Hotkey\>       | Add label (and deactivating all other labels from the same group) as declared in label editor
-Alt + \<Hotkey\> | Toggle label "stickyness". If a label is sticky all frames that are visited from now on will implicitly get this label added.
-Backspace        | Clear all sticky labels
+Keymap            | Function
+--------          | -------------
+\<Hotkey\>        | Add label (and deactivating all other labels from the same group) as declared in label editor
+Alt + \<Hotkey\>  | Toggle label "stickyness". If a label is sticky all frames that are visited from now on will implicitly get this label added.
+CTRL + \<Hotkey\> | Set this label to all PREVIOUS frames until a frame with the same label occurs (asks for confirmation)
+Backspace         | Clear all sticky labels
 
 
 ## "Unary-View":

@@ -45,10 +45,12 @@ public:
 private:
     void buildKeyMap();
     void makeSticky(const LabelId& label);
+    void labelContinous(std::size_t frame, const LabelId& label);
     bool isSticky(const LabelId& label);
     bool isStickyEqual(const LabelId& label);
     void insertLabel(const LabelId& label, Labels& labels);
     std::pair<QString, QString> getLabels(const Labels& labels) const;
+    QString labelIdToQString(const LabelId& label) const;
 
 private:
     std::size_t mNumImgs;

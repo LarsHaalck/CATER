@@ -5,6 +5,8 @@
 
 #include "labelIO.h"
 
+#include <QMessageBox>
+
 namespace gui
 {
 
@@ -90,11 +92,17 @@ std::pair<QString, QString> Labeler::getLabels(const Labels& labels) const
     for (const auto& label : labels)
     {
         auto color = mConfig.at(label.first)[label.second].color;
-        auto name = QString::fromStdString(mConfig.at(label.first)[label.second].label);
         resShort += coloredCircle(color);
-        resLong += QString::fromStdString(label.first) + ": " + name + "\n";
+        resLong += labelIdToQString(label);
     }
     return std::make_pair(resShort, resLong);
+}
+
+QString Labeler::labelIdToQString(const LabelId& label) const
+{
+    auto name = QString::fromStdString(mConfig.at(label.first)[label.second].label);
+    name = QString::fromStdString(label.first) + ": " + name + "\n";
+    return name;
 }
 
 void Labeler::processKeyEvent(std::size_t frame, QKeyEvent* event)
@@ -116,8 +124,15 @@ void Labeler::processKeyEvent(std::size_t frame, QKeyEvent* event)
         auto groupName = mKeyMap[key].first;
         auto labelId = mKeyMap[key].second;
         auto label = std::make_pair(groupName, labelId);
-        insertLabel(label, mLabels[frame]);
 
+        // on continous label, do nothing else
+        if (mod == Mod::Ctrl)
+        {
+            labelContinous(frame, label);
+            return;
+        }
+
+        insertLabel(label, mLabels[frame]);
         if (mod == Mod::Alt)
             makeSticky(label);
     }
@@ -143,6 +158,44 @@ void Labeler::makeSticky(const LabelId& label)
         mStickyLabels.erase(label);
     else
         insertLabel(label, mStickyLabels);
+}
+
+void Labeler::labelContinous(std::size_t frame, const LabelId& label)
+{
+    // find the last occurence of this label instantion before the curent frame
+    int idx = -1;
+    for (int i = static_cast<int>(frame) - 1; i >= 0; i--)
+    {
+        if (auto it = mLabels[i].find(label);
+            it != std::end(mLabels[i]) && (*it).second == label.second)
+        {
+            idx = i;
+            break;
+        }
+    }
+
+    // not found, nothing to to do
+    if (idx < 0)
+        return;
+
+    QString msg
+        = QString("Do you want to label all frames between %1 and %2 with label: %3")
+              .arg(QString::number(idx + 1), QString::number(frame + 1), labelIdToQString(label));
+
+    QMessageBox msgBox;
+    msgBox.setText("Label all frames");
+    msgBox.setInformativeText(msg);
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+    int ret = msgBox.exec();
+
+    if (ret != QMessageBox::Yes)
+        return;
+
+    // label all frames from this last instantion exlusive left (because it was already set) and 
+    // inclusive right (because frame label was not set in processKeyEvent)
+    for (int i = idx + 1; i <= static_cast<int>(frame); i++)
+        insertLabel(label, mLabels[i]);
 }
 
 void Labeler::insertLabel(const LabelId& label, Labels& labels)
