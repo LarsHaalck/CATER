@@ -20,7 +20,7 @@ namespace detail
         std::size_t idI, std::size_t idJ, const BaseFeatureContainer& fts, GeometricType type);
 
     std::size_t filterViews(
-        const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low, float high);
+        std::vector<std::pair<float, std::size_t>> distOverlapVec, float low, float high);
     bool compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
         const std::pair<float, std::size_t>& rhs, float low, float high);
     double calcReprojError(const std::vector<cv::Point2f>& ptsSrc, std::vector<cv::Point2f>& ptsDst,

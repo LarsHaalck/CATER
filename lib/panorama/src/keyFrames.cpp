@@ -104,7 +104,7 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
             if (highShift && distOverlapVec.empty())
                 distOverlapVec.push_back(currDistOverlapVec[0]);
 
-            // enough shift, break
+            // enough shift or no extension anymore --> break
             if (highShift || extended == 0)
                 break;
         }
@@ -116,7 +116,7 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
         std::size_t offset = detail::filterViews(distOverlapVec, low, high);
 
         // + 1 because ids in overlap vec are relative to first neighbor
-        currView += +offset + 1;
+        currView += offset + 1;
         keyFrames.push_back(currView);
 
         cb->inc(offset + 1);
@@ -207,14 +207,22 @@ namespace detail
     }
 
     std::size_t filterViews(
-        const std::vector<std::pair<float, std::size_t>>& distOverlapVec, float low, float high)
+        std::vector<std::pair<float, std::size_t>> distOverlapVec, float low, float high)
     {
-        auto maxView = std::max_element(std::begin(distOverlapVec), std::end(distOverlapVec),
+        // find first element from behind which has non zero num fts
+        auto non_zero = std::find_if(std::rbegin(distOverlapVec), std::rend(distOverlapVec),
+            [](const auto& p) { return p.second != 0; });
+        // and erase until this frame
+        distOverlapVec.erase(non_zero.base(), std::end(distOverlapVec));
+
+        auto maxView = std::max_element(std::rbegin(distOverlapVec), std::rend(distOverlapVec),
             [&](const auto& lhs, const auto& rhs) {
                 return compareMaxOverlap(lhs, rhs, low, high);
             });
 
-        return static_cast<std::size_t>(std::distance(std::begin(distOverlapVec), maxView));
+        // find distance to reversed reverse iterator (+1 because of rev iterator implementation)
+        return static_cast<std::size_t>(
+            std::distance(std::begin(distOverlapVec), (++maxView).base()));
     }
 
     bool compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
