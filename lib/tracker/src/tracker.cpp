@@ -100,22 +100,24 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
 {
     spdlog::debug("Running tracking on boundaries: [{}, {})", start, end);
     spdlog::debug("Running tracking on boundaries (id-space): [{}, {}]", ids[start], ids[end - 1]);
+
+    // number of random variables
     int numVariables = end - start;
 
+    // x,y for every variables
     cv::Mat maxStates(numVariables, 2, CV_32S);
     if (numVariables == 0)
         return maxStates;
 
+    // root node for max sum algorithm
     cv::Mat firstUnary = unaries.at(ids[start]);
 
     cv::Mat messageToFactor = firstUnary.clone();
     cv::Mat messageToNode = firstUnary.clone();
-    std::vector<cv::Mat> phis;
 
-    int phiSize[3];
-    phiSize[0] = firstUnary.rows;
-    phiSize[1] = firstUnary.cols;
-    phiSize[2] = 2;
+    // backtracking data
+    std::vector<cv::Mat> phis;
+    int phiSize[] = { firstUnary.rows, firstUnary.cols, 2 };
 
     cv::log(messageToFactor, messageToFactor);
     cv::log(messageToNode, messageToNode);
@@ -128,8 +130,8 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     {
         std::size_t idx = ids[i];
         spdlog::debug("Optimize unary {} ({})", i, ids[i]);
-        cv::Mat phi(3, phiSize, CV_32S);
 
+        cv::Mat phi(3, phiSize, CV_32S);
         passMessageToNode(messageToFactor, pairwiseKernel, messageToNode, phi);
         phis.push_back(phi);
 
@@ -158,10 +160,12 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
             tempU -= cv::abs(tempMin);
         }
 
+        // pass message to factor by simple summation
         messageToFactor = messageToNode + tempU;
     }
 
-    // Now find the max of the last message
+    // TODO: clean up this redundant mess here
+    // find the max of the last message
     float logBestConfigurationProbability = std::numeric_limits<float>::lowest();
     float curVal = std::numeric_limits<float>::lowest();
     int curMaxI = 0;
@@ -183,7 +187,8 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     maxStates.at<int>(numVariables - 1, 0) = curMaxI;
     maxStates.at<int>(numVariables - 1, 1) = curMaxJ;
 
-    for (int v = (numVariables - 2); v >= 0; v--)
+    // backtrack through phi to fill maxStates
+    for (auto v = numVariables - 2; v >= 0; v--)
     {
         maxStates.at<int>(v, 0)
             = phis[v].at<int>(maxStates.at<int>(v + 1, 0), maxStates.at<int>(v + 1, 1), 0);
@@ -206,6 +211,7 @@ void Tracker::passMessageToNode(const cv::Mat& previousMessageToFactor,
     int curI = 0;
     int curJ = 0;
 
+    // find max value in truncation window
     for (int i = 0; i < previousMessageToFactor.rows; i++)
     {
         for (int j = 0; j < previousMessageToFactor.cols; j++)
@@ -213,6 +219,9 @@ void Tracker::passMessageToNode(const cv::Mat& previousMessageToFactor,
             curMax = std::numeric_limits<float>::lowest();
             curMaxI = i;
             curMaxJ = j;
+
+            // truncation for better performance
+            // based on simple heurisitic on pairwise potential size
             for (int ii = -offset; ii <= offset; ii++)
             {
                 curI = i + ii;
@@ -228,6 +237,7 @@ void Tracker::passMessageToNode(const cv::Mat& previousMessageToFactor,
                         continue;
                     }
 
+                    // max value is the previous message + the logged function
                     curVal = previousMessageToFactor.at<float>(curI, curJ)
                         + logPairwisePotential.at<float>(ii + offset, jj + offset);
                     if (curVal > curMax)
@@ -239,17 +249,12 @@ void Tracker::passMessageToNode(const cv::Mat& previousMessageToFactor,
                 }
             }
             messageToNode.at<float>(i, j) = curMax;
+
+            // store max indices for later backtracking
             phi.at<int>(i, j, 0) = curMaxI;
             phi.at<int>(i, j, 1) = curMaxJ;
         }
     }
-}
-
-void Tracker::passMessageToFactor(
-    const cv::Mat& previousMessageToNode, const cv::Mat& unaryPotential, cv::Mat& messageToFactor)
-{
-    cv::log(unaryPotential, messageToFactor);
-    cv::add(previousMessageToNode, messageToFactor, messageToFactor);
 }
 
 Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,

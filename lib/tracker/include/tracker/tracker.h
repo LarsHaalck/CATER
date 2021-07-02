@@ -42,9 +42,6 @@ private:
 
     static void passMessageToNode(const cv::Mat& previousMessageToFactor,
         const cv::Mat& logPairwisePotential, cv::Mat& messageToNode, cv::Mat& phi);
-    static void passMessageToFactor(const cv::Mat& previousMessageToNode,
-        const cv::Mat& unaryPotential, cv::Mat& messageToFactor);
-
     static Detections extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
         std::size_t offset, const Settings& settings, const PairwiseTrafos& trafos);
 
