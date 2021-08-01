@@ -215,10 +215,16 @@ namespace detail
         // and erase until this frame
         distOverlapVec.erase(non_zero.base(), std::end(distOverlapVec));
 
+        if (distOverlapVec.empty())
+        {
+            spdlog::warn(
+                "Found no feature points, progressing by one frame only in keyframe selection");
+            return 0;
+        }
+
         auto maxView = std::max_element(std::rbegin(distOverlapVec), std::rend(distOverlapVec),
-            [&](const auto& lhs, const auto& rhs) {
-                return compareMaxOverlap(lhs, rhs, low, high);
-            });
+            [&](const auto& lhs, const auto& rhs)
+            { return compareMaxOverlap(lhs, rhs, low, high); });
 
         // find distance to reversed reverse iterator (+1 because of rev iterator implementation)
         return static_cast<std::size_t>(
@@ -228,9 +234,8 @@ namespace detail
     bool compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
         const std::pair<float, std::size_t>& rhs, float low, float high)
     {
-        auto isInRange = [low, high](const auto& pair) -> bool {
-            return ((pair.first >= low) && (pair.first <= high));
-        };
+        auto isInRange = [low, high](const auto& pair) -> bool
+        { return ((pair.first >= low) && (pair.first <= high)); };
 
         if (!isInRange(lhs) && !isInRange(rhs))
             return (lhs.first < rhs.first);
