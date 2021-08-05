@@ -2,6 +2,7 @@
 
 #include "habitrack/resultsIO.h"
 #include "habitrack/imageViewer.h"
+#include "util/log.h"
 #include "image-processing/util.h"
 #include "io/io.h"
 #include "progressbar/progressBar.h"
@@ -9,15 +10,7 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
-#include <iostream>
 #include <opencv2/videoio.hpp>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
-
-/* #include <image-processing/transformation.h> */
-/* #include <opencv2/highgui.hpp> */
-/* #include <opencv2/imgproc.hpp> */
 
 namespace fs = std::filesystem;
 
@@ -186,26 +179,7 @@ void HabiTrack::populatePaths()
     mUnFolder = mOutputPath / "unaries";
     mDetectionsFile = mOutputPath / "detections.yml";
 
-    try
-    {
-        auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        console_sink->set_level(spdlog::level::info);
-
-        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-            (mOutputPath / "logs.txt").string(), false);
-        file_sink->set_level(spdlog::level::debug);
-
-        auto logger = std::make_shared<spdlog::logger>(
-            "multi_sink", spdlog::sinks_init_list({console_sink, file_sink}));
-        logger->set_level(spdlog::level::debug);
-        spdlog::flush_every(std::chrono::seconds(3));
-        spdlog::set_default_logger(logger);
-        spdlog::info("New run -------------");
-    }
-    catch (const spdlog::spdlog_ex& ex)
-    {
-        std::cerr << "Log initialization failed: " << ex.what();
-    }
+    setLogFileTo(mOutputPath / "logs.txt");
 }
 
 void HabiTrack::openImagesHelper(const fs::path& path)
