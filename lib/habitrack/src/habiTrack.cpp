@@ -1,16 +1,17 @@
 #include "habitrack/habiTrack.h"
 
-#include "habitrack/resultsIO.h"
 #include "habitrack/imageViewer.h"
-#include "util/log.h"
+#include "habitrack/resultsIO.h"
 #include "image-processing/util.h"
 #include "io/io.h"
 #include "progressbar/progressBar.h"
 #include "tracker/tracker.h"
+#include "util/log.h"
 #include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <opencv2/videoio.hpp>
+#include <spdlog/spdlog.h>
 
 namespace fs = std::filesystem;
 

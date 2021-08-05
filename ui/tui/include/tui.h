@@ -6,6 +6,7 @@
 
 #include "habitrack/habiTrack.h"
 #include "panorama/panoramaEngine.h"
+#include "util/log.h"
 
 namespace tui
 {

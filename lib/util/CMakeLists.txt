@@ -3,6 +3,7 @@
 ###########################################################################
 set(SOURCES
     src/threadPool.cpp
+    src/log.cpp
 )
 ###########################################################################
 #                               TARGETS                                   #
@@ -16,6 +17,11 @@ target_include_directories(${LIB_NAME}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_link_libraries(${LIB_NAME}
+    PRIVATE
+    spdlog::spdlog
 )
 
 

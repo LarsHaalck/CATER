@@ -193,6 +193,8 @@ void Tui::generatePanorama()
             currPts = getDetections(habitrack);
 
         auto outPath = habitrack.getOutputPath() / "panorama";
+
+        ht::setLogFileTo(outPath / "log.txt");
         ht::PanoramaEngine::runSingle(
             currImages, outPath, mPanoSettings, currPts, habitrack.getPreferences().chunkSize);
 
@@ -207,6 +209,7 @@ void Tui::generatePanorama()
         return;
 
     auto outFolder = mPanoFiles[0].parent_path() / "panorama_combined";
+    ht::setLogFileTo(outFolder / "log.txt");
     ht::PanoramaEngine::runMulti(images, data, outFolder, mPanoSettings, pts, chunkSizes);
 }
 
