@@ -59,12 +59,18 @@ Transitions getMostProminantTransition(
             std::make_pair(blockPair.first, blockPair.second), std::make_pair(idI, idJ)));
     }
 
+    std::set<std::size_t> setOfBlocks;
     for (auto elem : optimalTransitions)
     {
         auto [blockI, blockJ] = elem.first;
+        setOfBlocks.insert(blockI);
+        setOfBlocks.insert(blockJ);
         auto [idI, idJ] = elem.second;
         spdlog::info("Mapping {} to {} with frame {} to {}", blockI, blockJ, idI, idJ);
     }
+
+    if (setOfBlocks.size() < sizes.size())
+        throw std::runtime_error("Could not map all videos for ivlc");
     return optimalTransitions;
 }
 } // namespace ht
