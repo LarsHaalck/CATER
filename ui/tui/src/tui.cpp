@@ -1,6 +1,7 @@
 #include "tui.h"
 
 #include <iostream>
+#include <spdlog/spdlog.h>
 
 constexpr char prompt[] = "HabiTrack >>> ";
 
@@ -210,6 +211,8 @@ void Tui::generatePanorama()
 
     auto outFolder = mPanoFiles[0].parent_path() / "panorama_combined";
     ht::setLogFileTo(outFolder / "log.txt");
+    for (auto resFile : mPanoFiles)
+        spdlog::info("Adding res file for combined panorama: {}", resFile);
     ht::PanoramaEngine::runMulti(images, data, outFolder, mPanoSettings, pts, chunkSizes);
 }
 
