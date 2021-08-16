@@ -1,0 +1,9 @@
+Bootstrap: docker
+From: python:3.9-slim
+
+%post
+    apt-get -y update
+    pip install --no-cache-dir numpy
+
+%runscript
+    /bin/bash
