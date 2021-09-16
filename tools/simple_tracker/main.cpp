@@ -2,6 +2,8 @@
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
 #include "tracker/unaries.h"
+#include "tracker/manualUnaries.h"
+#include "tracker/tracker.h"
 
 /* #include "habitrack/transformation.h" */
 
@@ -24,9 +26,8 @@ constexpr std::size_t cache_size = 2000;
 int main()
 {
     spdlog::set_level(spdlog::level::debug);
-    /* spdlog::cfg::load_env_levels(); */
 
-    ht::Images imgs {img_folder, ht::Images::ReadMode::Gray};
+    ht::Images imgs {img_folder};
 
     ht::Features fts;
     if (ht::Features::isComputed(imgs, ft_folder, ht::FeatureType::ORB))
@@ -69,5 +70,8 @@ int main()
     else
         uns = ht::Unaries::compute(imgs, un_folder, 0, -1, true, 0.8, 200.0, trafos, cache_size);
 
+    auto settings = ht::Tracker::Settings {0.8, 25, 250, 4, false, 5, 3, 0};
+    auto manual = ht::ManualUnaries();
+    auto detections = ht::Tracker::track(uns, manual, settings, trafos);
     return 0;
 }
