@@ -1,4 +1,4 @@
-#include "tracker/tracker2.h"
+#include "tracker/interpTracker.h"
 
 #include "image-processing/transformation.h"
 #include "image-processing/util.h"
@@ -18,13 +18,13 @@ namespace ht
 using namespace matches;
 using namespace transformation;
 
-Detections Tracker2::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
+Detections InterpTracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
     const Settings& settings, std::size_t, const PairwiseTrafos& trafos)
 {
-    return Tracker2::track(unaries, manualUnaries, settings, trafos);
+    return InterpTracker::track(unaries, manualUnaries, settings, trafos);
 }
 
-Detections Tracker2::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
+Detections InterpTracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
     const Settings& settings, const PairwiseTrafos&)
 {
     spdlog::warn("Interpolation Tracker running");
@@ -78,7 +78,7 @@ Detections Tracker2::track(const Unaries& unaries, const ManualUnaries& manualUn
     return detections;
 }
 
-std::size_t Tracker2::getNumChunks(std::size_t numUnaries, std::size_t chunkSize)
+std::size_t InterpTracker::getNumChunks(std::size_t numUnaries, std::size_t chunkSize)
 {
     if (chunkSize == 0)
         chunkSize = numUnaries;
@@ -87,7 +87,7 @@ std::size_t Tracker2::getNumChunks(std::size_t numUnaries, std::size_t chunkSize
     return numChunks;
 }
 
-std::size_t Tracker2::getChunkEnd(
+std::size_t InterpTracker::getChunkEnd(
     std::size_t chunk, std::size_t numChunks, std::size_t chunkSize, std::size_t numUnaries)
 {
     if (chunk == numChunks - 1)

@@ -2,8 +2,8 @@
 #include "image-processing/images.h"
 #include "image-processing/matches.h"
 #include "kde.h"
+#include "tracker/interpTracker.h"
 #include "tracker/manualUnaries.h"
-#include "tracker/tracker2.h"
 #include "tracker/unaries.h"
 
 #include <iostream>
@@ -63,7 +63,7 @@ int main(int argc, char** argv)
     auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
     auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
     auto manual_uns_all = ht::ManualUnaries::fromDir(un_folder, 0.8, 9, imgs.getImgSize());
-    auto settings = ht::Tracker2::Settings {0.8, 25, 250, 4, false, 5, 3, chunk};
+    auto settings = ht::InterpTracker::Settings {0.8, 25, 250, 4, false, 5, 3, chunk};
     std::string end = a1 + "-" + a2 + "-" + a3 + "_";
 
     std::vector<double> frames_all;
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
         manual_uns = std::move(manual_uns_subset);
 
         spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
-        auto detections = ht::Tracker2::track(uns, manual_uns, settings, trafos);
+        auto detections = ht::InterpTracker::track(uns, manual_uns, settings, trafos);
         detections.save(
             base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml"));
 

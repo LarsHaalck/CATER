@@ -9,7 +9,7 @@ set(SOURCES
     src/unaries.cpp
     src/manualUnaries.cpp
     src/tracker.cpp
-    src/tracker2.cpp
+    src/interpTracker.cpp
     src/detections.cpp
 )
 
