@@ -156,7 +156,21 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
             double multiplier = settings.manualMultiplier;
             currentUnary *= multiplier;
             currentUnary -= cv::abs(tempMin);
+
+            auto pt = manualUnaries.unaryPointAt(idx);
+            auto phi = phis[phis.size() - 1];
+            for (int r = 0; r < firstUnary.rows; r++)
+            {
+                for (int c = 0; c < firstUnary.cols; c++)
+                {
+                    phi.at<int>(r, c, 0) = 0.8*pt.y;
+                    phi.at<int>(r, c, 1) = 0.8*pt.x;
+                }
+            }
+
+            phis[phis.size() - 1] = phi;
         }
+
 
         // pass message to factor by simple summation
         messageToFactor = messageToNode + currentUnary;
