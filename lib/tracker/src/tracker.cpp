@@ -130,7 +130,10 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
 
         cv::Mat phi(3, phiSize, CV_32S);
         // set message to node by maximizing over log f and message to factor
-        passMessageToNode(messageToFactor, pairwiseKernel, messageToNode, phi);
+        bool constrain = true;
+        if (i > 0 && manualUnaries.exists(ids[i - 1]))
+            constrain = false;
+        passMessageToNode(messageToFactor, pairwiseKernel, messageToNode, phi, constrain);
         phis.push_back(phi);
 
         cv::Mat currentUnary;
@@ -197,10 +200,13 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
 }
 
 void Tracker::passMessageToNode(const cv::Mat& previousMessageToFactor,
-    const cv::Mat& logPairwisePotential, cv::Mat& messageToNode, cv::Mat& phi)
+    const cv::Mat& logPairwisePotential, cv::Mat& messageToNode, cv::Mat& phi, bool constrain)
 {
     int pairwiseSize = logPairwisePotential.rows;
     int offset = std::floor(pairwiseSize / 2);
+
+    if (!constrain)
+        offset = 2*offset;
 
     // find max value in truncation window
     /* #pragma omp parallel for */
