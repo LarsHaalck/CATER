@@ -112,26 +112,24 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     // root node for max sum algorithm
     cv::Mat firstUnary = unaries.at(ids[start]);
 
-    cv::Mat messageToFactor = firstUnary.clone();
     cv::Mat messageToNode = firstUnary.clone();
+    cv::log(messageToNode, messageToNode);
+    cv::Mat messageToFactor = messageToNode.clone();
 
     // backtracking data
     std::vector<cv::Mat> phis;
-    int phiSize[] = { firstUnary.rows, firstUnary.cols, 2 };
-
-    cv::log(messageToFactor, messageToFactor);
-    cv::log(messageToNode, messageToNode);
+    const int phiSize[] = { firstUnary.rows, firstUnary.cols, 2 };
 
     if (numVariables == 1)
         messageToNode = messageToFactor;
 
-    cv::Mat tempU = firstUnary.clone();
     for (std::size_t i = start; i < end; i++)
     {
         std::size_t idx = ids[i];
         spdlog::debug("Optimize unary {} ({})", i, ids[i]);
 
         cv::Mat phi(3, phiSize, CV_32S);
+        // set message to node by maximizing over log f and message to factor
         passMessageToNode(messageToFactor, pairwiseKernel, messageToNode, phi);
         phis.push_back(phi);
 
@@ -141,7 +139,7 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
         else
             currentUnary = unaries.at(idx);
 
-        cv::log(currentUnary, tempU);
+        cv::log(currentUnary, currentUnary);
 
         // To make manual positions stronger the (logarithmic) unary is multiplied
         // NOTE: due to the log operation the values in the unary are in [-x, +/- y]
@@ -153,15 +151,15 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
         if (manualUnaries.exists(idx))
         {
             double tempMin, tempMax;
-            cv::minMaxLoc(tempU, &tempMin, &tempMax);
-            tempU += cv::abs(tempMin);
+            cv::minMaxLoc(currentUnary, &tempMin, &tempMax);
+            currentUnary += cv::abs(tempMin);
             double multiplier = settings.manualMultiplier;
-            tempU *= multiplier;
-            tempU -= cv::abs(tempMin);
+            currentUnary *= multiplier;
+            currentUnary -= cv::abs(tempMin);
         }
 
         // pass message to factor by simple summation
-        messageToFactor = messageToNode + tempU;
+        messageToFactor = messageToNode + currentUnary;
     }
 
     // TODO: clean up this redundant mess here
@@ -190,10 +188,10 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     // backtrack through phi to fill maxStates
     for (auto v = numVariables - 2; v >= 0; v--)
     {
-        maxStates.at<int>(v, 0)
-            = phis[v].at<int>(maxStates.at<int>(v + 1, 0), maxStates.at<int>(v + 1, 1), 0);
-        maxStates.at<int>(v, 1)
-            = phis[v].at<int>(maxStates.at<int>(v + 1, 0), maxStates.at<int>(v + 1, 1), 1);
+        auto r = maxStates.at<int>(v + 1, 0);
+        auto c = maxStates.at<int>(v + 1, 1);
+        maxStates.at<int>(v, 0) = phis[v].at<int>(r, c, 0);
+        maxStates.at<int>(v, 1) = phis[v].at<int>(r, c, 1);
     }
     return maxStates;
 }
@@ -204,41 +202,35 @@ void Tracker::passMessageToNode(const cv::Mat& previousMessageToFactor,
     int pairwiseSize = logPairwisePotential.rows;
     int offset = std::floor(pairwiseSize / 2);
 
-    float curMax = std::numeric_limits<float>::lowest();
-    float curVal = std::numeric_limits<float>::lowest();
-    int curMaxI = 0;
-    int curMaxJ = 0;
-    int curI = 0;
-    int curJ = 0;
-
     // find max value in truncation window
+    /* #pragma omp parallel for */
     for (int i = 0; i < previousMessageToFactor.rows; i++)
     {
         for (int j = 0; j < previousMessageToFactor.cols; j++)
         {
-            curMax = std::numeric_limits<float>::lowest();
-            curMaxI = i;
-            curMaxJ = j;
+            auto curMax = std::numeric_limits<float>::lowest();
+            auto curMaxI = i;
+            auto curMaxJ = j;
 
             // truncation for better performance
             // based on simple heurisitic on pairwise potential size
             for (int ii = -offset; ii <= offset; ii++)
             {
-                curI = i + ii;
+                auto curI = i + ii;
                 if ((curI < 0) || (curI >= previousMessageToFactor.rows))
                 {
                     continue;
                 }
                 for (int jj = -offset; jj <= offset; jj++)
                 {
-                    curJ = j + jj;
+                    auto curJ = j + jj;
                     if ((curJ < 0) || (curJ >= previousMessageToFactor.cols))
                     {
                         continue;
                     }
 
                     // max value is the previous message + the logged function
-                    curVal = previousMessageToFactor.at<float>(curI, curJ)
+                    auto curVal = previousMessageToFactor.at<float>(curI, curJ)
                         + logPairwisePotential.at<float>(ii + offset, jj + offset);
                     if (curVal > curMax)
                     {
