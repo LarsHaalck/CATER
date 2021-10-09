@@ -737,7 +737,7 @@ void MainWindow::on_statusChanged(const QString& state) { ui->labelProgress->set
 
 void MainWindow::enqueueOptimization()
 {
-    std::size_t chunk = 0;
+    int chunk = -1;
     if (auto chunkSize = mHabiTrack.getPreferences().chunkSize; chunkSize)
     {
         auto start = mHabiTrack.getStartFrame();

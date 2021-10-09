@@ -30,18 +30,30 @@ public:
 public:
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
         const Settings& settings, std::size_t chunk, const PairwiseTrafos& trafos);
+
     static Detections track(const Unaries& unaries, const ManualUnaries& manualUnaries,
+        const Settings& settings, const PairwiseTrafos& trafos)
+    {
+        auto chunkSize = settings.chunkSize;
+        if (chunkSize > 0)
+            return trackChunked(unaries, manualUnaries, settings, trafos);
+        return trackContinous(unaries, manualUnaries, settings, trafos);
+    }
+
+    static Detections trackChunked(const Unaries& unaries, const ManualUnaries& manualUnaries,
+        const Settings& settings, const PairwiseTrafos& trafos);
+    static Detections trackContinous(const Unaries& unaries, const ManualUnaries& manualUnaries,
         const Settings& settings, const PairwiseTrafos& trafos);
 
 private:
     static cv::Mat getPairwiseKernel(int size, double sigma);
+
+    template <typename MessagePassing>
     static cv::Mat truncatedMaxSum(std::size_t start, std::size_t end,
         const std::vector<std::size_t>& ids, const Unaries& unaries,
-        const ManualUnaries& manualUnaries, const Settings& settings,
-        const cv::Mat& pairwiseKernel);
+        const ManualUnaries& manualUnaries, const Settings& settings, const cv::Mat& pairwiseKernel,
+        MessagePassing messagePassing);
 
-    static void passMessageToNode(const cv::Mat& previousMessageToFactor,
-        const cv::Mat& logPairwisePotential, cv::Mat& messageToNode, cv::Mat& phi);
     static Detections extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
         std::size_t offset, const Settings& settings, const PairwiseTrafos& trafos);
 

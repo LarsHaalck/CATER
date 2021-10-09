@@ -13,10 +13,32 @@
 #include <limits>
 #include <opencv2/imgproc.hpp>
 
+#ifdef HAS_OPENCL
+#include "tracker/trackerOpenCL.h"
+#endif
+
 namespace ht
 {
 using namespace matches;
 using namespace transformation;
+using MessagePassing = void (*)(const cv::Mat&, const cv::Mat&, cv::Mat&, cv::Mat&);
+
+// explicit template instantation to allow template function defintion in this unit
+template cv::Mat Tracker::truncatedMaxSum<MessagePassing>(std::size_t, std::size_t,
+    const std::vector<std::size_t>&, const Unaries&, const ManualUnaries&, const Settings&,
+    const cv::Mat&, MessagePassing);
+
+#ifdef HAS_OPENCL
+template cv::Mat Tracker::truncatedMaxSum<TrackerOpenCL>(std::size_t, std::size_t,
+    const std::vector<std::size_t>&, const Unaries&, const ManualUnaries&, const Settings&,
+    const cv::Mat&, TrackerOpenCL);
+#endif
+
+namespace
+{
+    void passMessageToNode(const cv::Mat& previousMessageToFactor,
+        const cv::Mat& logPairwisePotential, cv::Mat& messageToNode, cv::Mat& phi);
+}
 
 Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
     const Settings& settings, std::size_t chunk, const PairwiseTrafos& trafos)
@@ -35,8 +57,8 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 
     auto start = std::chrono::system_clock::now();
     std::size_t boundary = util::getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
-    auto states = truncatedMaxSum(
-        chunk * chunkSize, boundary, ids, unaries, manualUnaries, settings, pairwiseKernel);
+    auto states = truncatedMaxSum(chunk * chunkSize, boundary, ids, unaries, manualUnaries,
+        settings, pairwiseKernel, passMessageToNode);
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     spdlog::debug("Elapsed time for chunk {} tracking: {}", chunk, elapsed.count());
@@ -44,7 +66,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
 }
 
 // TODO: maybe remove this function because of redundancy with the function above
-Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
+Detections Tracker::trackChunked(const Unaries& unaries, const ManualUnaries& manualUnaries,
     const Settings& settings, const PairwiseTrafos& trafos)
 {
     auto pairwiseKernel = getPairwiseKernel(settings.pairwiseSize, settings.pairwiseSigma);
@@ -68,8 +90,8 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     for (std::size_t i = 0; i < numChunks; i++)
     {
         std::size_t end = util::getChunkEnd(i, numChunks, chunkSize, numUnaries);
-        auto future = pool.enqueue(truncatedMaxSum, i * chunkSize, end, ids, unaries, manualUnaries,
-            settings, pairwiseKernel);
+        auto future = pool.enqueue(truncatedMaxSum<MessagePassing>, i * chunkSize, end, ids,
+            unaries, manualUnaries, settings, pairwiseKernel, passMessageToNode);
         futureStates.push_back(std::move(future));
     }
 
@@ -94,9 +116,10 @@ cv::Mat Tracker::getPairwiseKernel(int size, double sigma)
     return kernelX * kernelY.t();
 }
 
+template <typename MessagePassing>
 cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     const std::vector<std::size_t>& ids, const Unaries& unaries, const ManualUnaries& manualUnaries,
-    const Settings& settings, const cv::Mat& pairwiseKernel)
+    const Settings& settings, const cv::Mat& pairwiseKernel, MessagePassing messagePassing)
 {
     spdlog::debug("Running tracking on boundaries: [{}, {})", start, end);
     spdlog::debug("Running tracking on boundaries (id-space): [{}, {}]", ids[start], ids[end - 1]);
@@ -118,7 +141,7 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
 
     // backtracking data
     std::vector<cv::Mat> phis;
-    const int phiSize[] = { firstUnary.rows, firstUnary.cols, 2 };
+    const int phiSize[] = {firstUnary.rows, firstUnary.cols, 2};
 
     if (numVariables == 1)
         messageToNode = messageToFactor;
@@ -130,7 +153,7 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
 
         cv::Mat phi(3, phiSize, CV_32S);
         // set message to node by maximizing over log f and message to factor
-        passMessageToNode(messageToFactor, pairwiseKernel, messageToNode, phi);
+        messagePassing(messageToFactor, pairwiseKernel, messageToNode, phi);
         phis.push_back(phi);
 
         cv::Mat currentUnary;
@@ -194,59 +217,6 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
         maxStates.at<int>(v, 1) = phis[v].at<int>(r, c, 1);
     }
     return maxStates;
-}
-
-void Tracker::passMessageToNode(const cv::Mat& previousMessageToFactor,
-    const cv::Mat& logPairwisePotential, cv::Mat& messageToNode, cv::Mat& phi)
-{
-    int pairwiseSize = logPairwisePotential.rows;
-    int offset = std::floor(pairwiseSize / 2);
-
-    // find max value in truncation window
-    /* #pragma omp parallel for */
-    for (int i = 0; i < previousMessageToFactor.rows; i++)
-    {
-        for (int j = 0; j < previousMessageToFactor.cols; j++)
-        {
-            auto curMax = std::numeric_limits<float>::lowest();
-            auto curMaxI = i;
-            auto curMaxJ = j;
-
-            // truncation for better performance
-            // based on simple heurisitic on pairwise potential size
-            for (int ii = -offset; ii <= offset; ii++)
-            {
-                auto curI = i + ii;
-                if ((curI < 0) || (curI >= previousMessageToFactor.rows))
-                {
-                    continue;
-                }
-                for (int jj = -offset; jj <= offset; jj++)
-                {
-                    auto curJ = j + jj;
-                    if ((curJ < 0) || (curJ >= previousMessageToFactor.cols))
-                    {
-                        continue;
-                    }
-
-                    // max value is the previous message + the logged function
-                    auto curVal = previousMessageToFactor.at<float>(curI, curJ)
-                        + logPairwisePotential.at<float>(ii + offset, jj + offset);
-                    if (curVal > curMax)
-                    {
-                        curMax = curVal;
-                        curMaxI = curI;
-                        curMaxJ = curJ;
-                    }
-                }
-            }
-            messageToNode.at<float>(i, j) = curMax;
-
-            // store max indices for later backtracking
-            phi.at<int>(i, j, 0) = curMaxI;
-            phi.at<int>(i, j, 1) = curMaxJ;
-        }
-    }
 }
 
 Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
@@ -431,4 +401,59 @@ double Tracker::calcWeightedCircularMean(
     double tmp = std::atan2(y, x);
     return radian2Degree(tmp);
 }
+
+namespace
+{
+    void passMessageToNode(const cv::Mat& previousMessageToFactor,
+        const cv::Mat& logPairwisePotential, cv::Mat& messageToNode, cv::Mat& phi)
+    {
+        int pairwiseSize = logPairwisePotential.rows;
+        int offset = std::floor(pairwiseSize / 2);
+
+        // find max value in truncation window
+        for (int i = 0; i < previousMessageToFactor.rows; i++)
+        {
+            for (int j = 0; j < previousMessageToFactor.cols; j++)
+            {
+                auto curMax = std::numeric_limits<float>::lowest();
+                auto curMaxI = i;
+                auto curMaxJ = j;
+
+                // truncation for better performance
+                // based on simple heurisitic on pairwise potential size
+                for (int ii = -offset; ii <= offset; ii++)
+                {
+                    auto curI = i + ii;
+                    if ((curI < 0) || (curI >= previousMessageToFactor.rows))
+                    {
+                        continue;
+                    }
+                    for (int jj = -offset; jj <= offset; jj++)
+                    {
+                        auto curJ = j + jj;
+                        if ((curJ < 0) || (curJ >= previousMessageToFactor.cols))
+                        {
+                            continue;
+                        }
+
+                        // max value is the previous message + the logged function
+                        auto curVal = previousMessageToFactor.at<float>(curI, curJ)
+                            + logPairwisePotential.at<float>(ii + offset, jj + offset);
+                        if (curVal > curMax)
+                        {
+                            curMax = curVal;
+                            curMaxI = curI;
+                            curMaxJ = curJ;
+                        }
+                    }
+                }
+                messageToNode.at<float>(i, j) = curMax;
+
+                // store max indices for later backtracking
+                phi.at<int>(i, j, 0) = curMaxI;
+                phi.at<int>(i, j, 1) = curMaxJ;
+            }
+        }
+    }
+} // unnamed namespace
 } // namespace ht
