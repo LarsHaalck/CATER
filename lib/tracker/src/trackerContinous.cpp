@@ -38,8 +38,8 @@ Detections Tracker::trackContinous(const Unaries& unaries, const ManualUnaries& 
     spdlog::debug("Number of chunks for (parallel) tracking: {}", numChunks);
 
     auto start = std::chrono::system_clock::now();
-    auto states = truncatedMaxSum(
-        0, numUnaries, ids, unaries, manualUnaries, settings, pairwiseKernel, passMessageToNode);
+    auto states = truncatedMaxSum(0, numUnaries, ids, unaries, manualUnaries, settings,
+        pairwiseKernel, passMessageToNode, unaries.getUnaryDirectory());
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     spdlog::info("Elapsed time for tracking: {}", elapsed.count());

@@ -95,8 +95,8 @@ Detections Tracker::trackContinous(const Unaries& unaries, const ManualUnaries& 
 
     auto start = std::chrono::system_clock::now();
     auto openclTracker = TrackerOpenCL();
-    auto states = truncatedMaxSum(
-        0, numUnaries, ids, unaries, manualUnaries, settings, pairwiseKernel, openclTracker);
+    auto states = truncatedMaxSum(0, numUnaries, ids, unaries, manualUnaries, settings,
+        pairwiseKernel, openclTracker, unaries.getUnaryDirectory());
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     spdlog::info("Elapsed time for tracking: {}", elapsed.count());
@@ -133,10 +133,9 @@ void TrackerOpenCL::operator()(const cv::Mat& previousMessageToFactor,
     std::size_t localSize[2] = {32, 32};
     bool res
         = mKernel
-              .args(cv::ocl::KernelArg::PtrReadOnly(mPrev),
-                  cv::ocl::KernelArg::PtrReadOnly(mPair),
-                  cv::ocl::KernelArg::PtrWriteOnly(mCurr),
-                  cv::ocl::KernelArg::PtrWriteOnly(mIds), offset, rows, cols)
+              .args(cv::ocl::KernelArg::PtrReadOnly(mPrev), cv::ocl::KernelArg::PtrReadOnly(mPair),
+                  cv::ocl::KernelArg::PtrWriteOnly(mCurr), cv::ocl::KernelArg::PtrWriteOnly(mIds),
+                  offset, rows, cols)
               .run(2, globalSize, localSize, true);
 
     if (!res)

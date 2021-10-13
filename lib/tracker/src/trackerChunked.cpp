@@ -2,6 +2,7 @@
 
 #include "image-processing/transformation.h"
 #include "image-processing/util.h"
+#include "io/matndIO.h"
 #include "spdlog/spdlog.h"
 #include "tracker/manualUnaries.h"
 #include "tracker/unaries.h"
@@ -21,17 +22,18 @@ namespace ht
 {
 using namespace matches;
 using namespace transformation;
+namespace fs = std::filesystem;
 using MessagePassing = void (*)(const cv::Mat&, const cv::Mat&, cv::Mat&, cv::Mat&);
 
 // explicit template instantation to allow template function defintion in this unit
 template cv::Mat Tracker::truncatedMaxSum<MessagePassing>(std::size_t, std::size_t,
     const std::vector<std::size_t>&, const Unaries&, const ManualUnaries&, const Settings&,
-    const cv::Mat&, MessagePassing);
+    const cv::Mat&, MessagePassing, const fs::path&);
 
 #ifdef HAS_OPENCL
 template cv::Mat Tracker::truncatedMaxSum<TrackerOpenCL>(std::size_t, std::size_t,
     const std::vector<std::size_t>&, const Unaries&, const ManualUnaries&, const Settings&,
-    const cv::Mat&, TrackerOpenCL);
+    const cv::Mat&, TrackerOpenCL, const fs::path&);
 #endif
 
 namespace
@@ -58,7 +60,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     auto start = std::chrono::system_clock::now();
     std::size_t boundary = util::getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
     auto states = truncatedMaxSum(chunk * chunkSize, boundary, ids, unaries, manualUnaries,
-        settings, pairwiseKernel, passMessageToNode);
+        settings, pairwiseKernel, passMessageToNode, unaries.getUnaryDirectory());
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     spdlog::debug("Elapsed time for chunk {} tracking: {}", chunk, elapsed.count());
@@ -91,7 +93,8 @@ Detections Tracker::trackChunked(const Unaries& unaries, const ManualUnaries& ma
     {
         std::size_t end = util::getChunkEnd(i, numChunks, chunkSize, numUnaries);
         auto future = pool.enqueue(truncatedMaxSum<MessagePassing>, i * chunkSize, end, ids,
-            unaries, manualUnaries, settings, pairwiseKernel, passMessageToNode);
+            unaries, manualUnaries, settings, pairwiseKernel, passMessageToNode,
+            unaries.getUnaryDirectory());
         futureStates.push_back(std::move(future));
     }
 
@@ -116,10 +119,38 @@ cv::Mat Tracker::getPairwiseKernel(int size, double sigma)
     return kernelX * kernelY.t();
 }
 
+void Tracker::savePhi(std::size_t idx, const cv::Mat& phi, const fs::path& workingDir)
+{
+    auto file
+        = workingDir / "phis" / (std::string("phi_") + std::to_string(idx));
+    fs::create_directory(file.parent_path());
+    std::ofstream stream(file.string(), std::ios::out);
+    io::checkStream(stream, file);
+    {
+        cereal::PortableBinaryOutputArchive archive(stream);
+        archive(MatND(phi));
+    }
+}
+
+cv::Mat Tracker::loadPhi(std::size_t idx, const fs::path& workingDir)
+{
+    auto file
+        = workingDir / "phis" / (std::string("phi_") + std::to_string(idx));
+    std::ifstream stream(file.string(), std::ios::in);
+    io::checkStream(stream, file);
+    MatND phi;
+    {
+        cereal::PortableBinaryInputArchive archive(stream);
+        archive(phi);
+    }
+    return phi._m;
+}
+
 template <typename MessagePassing>
 cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     const std::vector<std::size_t>& ids, const Unaries& unaries, const ManualUnaries& manualUnaries,
-    const Settings& settings, const cv::Mat& pairwiseKernel, MessagePassing messagePassing)
+    const Settings& settings, const cv::Mat& pairwiseKernel, MessagePassing messagePassing,
+    const std::filesystem::path& workingDir)
 {
     spdlog::debug("Running tracking on boundaries: [{}, {})", start, end);
     spdlog::debug("Running tracking on boundaries (id-space): [{}, {}]", ids[start], ids[end - 1]);
@@ -140,7 +171,6 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     cv::Mat messageToFactor = messageToNode.clone();
 
     // backtracking data
-    std::vector<cv::Mat> phis;
     const int phiSize[] = {firstUnary.rows, firstUnary.cols, 2};
 
     if (numVariables == 1)
@@ -154,7 +184,7 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
         cv::Mat phi(3, phiSize, CV_32S);
         // set message to node by maximizing over log f and message to factor
         messagePassing(messageToFactor, pairwiseKernel, messageToNode, phi);
-        phis.push_back(phi);
+        savePhi(idx, phi, workingDir);
 
         cv::Mat currentUnary;
         if (manualUnaries.exists(idx))
@@ -213,9 +243,12 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     {
         auto r = maxStates.at<int>(v + 1, 0);
         auto c = maxStates.at<int>(v + 1, 1);
-        maxStates.at<int>(v, 0) = phis[v].at<int>(r, c, 0);
-        maxStates.at<int>(v, 1) = phis[v].at<int>(r, c, 1);
+        auto phi = loadPhi(v, workingDir);
+        maxStates.at<int>(v, 0) = phi.at<int>(r, c, 0);
+        maxStates.at<int>(v, 1) = phi.at<int>(r, c, 1);
     }
+
+    fs::remove_all(workingDir / "phis");
     return maxStates;
 }
 

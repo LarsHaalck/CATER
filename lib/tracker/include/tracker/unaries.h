@@ -36,6 +36,8 @@ public:
 
     static double getUnaryQuality(const cv::Mat& unary);
 
+    std::filesystem::path getUnaryDirectory() const { return mUnDir; };
+
 private:
     Unaries(const std::filesystem::path& unDir,
         const std::unordered_map<std::size_t, std::filesystem::path> unFiles, cv::Size imgSize,
