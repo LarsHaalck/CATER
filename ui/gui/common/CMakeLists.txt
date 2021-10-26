@@ -21,7 +21,7 @@ set_target_properties(${LIB_NAME} PROPERTIES AUTOMOC ON)
 target_include_directories(${LIB_NAME} PUBLIC include)
 target_link_libraries(${LIB_NAME}
     PRIVATE
-    Qt5::Widgets
+    Qt6::Widgets
     progressbar
 )
 

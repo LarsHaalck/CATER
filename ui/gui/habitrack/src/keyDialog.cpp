@@ -34,7 +34,7 @@ void KeyDialog::setKey(int key)
 
 void KeyDialog::setKeyName(QString key)
 {
-    mKey = QKeySequence::fromString(key)[0];
+    mKey = QKeySequence::fromString(key)[0].toCombined();
     ui->key->setText(key);
 }
 

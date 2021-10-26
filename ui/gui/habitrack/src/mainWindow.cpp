@@ -12,9 +12,10 @@
 #include <QFileDialog>
 #include <QKeyEvent>
 #include <QMessageBox>
-#include <QSound>
+#include <QSoundEffect>
 #include <QStatusBar>
 #include <QTime>
+#include <QUnhandledException>
 #include <QtConcurrent>
 #include <algorithm>
 #include <chrono>
@@ -203,11 +204,13 @@ void MainWindow::on_actionExport_triggered()
     Ui::ExportDialog uiDialog;
     uiDialog.setupUi(&dialog);
 
-    connect(uiDialog.buttonFile, &QPushButton::clicked, this, [&dialog, &uiDialog]() {
-        auto filename = QFileDialog::getSaveFileName(
-            &dialog, "Export file for detections", QString(), "CSV (*.csv)");
-        uiDialog.labelFile->setText(filename);
-    });
+    connect(uiDialog.buttonFile, &QPushButton::clicked, this,
+        [&dialog, &uiDialog]()
+        {
+            auto filename = QFileDialog::getSaveFileName(
+                &dialog, "Export file for detections", QString(), "CSV (*.csv)");
+            uiDialog.labelFile->setText(filename);
+        });
     dialog.exec();
 
     mHabiTrack.exportDetections(
@@ -688,7 +691,23 @@ void MainWindow::optimizeUnaries()
         chunk = mDetectionsQueue.front();
         mDetectionsQueue.pop_front();
     }
-    auto detectionFuture = QtConcurrent::run(&mHabiTrack, &HabiTrack::optimizeUnaries, chunk);
+
+    // "If a worker thread throws an exception that is not a subclass of QException,
+    // the Qt Concurrent functions will throw a QUnhandledException"
+    auto detectionFuture = QtConcurrent::run(&HabiTrack::optimizeUnaries, &mHabiTrack, chunk)
+                               .onFailed(
+                                   [this](const QUnhandledException& e)
+                                   {
+                                       try
+                                       {
+                                           if (e.exception())
+                                               std::rethrow_exception(e.exception());
+                                       }
+                                       catch (const std::exception& ex)
+                                       {
+                                           emit warn(ex.what());
+                                       }
+                                   });
     auto watcher = std::make_unique<QFutureWatcher<void>>();
     watcher->setFuture(detectionFuture);
 
@@ -703,14 +722,14 @@ void MainWindow::optimizeUnaries()
 
 void MainWindow::on_detectionsAvailable(int chunkId)
 {
-    QSound::play("qrc:///sounds/notification.wav");
+    QSoundEffect effect;
+    effect.setSource(QUrl("qrc:///sounds/notification.wav"));
+    effect.play();
     statusBar()->showMessage("New detections available", statusDelay);
     emit toggleChunk(chunkId, false);
     spdlog::debug("GUI: detections avaiable for chunk {}", chunkId);
     mDetectionsWatchers.erase(chunkId);
-
     ui->labelNumTrackedPos->setText(QString::number(mHabiTrack.detections().size()));
-
     mSaved = false;
 }
 
@@ -757,7 +776,8 @@ void MainWindow::on_positionChanged(QPointF position)
 {
     auto start = mHabiTrack.getStartFrame();
     auto end = mHabiTrack.getEndFrame();
-    if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
+    if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start
+        || mCurrentFrameNumber > end - 1)
         return;
 
     if (auto size = mHabiTrack.images().getImgSize(); position.x() < 0 || position.y() < 0
@@ -780,7 +800,8 @@ void MainWindow::on_bearingChanged(QPointF position)
 {
     auto start = mHabiTrack.getStartFrame();
     auto end = mHabiTrack.getEndFrame();
-    if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
+    if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start
+        || mCurrentFrameNumber > end - 1)
         return;
     spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(), position.y(),
         mCurrentFrameNumber);
@@ -793,7 +814,8 @@ void MainWindow::on_positionCleared()
 {
     auto start = mHabiTrack.getStartFrame();
     auto end = mHabiTrack.getEndFrame();
-    if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
+    if (!mHabiTrack.unaries().size() || mCurrentFrameNumber < start
+        || mCurrentFrameNumber > end - 1)
         return;
 
     spdlog::debug("GUI: manual position cleared on frame {}", mCurrentFrameNumber);
@@ -809,7 +831,8 @@ void MainWindow::on_bearingCleared()
 {
     auto start = mHabiTrack.getStartFrame();
     auto end = mHabiTrack.getEndFrame();
-    if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
+    if (!mHabiTrack.detections().size() || mCurrentFrameNumber < start
+        || mCurrentFrameNumber > end - 1)
         return;
     spdlog::debug("GUI: manual bearing cleared on frame {}", mCurrentFrameNumber);
     mHabiTrack.removeManualBearing(mCurrentFrameNumber);

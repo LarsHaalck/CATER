@@ -29,8 +29,8 @@ set(habitrack_dependencies
     cxxopts_external
     fitpackpp_external
     opencv_external
-    qt5base_external
-    qt5multimedia_external
+    qt6base_external
+    qt6multimedia_external
 )
 
 if (${BUILD_DEPS_ONLY})
@@ -56,9 +56,9 @@ else ()
             -Dcxxopts_DIR=${cxxopts_DIR}
             -Dfitpackpp_DIR=${fitpackpp_DIR}
             -DOpenCV_DIR=${OpenCV_DIR}
-            -DQt5Concurrent_DIR=${Qt5Concurrent_DIR}
-            -DQt5Widgets_DIR=${Qt5Widgets_DIR}
-            -DQt5Multimedia_DIR=${Qt5Multimedia_DIR}
+            -DQt6Concurrent_DIR=${Qt6Concurrent_DIR}
+            -DQt6Widgets_DIR=${Qt6Widgets_DIR}
+            -DQt6Multimedia_DIR=${Qt6Multimedia_DIR}
             -DCMAKE_INSTALL_RPATH=${CMAKE_INSTALL_RPATH}
         BUILD_ALWAYS ON
         INSTALL_COMMAND ""

@@ -78,7 +78,7 @@ void PanoWizard::on_newid(int id)
     {
         connect(&mWatcher, &QFutureWatcher<void>::finished,
             [&]() { this->button(QWizard::FinishButton)->setEnabled(true); });
-        QFuture<void> future = QtConcurrent::run(this, &PanoWizard::process);
+        QFuture<void> future = QtConcurrent::run(&PanoWizard::process, this);
         mWatcher.setFuture(future);
     }
 }

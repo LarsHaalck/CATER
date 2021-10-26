@@ -250,7 +250,7 @@ void LabelEditor::on_accepted()
 
 int LabelEditor::keyStringToInt(const QString& key) const
 {
-    return QKeySequence::fromString(key)[0];
+    return QKeySequence::fromString(key)[0].toCombined();
 }
 
 QString LabelEditor::keyIntToString(int key) const { return QKeySequence(key).toString(); }
