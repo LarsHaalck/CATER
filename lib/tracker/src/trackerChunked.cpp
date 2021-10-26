@@ -60,7 +60,7 @@ Detections Tracker::track(const Unaries& unaries, const ManualUnaries& manualUna
     auto start = std::chrono::system_clock::now();
     std::size_t boundary = util::getChunkEnd(chunk, numChunks, chunkSize, numUnaries);
     auto states = truncatedMaxSum(chunk * chunkSize, boundary, ids, unaries, manualUnaries,
-        settings, pairwiseKernel, passMessageToNode, unaries.getUnaryDirectory());
+        settings, pairwiseKernel, passMessageToNode, "");
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     spdlog::debug("Elapsed time for chunk {} tracking: {}", chunk, elapsed.count());
@@ -93,8 +93,7 @@ Detections Tracker::trackChunked(const Unaries& unaries, const ManualUnaries& ma
     {
         std::size_t end = util::getChunkEnd(i, numChunks, chunkSize, numUnaries);
         auto future = pool.enqueue(truncatedMaxSum<MessagePassing>, i * chunkSize, end, ids,
-            unaries, manualUnaries, settings, pairwiseKernel, passMessageToNode,
-            unaries.getUnaryDirectory());
+            unaries, manualUnaries, settings, pairwiseKernel, passMessageToNode, "");
         futureStates.push_back(std::move(future));
     }
 
@@ -121,8 +120,7 @@ cv::Mat Tracker::getPairwiseKernel(int size, double sigma)
 
 void Tracker::savePhi(std::size_t idx, const cv::Mat& phi, const fs::path& workingDir)
 {
-    auto file
-        = workingDir / "phis" / (std::string("phi_") + std::to_string(idx));
+    auto file = workingDir / "phis" / (std::string("phi_") + std::to_string(idx));
     fs::create_directory(file.parent_path());
     std::ofstream stream(file.string(), std::ios::out);
     io::checkStream(stream, file);
@@ -134,8 +132,7 @@ void Tracker::savePhi(std::size_t idx, const cv::Mat& phi, const fs::path& worki
 
 cv::Mat Tracker::loadPhi(std::size_t idx, const fs::path& workingDir)
 {
-    auto file
-        = workingDir / "phis" / (std::string("phi_") + std::to_string(idx));
+    auto file = workingDir / "phis" / (std::string("phi_") + std::to_string(idx));
     std::ifstream stream(file.string(), std::ios::in);
     io::checkStream(stream, file);
     MatND phi;
@@ -171,6 +168,7 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     cv::Mat messageToFactor = messageToNode.clone();
 
     // backtracking data
+     std::vector<cv::Mat> phis;
     const int phiSize[] = {firstUnary.rows, firstUnary.cols, 2};
 
     if (numVariables == 1)
@@ -184,7 +182,10 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
         cv::Mat phi(3, phiSize, CV_32S);
         // set message to node by maximizing over log f and message to factor
         messagePassing(messageToFactor, pairwiseKernel, messageToNode, phi);
-        savePhi(idx, phi, workingDir);
+        if (workingDir.empty())
+            phis.push_back(phi);
+        else
+            savePhi(idx, phi, workingDir);
 
         cv::Mat currentUnary;
         if (manualUnaries.exists(idx))
@@ -243,12 +244,17 @@ cv::Mat Tracker::truncatedMaxSum(std::size_t start, std::size_t end,
     {
         auto r = maxStates.at<int>(v + 1, 0);
         auto c = maxStates.at<int>(v + 1, 1);
-        auto phi = loadPhi(v, workingDir);
+        cv::Mat phi;
+        if (workingDir.empty())
+            phi = phis[v];
+        else
+            phi = loadPhi(v, workingDir);
         maxStates.at<int>(v, 0) = phi.at<int>(r, c, 0);
         maxStates.at<int>(v, 1) = phi.at<int>(r, c, 1);
     }
 
-    fs::remove_all(workingDir / "phis");
+    if (!workingDir.empty())
+        fs::remove_all(workingDir / "phis");
     return maxStates;
 }
 
