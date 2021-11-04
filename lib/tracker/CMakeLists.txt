@@ -16,6 +16,7 @@ set(SOURCES
     src/manualUnaries.cpp
     src/interpTracker.cpp
     src/detections.cpp
+    src/tracker.cpp
     src/trackerChunked.cpp
 )
 

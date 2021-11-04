@@ -10,8 +10,8 @@ class TrackerOpenCL
 {
 public:
     TrackerOpenCL();
-    void operator()(const cv::Mat& previousMessageToFactor, const cv::Mat& logPairwisePotential,
-        cv::Mat& messageToNode, cv::Mat& phi);
+    void operator()(const cv::UMat& previousMessageToFactor, const cv::UMat& logPairwisePotential,
+        cv::UMat& messageToNode, cv::Mat& phi);
 
 private:
     void initMemory(int rows, int cols, int type);
@@ -19,9 +19,6 @@ private:
 private:
     static const char* mKernelSource;
     cv::ocl::Kernel mKernel;
-    cv::UMat mPair;
-    cv::UMat mPrev;
-    cv::UMat mCurr;
     cv::UMat mIds;
 };
 } // namespace ht

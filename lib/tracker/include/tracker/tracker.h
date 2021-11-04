@@ -45,17 +45,12 @@ public:
     static Detections trackContinous(const Unaries& unaries, const ManualUnaries& manualUnaries,
         const Settings& settings, const PairwiseTrafos& trafos);
 
+    static void savePhi(std::size_t idx, const cv::Mat& phi, const std::filesystem::path& workingDir);
+    static cv::Mat loadPhi(std::size_t idx, const std::filesystem::path& workingDir);
+
 private:
     static cv::Mat getPairwiseKernel(int size, double sigma);
 
-    template <typename MessagePassing>
-    static cv::Mat truncatedMaxSum(std::size_t start, std::size_t end,
-        const std::vector<std::size_t>& ids, const Unaries& unaries,
-        const ManualUnaries& manualUnaries, const Settings& settings, const cv::Mat& pairwiseKernel,
-        MessagePassing messagePassing, const std::filesystem::path& workingDir);
-
-    static void savePhi(std::size_t idx, const cv::Mat& phi, const std::filesystem::path& workingDir);
-    static cv::Mat loadPhi(std::size_t idx, const std::filesystem::path& workingDir);
 
     static Detections extractFromStates(const cv::Mat& states, const std::vector<std::size_t>& ids,
         std::size_t offset, const Settings& settings, const PairwiseTrafos& trafos);
