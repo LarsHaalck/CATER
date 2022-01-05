@@ -21,6 +21,7 @@ set(SOURCES
     src/homographyGlobalOptimizer.cpp
     src/similarityGlobalOptimizer.cpp
     src/isometryGlobalOptimizer.cpp
+    src/similarityGPSOptimizer.cpp
 
     src/transitions.cpp
     src/mst.cpp

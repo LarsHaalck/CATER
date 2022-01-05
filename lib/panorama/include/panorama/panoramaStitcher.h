@@ -76,7 +76,7 @@ private:
 
     bool globalOptimize(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
         FramesMode keyFramesMode, std::size_t limitTo, bool multiThread,
-        std::shared_ptr<BaseProgressBar> cb = {});
+        const GPSMap& gps = {}, std::shared_ptr<BaseProgressBar> cb = {});
     cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
         const cv::Mat& trafo, cv::Rect2d currRect = cv::Rect2d()) const;
@@ -84,6 +84,7 @@ private:
     void addFunctor(ceres::Problem& problem, const cv::Point2f& ptI, const cv::Point2f& ptJ,
         cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
         std::vector<double>* paramsI, std::vector<double>* paramsJ, float response, float weight);
+    void addGPSRegularizer(ceres::Problem& problem, const GPSMap& gps);
     void reconstructTrafos(FramesMode framesMode);
 
     std::vector<double> getCamParameterization() const;
@@ -117,6 +118,8 @@ private:
     std::vector<std::vector<double>> mOptimizedParams; // use for isometries and similaries
 
     bool mReintegrated;
+
+    cv::Mat mGPSSim;
 };
 } // namespace ht
 #endif // HABITRACK_PANORAMA_STITCHER_H

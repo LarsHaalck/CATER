@@ -9,6 +9,7 @@
 #include "isometryGlobalOptimizer.h"
 #include "progressbar/progressBar.h"
 #include "similarityGlobalOptimizer.h"
+#include "similarityGPSOptimizer.h"
 #include "util/algorithm.h"
 #include "util/stopWatch.h"
 
@@ -47,16 +48,17 @@ PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
     , mOptimizedTrafos(mImages.size(), cv::Mat())
     , mOptimizedParams(mImages.size(), std::vector<double>(3, -11))
     , mReintegrated(false)
+    , mGPSSim(cv::Mat::eye(3, 3, CV_64F))
 {
     if (mCamMat.empty())
     {
         mCamMat = cv::Mat::eye(3, 3, CV_64F);
 
-        /* auto imgSize = mImages.getImgSize(); */
+        auto imgSize = mImages.getImgSize();
         /* mCamMat.at<double>(0, 0) = mCamMat.at<double>(1, 1) */
         /*     = 1.2 * std::max(imgSize.width, imgSize.height); */
-        /* mCamMat.at<double>(0, 2) = imgSize.width / 2; */
-        /* mCamMat.at<double>(1, 2) = imgSize.height / 2; */
+        mCamMat.at<double>(0, 2) = static_cast<double>(imgSize.width) / 2;
+        mCamMat.at<double>(1, 2) = static_cast<double>(imgSize.height) / 2;
 
         mDistCoeffs = cv::Mat::zeros(5, 1, CV_64F);
     }
@@ -290,7 +292,7 @@ void PanoramaStitcher::globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
         cb = std::make_shared<ProgressBar>();
 
     PreciseStopWatch timer;
-    bool res = globalOptimize(fts, matches, FramesMode::KeyFramesOnly, limitTo, true, cb);
+    bool res = globalOptimize(fts, matches, FramesMode::KeyFramesOnly, limitTo, true, gps, cb);
     reconstructTrafos(FramesMode::KeyFramesOnly);
     auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
     spdlog::info("Optimization took {} ms", elapsed_time);
@@ -443,7 +445,7 @@ std::vector<std::size_t> PanoramaStitcher::sortIdsByResponseProduct(
 
 bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     const PairwiseMatches& matches, FramesMode framesMode, std::size_t limitTo, bool multiThread,
-    std::shared_ptr<BaseProgressBar> cb)
+    const GPSMap& gps, std::shared_ptr<BaseProgressBar> cb)
 {
     auto camParams = getCamParameterization();
     auto distParams = getDistParameterization();
@@ -458,7 +460,7 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     options.preconditioner_type = ceres::SCHUR_JACOBI;
 
     if (multiThread)
-        options.num_threads = 16;
+        options.num_threads = std::thread::hardware_concurrency();
     else
         options.num_threads = 1;
 
@@ -519,6 +521,9 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         cb->done();
     }
 
+    if (framesMode == FramesMode::KeyFramesOnly)
+        addGPSRegularizer(problem, gps);
+
     // fix first transformation to identity
     if (framesMode == FramesMode::KeyFramesOnly)
     {
@@ -539,6 +544,24 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
 
     /* repairIntriniscs(camParams, distParams); */
     return summary.IsSolutionUsable();
+}
+
+void PanoramaStitcher::addGPSRegularizer(ceres::Problem& problem, const GPSMap& gps)
+{
+    for (auto kf : mKeyFrames)
+    {
+        if (gps.count(kf) == 0)
+            continue;
+
+        using Functor = SimilarityGPSFunctor;
+        auto pt = gps.at(kf);
+        Functor* functor = new Functor(Eigen::Vector2d(pt.x, pt.y));
+
+        auto& params = mOptimizedParams[kf];
+        problem.AddResidualBlock(new ceres::AutoDiffCostFunction<Functor, 4, 6, 6>(functor),
+            new ceres::HuberLoss(1.0), static_cast<double*>(params.data()),
+            mGPSSim.ptr<double>(0));
+    }
 }
 
 void PanoramaStitcher::reintegrate()

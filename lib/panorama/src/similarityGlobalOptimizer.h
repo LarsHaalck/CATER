@@ -16,8 +16,6 @@ public:
     bool operator()(const T* const camParams, const T* const distParams, const T* const simVec0,
         const T* const simVec1, T* errors) const
     {
-        (void)camParams;
-        (void)distParams;
         using Mat3 = Eigen::Matrix<T, 3, 3, Eigen::RowMajor>;
         using Vec2 = Eigen::Matrix<T, 2, 1>;
 
