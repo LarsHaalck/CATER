@@ -6,6 +6,7 @@
 #include "image-processing/geometricType.h"
 #include "image-processing/matches.h"
 #include "image-processing/transformation.h"
+#include "panorama/gpsInterpolator.h"
 #include "util/pairHash.h"
 
 #include <opencv2/core.hpp>
@@ -58,7 +59,7 @@ public:
         cv::Size targetSize, bool blend = false, std::shared_ptr<BaseProgressBar> cb = {}) const;
 
     void globalOptimizeKeyFrames(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
-        std::size_t limitTo = 0, std::shared_ptr<BaseProgressBar> cb = {});
+        std::size_t limitTo = 0, const GPSMap& gps = {},std::shared_ptr<BaseProgressBar> cb = {});
     void refineNonKeyFrames(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
         std::size_t limitTo = 0, std::shared_ptr<BaseProgressBar> cb = {});
     void reintegrate();
@@ -94,7 +95,6 @@ private:
     std::tuple<std::vector<cv::KeyPoint>, std::vector<cv::KeyPoint>, std::vector<float>>
     getCorrespondingPoints(std::pair<std::size_t, std::size_t> pair, const Matches& matches,
         const BaseFeatureContainer& fts);
-    /* cv::Point2d getCenter(const cv::Mat& trafo); */
 
     cv::Mat transformBoundingRect(const cv::Mat& trafo) const;
     cv::Mat interpolateTrafo(double alpha, const cv::Mat& mat1, const cv::Mat& mat2) const;
@@ -108,7 +108,6 @@ private:
     std::vector<std::size_t> mKeyFrames;
     std::unordered_set<std::size_t> mKeyFramesSet;
     GeometricType mType;
-    /* std::vector<std::size_t> mSizes; // only used for IVLC */
 
     cv::Mat mCamMat;
     cv::Mat mCamMatInv;

@@ -15,64 +15,36 @@
 #include "panorama/panoramaStitcher.h"
 #include "panorama/transitions.h"
 
+#include <opencv2/core/persistence.hpp>
+#include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
 
 namespace fs = std::filesystem;
 
 namespace ht
 {
-
-std::ostream& operator<<(std::ostream& stream, const PanoramaStage& stage)
-{
-    switch (stage)
-    {
-    case PanoramaStage::Initialization:
-        stream << "Initialization\n";
-        break;
-    case PanoramaStage::Optimization:
-        stream << "Optimization\n";
-        break;
-    case PanoramaStage::Refinement:
-        stream << "Refinement\n";
-        break;
-    default:
-        stream << "Undefined\n";
-        break;
-    }
-    return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, const PanoramaSettings& settings)
-{
-    stream << "Panorama Settings: \n";
-    stream << "General: \n";
-    stream << "rows: " << settings.rows << "\n";
-    stream << "cols: " << settings.cols << "\n";
-    stream << "cacheSize: " << settings.cacheSize << "\n";
-    stream << "--------------------\n";
-    stream << "ftType: " << settings.ftType << "\n";
-    stream << "numFts: " << settings.numFts << "\n";
-    stream << "minCoverage: " << settings.minCoverage << "\n";
-    stream << "force: " << settings.force << "\n";
-    stream << "stage: " << settings.stage << "\n";
-    stream << "--------------------\n";
-    stream << "overlayCenters: " << settings.overlayCenters << "\n";
-    stream << "overlayPoints: " << settings.overlayPoints << "\n";
-    stream << "smooth: " << settings.smooth << "\n";
-    stream << "--------------------\n";
-    stream << "writeReadable: " << settings.writeReadable << "\n";
-    stream << "====================\n";
-    return stream;
-}
-
 namespace PanoramaEngine
 {
     auto ORB = ht::FeatureType::ORB;
     auto SIM = ht::GeometricType::Similarity;
 
+    GPSSettings loadGPSSettings(const fs::path& gpsFile)
+    {
+        spdlog::info("load gps from: {}", gpsFile.string());
+        cv::FileStorage fs(gpsFile.string(), cv::FileStorage::READ);
+
+        GPSSettings gps;
+        gps.file = static_cast<fs::path>(fs["file"]);
+        gps.offset = fs["offset"];
+        gps.sampling_rate = fs["sampling_rate"];
+        gps.frame_sampling_rate = fs["frame_sampling_rate"];
+        spdlog::debug("loaded gps {}", gps);
+        return gps;
+    }
+
     void runSingle(const Images& images, const std::filesystem::path& dataFolder,
         const PanoramaSettings& settings, const std::vector<cv::Point>& overlayPts,
-        std::size_t chunkSize, std::shared_ptr<BaseProgressBar> mBar)
+        std::size_t chunkSize, const GPSInterpolator& gps_interp, std::shared_ptr<BaseProgressBar> mBar)
     {
         auto basePath = dataFolder;
         fs::create_directories(basePath);
@@ -187,8 +159,9 @@ namespace PanoramaEngine
             stitcher.loadTrafos(basePath / "kfs/opt_trafos.bin");
         else
         {
+            auto gps = gps_interp.interpolate(keyFrames);
             stitcher.globalOptimizeKeyFrames(
-                featuresDense, matches::getMatches(kfInterPath, SIM), 0, mBar);
+                featuresDense, matches::getMatches(kfInterPath, SIM), 0, gps, mBar);
             stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
         }
         // reintegrate by geodesic interpolation of frames between keyframes
@@ -318,10 +291,10 @@ namespace PanoramaEngine
         {
             if (settings.ftType != ORB)
                 stitcher.globalOptimizeKeyFrames(
-                    combinedDenseFtContainer, globalInterMatches, 0, mBar);
+                    combinedDenseFtContainer, globalInterMatches, 0, {}, mBar);
             else
                 stitcher.globalOptimizeKeyFrames(
-                    combinedDenseOrbFtContainer, globalInterMatches, 0, mBar);
+                    combinedDenseOrbFtContainer, globalInterMatches, 0, {}, mBar);
             stitcher.writeTrafos(basePath / "opt_trafos_sparse.bin");
         }
 
@@ -330,8 +303,8 @@ namespace PanoramaEngine
         cv::imwrite(basePath / "combined1_opt_sparse.png", std::get<0>(panoTuple));
 
         detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
-            basePath / "combined1_opt_sparse", settings, combinedImgContainer.getCenter(), chunkSizes,
-            sizes);
+            basePath / "combined1_opt_sparse", settings, combinedImgContainer.getCenter(),
+            chunkSizes, sizes);
 
         if (settings.stage < PanoramaStage::Refinement)
             return;
@@ -351,8 +324,8 @@ namespace PanoramaEngine
         cv::imwrite(basePath / "combined2_opt_dense.png", std::get<0>(panoTuple));
 
         detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
-            basePath / "combined2_opt_dense", settings, combinedImgContainer.getCenter(), chunkSizes,
-            sizes);
+            basePath / "combined2_opt_dense", settings, combinedImgContainer.getCenter(),
+            chunkSizes, sizes);
     }
 
     namespace detail

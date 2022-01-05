@@ -41,7 +41,6 @@ PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
     , mKeyFrames(keyFrames)
     , mKeyFramesSet(std::begin(keyFrames), std::end(keyFrames))
     , mType(type)
-    /* , mSizes() */
     , mCamMat(camMat)
     , mCamMatInv()
     , mDistCoeffs(distCoeffs)
@@ -93,7 +92,6 @@ void PanoramaStitcher::initTrafos(const PairwiseTrafos& trafos)
 void PanoramaStitcher::initTrafosMultipleHelper(std::size_t currBlock, const cv::Mat& currTrafo,
     const std::vector<cv::Mat>& localOptimalTrafos, const std::vector<std::size_t>& sizes)
 {
-    /* mSizes = sizes; */
     Translator translator(sizes);
     auto lower = translator.localToGlobal(std::make_pair(currBlock, static_cast<std::size_t>(0)));
     auto upper = lower + sizes[currBlock];
@@ -182,14 +180,6 @@ cv::Mat PanoramaStitcher::transformBoundingRect(const cv::Mat& trafo) const
 
     return cornersTrafo;
 }
-
-/* cv::Point2d PanoramaStitcher::getCenter(const cv::Mat& trafo) */
-/* { */
-/*     auto cornersTrafo = transformBoundingRect(trafo); */
-/*     cv::Point2d p0(cornersTrafo.at<double>(0, 0), cornersTrafo.at<double>(0, 1)); */
-/*     cv::Point2d p1(cornersTrafo.at<double>(3, 0), cornersTrafo.at<double>(3, 1)); */
-/*     return 0.5 * (p0 + p1); */
-/* } */
 
 void PanoramaStitcher::buildParamsVector()
 {
@@ -293,7 +283,8 @@ std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(
 }
 
 void PanoramaStitcher::globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
-    const PairwiseMatches& matches, std::size_t limitTo, std::shared_ptr<BaseProgressBar> cb)
+    const PairwiseMatches& matches, std::size_t limitTo, const GPSMap& gps,
+    std::shared_ptr<BaseProgressBar> cb)
 {
     if (!cb)
         cb = std::make_shared<ProgressBar>();
@@ -435,9 +426,11 @@ std::vector<std::size_t> PanoramaStitcher::sortIdsByResponseProduct(
 
     if (weights.empty())
     {
-        std::sort(std::begin(ids), std::end(ids), [&](std::size_t k, std::size_t l) {
-            return (ftsI[k].response * ftsJ[k].response) > (ftsI[l].response * ftsJ[l].response);
-        });
+        std::sort(std::begin(ids), std::end(ids),
+            [&](std::size_t k, std::size_t l) {
+                return (ftsI[k].response * ftsJ[k].response)
+                    > (ftsI[l].response * ftsJ[l].response);
+            });
     }
     else
     {

@@ -1,5 +1,6 @@
 #include "tui.h"
 
+#include "panorama/gpsInterpolator.h"
 #include <iostream>
 #include <spdlog/spdlog.h>
 
@@ -156,16 +157,30 @@ void Tui::prefs(const std::string& args)
 
 void Tui::addPanorama(const std::string& args)
 {
-    if (std::find(std::begin(mPanoFiles), std::end(mPanoFiles), args) != std::end(mPanoFiles))
+    std::vector<std::string> words;
+    extractWords(args, std::back_inserter(words));
+    if (words.size() == 0)
+    {
+        std::cout << "Need to pass at least one argument (file [, gps])" << std::endl;
+        return;
+    }
+
+    auto panoFile = words[0];
+    std::string gpsFile;
+    if (words.size() > 1)
+        gpsFile = words[1];
+
+    if (std::find(std::begin(mPanoFiles), std::end(mPanoFiles), panoFile) != std::end(mPanoFiles))
         return;
 
-    if (!fs::is_regular_file(args))
+    if (!fs::is_regular_file(panoFile) || (!gpsFile.empty() && !fs::is_regular_file(gpsFile)))
     {
         std::cout << "Passed argument is not a file" << std::endl;
         return;
     }
 
-    mPanoFiles.push_back(args);
+    mPanoFiles.push_back(panoFile);
+    mPanoGPSFiles[panoFile] = gpsFile;
 }
 
 void Tui::listPanorama()
@@ -186,6 +201,11 @@ void Tui::generatePanorama()
     {
         ht::HabiTrack habitrack;
         habitrack.loadResultsFile(resFile);
+        ht::GPSSettings gps_settings;
+        if (mPanoGPSFiles.count(resFile) > 0)
+            gps_settings = ht::PanoramaEngine::loadGPSSettings(mPanoGPSFiles[resFile]);
+
+        auto gps = ht::GPSInterpolator(gps_settings, habitrack.getStartFrame());
         ht::Images currImages = habitrack.images();
         currImages.clip(habitrack.getStartFrame(), habitrack.getEndFrame() + 1);
 
@@ -197,7 +217,7 @@ void Tui::generatePanorama()
 
         ht::setLogFileTo(outPath / "log.txt");
         ht::PanoramaEngine::runSingle(
-            currImages, outPath, mPanoSettings, currPts, habitrack.getPreferences().chunkSize);
+            currImages, outPath, mPanoSettings, currPts, habitrack.getPreferences().chunkSize, gps);
 
         images.push_back(currImages);
         data.push_back(outPath);

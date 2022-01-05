@@ -12,7 +12,9 @@ set(SOURCES
     src/keyFrames.cpp
     src/keyFrameRecommender.cpp
     src/panoramaStitcher.cpp
+    src/settings.cpp
     src/panoramaEngine.cpp
+    src/gpsInterpolator.cpp
 
     src/metrics.cpp
     src/affinityGlobalOptimizer.cpp

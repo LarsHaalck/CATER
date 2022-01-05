@@ -178,7 +178,7 @@ void PanoWizard::processSingle(const fs::path& resFile)
         pts = getDetections(resFile);
 
     PanoramaEngine::runSingle(images, resFile.parent_path() / "panorama", settings, pts,
-        std::get<0>(resTuple).chunkSize, mBar);
+        std::get<0>(resTuple).chunkSize, {}, mBar);
 }
 
 void PanoWizard::processMultiple()

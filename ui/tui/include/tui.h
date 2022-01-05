@@ -56,6 +56,7 @@ private:
 private:
     ht::HabiTrack mHabiTrack;
     std::vector<std::filesystem::path> mPanoFiles;
+    std::unordered_map<std::string, std::filesystem::path> mPanoGPSFiles;
     ht::PanoramaSettings mPanoSettings;
 };
 
