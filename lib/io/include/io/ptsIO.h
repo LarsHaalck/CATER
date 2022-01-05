@@ -17,6 +17,22 @@ void savePoints(const std::filesystem::path& filename, const std::vector<cv::Poi
         stream << pt.x << "," << pt.y << "\n";
 }
 
+template <class T>
+std::vector<cv::Point_<T>> loadPts(const std::filesystem::path& filename)
+{
+    std::ifstream stream(filename.string());
+    checkStream(stream, filename);
+    std::vector<cv::Point_<T>> pts;
+    for (std::string line; std::getline(stream, line);)
+    {
+        auto it = line.find(",");
+        auto a = static_cast<T>(std::stod(line.substr(0, it)));
+        auto b = static_cast<T>(std::stod(line.substr(it + 1)));
+        pts.push_back({a, b});
+    }
+    return pts;
+}
+
 } // namespace io
 
 #endif // HT_PTS_IO_H
