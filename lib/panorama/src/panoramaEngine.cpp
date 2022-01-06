@@ -165,6 +165,8 @@ namespace PanoramaEngine
             stitcher.globalOptimizeKeyFrames(
                 featuresDense, matches::getMatches(kfInterPath, SIM), 0, gps, mBar);
             stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
+            if (settings.writeReadable)
+                stitcher.writeTrafos(basePath / "kfs/opt_trafos.yml", WriteType::Readable);
         }
         // reintegrate by geodesic interpolation of frames between keyframes
         stitcher.reintegrate();
