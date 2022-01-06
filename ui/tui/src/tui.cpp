@@ -180,7 +180,8 @@ void Tui::addPanorama(const std::string& args)
     }
 
     mPanoFiles.push_back(panoFile);
-    mPanoGPSFiles[panoFile] = gpsFile;
+    if (!gpsFile.empty())
+        mPanoGPSFiles[panoFile] = gpsFile;
 }
 
 void Tui::listPanorama()

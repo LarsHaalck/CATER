@@ -8,8 +8,8 @@
 #include "io/matIO.h"
 #include "isometryGlobalOptimizer.h"
 #include "progressbar/progressBar.h"
-#include "similarityGlobalOptimizer.h"
 #include "similarityGPSOptimizer.h"
+#include "similarityGlobalOptimizer.h"
 #include "util/algorithm.h"
 #include "util/stopWatch.h"
 
@@ -22,6 +22,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/stitching.hpp>
 #include <queue>
+#include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
 #include <unsupported/Eigen/MatrixFunctions>
 
@@ -48,7 +49,7 @@ PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
     , mOptimizedTrafos(mImages.size(), cv::Mat())
     , mOptimizedParams(mImages.size(), std::vector<double>(3, -11))
     , mReintegrated(false)
-    , mGPSSim(cv::Mat::eye(3, 3, CV_64F))
+    , mGPSSim()
 {
     if (mCamMat.empty())
     {
@@ -305,6 +306,8 @@ void PanoramaStitcher::globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
 
     if (!res)
         spdlog::warn("Optimization might not be reliable");
+
+    spdlog::warn("Sim: {}", mGPSSim);
 }
 
 void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
@@ -535,13 +538,13 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         addGPSRegularizer(problem, gps);
 
     // fix first transformation to identity
-    if (framesMode == FramesMode::KeyFramesOnly)
-    {
-        if (mType == GeometricType::Isometry)
-            problem.SetParameterBlockConstant(mOptimizedParams[mKeyFrames[0]].data());
-        else
-            problem.SetParameterBlockConstant(mOptimizedTrafos[mKeyFrames[0]].ptr<double>(0));
-    }
+    /* if (framesMode == FramesMode::KeyFramesOnly) */
+    /* { */
+    /*     if (mType == GeometricType::Isometry) */
+    /*         problem.SetParameterBlockConstant(mOptimizedParams[mKeyFrames[0]].data()); */
+    /*     else */
+    /*         problem.SetParameterBlockConstant(mOptimizedTrafos[mKeyFrames[0]].ptr<double>(0)); */
+    /* } */
 
     // TODO: control this via argument
     // and should always be constant for AllFrames Mode for parallel processing
@@ -559,6 +562,27 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
 
 void PanoramaStitcher::addGPSRegularizer(ceres::Problem& problem, const GPSMap& gps)
 {
+    // init gps mat
+    if (mGPSSim.empty())
+    {
+        std::vector<cv::Point2d> src, dst;
+        for (auto kf : mKeyFrames)
+        {
+            if (gps.count(kf) == 0)
+                continue;
+
+            auto gps_pt = gps.at(kf);
+            auto trafo = mOptimizedTrafos[kf];
+            auto trans_pt = cv::Point2d(trafo.at<double>(0, 2), trafo.at<double>(1, 2));
+
+            src.push_back(gps_pt);
+            dst.push_back(trans_pt);
+        }
+
+        mGPSSim = makeFull(cv::estimateAffinePartial2D(src, dst, cv::noArray(), cv::RANSAC, 3));
+        spdlog::warn("gps init: {}", mGPSSim);
+    }
+
     for (auto kf : mKeyFrames)
     {
         if (gps.count(kf) == 0)
@@ -568,10 +592,9 @@ void PanoramaStitcher::addGPSRegularizer(ceres::Problem& problem, const GPSMap& 
         auto pt = gps.at(kf);
         Functor* functor = new Functor(Eigen::Vector2d(pt.x, pt.y));
 
-        auto& params = mOptimizedParams[kf];
+        auto& params = mOptimizedTrafos[kf];
         problem.AddResidualBlock(new ceres::AutoDiffCostFunction<Functor, 4, 6, 6>(functor),
-            new ceres::HuberLoss(1.0), static_cast<double*>(params.data()),
-            mGPSSim.ptr<double>(0));
+            new ceres::HuberLoss(1.0), params.ptr<double>(0), mGPSSim.ptr<double>(0));
     }
 }
 
@@ -743,6 +766,13 @@ void PanoramaStitcher::reconstructTrafos(FramesMode framesMode)
                 trafo.at<double>(1, 0) = -trafo.at<double>(0, 1);
                 trafo.at<double>(1, 1) = trafo.at<double>(0, 0);
             }
+        }
+
+        if (framesMode == FramesMode::KeyFramesOnly)
+        {
+            auto& trafo = mGPSSim;
+            trafo.at<double>(1, 0) = -trafo.at<double>(0, 1);
+            trafo.at<double>(1, 1) = trafo.at<double>(0, 0);
         }
         break;
     case GeometricType::Affinity:

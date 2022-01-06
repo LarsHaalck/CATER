@@ -159,7 +159,9 @@ namespace PanoramaEngine
             stitcher.loadTrafos(basePath / "kfs/opt_trafos.bin");
         else
         {
-            auto gps = gps_interp.interpolate(keyFrames);
+            GPSMap gps;
+            if (gps_interp.has_prior())
+                gps = gps_interp.interpolate(keyFrames);
             stitcher.globalOptimizeKeyFrames(
                 featuresDense, matches::getMatches(kfInterPath, SIM), 0, gps, mBar);
             stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");

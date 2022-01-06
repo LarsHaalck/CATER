@@ -22,7 +22,7 @@ public:
             T(0), T(1);
 
         Vec2 mGPST(mGPS(0), mGPS(1));
-        Vec2 mTransT(simVec[0], simVec[5]);
+        Vec2 mTransT(simVec[2], simVec[5]);
 
         symmetricReprojectionError<T>(gpsMat, mGPST, mTransT, errors, 1);
         return true;
