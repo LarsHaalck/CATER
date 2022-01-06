@@ -480,10 +480,10 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     for (const auto& [pair, match] : matches)
     {
         auto [idI, idJ] = pair;
-        cv::Mat* trafoI = &mOptimizedTrafos[idI];
-        cv::Mat* trafoJ = &mOptimizedTrafos[idJ];
-        std::vector<double>* paramsI = &mOptimizedParams[idI];
-        std::vector<double>* paramsJ = &mOptimizedParams[idJ];
+        auto* trafoI = &mOptimizedTrafos[idI];
+        auto* trafoJ = &mOptimizedTrafos[idJ];
+        auto* paramsI = &mOptimizedParams[idI];
+        auto* paramsJ = &mOptimizedParams[idJ];
 
         auto [ftsI, ftsJ, weights] = getCorrespondingPoints(pair, match, fts);
 
@@ -508,13 +508,17 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         }
         if (framesMode == FramesMode::AllFrames && isKeyFrame(idI))
         {
-            // TODO: check if iso
-            problem.SetParameterBlockConstant(trafoI->ptr<double>(0));
+            if (mType == GeometricType::Isometry)
+                problem.SetParameterBlockConstant(paramsI->data());
+            else
+                problem.SetParameterBlockConstant(trafoI->ptr<double>(0));
         }
         if (framesMode == FramesMode::AllFrames && isKeyFrame(idJ))
         {
-            // TODO: check if iso
-            problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
+            if (mType == GeometricType::Isometry)
+                problem.SetParameterBlockConstant(paramsJ->data());
+            else
+                problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
         }
 
         if (cb)
@@ -533,9 +537,10 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     // fix first transformation to identity
     if (framesMode == FramesMode::KeyFramesOnly)
     {
-        // TODO: check if iso
-        problem.SetParameterBlockConstant(mOptimizedTrafos[mKeyFrames[0]].ptr<double>(0));
-        /* problem.SetParameterBlockConstant(params[mKeyFrames[0]].data()); */
+        if (mType == GeometricType::Isometry)
+            problem.SetParameterBlockConstant(mOptimizedParams[mKeyFrames[0]].data());
+        else
+            problem.SetParameterBlockConstant(mOptimizedTrafos[mKeyFrames[0]].ptr<double>(0));
     }
 
     // TODO: control this via argument

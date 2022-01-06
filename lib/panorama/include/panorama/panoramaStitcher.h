@@ -117,7 +117,7 @@ private:
     cv::Mat mDistCoeffs;
 
     std::vector<cv::Mat> mOptimizedTrafos;
-    std::vector<std::vector<double>> mOptimizedParams; // use for isometries and similaries
+    std::vector<std::vector<double>> mOptimizedParams; // use for isometries only
 
     bool mReintegrated;
 
