@@ -44,7 +44,8 @@ namespace PanoramaEngine
 
     void runSingle(const Images& images, const std::filesystem::path& dataFolder,
         const PanoramaSettings& settings, const std::vector<cv::Point>& overlayPts,
-        std::size_t chunkSize, const GPSInterpolator& gps_interp, std::shared_ptr<BaseProgressBar> mBar)
+        std::size_t chunkSize, const GPSInterpolator& gps_interp,
+        std::shared_ptr<BaseProgressBar> mBar)
     {
         auto basePath = dataFolder;
         fs::create_directories(basePath);
@@ -201,7 +202,7 @@ namespace PanoramaEngine
         const std::vector<std::filesystem::path>& dataFolders,
         const std::filesystem::path& outFolder, const PanoramaSettings& settings,
         const std::vector<cv::Point>& overlayPts, const std::vector<std::size_t>& chunkSizes,
-        std::shared_ptr<BaseProgressBar> mBar)
+        const std::vector<GPSInterpolator>& gpsInterpolators, std::shared_ptr<BaseProgressBar> mBar)
     {
         std::vector<std::vector<std::size_t>> keyFrameList;
         std::vector<std::size_t> sizes;
@@ -213,6 +214,8 @@ namespace PanoramaEngine
         std::vector<Features> ftsDense;
 
         std::vector<std::vector<cv::Mat>> localOptimalTrafos;
+
+        std::vector<GPSMap> gpsMaps;
 
         auto basePath = outFolder;
         fs::create_directories(basePath);
@@ -241,6 +244,11 @@ namespace PanoramaEngine
 
             sizes.push_back(images.size());
             localOptimalTrafos.push_back(PanoramaStitcher::getTrafos(path / "kfs/opt_trafos.bin"));
+
+            GPSMap gps;
+            if (gpsInterpolators[i].has_prior())
+                gps = gpsInterpolators[i].interpolate(keyFrames);
+            gpsMaps.push_back(gps);
         }
         Translator translator(sizes);
 
@@ -293,6 +301,7 @@ namespace PanoramaEngine
             stitcher.loadTrafos(basePath / "opt_trafos_sparse.bin");
         else
         {
+            auto globalGPSMap = translator.localToGlobal(gpsMaps);
             if (settings.ftType != ORB)
                 stitcher.globalOptimizeKeyFrames(
                     combinedDenseFtContainer, globalInterMatches, 0, {}, mBar);

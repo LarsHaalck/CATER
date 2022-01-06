@@ -198,6 +198,7 @@ void Tui::generatePanorama()
 
     std::vector<cv::Point> pts;
     std::vector<std::size_t> chunkSizes;
+    std::vector<ht::GPSInterpolator> gpsInterpolators;
     for (auto resFile : mPanoFiles)
     {
         ht::HabiTrack habitrack;
@@ -206,7 +207,9 @@ void Tui::generatePanorama()
         if (mPanoGPSFiles.count(resFile) > 0)
             gps_settings = ht::PanoramaEngine::loadGPSSettings(mPanoGPSFiles[resFile]);
 
-        auto gps = ht::GPSInterpolator(gps_settings, habitrack.getStartFrame());
+        auto gpsInterpolator = ht::GPSInterpolator(gps_settings, habitrack.getStartFrame());
+        gpsInterpolators.push_back(gpsInterpolator);
+
         ht::Images currImages = habitrack.images();
         currImages.clip(habitrack.getStartFrame(), habitrack.getEndFrame() + 1);
 
@@ -217,8 +220,8 @@ void Tui::generatePanorama()
         auto outPath = habitrack.getOutputPath() / "panorama";
 
         ht::setLogFileTo(outPath / "log.txt");
-        ht::PanoramaEngine::runSingle(
-            currImages, outPath, mPanoSettings, currPts, habitrack.getPreferences().chunkSize, gps);
+        ht::PanoramaEngine::runSingle(currImages, outPath, mPanoSettings, currPts,
+            habitrack.getPreferences().chunkSize, gpsInterpolator);
 
         images.push_back(currImages);
         data.push_back(outPath);
@@ -234,7 +237,8 @@ void Tui::generatePanorama()
     ht::setLogFileTo(outFolder / "log.txt");
     for (auto resFile : mPanoFiles)
         spdlog::info("Adding res file for combined panorama: {}", resFile);
-    ht::PanoramaEngine::runMulti(images, data, outFolder, mPanoSettings, pts, chunkSizes);
+    ht::PanoramaEngine::runMulti(
+        images, data, outFolder, mPanoSettings, pts, chunkSizes, gpsInterpolators);
 }
 
 std::vector<cv::Point> Tui::getDetections(const ht::HabiTrack& habitrack) const

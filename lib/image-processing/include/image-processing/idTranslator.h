@@ -18,6 +18,20 @@ public:
     std::vector<std::size_t> localToGlobal(const std::vector<std::vector<std::size_t>>& ids);
     PairwiseMatches localToGlobal(const std::vector<PairwiseMatches>& ids);
 
+    // TODO: can this be comined with the vector version above with TMP?
+    template <typename T>
+    std::unordered_map<std::size_t, T> localToGlobal(
+        const std::vector<std::unordered_map<std::size_t, T>>& ids)
+    {
+        std::unordered_map<std::size_t, T> globalIds;
+        for (std::size_t i = 0; i < ids.size(); i++)
+        {
+            for(auto j : ids[i])
+                globalIds.insert({localToGlobal(std::make_pair(i, j.first)), j.second});
+        }
+        return globalIds;
+    }
+
 private:
     std::vector<std::size_t> mCumSums;
 };

@@ -19,6 +19,7 @@ namespace PanoramaEngine
         const std::filesystem::path& outFolder, const PanoramaSettings& settings,
         const std::vector<cv::Point>& overlayPts = {},
         const std::vector<std::size_t>& chunkSizes = {},
+        const std::vector<GPSInterpolator>& gpsInterpolators = {},
         std::shared_ptr<BaseProgressBar> mBar = {});
 
     namespace detail

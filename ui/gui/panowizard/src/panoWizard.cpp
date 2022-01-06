@@ -212,7 +212,7 @@ void PanoWizard::processMultiple()
     }
 
     auto outFolder = mResFiles[0].parent_path() / "panorama_combined";
-    PanoramaEngine::runMulti(images, data, outFolder, settings, pts, chunkSizes, mBar);
+    PanoramaEngine::runMulti(images, data, outFolder, settings, pts, chunkSizes, {}, mBar);
 }
 
 void PanoWizard::on_totalChanged(int total)
