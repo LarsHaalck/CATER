@@ -77,6 +77,8 @@ private:
     bool globalOptimize(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
         FramesMode keyFramesMode, std::size_t limitTo, bool multiThread,
         const GPSMap& gps = {}, std::shared_ptr<BaseProgressBar> cb = {});
+
+    std::tuple<cv::Mat, cv::Mat, cv::Size> scaleTransMat(cv::Size targetSize) const;
     cv::Rect2d generateBoundingRect() const;
     cv::Rect2d generateBoundingRectHelper(
         const cv::Mat& trafo, cv::Rect2d currRect = cv::Rect2d()) const;

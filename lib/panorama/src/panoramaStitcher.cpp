@@ -199,8 +199,7 @@ void PanoramaStitcher::buildParamsVector()
     }
 }
 
-std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(
-    cv::Size targetSize, bool blend, std::shared_ptr<BaseProgressBar> cb) const
+std::tuple<cv::Mat, cv::Mat, cv::Size> PanoramaStitcher::scaleTransMat(cv::Size targetSize) const
 {
     auto rect = generateBoundingRect();
     rect.width = rect.width - rect.x;
@@ -216,6 +215,13 @@ std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(
     cv::Mat transMat = getTranslationMat(-rect.x, -rect.y, true);
     cv::Size newSize(scale * rect.width, scale * rect.height);
 
+    return std::make_tuple(scaleMat, transMat, newSize);
+}
+
+std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(
+    cv::Size targetSize, bool blend, std::shared_ptr<BaseProgressBar> cb) const
+{
+    auto [scaleMat, transMat, newSize] = scaleTransMat(targetSize);
     spdlog::info("Target size: {} x {}", newSize.width, newSize.height);
 
     cv::detail::MultiBandBlender blender(false, 5);
