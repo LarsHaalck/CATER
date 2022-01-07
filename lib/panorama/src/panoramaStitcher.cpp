@@ -162,28 +162,6 @@ void PanoramaStitcher::initTrafosFromMultipleVideos(const PairwiseTrafos& trafos
         buildParamsVector();
 }
 
-cv::Mat PanoramaStitcher::transformBoundingRect(const cv::Mat& trafo) const
-{
-    auto size = mImages.getImgSize();
-    cv::Mat corners = (cv::Mat_<double>(4, 2) << 0.0, 0.0, size.width - 1, 0.0, 0.0,
-        size.height - 1, size.width - 1, size.height - 1);
-
-    cv::Mat cornersHomo;
-    cv::convertPointsToHomogeneous(corners, cornersHomo);
-
-    for (int i = 0; i < cornersHomo.rows; i++)
-    {
-        auto vec = cornersHomo.at<cv::Vec3d>(i, 0);
-        cv::Mat vecMat = trafo * cv::Mat(vec);
-        cornersHomo.at<cv::Vec3d>(i, 0) = vecMat;
-    }
-
-    cv::Mat cornersTrafo;
-    cv::convertPointsFromHomogeneous(cornersHomo, cornersTrafo);
-
-    return cornersTrafo;
-}
-
 void PanoramaStitcher::buildParamsVector()
 {
     for (std::size_t i = 0; i < mImages.size(); i++)
@@ -786,11 +764,9 @@ void PanoramaStitcher::reconstructTrafos(FramesMode framesMode)
 
 cv::Rect2d PanoramaStitcher::generateBoundingRect() const
 {
-    auto imgSize = mImages.getImgSize();
-    cv::Rect2d boundingRect(0, 0, imgSize.width, imgSize.height);
-
-    // store trafos relative to first frame
-    for (size_t i = 1; i < mKeyFrames.size(); i++)
+    // !!the rect is used as 4 (xmin,ymin), (xmax,ymax) and not with (width,height)!!!
+    cv::Rect2d boundingRect;
+    for (size_t i = 0; i < mKeyFrames.size(); i++)
     {
         auto currId = mKeyFrames[i];
         boundingRect = generateBoundingRectHelper(mOptimizedTrafos[currId], boundingRect);
@@ -811,12 +787,44 @@ cv::Rect2d PanoramaStitcher::generateBoundingRectHelper(
     cv::minMaxLoc(cornersTrafoSplit[0], &minX, &maxX);
     cv::minMaxLoc(cornersTrafoSplit[1], &minY, &maxY);
 
-    currRect.x = std::min(currRect.x, minX);
-    currRect.y = std::min(currRect.y, minY);
-    currRect.width = std::max(currRect.width, maxX);
-    currRect.height = std::max(currRect.height, maxY);
+    if (std::abs(currRect.area()) > 0)
+    {
+        currRect.x = std::min(currRect.x, minX);
+        currRect.y = std::min(currRect.y, minY);
+        currRect.width = std::max(currRect.width, maxX);
+        currRect.height = std::max(currRect.height, maxY);
+    }
+    else
+    {
+        currRect.x = minX;
+        currRect.y = minY;
+        currRect.width = maxX;
+        currRect.height = maxY;
+    }
 
     return currRect;
+}
+
+cv::Mat PanoramaStitcher::transformBoundingRect(const cv::Mat& trafo) const
+{
+    auto size = mImages.getImgSize();
+    cv::Mat corners = (cv::Mat_<double>(4, 2) << 0.0, 0.0, size.width - 1, 0.0, 0.0,
+        size.height - 1, size.width - 1, size.height - 1);
+
+    cv::Mat cornersHomo;
+    cv::convertPointsToHomogeneous(corners, cornersHomo);
+
+    for (int i = 0; i < cornersHomo.rows; i++)
+    {
+        auto vec = cornersHomo.at<cv::Vec3d>(i, 0);
+        cv::Mat vecMat = trafo * cv::Mat(vec);
+        cornersHomo.at<cv::Vec3d>(i, 0) = vecMat;
+    }
+
+    cv::Mat cornersTrafo;
+    cv::convertPointsFromHomogeneous(cornersHomo, cornersTrafo);
+
+    return cornersTrafo;
 }
 
 std::vector<double> PanoramaStitcher::getCamParameterization() const
