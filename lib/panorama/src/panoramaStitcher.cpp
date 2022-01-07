@@ -534,7 +534,7 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         cb->done();
     }
 
-    if (framesMode == FramesMode::KeyFramesOnly)
+    if (framesMode == FramesMode::KeyFramesOnly && !gps.empty())
         addGPSRegularizer(problem, gps);
 
     // fix first transformation to identity
@@ -768,7 +768,7 @@ void PanoramaStitcher::reconstructTrafos(FramesMode framesMode)
             }
         }
 
-        if (framesMode == FramesMode::KeyFramesOnly)
+        if (framesMode == FramesMode::KeyFramesOnly && !mGPSSim.empty())
         {
             auto& trafo = mGPSSim;
             trafo.at<double>(1, 0) = -trafo.at<double>(0, 1);
