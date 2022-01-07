@@ -304,11 +304,13 @@ namespace PanoramaEngine
             auto globalGPSMap = translator.localToGlobal(gpsMaps);
             if (settings.ftType != ORB)
                 stitcher.globalOptimizeKeyFrames(
-                    combinedDenseFtContainer, globalInterMatches, 0, {}, mBar);
+                    combinedDenseFtContainer, globalInterMatches, 0, globalGPSMap, mBar);
             else
                 stitcher.globalOptimizeKeyFrames(
-                    combinedDenseOrbFtContainer, globalInterMatches, 0, {}, mBar);
+                    combinedDenseOrbFtContainer, globalInterMatches, 0, globalGPSMap, mBar);
             stitcher.writeTrafos(basePath / "opt_trafos_sparse.bin");
+            if (settings.writeReadable)
+                stitcher.writeTrafos(basePath / "opt_trafos_sparse.yml", WriteType::Readable);
         }
 
         stitcher.reintegrate();
