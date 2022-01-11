@@ -59,7 +59,8 @@ public:
         cv::Size targetSize, bool blend = false, std::shared_ptr<BaseProgressBar> cb = {}) const;
 
     void globalOptimizeKeyFrames(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
-        std::size_t limitTo = 0, const GPSMap& gps = {},std::shared_ptr<BaseProgressBar> cb = {});
+        std::size_t limitTo = 0, const GPSMap& gps = {}, bool fixTranslation = false,
+        std::shared_ptr<BaseProgressBar> cb = {});
     void refineNonKeyFrames(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
         std::size_t limitTo = 0, std::shared_ptr<BaseProgressBar> cb = {});
     void reintegrate();
@@ -75,8 +76,8 @@ private:
         const std::vector<cv::KeyPoint>& ftsJ, const std::vector<float>& weights);
 
     bool globalOptimize(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
-        FramesMode keyFramesMode, std::size_t limitTo, bool multiThread,
-        const GPSMap& gps = {}, std::shared_ptr<BaseProgressBar> cb = {});
+        FramesMode keyFramesMode, std::size_t limitTo, bool multiThread, const GPSMap& gps = {},
+        bool fixTranslation = false, std::shared_ptr<BaseProgressBar> cb = {});
 
     std::tuple<cv::Mat, cv::Mat, cv::Size> scaleTransMat(cv::Size targetSize) const;
     cv::Rect2d generateBoundingRect() const;
@@ -87,6 +88,7 @@ private:
         cv::Mat* trafoI, cv::Mat* trafoJ, double* camParams, double* distParams,
         std::vector<double>* paramsI, std::vector<double>* paramsJ, float response, float weight);
     void addGPSRegularizer(ceres::Problem& problem, const GPSMap& gps);
+    void fixGPSTranslation(ceres::Problem& problem, const GPSMap& gps);
     void reconstructTrafos(FramesMode framesMode);
 
     std::vector<double> getCamParameterization() const;

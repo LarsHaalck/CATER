@@ -164,8 +164,7 @@ namespace PanoramaEngine
             if (gps_interp.has_prior())
                 gps = gps_interp.interpolate(keyFrames);
             stitcher.globalOptimizeKeyFrames(
-                featuresDense, matches::getMatches(kfInterPath, SIM), 0, gps, mBar);
-            stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
+                featuresDense, matches::getMatches(kfInterPath, SIM), 0, gps, false, mBar);
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "kfs/opt_trafos.yml", WriteType::Readable);
         }
@@ -174,7 +173,6 @@ namespace PanoramaEngine
 
         panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite((basePath / "pano1_opt_sparse.png").string(), std::get<0>(panoTuple));
-
         detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
             basePath / "pano1_opt_sparse", settings, images.getCenter(), {chunkSize}, {});
 
@@ -193,7 +191,6 @@ namespace PanoramaEngine
         }
         panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite((basePath / "pano2_opt_dense.png").string(), std::get<0>(panoTuple));
-
         detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
             basePath / "pano2_opt_dense", settings, images.getCenter(), {chunkSize}, {});
     }
@@ -304,10 +301,10 @@ namespace PanoramaEngine
             auto globalGPSMap = translator.localToGlobal(gpsMaps);
             if (settings.ftType != ORB)
                 stitcher.globalOptimizeKeyFrames(
-                    combinedDenseFtContainer, globalInterMatches, 0, globalGPSMap, mBar);
+                    combinedDenseFtContainer, globalInterMatches, 0, globalGPSMap, false, mBar);
             else
                 stitcher.globalOptimizeKeyFrames(
-                    combinedDenseOrbFtContainer, globalInterMatches, 0, globalGPSMap, mBar);
+                    combinedDenseOrbFtContainer, globalInterMatches, 0, globalGPSMap, true, mBar);
             stitcher.writeTrafos(basePath / "opt_trafos_sparse.bin");
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "opt_trafos_sparse.yml", WriteType::Readable);
@@ -316,7 +313,6 @@ namespace PanoramaEngine
         stitcher.reintegrate();
         panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite(basePath / "combined1_opt_sparse.png", std::get<0>(panoTuple));
-
         detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
             basePath / "combined1_opt_sparse", settings, combinedImgContainer.getCenter(),
             chunkSizes, sizes);
@@ -337,7 +333,6 @@ namespace PanoramaEngine
 
         panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite(basePath / "combined2_opt_dense.png", std::get<0>(panoTuple));
-
         detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple),
             basePath / "combined2_opt_dense", settings, combinedImgContainer.getCenter(),
             chunkSizes, sizes);

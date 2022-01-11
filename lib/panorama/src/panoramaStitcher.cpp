@@ -270,14 +270,15 @@ std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(
 }
 
 void PanoramaStitcher::globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
-    const PairwiseMatches& matches, std::size_t limitTo, const GPSMap& gps,
+    const PairwiseMatches& matches, std::size_t limitTo, const GPSMap& gps, bool fixTranslation,
     std::shared_ptr<BaseProgressBar> cb)
 {
     if (!cb)
         cb = std::make_shared<ProgressBar>();
 
     PreciseStopWatch timer;
-    bool res = globalOptimize(fts, matches, FramesMode::KeyFramesOnly, limitTo, true, gps, cb);
+    bool res = globalOptimize(
+        fts, matches, FramesMode::KeyFramesOnly, limitTo, true, gps, fixTranslation, cb);
     reconstructTrafos(FramesMode::KeyFramesOnly);
     auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
     spdlog::info("Optimization took {} ms", elapsed_time);
@@ -432,7 +433,7 @@ std::vector<std::size_t> PanoramaStitcher::sortIdsByResponseProduct(
 
 bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     const PairwiseMatches& matches, FramesMode framesMode, std::size_t limitTo, bool multiThread,
-    const GPSMap& gps, std::shared_ptr<BaseProgressBar> cb)
+    const GPSMap& gps, bool fixTranslation, std::shared_ptr<BaseProgressBar> cb)
 {
     auto camParams = getCamParameterization();
     auto distParams = getDistParameterization();
@@ -514,7 +515,12 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
 
     // no need to add gps regularizer on AllFrames, since the transformations are fixed
     if (framesMode == FramesMode::KeyFramesOnly && !gps.empty())
-        addGPSRegularizer(problem, gps);
+    {
+        if (fixTranslation)
+            fixGPSTranslation(problem, gps);
+        else
+            addGPSRegularizer(problem, gps);
+    }
 
     // fix first transformation to identity
     /* if (framesMode == FramesMode::KeyFramesOnly) */
@@ -574,6 +580,19 @@ void PanoramaStitcher::addGPSRegularizer(ceres::Problem& problem, const GPSMap& 
         auto& params = mOptimizedTrafos[kf];
         problem.AddResidualBlock(new ceres::AutoDiffCostFunction<Functor, 4, 6, 6>(functor),
             new ceres::CauchyLoss(1.0), params.ptr<double>(0), mGPSSim.ptr<double>(0));
+    }
+}
+
+void PanoramaStitcher::fixGPSTranslation(ceres::Problem& problem, const GPSMap& gps)
+{
+    for (auto kf : mKeyFrames)
+    {
+        if (gps.count(kf) == 0)
+            continue;
+
+        auto& params = mOptimizedTrafos[kf];
+        problem.SetParameterization(
+            params.ptr<double>(0), new ceres::SubsetParameterization(6, {2, 5}));
     }
 }
 
