@@ -1,0 +1,16 @@
+FROM ubuntu:22.04
+
+RUN apt update \
+    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
+        build-essential \
+        ninja-build \
+        cmake \
+        git \
+        gfortran \
+        ca-certificates \
+        gdb \
+        libopencv-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# vi: ft=dockerfile
