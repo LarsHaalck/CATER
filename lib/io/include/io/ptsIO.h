@@ -18,7 +18,7 @@ void savePoints(const std::filesystem::path& filename, const std::vector<cv::Poi
 }
 
 template <class T>
-std::vector<cv::Point_<T>> loadPts(const std::filesystem::path& filename)
+std::vector<cv::Point_<T>> loadPoints(const std::filesystem::path& filename)
 {
     std::ifstream stream(filename.string());
     checkStream(stream, filename);

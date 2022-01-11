@@ -11,7 +11,7 @@ GPSInterpolator::GPSInterpolator(const GPSSettings& settings, std::size_t start_
 
 GPSMap GPSInterpolator::interpolate(const std::vector<std::size_t>& keyFrames) const
 {
-    auto gps = io::loadPts<double>(mSettings.file);
+    auto gps = io::loadPoints<double>(mSettings.file);
     auto gps_frame_offset = mSettings.offset * mSettings.frame_sampling_rate;
     auto rate_ratio = static_cast<double>(mSettings.frame_sampling_rate) / mSettings.sampling_rate;
 
