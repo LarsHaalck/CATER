@@ -17,8 +17,8 @@ std::ostream& operator<<(std::ostream& stream, const PanoramaStage& stage);
 
 struct PanoramaSettings
 {
-    int rows = 2000;
-    int cols = 2000;
+    int rows = 8000;
+    int cols = 8000;
     int cacheSize = 200;
 
     FeatureType ftType = FeatureType::ORB;
@@ -27,11 +27,11 @@ struct PanoramaSettings
     bool force = false;
     PanoramaStage stage = PanoramaStage::Refinement;
 
-    bool overlayCenters = false;
+    bool overlayCenters = true;
     bool overlayPoints = false;
     bool smooth = false;
 
-    bool writeReadable = false;
+    bool writeReadable = true;
 };
 std::ostream& operator<<(std::ostream& stream, const PanoramaSettings& prefs);
 
