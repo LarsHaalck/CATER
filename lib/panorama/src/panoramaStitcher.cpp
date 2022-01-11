@@ -516,6 +516,7 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     // no need to add gps regularizer on AllFrames, since the transformations are fixed
     if (framesMode == FramesMode::KeyFramesOnly && !gps.empty())
     {
+        spdlog::warn("Adding GPS regularizers");
         if (fixTranslation)
             fixGPSTranslation(problem, gps);
         else

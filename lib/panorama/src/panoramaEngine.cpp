@@ -165,6 +165,7 @@ namespace PanoramaEngine
                 gps = gps_interp.interpolate(keyFrames);
             stitcher.globalOptimizeKeyFrames(
                 featuresDense, matches::getMatches(kfInterPath, SIM), 0, gps, false, mBar);
+            stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "kfs/opt_trafos.yml", WriteType::Readable);
         }
@@ -304,7 +305,7 @@ namespace PanoramaEngine
                     combinedDenseFtContainer, globalInterMatches, 0, globalGPSMap, false, mBar);
             else
                 stitcher.globalOptimizeKeyFrames(
-                    combinedDenseOrbFtContainer, globalInterMatches, 0, globalGPSMap, true, mBar);
+                    combinedDenseOrbFtContainer, globalInterMatches, 0, globalGPSMap, false, mBar);
             stitcher.writeTrafos(basePath / "opt_trafos_sparse.bin");
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "opt_trafos_sparse.yml", WriteType::Readable);
