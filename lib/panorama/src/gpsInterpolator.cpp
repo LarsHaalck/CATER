@@ -1,5 +1,6 @@
 #include "panorama/gpsInterpolator.h"
 #include "io/ptsIO.h"
+#include "io/io.h"
 
 namespace ht
 {
@@ -15,6 +16,10 @@ GPSMap GPSInterpolator::interpolate(const std::vector<std::size_t>& keyFrames) c
     auto gps_frame_offset = mSettings.offset * mSettings.frame_sampling_rate;
     auto rate_ratio = static_cast<double>(mSettings.frame_sampling_rate) / mSettings.sampling_rate;
 
+    /* auto filename = std::filesystem::path("gps_interp.csv"); */
+    /* std::ofstream stream(filename.string()); */
+    /* io::checkStream(stream, filename); */
+
     std::unordered_map<std::size_t, cv::Point2d> gps_kf;
     for (auto kf : keyFrames)
     {
@@ -29,7 +34,11 @@ GPSMap GPSInterpolator::interpolate(const std::vector<std::size_t>& keyFrames) c
             // prev < div < next, prev + 1 = next
             auto interp = (next - div) * gps[prev] + (div - prev) * gps[next];
             gps_kf[kf] = interp;
+
+            /* stream << kf << "," << prev << "," << next << "\n"; */
         }
+        /* else */
+        /*     stream << kf << "," << -1 << "," << -1 << "\n"; */
     }
 
     return gps_kf;
