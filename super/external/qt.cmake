@@ -38,8 +38,11 @@ else()
 
     # set(qmake ${STAGED_INSTALL_PREFIX}/bin/qmake)
     set(Qt6Core_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt6Core)
+    set(Qt6CoreTools_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt6CoreTools)
     set(Qt6Concurrent_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt6Concurrent)
     set(Qt6Widgets_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt6Widgets)
+    set(Qt6WidgetsTools_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt6WidgetsTools)
+    set(Qt6GuiTools_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt6GuiTools)
     ExternalProject_Add(
         qt6shadertools_external
         DEPENDS qt6base_external

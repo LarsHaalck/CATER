@@ -1,4 +1,4 @@
-find_package(Eigen3 3.3 CONFIG QUIET)
+find_package(Eigen3 3.4 CONFIG QUIET)
 
 if(TARGET Eigen3::Eigen)
     get_property(loc TARGET Eigen3::Eigen PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
@@ -10,7 +10,7 @@ else()
     ExternalProject_Add(
         eigen3_external
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen
-        GIT_TAG 3.3.9
+        GIT_TAG 3.4
         GIT_SHALLOW TRUE
         CMAKE_ARGS
           -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
@@ -24,5 +24,5 @@ else()
         LOG_BUILD ON
         LOG_INSTALL ON
     )
-    set(Eigen3_DIR ${STAGED_INSTALL_PREFIX}/share/eigen3/ceres)
+    set(Eigen3_DIR ${STAGED_INSTALL_PREFIX}/share/eigen3/cmake)
 endif()

@@ -1,0 +1,25 @@
+Bootstrap: docker
+From: alpine:3.15.0
+
+%files
+    super /opt/super
+
+%post
+    apk add --no-cache \
+        git \
+        g++ \
+        gcc \
+        gfortran \
+        make \
+        cmake \
+        spdlog-dev \
+        cereal \
+        opencv-dev
+
+    mkdir /opt/deps
+    cd /opt/deps
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_DEPS_ONLY=ON  ../super
+    make -j4
+
+
+

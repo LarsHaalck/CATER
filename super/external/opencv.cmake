@@ -1,4 +1,4 @@
-find_package(OpenCV 4.4 CONFIG QUIET)
+find_package(OpenCV 4.5 CONFIG QUIET)
 
 if(TARGET opencv_core)
     get_property(loc TARGET opencv_core PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
@@ -15,7 +15,7 @@ else()
         opencv_external
         DEPENDS eigen3_external
         GIT_REPOSITORY https://github.com/opencv/opencv
-        GIT_TAG 4.5.1
+        GIT_TAG 4.5.5
         GIT_SHALLOW TRUE
         CMAKE_ARGS
             -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}

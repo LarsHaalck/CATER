@@ -237,3 +237,6 @@ dmypy.json
 
 lib/3rdparty/*/
 
+# Singularity
+*.sif
+

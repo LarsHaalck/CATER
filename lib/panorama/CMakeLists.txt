@@ -2,7 +2,7 @@
 #                              DEPENDENCIES                               #
 ###########################################################################
 find_package(cereal REQUIRED)
-find_package(Eigen3 3.3 REQUIRED)
+find_package(Eigen3 3.4 REQUIRED)
 find_package(Ceres 2.0 REQUIRED)
 
 ###########################################################################

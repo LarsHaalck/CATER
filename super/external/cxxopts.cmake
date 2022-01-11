@@ -1,5 +1,4 @@
-# cxxopts does not export version correctly
-find_package(cxxopts 2.2.1 CONFIG QUIET)
+find_package(cxxopts 3 CONFIG QUIET)
 
 if(TARGET cxxopts::cxxopts)
     get_property(loc TARGET cxxopts::cxxopts PROPERTY INTERFACE_INCLUDE_DIRECTORIES)

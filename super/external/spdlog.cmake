@@ -1,4 +1,4 @@
-find_package(spdlog 1.8.5 CONFIG QUIET)
+find_package(spdlog 1.9 CONFIG QUIET)
 
 if(TARGET spdlog::spdlog)
     get_property(loc TARGET spdlog::spdlog PROPERTY LOCATION)
@@ -10,7 +10,7 @@ else()
     ExternalProject_Add(
         spdlog_external
         GIT_REPOSITORY https://github.com/gabime/spdlog
-        GIT_TAG v1.8.5
+        GIT_TAG v1.9.2
         GIT_SHALLOW TRUE
         CMAKE_ARGS
           -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
