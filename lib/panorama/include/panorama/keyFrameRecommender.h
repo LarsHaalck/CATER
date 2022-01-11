@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <random>
 
 namespace ht
 {
@@ -18,6 +19,8 @@ public:
 
 private:
     std::vector<std::size_t> mKeyFrames;
+    std::random_device mRd;
+    std::mt19937 mG;
 };
 } // namespace ht
 #endif // HABITRACK_KEYFRAME_RECOMMENDER_H

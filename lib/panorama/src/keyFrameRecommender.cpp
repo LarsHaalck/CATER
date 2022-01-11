@@ -1,9 +1,14 @@
 #include "panorama/keyFrameRecommender.h"
 
+#include <numeric>
+#include <algorithm>
+
 namespace ht
 {
 KeyFrameRecommender::KeyFrameRecommender(const std::vector<std::size_t>& keyFrames)
     : mKeyFrames(keyFrames)
+    , mRd()
+    , mG(mRd())
 {
 }
 
