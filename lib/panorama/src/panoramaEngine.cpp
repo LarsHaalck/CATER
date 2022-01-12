@@ -155,14 +155,15 @@ namespace PanoramaEngine
         if (settings.stage < PanoramaStage::Optimization)
             return;
 
+        GPSMap gps;
+        if (gps_interp.has_prior())
+            gps = gps_interp.interpolate(keyFrames);
+
         // globally optimized these keyframe tranformations and write them for later IVLC
         if (fs::exists(basePath / "kfs/opt_trafos.bin") && !settings.force)
             stitcher.loadTrafos(basePath / "kfs/opt_trafos.bin");
         else
         {
-            GPSMap gps;
-            if (gps_interp.has_prior())
-                gps = gps_interp.interpolate(keyFrames);
             stitcher.globalOptimizeKeyFrames(
                 featuresDense, matches::getMatches(kfInterPath, SIM), 0, gps, false, mBar);
             stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
@@ -185,7 +186,8 @@ namespace PanoramaEngine
             stitcher.loadTrafos(basePath / "opt_trafos.bin");
         else
         {
-            stitcher.refineNonKeyFrames(features, matches::getMatches(kfIntraPath, SIM), 50, mBar);
+            stitcher.refineNonKeyFrames(
+                features, matches::getMatches(kfIntraPath, SIM), 0, gps, mBar);
             stitcher.writeTrafos(basePath / "opt_trafos.bin");
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
@@ -295,11 +297,11 @@ namespace PanoramaEngine
         if (settings.stage < PanoramaStage::Optimization)
             return;
 
+        auto globalGPSMap = translator.localToGlobal(gpsMaps);
         if (fs::exists(basePath / "opt_trafos_sparse.bin") && !settings.force)
             stitcher.loadTrafos(basePath / "opt_trafos_sparse.bin");
         else
         {
-            auto globalGPSMap = translator.localToGlobal(gpsMaps);
             if (settings.ftType != ORB)
                 stitcher.globalOptimizeKeyFrames(
                     combinedDenseFtContainer, globalInterMatches, 0, globalGPSMap, false, mBar);
@@ -326,7 +328,8 @@ namespace PanoramaEngine
         else
         {
             auto globalIntraMatches = translator.localToGlobal(matchesIntraList);
-            stitcher.refineNonKeyFrames(combinedSparseFtContainer, globalIntraMatches, 0, mBar);
+            stitcher.refineNonKeyFrames(
+                combinedSparseFtContainer, globalIntraMatches, 0, globalGPSMap, mBar);
             stitcher.writeTrafos(basePath / "opt_trafos.bin");
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);

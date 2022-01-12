@@ -62,7 +62,7 @@ public:
         std::size_t limitTo = 0, const GPSMap& gps = {}, bool fixTranslation = false,
         std::shared_ptr<BaseProgressBar> cb = {});
     void refineNonKeyFrames(const BaseFeatureContainer& fts, const PairwiseMatches& matches,
-        std::size_t limitTo = 0, std::shared_ptr<BaseProgressBar> cb = {});
+        std::size_t limitTo = 0, const GPSMap& gps = {}, std::shared_ptr<BaseProgressBar> cb = {});
     void reintegrate();
 
     void loadTrafos(const std::filesystem::path& file);

@@ -28,6 +28,8 @@
 
 #include <chrono>
 
+/* #define FIX_KF */
+
 namespace fs = std::filesystem;
 using Gt = ht::GeometricType;
 using namespace ht::matches;
@@ -290,7 +292,8 @@ void PanoramaStitcher::globalOptimizeKeyFrames(const BaseFeatureContainer& fts,
 }
 
 void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
-    const PairwiseMatches& matches, std::size_t limitTo, std::shared_ptr<BaseProgressBar> cb)
+    const PairwiseMatches& matches, std::size_t limitTo, const GPSMap& gps,
+    std::shared_ptr<BaseProgressBar> cb)
 {
     auto pairs = getKeyList(matches);
 
@@ -332,8 +335,9 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
     cb->status("Performing global optimization between keyframes");
     cb->setTotal(mKeyFrames.size() - 1);
 
-    std::vector<bool> res(boundedMatches.size());
     PreciseStopWatch timer;
+#ifdef FIX_KF
+    std::vector<bool> res(boundedMatches.size());
 // optimization problems might have very different sizes so use dynamic scheduling
 #pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < boundedMatches.size(); i++)
@@ -343,12 +347,9 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
 #pragma omp critical
         cb->inc();
     }
-
-    auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
     cb->status("Finished");
     cb->done();
-    spdlog::info("Computed Features in {} ms", elapsed_time);
-    reconstructTrafos(FramesMode::AllFrames);
+    auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
 
     for (std::size_t i = 0; i < boundedMatches.size(); i++)
     {
@@ -359,6 +360,19 @@ void PanoramaStitcher::refineNonKeyFrames(const BaseFeatureContainer& fts,
                 "Optimization might not be reliable for segmet starting with frame {}", id);
         }
     }
+#else
+    PairwiseMatches fullMatches;
+    for (std::size_t i = 0; i < boundedMatches.size(); i++)
+        fullMatches.insert(std::begin(boundedMatches[i]), std::end(boundedMatches[i]));
+    auto res = globalOptimize(fts, fullMatches, FramesMode::AllFrames, limitTo, true, gps);
+    if (!res)
+        spdlog::warn("Optimization might not be reliable");
+    auto elapsed_time = timer.elapsed_time<unsigned int, std::chrono::milliseconds>();
+    spdlog::warn("Sim: {}", mGPSSim);
+#endif
+
+    spdlog::info("Refined in {} ms", elapsed_time);
+    reconstructTrafos(FramesMode::AllFrames);
 
     spdlog::info("Interpolating postponed transformations of {} frames", postpones.size());
     if (postpones.empty())
@@ -488,6 +502,7 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
             addFunctor(problem, ftsI[k].pt, ftsJ[k].pt, trafoI, trafoJ, camParams.data(),
                 distParams.data(), paramsI, paramsJ, ftsI[k].response * ftsJ[k].response, w);
         }
+#ifdef FIX_KF
         if (framesMode == FramesMode::AllFrames && isKeyFrame(idI))
         {
             if (mType == GeometricType::Isometry)
@@ -502,6 +517,7 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
             else
                 problem.SetParameterBlockConstant(trafoJ->ptr<double>(0));
         }
+#endif
 
         if (cb)
             cb->inc();
@@ -513,6 +529,7 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         cb->done();
     }
 
+#ifdef FIX_KF
     // no need to add gps regularizer on AllFrames, since the transformations are fixed
     if (framesMode == FramesMode::KeyFramesOnly && !gps.empty())
     {
@@ -522,6 +539,10 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
         else
             addGPSRegularizer(problem, gps);
     }
+#else
+    if (!gps.empty())
+        addGPSRegularizer(problem, gps);
+#endif
 
     // fix first transformation to identity
     /* if (framesMode == FramesMode::KeyFramesOnly) */
