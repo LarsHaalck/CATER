@@ -572,7 +572,7 @@ void PanoramaStitcher::addGPSRegularizer(ceres::Problem& problem, const GPSMap& 
 
         auto& params = mOptimizedTrafos[kf];
         problem.AddResidualBlock(new ceres::AutoDiffCostFunction<Functor, 4, 6, 6>(functor),
-            new ceres::HuberLoss(1.0), params.ptr<double>(0), mGPSSim.ptr<double>(0));
+            new ceres::CauchyLoss(1.0), params.ptr<double>(0), mGPSSim.ptr<double>(0));
     }
 }
 
