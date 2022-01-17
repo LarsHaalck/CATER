@@ -19,6 +19,7 @@ else()
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+          -DEigen3_DIR=${Eigen3_DIR}
           -DJUST_INSTALL_CEREAL=ON
           -DWITH_WERROR=OFF
         LOG_DOWNLOAD ON
