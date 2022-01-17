@@ -8,11 +8,11 @@
 #include <habitrack/util/algorithm.h>
 #include <habitrack/util/stopWatch.h>
 
+#include "affinityGlobalOptimizer.h"
+#include "homographyGlobalOptimizer.h"
 #include "isometryGlobalOptimizer.h"
 #include "similarityGPSOptimizer.h"
 #include "similarityGlobalOptimizer.h"
-#include "affinityGlobalOptimizer.h"
-#include "homographyGlobalOptimizer.h"
 
 #include <Eigen/Dense>
 #include <ceres/ceres.h>
@@ -234,7 +234,8 @@ std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(
         auto currTrafo = preTrafo * mOptimizedTrafos[currId] * mCamMatInv;
         cv::Mat warpedMask, warped;
         cv::warpPerspective(undistMask, warpedMask, currTrafo, newSize);
-        cv::warpPerspective(undistImg, warped, currTrafo, newSize);
+        cv::warpPerspective(undistImg, warped, currTrafo, newSize, cv::INTER_LINEAR,
+            cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
 
         if (mReintegrated && i > 0)
         {

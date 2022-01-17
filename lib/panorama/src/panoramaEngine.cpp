@@ -155,6 +155,20 @@ namespace PanoramaEngine
         auto panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite((basePath / "pano0_init.png").string(), std::get<0>(panoTuple));
 
+        /* detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple), */
+        /*     basePath / "pano0_init", settings, images.getCenter(), {chunkSize}, {}); */
+
+        /* stitcher.writeTrafos(basePath / "kfs/init_trafos.bin"); */
+        /* if (settings.writeReadable) */
+        /*     stitcher.writeTrafos(basePath / "kfs/init_trafos.yml", WriteType::Readable); */
+
+        /* stitcher.reintegrate(); */
+        /* panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar); */
+        /* cv::imwrite((basePath / "pano0_init_dense.png").string(), std::get<0>(panoTuple)); */
+        /* detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple), */
+        /*     basePath / "pano0_init_dense", settings, images.getCenter(), {chunkSize}, {}); */
+
+
         if (settings.stage < PanoramaStage::Optimization)
             return;
 
@@ -172,6 +186,11 @@ namespace PanoramaEngine
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "kfs/opt_trafos.yml", WriteType::Readable);
         }
+        /* panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar); */
+        /* cv::imwrite((basePath / "pano1_opt_sparse.png").string(), std::get<0>(panoTuple)); */
+        /* detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple), */
+        /*     basePath / "pano1_opt_sparse", settings, images.getCenter(), {chunkSize}, {}); */
+
         // reintegrate by geodesic interpolation of frames between keyframes
         stitcher.reintegrate();
 
