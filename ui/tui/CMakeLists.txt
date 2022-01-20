@@ -24,7 +24,7 @@ target_link_libraries(${EXE_NAME}
     PRIVATE
     spdlog::spdlog
     progressbar
-    habitrack
+    model
     cereal
     util
     io

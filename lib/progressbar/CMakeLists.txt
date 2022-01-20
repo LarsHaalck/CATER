@@ -17,8 +17,4 @@ target_include_directories(${LIB_NAME}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-# install(TARGETS ${LIB_NAME}
-#     EXPORT habitrack-targets
-#     DESTINATION ${CMAKE_INSTALL_LIBDIR}
-# )
-# install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION .)
+install_lib(${LIB_NAME} ON)

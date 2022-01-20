@@ -1,10 +1,12 @@
-#include "tracker/unaries.h"
+#include <habitrack/tracker/unaries.h>
 
-#include "image-processing/images.h"
-#include "image-processing/transformation.h"
-#include "image-processing/util.h"
-#include "progressbar/progressBar.h"
+#include <habitrack/image-processing/images.h>
+#include <habitrack/image-processing/transformation.h>
+#include <habitrack/image-processing/util.h>
+#include <habitrack/progressbar/progressBar.h>
+
 #include "unaryIO.h"
+
 #include <algorithm>
 #include <fstream>
 #include <opencv2/core.hpp>

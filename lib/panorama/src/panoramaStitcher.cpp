@@ -1,17 +1,18 @@
-#include "panorama/panoramaStitcher.h"
+#include <habitrack/panorama/panoramaStitcher.h>
 
-#include "affinityGlobalOptimizer.h"
-#include "homographyGlobalOptimizer.h"
-#include "image-processing/idTranslator.h"
-#include "image-processing/isometry.h"
-#include "io/io.h"
-#include "io/matIO.h"
+#include <habitrack/image-processing/idTranslator.h>
+#include <habitrack/image-processing/isometry.h>
+#include <habitrack/io/io.h>
+#include <habitrack/io/matIO.h>
+#include <habitrack/progressbar/progressBar.h>
+#include <habitrack/util/algorithm.h>
+#include <habitrack/util/stopWatch.h>
+
 #include "isometryGlobalOptimizer.h"
-#include "progressbar/progressBar.h"
 #include "similarityGPSOptimizer.h"
 #include "similarityGlobalOptimizer.h"
-#include "util/algorithm.h"
-#include "util/stopWatch.h"
+#include "affinityGlobalOptimizer.h"
+#include "homographyGlobalOptimizer.h"
 
 #include <Eigen/Dense>
 #include <ceres/ceres.h>

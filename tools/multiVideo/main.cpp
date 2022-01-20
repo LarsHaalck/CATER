@@ -1,16 +1,14 @@
-#include <iostream>
-#include <memory>
-#include <numeric>
+#include <cxxopts.hpp>
 
-#include "image-processing/images.h"
-#include "panorama/panoramaEngine.h"
-
-#include "cxxopts.hpp"
+#include <habitrack/image-processing/images.h>
+#include <habitrack/panorama/panoramaEngine.h>
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
-
 #include <spdlog/spdlog.h>
+#include <iostream>
+#include <memory>
+#include <numeric>
 
 using namespace ht;
 namespace fs = std::filesystem;

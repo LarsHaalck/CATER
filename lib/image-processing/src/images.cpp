@@ -1,4 +1,4 @@
-#include "image-processing/images.h"
+#include <habitrack/image-processing/images.h>
 
 #include <fstream>
 #include <opencv2/imgproc.hpp>

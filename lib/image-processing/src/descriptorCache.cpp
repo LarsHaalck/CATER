@@ -1,5 +1,5 @@
-#include "image-processing/descriptorCache.h"
-#include "image-processing/baseFeatureContainer.h"
+#include <habitrack/image-processing/descriptorCache.h>
+#include <habitrack/image-processing/baseFeatureContainer.h>
 
 namespace ht
 {

@@ -1,11 +1,11 @@
-#include "image-processing/mildRecommender.h"
+#include <habitrack/image-processing/mildRecommender.h>
 
-#include "MILD/BayesianFilter.hpp"
-#include "MILD/loop_closure_detector.h"
-#include "image-processing/featureAggregator.h"
-#include "image-processing/features.h"
-#include "image-processing/matches.h"
-#include "util/stopWatch.h"
+#include <MILD/BayesianFilter.hpp>
+#include <MILD/loop_closure_detector.h>
+#include <habitrack/image-processing/featureAggregator.h>
+#include <habitrack/image-processing/features.h>
+#include <habitrack/image-processing/matches.h>
+#include <habitrack/util/stopWatch.h>
 
 #include <spdlog/spdlog.h>
 

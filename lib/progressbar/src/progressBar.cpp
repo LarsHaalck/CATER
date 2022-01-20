@@ -1,4 +1,4 @@
-#include "progressbar/progressBar.h"
+#include <habitrack/progressbar/progressBar.h>
 
 #include <iostream>
 

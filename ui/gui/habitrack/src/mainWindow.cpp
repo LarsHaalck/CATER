@@ -1,13 +1,14 @@
 #include "mainWindow.h"
 #include "ui_mainWindow.h"
-
-#include "image-processing/util.h"
 #include "labelEditor.h"
 #include "labeler.h"
 #include "preferencesDialog.h"
 #include "qtOpencvCore.h"
 #include "scopedBlocker.h"
 #include "ui_exportDialog.h"
+
+#include <habitrack/image-processing/util.h>
+
 #include <QDate>
 #include <QFileDialog>
 #include <QKeyEvent>
@@ -694,7 +695,7 @@ void MainWindow::optimizeUnaries()
 
     // "If a worker thread throws an exception that is not a subclass of QException,
     // the Qt Concurrent functions will throw a QUnhandledException"
-    auto detectionFuture = QtConcurrent::run(&HabiTrack::optimizeUnaries, &mHabiTrack, chunk)
+    auto detectionFuture = QtConcurrent::run(&Model::optimizeUnaries, &mHabiTrack, chunk)
                                .onFailed(
                                    [this](const QUnhandledException& e)
                                    {

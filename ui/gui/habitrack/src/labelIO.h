@@ -8,7 +8,7 @@
 #include <cereal/types/set.hpp>
 #include <cereal/types/string.hpp>
 
-#include "io/io.h"
+#include <habitrack/io/io.h>
 
 namespace cereal
 {

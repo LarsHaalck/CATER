@@ -1,12 +1,14 @@
-#include "image-processing/matches.h"
+#include <habitrack/image-processing/matches.h>
 
-#include "image-processing/isometry.h"
-#include "io/matIO.h"
+#include <habitrack/image-processing/isometry.h>
+#include <habitrack/io/matIO.h>
+#include <habitrack/progressbar/progressBar.h>
+#include <habitrack/util/stopWatch.h>
+
 #include "matchesIO.h"
-#include "progressbar/progressBar.h"
 #include "unknownFeatureType.h"
 #include "unknownGeometricType.h"
-#include "util/stopWatch.h"
+
 #include <fstream>
 #include <numeric>
 #include <opencv2/imgproc.hpp>

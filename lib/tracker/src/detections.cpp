@@ -1,7 +1,7 @@
-#include "tracker/detections.h"
+#include <habitrack/tracker/detections.h>
 
-#include "image-processing/transformation.h"
-#include "image-processing/util.h"
+#include <habitrack/image-processing/transformation.h>
+#include <habitrack/image-processing/util.h>
 #include <opencv2/imgproc.hpp>
 #include <spdlog/spdlog.h>
 

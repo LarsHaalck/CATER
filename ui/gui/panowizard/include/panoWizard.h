@@ -6,7 +6,8 @@
 #include <filesystem>
 
 #include "gui/progressStatusBar.h"
-#include "panorama/panoramaEngine.h"
+
+#include <habitrack/panorama/panoramaEngine.h>
 
 namespace Ui
 {

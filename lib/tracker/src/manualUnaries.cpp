@@ -1,6 +1,6 @@
-#include "tracker/manualUnaries.h"
+#include <habitrack/tracker/manualUnaries.h>
 
-#include "image-processing/util.h"
+#include <habitrack/image-processing/util.h>
 #include <opencv2/imgproc.hpp>
 
 #include "unaryIO.h"

@@ -1,6 +1,6 @@
 #include "tui.h"
 
-#include "panorama/gpsInterpolator.h"
+#include <habitrack/panorama/gpsInterpolator.h>
 #include <iostream>
 #include <spdlog/spdlog.h>
 
@@ -83,7 +83,7 @@ int Tui::parse(const std::string& response)
 
 void Tui::loadResults(const std::filesystem::path& resFile)
 {
-    mHabiTrack.loadResultsFile(resFile);
+    mModel.loadResultsFile(resFile);
     addPanorama(resFile);
 }
 
@@ -94,11 +94,11 @@ void Tui::prefs(const std::string& args)
 
     if (words.empty() || words.size() % 2 != 0)
     {
-        std::cout << mHabiTrack.getPreferences() << std::endl;
+        std::cout << mModel.getPreferences() << std::endl;
         return;
     }
 
-    auto currPrefs = mHabiTrack.getPreferences();
+    auto currPrefs = mModel.getPreferences();
     for (std::size_t i = 0; i < words.size(); i += 2)
     {
         if (words[i] == "cacheSize")
@@ -152,7 +152,7 @@ void Tui::prefs(const std::string& args)
             currPrefs.ranscacReproj = std::stod(words[i + 1]);
     }
 
-    mHabiTrack.setPreferences(currPrefs);
+    mModel.setPreferences(currPrefs);
 }
 
 void Tui::addPanorama(const std::string& args)
@@ -201,7 +201,7 @@ void Tui::generatePanorama()
     std::vector<ht::GPSInterpolator> gpsInterpolators;
     for (auto resFile : mPanoFiles)
     {
-        ht::HabiTrack habitrack;
+        ht::Model habitrack;
         habitrack.loadResultsFile(resFile);
         ht::GPSSettings gps_settings;
         if (mPanoGPSFiles.count(resFile) > 0)
@@ -241,7 +241,7 @@ void Tui::generatePanorama()
         images, data, outFolder, mPanoSettings, pts, chunkSizes, gpsInterpolators);
 }
 
-std::vector<cv::Point> Tui::getDetections(const ht::HabiTrack& habitrack) const
+std::vector<cv::Point> Tui::getDetections(const ht::Model& habitrack) const
 {
     auto dets = habitrack.detections();
     auto data = dets.cdata();

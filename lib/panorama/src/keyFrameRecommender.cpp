@@ -1,4 +1,4 @@
-#include "panorama/keyFrameRecommender.h"
+#include <habitrack/panorama/keyFrameRecommender.h>
 
 namespace ht
 {

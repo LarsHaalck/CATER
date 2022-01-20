@@ -5,14 +5,16 @@
 #include <QThreadPool>
 
 #include "gui/progressStatusBar.h"
+
 #include "guiPreferences.h"
 #include "labelConfig.h"
 #include "labeler.h"
 #include "trackerScene.h"
 #include "unaryGraphicsView.h"
 
-#include "habitrack/habiTrack.h"
-#include "habitrack/imageViewer.h"
+#include <habitrack/model/model.h>
+#include <habitrack/model/imageViewer.h>
+
 #include <QFutureWatcher>
 #include <QMessageBox>
 #include <QtConcurrent>
@@ -181,7 +183,7 @@ private:
     QTimer mAutoSaveTimer;
     QElapsedTimer mFrameTimer;
 
-    ht::HabiTrack mHabiTrack;
+    ht::Model mHabiTrack;
     QString mVideoFile;
     ht::ImageViewer mViewer;
 

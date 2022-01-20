@@ -1,4 +1,4 @@
-#include "panorama/settings.h"
+#include <habitrack/panorama/settings.h>
 
 namespace ht
 {

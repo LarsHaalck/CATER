@@ -1,6 +1,6 @@
 #include "unaryGraphicsView.h"
 
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 #include <QMouseEvent>
 
 namespace gui

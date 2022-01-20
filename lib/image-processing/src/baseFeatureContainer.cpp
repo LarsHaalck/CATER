@@ -1,4 +1,4 @@
-#include "image-processing/baseFeatureContainer.h"
+#include <habitrack/image-processing/baseFeatureContainer.h>
 
 namespace ht
 {

@@ -1,11 +1,11 @@
 #include <fstream>
 #include <iostream>
 
-#include "image-processing/features.h"
-#include "image-processing/matches.h"
-#include "panorama/keyFrames.h"
+#include <habitrack/image-processing/features.h>
+#include <habitrack/image-processing/matches.h>
+#include <habitrack/panorama/keyFrames.h>
 
-#include "cxxopts.hpp"
+#include <cxxopts.hpp>
 
 using namespace ht;
 namespace fs = std::filesystem;

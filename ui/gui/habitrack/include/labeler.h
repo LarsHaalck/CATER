@@ -8,7 +8,7 @@
 #include <QKeyEvent>
 
 #include "labelConfig.h"
-#include "util/pairHash.h"
+#include <habitrack/util/pairHash.h>
 
 namespace gui
 {

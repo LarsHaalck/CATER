@@ -1,10 +1,11 @@
-#include "image-processing/features.h"
-#include "image-processing/images.h"
-#include "image-processing/matches.h"
 #include "kde.h"
-#include "tracker/interpTracker.h"
-#include "tracker/manualUnaries.h"
-#include "tracker/unaries.h"
+
+#include <habitrack/image-processing/features.h>
+#include <habitrack/image-processing/images.h>
+#include <habitrack/image-processing/matches.h>
+#include <habitrack/tracker/interpTracker.h>
+#include <habitrack/tracker/manualUnaries.h>
+#include <habitrack/tracker/unaries.h>
 
 #include <iostream>
 #include <opencv2/core.hpp>

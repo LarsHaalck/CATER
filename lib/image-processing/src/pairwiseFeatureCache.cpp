@@ -1,5 +1,5 @@
-#include "image-processing/pairwiseFeatureCache.h"
-#include "image-processing/baseFeatureContainer.h"
+#include <habitrack/image-processing/pairwiseFeatureCache.h>
+#include <habitrack/image-processing/baseFeatureContainer.h>
 
 namespace ht
 {

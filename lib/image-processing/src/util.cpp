@@ -1,8 +1,9 @@
-#include "image-processing/util.h"
+#include <habitrack/image-processing/util.h>
+
+#include <habitrack/image-processing/idTranslator.h>
+#include <habitrack/util/tinycolormap.h>
 
 #include "fitpackpp/BSplineCurve.h"
-#include "image-processing/idTranslator.h"
-#include "util/tinycolormap.h"
 
 #include <opencv2/imgproc.hpp>
 

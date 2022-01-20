@@ -4,13 +4,13 @@
 
 #include <spdlog/spdlog.h>
 
-#include "image-processing/features.h"
-#include "image-processing/images.h"
-#include "image-processing/matches.h"
-#include "image-processing/mildRecommender.h"
-#include "image-processing/superGlue.h"
+#include <habitrack/image-processing/features.h>
+#include <habitrack/image-processing/images.h>
+#include <habitrack/image-processing/matches.h>
+#include <habitrack/image-processing/mildRecommender.h>
+#include <habitrack/image-processing/superGlue.h>
 
-#include "cxxopts.hpp"
+#include <cxxopts.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 

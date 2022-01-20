@@ -4,9 +4,9 @@
 #include <filesystem>
 #include <string>
 
-#include "habitrack/habiTrack.h"
-#include "panorama/panoramaEngine.h"
-#include "util/log.h"
+#include <habitrack/model/model.h>
+#include <habitrack/panorama/panoramaEngine.h>
+#include <habitrack/util/log.h>
 
 namespace tui
 {
@@ -20,19 +20,19 @@ private:
     int parse(const std::string& response);
     void prefs(const std::string& args);
 
-    void openImages(const std::filesystem::path& imgPath) { mHabiTrack.loadImageFolder(imgPath); }
+    void openImages(const std::filesystem::path& imgPath) { mModel.loadImageFolder(imgPath); }
     void loadResults(const std::filesystem::path& resFile);
-    void setStart(const std::string& args) { mHabiTrack.setStartFrame(std::stoul(args)); }
-    void setEnd(const std::string& args) { mHabiTrack.setEndFrame(std::stoul(args)); }
-    void save() { mHabiTrack.saveResultsFile(); }
-    void extractFeatures() { mHabiTrack.extractFeatures(); }
-    void extractTrafos() { mHabiTrack.extractTrafos(); }
-    void extractUnaries() { mHabiTrack.extractUnaries(); }
-    void optimize() { mHabiTrack.optimizeUnaries(); }
-    void track() { mHabiTrack.runFullPipeline(); }
-    void video(const std::filesystem::path& videoFile) { mHabiTrack.generateVideo(videoFile); }
+    void setStart(const std::string& args) { mModel.setStartFrame(std::stoul(args)); }
+    void setEnd(const std::string& args) { mModel.setEndFrame(std::stoul(args)); }
+    void save() { mModel.saveResultsFile(); }
+    void extractFeatures() { mModel.extractFeatures(); }
+    void extractTrafos() { mModel.extractTrafos(); }
+    void extractUnaries() { mModel.extractUnaries(); }
+    void optimize() { mModel.optimizeUnaries(); }
+    void track() { mModel.runFullPipeline(); }
+    void video(const std::filesystem::path& videoFile) { mModel.generateVideo(videoFile); }
 
-    std::vector<cv::Point> getDetections(const ht::HabiTrack& habitrack) const;
+    std::vector<cv::Point> getDetections(const ht::Model& habitrack) const;
 
     void addPanorama(const std::string& args);
     void listPanorama();
@@ -54,7 +54,7 @@ private:
     }
 
 private:
-    ht::HabiTrack mHabiTrack;
+    ht::Model mModel;
     std::vector<std::filesystem::path> mPanoFiles;
     std::unordered_map<std::string, std::filesystem::path> mPanoGPSFiles;
     ht::PanoramaSettings mPanoSettings;

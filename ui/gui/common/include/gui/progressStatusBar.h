@@ -1,7 +1,7 @@
 #ifndef GUI_PROGRESS_STATUS_BAR_FUNCTOR_H
 #define GUI_PROGRESS_STATUS_BAR_FUNCTOR_H
 
-#include "progressbar/baseProgressBar.h"
+#include <habitrack/progressbar/baseProgressBar.h>
 #include <QLabel>
 #include <QProgressBar>
 #include <string>

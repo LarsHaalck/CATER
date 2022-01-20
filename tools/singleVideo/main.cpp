@@ -4,10 +4,10 @@
 
 #include <spdlog/spdlog.h>
 
-#include "image-processing/images.h"
-#include "panorama/panoramaEngine.h"
+#include <habitrack/image-processing/images.h>
+#include <habitrack/panorama/panoramaEngine.h>
 
-#include "cxxopts.hpp"
+#include <cxxopts.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 

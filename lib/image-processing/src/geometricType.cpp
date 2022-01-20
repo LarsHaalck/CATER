@@ -1,4 +1,4 @@
-#include "image-processing/geometricType.h"
+#include <habitrack/image-processing/geometricType.h>
 
 namespace ht
 {

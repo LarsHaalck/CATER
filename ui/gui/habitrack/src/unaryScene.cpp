@@ -1,11 +1,12 @@
 #include "unaryScene.h"
 
 #include "colors.h"
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 
-#include "image-processing/util.h"
-#include "tracker/tracker.h"
-#include "util/algorithm.h"
+#include <habitrack/image-processing/util.h>
+#include <habitrack/tracker/tracker.h>
+#include <habitrack/util/algorithm.h>
+
 #include <QLinearGradient>
 #include <ostream>
 

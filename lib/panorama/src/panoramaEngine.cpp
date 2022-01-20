@@ -1,19 +1,19 @@
-#include "panorama/panoramaEngine.h"
+#include <habitrack/panorama/panoramaEngine.h>
 
-#include "image-processing/featureAggregator.h"
-#include "image-processing/features.h"
-#include "image-processing/idTranslator.h"
-#include "image-processing/imageAggregator.h"
-#include "image-processing/images.h"
-#include "image-processing/matches.h"
-#include "image-processing/mildRecommender.h"
-#include "image-processing/superGlue.h"
-#include "image-processing/util.h"
-#include "io/ptsIO.h"
-#include "panorama/keyFrameRecommender.h"
-#include "panorama/keyFrames.h"
-#include "panorama/panoramaStitcher.h"
-#include "panorama/transitions.h"
+#include <habitrack/image-processing/featureAggregator.h>
+#include <habitrack/image-processing/features.h>
+#include <habitrack/image-processing/idTranslator.h>
+#include <habitrack/image-processing/imageAggregator.h>
+#include <habitrack/image-processing/images.h>
+#include <habitrack/image-processing/matches.h>
+#include <habitrack/image-processing/mildRecommender.h>
+#include <habitrack/image-processing/superGlue.h>
+#include <habitrack/image-processing/util.h>
+#include <habitrack/io/ptsIO.h>
+#include <habitrack/panorama/keyFrameRecommender.h>
+#include <habitrack/panorama/keyFrames.h>
+#include <habitrack/panorama/panoramaStitcher.h>
+#include <habitrack/panorama/transitions.h>
 
 #include <opencv2/core/persistence.hpp>
 #include <spdlog/fmt/ostr.h>

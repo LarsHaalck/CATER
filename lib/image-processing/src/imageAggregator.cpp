@@ -1,4 +1,4 @@
-#include "image-processing/imageAggregator.h"
+#include <habitrack/image-processing/imageAggregator.h>
 
 namespace ht
 {

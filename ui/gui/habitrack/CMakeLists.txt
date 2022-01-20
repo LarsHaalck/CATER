@@ -62,7 +62,7 @@ target_link_libraries(${EXE_NAME}
     Qt6::Multimedia
     spdlog::spdlog
     progressbar
-    habitrack
+    model
     cereal
     util
     io

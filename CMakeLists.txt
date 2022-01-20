@@ -9,6 +9,7 @@ set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/ui)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(compile_options)
+include(habitrack)
 
 ###########################################################################
 #                                 OPTIONS                                 #
@@ -41,9 +42,4 @@ if(${BUILD_TOOLS})
     add_subdirectory(tools)
 endif()
 
-# include(GNUInstallDirs)
-# install(EXPORT habitrack-targets
-#     FILE habitrackTargets.cmake
-#     NAMESPACE habitrack::
-#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/habitrack
-# )
+install_logic()

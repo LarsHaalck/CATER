@@ -1,11 +1,12 @@
-#include "tracker/tracker.h"
+#include <habitrack/tracker/tracker.h>
 
-#include "image-processing/transformation.h"
-#include "image-processing/util.h"
-#include "spdlog/spdlog.h"
-#include "tracker/manualUnaries.h"
-#include "tracker/unaries.h"
-#include "util/algorithm.h"
+#include <habitrack/image-processing/transformation.h>
+#include <habitrack/image-processing/util.h>
+#include <habitrack/tracker/manualUnaries.h>
+#include <habitrack/tracker/unaries.h>
+#include <habitrack/util/algorithm.h>
+
+#include <spdlog/spdlog.h>
 #include <chrono>
 #include <iostream>
 #include <limits>

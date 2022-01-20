@@ -1,4 +1,4 @@
-#include "image-processing/idTranslator.h"
+#include <habitrack/image-processing/idTranslator.h>
 
 #include <numeric>
 

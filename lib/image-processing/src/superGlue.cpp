@@ -1,8 +1,8 @@
-#include "image-processing/superGlue.h"
+#include <habitrack/image-processing/superGlue.h>
 
-#include "image-processing/images.h"
-#include "progressbar/progressBar.h"
-#include "util/stopWatch.h"
+#include <habitrack/image-processing/images.h>
+#include <habitrack/progressbar/progressBar.h>
+#include <habitrack/util/stopWatch.h>
 
 #include <spdlog/spdlog.h>
 

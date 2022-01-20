@@ -1,12 +1,12 @@
-#include "image-processing/features.h"
+#include <habitrack/image-processing/features.h>
 
 #include "featureIO.h"
-#include "image-processing/images.h"
-#include "image-processing/util.h"
-#include "io/matIO.h"
-#include "progressbar/progressBar.h"
+#include <habitrack/image-processing/images.h>
+#include <habitrack/image-processing/util.h>
+#include <habitrack/io/matIO.h>
+#include <habitrack/progressbar/progressBar.h>
 #include "unknownFeatureType.h"
-#include "util/stopWatch.h"
+#include <habitrack/util/stopWatch.h>
 #include <fstream>
 #include <iostream>
 #include <opencv2/imgproc.hpp>

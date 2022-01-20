@@ -1,9 +1,9 @@
 #include <fstream>
 #include <iostream>
 
-#include "cxxopts.hpp"
-#include "image-processing/images.h"
-#include "panorama/keyFrames.h"
+#include <cxxopts.hpp>
+#include <habitrack/image-processing/images.h>
+#include <habitrack/panorama/keyFrames.h>
 
 using namespace ht;
 namespace fs = std::filesystem;

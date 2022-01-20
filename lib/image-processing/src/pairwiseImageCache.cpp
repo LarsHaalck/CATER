@@ -1,5 +1,6 @@
-#include "image-processing//pairwiseImageCache.h"
-#include "image-processing//baseImageContainer.h"
+#include <habitrack/image-processing//pairwiseImageCache.h>
+
+#include <habitrack/image-processing//baseImageContainer.h>
 
 namespace ht
 {

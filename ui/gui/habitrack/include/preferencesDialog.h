@@ -1,8 +1,8 @@
 #ifndef PREFERENCESDIALOG_H
 #define PREFERENCESDIALOG_H
 
-#include "habitrack/preferences.h"
-#include "image-processing/baseFeatureContainer.h"
+#include <habitrack/model/preferences.h>
+#include <habitrack/image-processing/baseFeatureContainer.h>
 #include <QDialog>
 
 namespace Ui

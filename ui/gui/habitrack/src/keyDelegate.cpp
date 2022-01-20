@@ -1,5 +1,4 @@
 #include "keyDelegate.h"
-
 #include "keyDialog.h"
 
 #include <QPainter>

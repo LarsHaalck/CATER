@@ -6,10 +6,10 @@
 #include <algorithm>
 #include <spdlog/spdlog.h>
 
-#include "habitrack/resultsIO.h"
-#include "image-processing/images.h"
-#include "panorama/panoramaEngine.h"
-#include "tracker/detections.h"
+#include <habitrack/model/resultsIO.h>
+#include <habitrack/image-processing/images.h>
+#include <habitrack/panorama/panoramaEngine.h>
+#include <habitrack/tracker/detections.h>
 
 namespace fs = std::filesystem;
 

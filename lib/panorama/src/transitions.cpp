@@ -1,6 +1,6 @@
-#include "panorama/transitions.h"
+#include <habitrack/panorama/transitions.h>
 
-#include "image-processing/idTranslator.h"
+#include <habitrack/image-processing/idTranslator.h>
 #include "mst.h"
 
 #include <spdlog/spdlog.h>

@@ -24,9 +24,4 @@ target_link_libraries(${LIB_NAME}
     spdlog::spdlog
 )
 
-
-# install(TARGETS ${LIB_NAME}
-#     EXPORT habitrack-targets
-#     DESTINATION ${CMAKE_INSTALL_LIBDIR}
-# )
-# install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION .)
+install_lib(${LIB_NAME} ON)

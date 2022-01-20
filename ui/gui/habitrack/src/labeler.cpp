@@ -1,10 +1,8 @@
 #include "labeler.h"
+#include "labelIO.h"
 
 #include <fstream>
 #include <spdlog/spdlog.h>
-
-#include "labelIO.h"
-
 #include <QMessageBox>
 
 namespace gui

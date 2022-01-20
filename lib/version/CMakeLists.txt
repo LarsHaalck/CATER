@@ -4,7 +4,7 @@
 set(LIB_NAME "version")
 add_library(${LIB_NAME} INTERFACE ${SOURCES})
 
-configure_file(include/version/version.h.in include/version/version.h)
+configure_file(include/habitrack/version/version.h.in include/habitrack/version/version.h)
 
 target_include_directories(${LIB_NAME}
     INTERFACE
@@ -12,8 +12,4 @@ target_include_directories(${LIB_NAME}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 )
 
-# install(TARGETS ${LIB_NAME}
-#     EXPORT habitrack-targets
-#     DESTINATION ${CMAKE_INSTALL_LIBDIR}
-# )
-# install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include DESTINATION .)
+install_lib(${LIB_NAME} ON)

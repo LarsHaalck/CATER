@@ -1,8 +1,8 @@
-#include "panorama/keyFrames.h"
+#include <habitrack/panorama/keyFrames.h>
 
-#include "image-processing/util.h"
-#include "util/algorithm.h"
-#include "util/stopWatch.h"
+#include <habitrack/image-processing/util.h>
+#include <habitrack/util/algorithm.h>
+#include <habitrack/util/stopWatch.h>
 
 #include <opencv2/core.hpp>
 #include <spdlog/spdlog.h>

@@ -1,6 +1,7 @@
-#include "panorama/gpsInterpolator.h"
-#include "io/ptsIO.h"
-#include "io/io.h"
+#include <habitrack/panorama/gpsInterpolator.h>
+
+#include <habitrack/io/ptsIO.h>
+#include <habitrack/io/io.h>
 
 namespace ht
 {

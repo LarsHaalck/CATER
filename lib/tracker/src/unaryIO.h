@@ -4,7 +4,7 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/types/unordered_map.hpp>
 
-#include "io/io.h"
+#include <habitrack/io/io.h>
 #include <opencv2/core.hpp>
 
 namespace cereal
