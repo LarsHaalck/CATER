@@ -1,9 +1,9 @@
 ###########################################################################
 #                              DEPENDENCIES                               #
 ###########################################################################
-find_package(cereal REQUIRED)
-find_package(Eigen3 3.4 REQUIRED)
 find_package(Ceres 2.0 REQUIRED)
+find_package(Eigen3 3.4 REQUIRED)
+find_package(cereal REQUIRED)
 
 ###########################################################################
 #                                FILES                                    #
@@ -45,7 +45,7 @@ target_link_libraries(${LIB_NAME}
     PUBLIC
     image-processing
     Eigen3::Eigen
-    PRIVATE
+    PUBLIC
     cereal
     ceres
     io
@@ -57,9 +57,10 @@ target_link_libraries(${LIB_NAME}
 
 if(${OpenMP_CXX_FOUND})
     target_link_libraries(${LIB_NAME}
-        PRIVATE
+        PUBLIC
         OpenMP::OpenMP_CXX
     )
 endif()
 
 install_lib(${LIB_NAME} ON)
+install_config(${LIB_NAME})

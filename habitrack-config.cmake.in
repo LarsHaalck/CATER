@@ -1,20 +1,23 @@
 @PACKAGE_INIT@
 
+include(CMakeFindDependencyMacro)
+set(comps @comps@)
+foreach(component ${habitrack_FIND_COMPONENTS})
+    if(${component} IN_LIST comps)
+        include(${CMAKE_CURRENT_LIST_DIR}/${component}-config.cmake)
+    else()
+        message(FATAL_ERROR "Component unknown: " ${comp})
+    endif()
+endforeach()
+
+set(OpenCV_DIR @OpenCV_DIR@)
+set(spdlog_DIR @spdlog_DIR@)
+
+find_dependency(OpenCV 4.5)
+find_dependency(spdlog 1.9)
+if (@OpenMP_CXX_FOUND@)
+    find_package(OpenMP REQUIRED)
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/@targets_export_name@.cmake)
 check_required_components(habitrack)
-
-# TODO: this is very hacky and should be replaced
-set(Eigen3_DIR @Eigen3_DIR@)
-set(spdlog_DIR @spdlog_DIR@)
-set(mild_DIR @mild_DIR@)
-set(Ceres_DIR @Ceres_DIR@)
-set(cereal_DIR @cereal_DIR@)
-set(cxxopts_DIR @cxxopts_DIR@)
-set(fitpackpp_DIR @fitpackpp_DIR@)
-set(OpenCV_DIR @OpenCV_DIR@)
-set(Qt6CoreTools_DIR @Qt6CoreTools_DIR@)
-set(Qt6Concurrent_DIR @Qt6Concurrent_DIR@)
-set(Qt6Widgets_DIR @Qt6Widgets_DIR@)
-set(Qt6WidgetsTools_DIR @Qt6WidgetsTools_DIR@)
-set(Qt6GuiTools_DIR @Qt6GuiTools_DIR@)
-set(Qt6Multimedia_DIR @Qt6Multimedia_DIR@)

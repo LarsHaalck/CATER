@@ -1,10 +1,10 @@
 ###########################################################################
 #                              DEPENDENCIES                               #
 ###########################################################################
-find_package(cereal REQUIRED)
-find_package(mild REQUIRED)
 find_package(Eigen3 3.4 REQUIRED)
+find_package(cereal REQUIRED)
 find_package(fitpackpp REQUIRED)
+find_package(mild REQUIRED)
 
 if(${WITH_SUPERGLUE})
     find_package(Torch REQUIRED)
@@ -75,7 +75,7 @@ target_link_libraries(${LIB_NAME}
     opencv_features2d
     opencv_calib3d
     util
-    PRIVATE
+    PUBLIC
     opencv_imgproc
     opencv_highgui
     opencv_flann
@@ -87,14 +87,15 @@ target_link_libraries(${LIB_NAME}
 )
 
 if(${WITH_SUPERGLUE})
-    target_link_libraries(${LIB_NAME} PRIVATE torch)
+    target_link_libraries(${LIB_NAME} PUBLIC torch)
 endif()
 
 if(${OpenMP_CXX_FOUND})
     target_link_libraries(${LIB_NAME}
-        PRIVATE
+        PUBLIC
         OpenMP::OpenMP_CXX
     )
 endif()
 
 install_lib(${LIB_NAME} ON)
+install_config(${LIB_NAME})

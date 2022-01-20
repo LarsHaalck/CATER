@@ -43,7 +43,7 @@ target_include_directories(${LIB_NAME}
 target_link_libraries(${LIB_NAME}
     PUBLIC
     image-processing
-    PRIVATE
+    PUBLIC
     cereal
     io
     progressbar
@@ -53,7 +53,7 @@ target_link_libraries(${LIB_NAME}
 
 if(${OpenMP_CXX_FOUND})
     target_link_libraries(${LIB_NAME}
-        PRIVATE
+        PUBLIC
         OpenMP::OpenMP_CXX
     )
 endif()
@@ -61,9 +61,10 @@ endif()
 if(${OpenCL_FOUND})
     target_compile_definitions(${LIB_NAME} PRIVATE HAS_OPENCL)
     target_link_libraries(${LIB_NAME}
-        PRIVATE
+        PUBLIC
         OpenCL::OpenCL
     )
 endif()
 
 install_lib(${LIB_NAME} ON)
+install_config(${LIB_NAME})

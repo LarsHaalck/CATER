@@ -76,10 +76,7 @@ if(${OpenMP_CXX_FOUND})
     )
 endif()
 
-install(TARGETS ${EXE_NAME}
-    DESTINATION bin
-)
-
+install_bin(${EXE_NAME})
 install(FILES resources/habitrack-gui.desktop DESTINATION share/applications)
 install(FILES resources/habitrack-gui.png
     DESTINATION share/icons/hicolor/128x128/apps)

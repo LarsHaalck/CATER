@@ -1,0 +1,9 @@
+set(cereal_DIR @cereal_DIR@)
+
+find_dependency(cereal)
+find_dependency(fitpackpp)
+find_dependency(mild)
+if (@OpenCL_FOUND@)
+    find_package(OpenCL REQUIRED)
+endif()
+set(habitrack_tracker_FOUND TRUE)

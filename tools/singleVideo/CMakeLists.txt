@@ -1,6 +1,6 @@
 add_executable(single main.cpp)
 target_link_libraries(single
-    PRIVATE
+    PUBLIC
     tracker
     panorama
     cxxopts::cxxopts

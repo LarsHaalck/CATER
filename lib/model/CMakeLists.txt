@@ -27,7 +27,7 @@ target_link_libraries(${LIB_NAME}
     image-processing
     tracker
     util
-    PRIVATE
+    PUBLIC
     spdlog::spdlog
     version
     io
@@ -35,7 +35,7 @@ target_link_libraries(${LIB_NAME}
 
 if(${OpenMP_CXX_FOUND})
     target_link_libraries(${LIB_NAME}
-        PRIVATE
+        PUBLIC
         OpenMP::OpenMP_CXX
     )
 endif()

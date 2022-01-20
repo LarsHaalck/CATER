@@ -38,6 +38,4 @@ if(${OpenMP_CXX_FOUND})
     )
 endif()
 
-install(TARGETS ${EXE_NAME}
-    DESTINATION bin
-)
+install_bin(${EXE_NAME})

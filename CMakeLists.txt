@@ -18,7 +18,6 @@ option(BUILD_GUI "Build the graphical user interface" TRUE)
 option(BUILD_TOOLS "Build tools" TRUE)
 option(WITH_SUPERGLUE "With SuperGlue/SuperPoint support" FALSE)
 
-
 ###########################################################################
 #                       PACKAGES / SUBDIRS                                #
 ###########################################################################
