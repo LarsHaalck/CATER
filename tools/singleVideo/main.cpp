@@ -68,8 +68,8 @@ int main(int argc, const char** argv)
     settings.cacheSize = cacheSize;
     settings.rows = rows;
     settings.cols = cols;
-    settings.numFts = numFts;
-    settings.ftType = ftType;
+    settings.numFeatures = numFts;
+    settings.featureType = ftType;
     settings.overlayCenters = true;
 
     // load images

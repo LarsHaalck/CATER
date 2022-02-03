@@ -30,8 +30,8 @@ std::ostream& operator<<(std::ostream& stream, const PanoramaSettings& settings)
     stream << "cols: " << settings.cols << "\n";
     stream << "cacheSize: " << settings.cacheSize << "\n";
     stream << "--------------------\n";
-    stream << "ftType: " << settings.ftType << "\n";
-    stream << "numFts: " << settings.numFts << "\n";
+    stream << "ftType: " << settings.featureType << "\n";
+    stream << "numFts: " << settings.numFeatures << "\n";
     stream << "minCoverage: " << settings.minCoverage << "\n";
     stream << "force: " << settings.force << "\n";
     stream << "stage: " << settings.stage << "\n";

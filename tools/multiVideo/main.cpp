@@ -57,7 +57,7 @@ int main(int argc, const char** argv)
     settings.cacheSize = cacheSize;
     settings.rows = rows;
     settings.cols = cols;
-    settings.ftType = ftType;
+    settings.featureType = ftType;
 
     std::vector<Images> imgContainers;
     for (const auto& path : videoPaths)

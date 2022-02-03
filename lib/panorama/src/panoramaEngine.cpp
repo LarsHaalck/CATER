@@ -57,7 +57,7 @@ namespace PanoramaEngine
             features = Features::fromDir(images, ftPath, ORB);
         else
             features = Features::compute(
-                images, ftPath, ORB, settings.numFts, settings.cacheSize, size_t_vec(), mBar);
+                images, ftPath, ORB, settings.numFeatures, settings.cacheSize, size_t_vec(), mBar);
 
         // select key frames
         auto kfPath = basePath / "key_frames.yml";
@@ -85,19 +85,19 @@ namespace PanoramaEngine
             featuresDense = Features::fromDir(images, featuresDensePath, ORB, keyFrames);
         else
         {
-            featuresDense = Features::compute(images, featuresDensePath, ORB, 4 * settings.numFts,
-                settings.cacheSize, keyFrames, mBar);
+            featuresDense = Features::compute(images, featuresDensePath, ORB,
+                4 * settings.numFeatures, settings.cacheSize, keyFrames, mBar);
         }
 
         // window is 4 because ceil(1 / 0.3) seems like a sensible default
         auto mildRecommender = std::make_unique<MildRecommender>(featuresDense, 1, true);
-        if (settings.ftType == FeatureType::SuperPoint)
+        if (settings.featureType == FeatureType::SuperPoint)
         {
-            if (Features::isComputed(images, featuresDensePath, settings.ftType, keyFrames)
+            if (Features::isComputed(images, featuresDensePath, settings.featureType, keyFrames)
                 && !settings.force)
             {
                 featuresDense
-                    = Features::fromDir(images, featuresDensePath, settings.ftType, keyFrames);
+                    = Features::fromDir(images, featuresDensePath, settings.featureType, keyFrames);
             }
             else
             {
@@ -108,19 +108,19 @@ namespace PanoramaEngine
                               settings.cacheSize, keyFrames, mBar);
             }
         }
-        else if (settings.ftType == FeatureType::SIFT)
+        else if (settings.featureType == FeatureType::SIFT)
         {
             auto featuresSift = Features();
-            if (Features::isComputed(images, featuresDensePath, settings.ftType, keyFrames)
+            if (Features::isComputed(images, featuresDensePath, settings.featureType, keyFrames)
                 && !settings.force)
             {
                 featuresSift
-                    = Features::fromDir(images, featuresDensePath, settings.ftType, keyFrames);
+                    = Features::fromDir(images, featuresDensePath, settings.featureType, keyFrames);
             }
             else
             {
-                featuresSift = Features::compute(images, featuresDensePath, settings.ftType,
-                    4 * settings.numFts, settings.cacheSize, keyFrames, mBar);
+                featuresSift = Features::compute(images, featuresDensePath, settings.featureType,
+                    4 * settings.numFeatures, settings.cacheSize, keyFrames, mBar);
 
                 if (!matches::isComputed(kfInterPath, SIM) || settings.force)
                 {
@@ -227,8 +227,9 @@ namespace PanoramaEngine
             auto currFtsOrbSparse = Features::fromDir(images, path / "fts", ORB);
             auto currFtsOrbDense = Features::fromDir(images, path / "kfs/fts", ORB);
 
-            if (settings.ftType != ORB)
-                ftsDense.push_back(Features::fromDir(images, path / "kfs/fts", settings.ftType));
+            if (settings.featureType != ORB)
+                ftsDense.push_back(
+                    Features::fromDir(images, path / "kfs/fts", settings.featureType));
 
             auto keyFrames = KeyFrames::fromDir(path / "key_frames.yml");
             keyFrameList.push_back(keyFrames);
@@ -266,7 +267,7 @@ namespace PanoramaEngine
         auto mildRecommender = std::make_unique<MildRecommender>(combinedDenseOrbFtContainer);
         if (!matches::isComputed(ivlcMatchPath, SIM) || settings.force)
         {
-            if (settings.ftType != ORB)
+            if (settings.featureType != ORB)
             {
                 matches::compute(ivlcMatchPath, SIM, combinedDenseFtContainer,
                     matches::MatchType::Strategy, 10, 0.0, std::move(mildRecommender),
@@ -302,7 +303,7 @@ namespace PanoramaEngine
         else
         {
             auto globalGPSMap = translator.localToGlobal(gpsMaps);
-            if (settings.ftType != ORB)
+            if (settings.featureType != ORB)
                 stitcher.globalOptimizeKeyFrames(
                     combinedDenseFtContainer, globalInterMatches, 0, globalGPSMap, mBar);
             else

@@ -150,6 +150,11 @@ void Tui::prefs(const std::string& args)
             currPrefs.nnRatio = std::stod(words[i + 1]);
         else if (words[i] == "ranscacReproj")
             currPrefs.ranscacReproj = std::stod(words[i + 1]);
+        else
+        {
+            std::cerr << "Unknown option: " << words[i] << std::endl;
+            std::exit(-1);
+        }
     }
 
     mModel.setPreferences(currPrefs);
@@ -270,17 +275,22 @@ void Tui::panoramaPrefs(const std::string& args)
             mPanoSettings.cols = std::stoi(words[i + 1]);
         else if (words[i] == "cacheSize")
             mPanoSettings.cacheSize = std::stoi(words[i + 1]);
-        else if (words[i] == "ftType")
+        else if (words[i] == "featureType")
         {
             if (words[i + 1] == "ORB")
-                mPanoSettings.ftType = ht::FeatureType::ORB;
+                mPanoSettings.featureType = ht::FeatureType::ORB;
             else if (words[i + 1] == "SIFT")
-                mPanoSettings.ftType = ht::FeatureType::SIFT;
+                mPanoSettings.featureType = ht::FeatureType::SIFT;
             else if (words[i + 1] == "SuperPoint")
-                mPanoSettings.ftType = ht::FeatureType::SuperPoint;
+                mPanoSettings.featureType = ht::FeatureType::SuperPoint;
+            else
+            {
+                std::cerr << "Unknown feature type: " << words[i] << std::endl;
+                std::exit(-1);
+            }
         }
-        else if (words[i] == "numFts")
-            mPanoSettings.numFts = std::stoi(words[i + 1]);
+        else if (words[i] == "numFeatures")
+            mPanoSettings.numFeatures = std::stoi(words[i + 1]);
         else if (words[i] == "minCoverage")
             mPanoSettings.minCoverage = std::stod(words[i + 1]);
         else if (words[i] == "force")
@@ -293,6 +303,11 @@ void Tui::panoramaPrefs(const std::string& args)
                 mPanoSettings.stage = ht::PanoramaStage::Optimization;
             else if (words[i + 1] == "Refinement")
                 mPanoSettings.stage = ht::PanoramaStage::Refinement;
+            else
+            {
+                std::cerr << "Unknown stage: " << words[i] << std::endl;
+                std::exit(-1);
+            }
         }
 
         else if (words[i] == "overlayCenters")
@@ -304,6 +319,11 @@ void Tui::panoramaPrefs(const std::string& args)
 
         else if (words[i] == "writeReadable")
             mPanoSettings.writeReadable = std::stoi(words[i + 1]);
+        else
+        {
+            std::cerr << "Unknown option: " << words[i] << std::endl;
+            std::exit(-1);
+        }
     }
 }
 } // namespace tui

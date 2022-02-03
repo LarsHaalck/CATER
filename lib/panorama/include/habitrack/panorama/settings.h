@@ -21,8 +21,8 @@ struct PanoramaSettings
     int cols = 2000;
     int cacheSize = 200;
 
-    FeatureType ftType = FeatureType::ORB;
-    int numFts = 500;
+    FeatureType featureType = FeatureType::ORB;
+    int numFeatures = 500;
     double minCoverage = 0.0;
     bool force = false;
     PanoramaStage stage = PanoramaStage::Refinement;

@@ -6,8 +6,8 @@
 #include <algorithm>
 #include <spdlog/spdlog.h>
 
-#include <habitrack/model/resultsIO.h>
 #include <habitrack/image-processing/images.h>
+#include <habitrack/model/resultsIO.h>
 #include <habitrack/panorama/panoramaEngine.h>
 #include <habitrack/tracker/detections.h>
 
@@ -116,8 +116,8 @@ void PanoWizard::populateDefaults()
     ui->spinWidth->setValue(settings.cols);
     ui->spinCache->setValue(settings.cacheSize);
 
-    ui->comboFt->setCurrentIndex(static_cast<int>(settings.ftType));
-    ui->spinNumFts->setValue(settings.numFts);
+    ui->comboFt->setCurrentIndex(static_cast<int>(settings.featureType));
+    ui->spinNumFts->setValue(settings.numFeatures);
     ui->spinCoverage->setValue(settings.minCoverage);
     ui->checkForce->setChecked(settings.force);
     ui->comboStage->setCurrentIndex(static_cast<int>(settings.stage));
@@ -148,8 +148,8 @@ PanoramaSettings PanoWizard::getSettings() const
     settings.cols = cols;
     settings.cacheSize = cacheSize;
 
-    settings.ftType = ftType;
-    settings.numFts = numFts;
+    settings.featureType = ftType;
+    settings.numFeatures = numFts;
     settings.minCoverage = coverage;
     settings.force = force;
     settings.stage = static_cast<PanoramaStage>(stage);
