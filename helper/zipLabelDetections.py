@@ -35,8 +35,9 @@ pos = np.genfromtxt(args.points, delimiter=',')
 data = pos
 header = "x,y"
 for label in args.labels:
-    min = np.minimum(len(data), len(is_label[label]))
-    data = np.c_[data[:min], is_label[label][:min]]
-    header = header + "," + label
+    if label in is_label:
+        min = np.minimum(len(data), len(is_label[label]))
+        data = np.c_[data[:min], is_label[label][:min]]
+        header = header + "," + label
 
 np.savetxt("zipped.csv", data, delimiter=',', fmt="%i", header=header)
