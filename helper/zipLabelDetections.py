@@ -35,7 +35,7 @@ pos = np.genfromtxt(args.points, delimiter=',')
 data = pos
 header = "x,y"
 for label in args.labels:
-    if label in is_label:
+    if len(is_label[label]) > 0:
         min = np.minimum(len(data), len(is_label[label]))
         data = np.c_[data[:min], is_label[label][:min]]
         header = header + "," + label
