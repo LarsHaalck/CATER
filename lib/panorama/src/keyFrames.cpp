@@ -143,12 +143,12 @@ namespace detail
         auto width = imgSize.width;
         auto height = imgSize.height;
         std::size_t minWH = std::min(width, height);
-        float realLow = (low * minWH) * (low * minWH);
+        float realLow = (low * minWH);
         float realHigh;
         if (high > 0)
-            realHigh = (high * minWH) * (high * minWH);
+            realHigh = (high * minWH);
         else // choose greatest possible value
-            realHigh = (width * width) + (height * height);
+            realHigh = std::sqrt((width * width) + (height * height));
 
         return std::make_pair(realLow, realHigh);
     }
