@@ -65,7 +65,8 @@ namespace PanoramaEngine
         if (KeyFrames::isComputed(kfPath) && !settings.force)
             keyFrames = KeyFrames::fromDir(kfPath);
         else
-            keyFrames = KeyFrames::compute(features, SIM, kfPath, 0.3, 0.5, mBar);
+            keyFrames = KeyFrames::compute(
+                features, SIM, kfPath, 0.3, 0.5, KeyFrames::Strategy::Borda, mBar);
 
         // calculate matches between keyframes and intermediate frames via KeyFrameRecommender
         auto kfIntraPath = basePath / "kfs/maches_intra";

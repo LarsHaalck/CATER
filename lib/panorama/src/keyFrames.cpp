@@ -5,6 +5,7 @@
 #include <habitrack/util/stopWatch.h>
 
 #include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 #include <spdlog/spdlog.h>
 
 // stubs if omp is not available on the system
@@ -30,7 +31,7 @@ std::vector<std::size_t> fromDir(const std::filesystem::path& file)
 }
 
 std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, GeometricType type,
-    const std::filesystem::path& file, float relLow, float relHigh,
+    const std::filesystem::path& file, float relLow, float relHigh, Strategy strategy,
     std::shared_ptr<BaseProgressBar> cb)
 {
     const auto [low, high] = detail::getRealLowHigh(ftContainer.getImageSize(), relLow, relHigh);
@@ -51,14 +52,14 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
     while (currView < ftContainer.size())
     {
         std::size_t remainImgs = ftContainer.size() - currView - 1;
-        std::vector<std::pair<float, std::size_t>> distOverlapVec;
+        std::vector<detail::KeyFrameData> distOverlapVec;
         int extended = -1;
 
         // control relative offset to current frame
         // thread 0 handles direct neighbor, thread 1 direct neighbor + 1, etc
         for (std::size_t k = 0; k < remainImgs; k += omp_get_max_threads())
         {
-            std::vector<std::pair<float, std::size_t>> currDistOverlapVec(omp_get_max_threads());
+            std::vector<detail::KeyFrameData> currDistOverlapVec(omp_get_max_threads());
 
 #pragma omp parallel
             {
@@ -73,13 +74,14 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
             }
 
             bool highShift = false;
-            for (const auto& pair : currDistOverlapVec)
+            for (const auto& tuple : currDistOverlapVec)
             {
-                auto [shift, numFts] = pair;
+                auto shift = std::get<0>(tuple);
+                auto numFts = std::get<1>(tuple);
                 if (numFts == 0)
                 {
                     if (extended < 0)
-                        extended = 10;
+                        extended = 50;
                     else if (extended > 0)
                         extended--;
                     else
@@ -90,7 +92,7 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
                     highShift = true;
                     break;
                 }
-                distOverlapVec.push_back(pair);
+                distOverlapVec.push_back(tuple);
             }
 
             // we extended the window a bit and have not reached high shift yet
@@ -113,7 +115,7 @@ std::vector<std::size_t> compute(const BaseFeatureContainer& ftContainer, Geomet
         if (distOverlapVec.empty())
             break;
 
-        std::size_t offset = detail::filterViews(distOverlapVec, low, high);
+        std::size_t offset = detail::filterViews(distOverlapVec, low, high, strategy);
 
         // + 1 because ids in overlap vec are relative to first neighbor
         currView += offset + 1;
@@ -153,7 +155,7 @@ namespace detail
         return std::make_pair(realLow, realHigh);
     }
 
-    std::pair<float, std::size_t> getMedianDistanceShift(
+    KeyFrameData getMedianDistanceShift(
         std::size_t idI, std::size_t idJ, const BaseFeatureContainer& fts, GeometricType type)
     {
         auto ftsI = fts.featureAt(idI);
@@ -166,22 +168,31 @@ namespace detail
 
         std::vector<float> distances;
         std::vector<cv::Point2f> srcFiltered, dstFiltered;
+        float response = 0;
         for (std::size_t i = 0; i < geomMatches.size(); i++)
         {
-            auto ptI = ftsI[geomMatches[i].queryIdx].pt;
-            auto ptJ = ftsJ[geomMatches[i].trainIdx].pt;
+            auto ftI = ftsI[geomMatches[i].queryIdx];
+            auto ftJ = ftsJ[geomMatches[i].trainIdx];
+            response += (ftI.response * ftI.response);
+            auto ptI = ftI.pt;
+            auto ptJ = ftJ.pt;
 
             distances.push_back(util::euclidianDist(ptI, ptJ));
             srcFiltered.push_back(ptI);
             dstFiltered.push_back(ptJ);
         }
+        response /= geomMatches.size();
 
-        /* double reprojError = calcReprojError(srcFiltered, dstFiltered, trafo); */
         if (srcFiltered.size() < 30)
-            return std::make_pair(0.0f, 0);
+            return std::make_tuple(0.0f, 0, 0.0f, 0.0f, 0.0f);
 
-        return std::make_pair(
-            median_fast(std::begin(distances), std::end(distances)), distances.size());
+        // negative reproj err is maximized -> reproj error is minimized
+        auto reprojError = -calcReprojError(srcFiltered, dstFiltered, trafo);
+        auto coverage = 0.5
+            * (cv::boundingRect(srcFiltered).area() + cv::boundingRect(dstFiltered).area())
+            / fts.getImageSize().area();
+        return std::make_tuple(median_fast(std::begin(distances), std::end(distances)),
+            distances.size(), coverage, response, reprojError);
     }
 
     double calcReprojError(const std::vector<cv::Point2f>& ptsSrc, std::vector<cv::Point2f>& ptsDst,
@@ -207,11 +218,11 @@ namespace detail
     }
 
     std::size_t filterViews(
-        std::vector<std::pair<float, std::size_t>> distOverlapVec, float low, float high)
+        std::vector<KeyFrameData> distOverlapVec, float low, float high, Strategy strategy)
     {
         // find first element from behind which has non zero num fts
         auto non_zero = std::find_if(std::rbegin(distOverlapVec), std::rend(distOverlapVec),
-            [](const auto& p) { return p.second != 0; });
+            [](const auto& p) { return std::get<1>(p) != 0; });
         // and erase until this frame
         distOverlapVec.erase(non_zero.base(), std::end(distOverlapVec));
 
@@ -222,13 +233,40 @@ namespace detail
             return 0;
         }
 
-        auto maxView = std::max_element(std::rbegin(distOverlapVec), std::rend(distOverlapVec),
+        auto counts = getBordaCounts(distOverlapVec, strategy);
+        auto maxView = std::max_element(std::rbegin(counts), std::rend(counts),
             [&](const auto& lhs, const auto& rhs)
             { return compareMaxOverlap(lhs, rhs, low, high); });
 
         // find distance to reversed reverse iterator (+1 because of rev iterator implementation)
-        return static_cast<std::size_t>(
-            std::distance(std::begin(distOverlapVec), (++maxView).base()));
+        return static_cast<std::size_t>(std::distance(std::begin(counts), (++maxView).base()));
+    }
+
+    std::vector<std::pair<float, std::size_t>> getBordaCounts(
+        const std::vector<KeyFrameData>& data, Strategy strategy)
+    {
+        std::vector<std::pair<float, std::size_t>> res;
+        res.reserve(data.size());
+        if (strategy == Strategy::Matches)
+        {
+            // select only shift and num matches from data
+            std::transform(std::begin(data), std::end(data), std::back_inserter(res),
+                [](const auto& elem)
+                { return std::make_pair(std::get<0>(elem), std::get<1>(elem)); });
+        }
+        else
+        {
+            auto borda1 = getBordaCount<1>(data);
+            auto borda2 = getBordaCount<2>(data);
+            auto borda3 = getBordaCount<3>(data);
+            auto borda4 = getBordaCount<4>(data);
+            for (std::size_t i = 0; i < data.size(); i++)
+            {
+                res.push_back(std::make_pair(
+                    std::get<0>(data[i]), borda1[i] + borda2[i] + borda3[i] + borda4[i]));
+            }
+        }
+        return res;
     }
 
     bool compareMaxOverlap(const std::pair<float, std::size_t>& lhs,
