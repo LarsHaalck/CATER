@@ -364,7 +364,7 @@ namespace PanoramaEngine
                 cv::imwrite(filename.string() + "_centers.png", pano);
                 io::savePoints(filename.string() + "_centers.csv", transPts);
             }
-            if (settings.overlayPoints)
+            if (settings.overlayPoints && !pts.empty())
             {
                 auto transPts = util::round(transformation::zipTransform(pts, trafos, SIM));
                 if (settings.smooth)
