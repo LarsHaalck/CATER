@@ -253,6 +253,8 @@ std::vector<cv::Point> Tui::getDetections(const ht::Model& habitrack) const
     std::vector<cv::Point> vec(dets.size());
     std::transform(std::begin(data), std::end(data), std::begin(vec),
         [](auto pair) { return pair.second.position; });
+    // repeat last element to have as many detections as trafos
+    vec.push_back(*vec.rbegin());
     return vec;
 }
 

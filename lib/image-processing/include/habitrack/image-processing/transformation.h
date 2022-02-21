@@ -32,17 +32,14 @@ template <typename T>
 std::vector<cv::Point2d> zipTransform(
     const std::vector<cv::Point_<T>>& points, const std::vector<cv::Mat>& Hs, GeometricType type)
 {
-    assert((points.size() <= Hs.size() || points.size() == 1)
+    assert((points.size() == Hs.size() || points.size() == 1)
         && "Size of points and trafos does not match or points size is not 1 in zipTransform");
 
     std::vector<cv::Point2d> ptsTrans(Hs.size());
     if (points.size() != 1)
     {
         for (std::size_t i = 0; i < Hs.size(); i++)
-        {
-            auto ptId = (i < points.size()) ? i : points.size() - 1;
-            ptsTrans[i] = transformPoint(points[ptId], Hs[i], type);
-        }
+            ptsTrans[i] = transformPoint(points[i], Hs[i], type);
     }
     else
     {
