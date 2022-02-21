@@ -26,7 +26,6 @@ else()
           -DBUILD_TESTING=OFF
           -DBUILD_EXAMPLES=OFF
           -DBUILD_BENCHMARKS=OFF
-          -DMINIGLOG=ON
         LOG_DOWNLOAD ON
         LOG_UPDATE ON
         LOG_PATCH ON
