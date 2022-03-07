@@ -210,7 +210,13 @@ void Tui::generatePanorama()
         habitrack.loadResultsFile(resFile);
         ht::GPSSettings gps_settings;
         if (mPanoGPSFiles.count(resFile) > 0)
-            gps_settings = ht::PanoramaEngine::loadGPSSettings(mPanoGPSFiles[resFile]);
+        {
+            if (mPanoGPSFiles[resFile].is_absolute())
+                gps_settings = ht::PanoramaEngine::loadGPSSettings(mPanoGPSFiles[resFile]);
+            else
+                gps_settings = ht::PanoramaEngine::loadGPSSettings(
+                    resFile.parent_path() / mPanoGPSFiles[resFile]);
+        }
 
         auto gpsInterpolator = ht::GPSInterpolator(gps_settings, habitrack.getStartFrame());
         gpsInterpolators.push_back(gpsInterpolator);
