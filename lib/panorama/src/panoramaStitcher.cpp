@@ -531,10 +531,10 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     problem.SetParameterBlockConstant(camParams.data());
     problem.SetParameterBlockConstant(distParams.data());
 
-    /* std::cout << "Optimizing Problem..." << std::endl; */
     ceres::Solver::Summary summary;
+    spdlog::info("Running Ceres optimizer with {} threads", options.num_threads);
     ceres::Solve(options, &problem, &summary);
-    /* std::cout << summary.FullReport() << std::endl; */
+    spdlog::debug("Ceres report {}", summary.FullReport());
 
     /* repairIntriniscs(camParams, distParams); */
     return summary.IsSolutionUsable();
