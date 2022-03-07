@@ -183,6 +183,7 @@ namespace detail
         }
         response /= geomMatches.size();
 
+        // TODO: remove harcoded value
         if (srcFiltered.size() < 30)
             return std::make_tuple(0.0f, 0, 0.0f, 0.0f, 0.0f);
 
