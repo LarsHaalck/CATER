@@ -11,6 +11,7 @@ find_package(cereal REQUIRED)
 set(SOURCES
     src/keyFrames.cpp
     src/keyFrameRecommender.cpp
+    src/interExhaustiveRecommender.cpp
     src/panoramaStitcher.cpp
     src/settings.cpp
     src/panoramaEngine.cpp
