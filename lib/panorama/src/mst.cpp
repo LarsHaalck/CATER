@@ -8,6 +8,40 @@ Graph::Graph(int V, int E)
 {
 }
 
+bool Graph::isConnected() const
+{
+    if (mV == 0)
+        return true;
+
+    // no node was visited
+    std::vector<bool> vis(mV, false);
+
+    // traverse from root node
+    traverseVis(0, vis);
+
+    for (int i = 0; i < mV; i++)
+    {
+        // single non visisted note? graph is not connected
+        if (!vis[i])
+            return false;
+    }
+    return true;
+}
+
+void Graph::traverseVis(int u, std::vector<bool>& vis) const
+{
+    vis[u] = true;
+    for (const auto& edgeData : mEdges)
+    {
+        auto e = edgeData.second;
+        // for every edge with one sid ebeeing u, and the other beeing unvisisted, visit it
+        if (e.first == u && !vis[e.second])
+            traverseVis(e.second, vis);
+        if (e.second == u && !vis[e.first])
+            traverseVis(e.first, vis);
+    }
+}
+
 /* Functions returns weight of the MST*/
 std::vector<std::pair<int, int>> Graph::kruskalMST()
 {

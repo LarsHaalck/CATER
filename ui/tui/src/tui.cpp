@@ -248,8 +248,16 @@ void Tui::generatePanorama()
     ht::setLogFileTo(outFolder / "log.txt");
     for (auto resFile : mPanoFiles)
         spdlog::info("Adding res file for combined panorama: {}", resFile);
-    ht::PanoramaEngine::runMulti(
-        images, data, outFolder, mPanoSettings, pts, chunkSizes, gpsInterpolators);
+
+    try
+    {
+        ht::PanoramaEngine::runMulti(
+            images, data, outFolder, mPanoSettings, pts, chunkSizes, gpsInterpolators);
+    }
+    catch (const std::runtime_error& e)
+    {
+        spdlog::error(e.what());
+    }
 }
 
 std::vector<cv::Point> Tui::getDetections(const ht::Model& habitrack) const

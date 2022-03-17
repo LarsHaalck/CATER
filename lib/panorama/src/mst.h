@@ -16,7 +16,11 @@ class Graph
 public:
     Graph(int V, int E);
     void addEdge(int u, int v, int w) { mEdges.push_back({w, {u, v}}); }
+    bool isConnected() const;
     std::vector<std::pair<int, int>> kruskalMST();
+
+private:
+    void traverseVis(int u, std::vector<bool>& vis) const;
 
 private:
     int mV;
