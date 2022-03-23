@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <opencv2/imgproc.hpp>
+#include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
 
 namespace fs = std::filesystem;
