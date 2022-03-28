@@ -39,7 +39,7 @@ bool Model::matchesComputed() const
 
 bool Model::unariesComputed() const
 {
-    return Unaries::isComputed(mImgFolder, mUnFolder, mStartFrameNumber, mEndFrameNumber + 1);
+    return Unaries::isComputed(mImages, mUnFolder, mStartFrameNumber, mEndFrameNumber + 1);
 }
 
 bool Model::detectionsComputed() const { return fs::is_regular_file(mDetectionsFile); }
@@ -276,7 +276,7 @@ void Model::extractUnaries()
     auto end = mEndFrameNumber + 1;
     if (unariesComputed())
     {
-        mUnaries = Unaries::fromDir(mImgFolder, mUnFolder, start, end);
+        mUnaries = Unaries::fromDir(mImages, mUnFolder, start, end);
         mBar->done();
     }
     else
@@ -285,7 +285,7 @@ void Model::extractUnaries()
             ? matches::getTrafos(mMatchFolder, GeometricType::Homography)
             : PairwiseTrafos();
 
-        mUnaries = Unaries::compute(mImgFolder, mUnFolder, start, end, mPrefs.removeRedLasers,
+        mUnaries = Unaries::compute(mImages, mUnFolder, start, end, mPrefs.removeRedLasers,
             mPrefs.unarySubsample, mPrefs.unarySigma, trafos, mPrefs.cacheSize, mBar);
     }
 
