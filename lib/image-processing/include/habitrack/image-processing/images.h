@@ -22,11 +22,13 @@ public:
 
     Images() = default; // needed for aggregator
 
-    Images(const std::vector<std::filesystem::path>& paths, ReadMode mode = ReadMode::Unchanged,
-        cv::Vec3d weights = cv::Vec3d(), cv::Vec2d resize = cv::Vec2d());
+    explicit Images(const std::vector<std::filesystem::path>& paths,
+        ReadMode mode = ReadMode::Unchanged, cv::Vec3d weights = cv::Vec3d(),
+        cv::Vec2d resize = cv::Vec2d(), cv::Rect2i crop = cv::Rect2i());
 
-    Images(const std::filesystem::path& path, ReadMode mode = ReadMode::Unchanged,
-        cv::Vec3d weights = cv::Vec3d(), cv::Vec2d resize = cv::Vec2d());
+    explicit Images(const std::filesystem::path& path, ReadMode mode = ReadMode::Unchanged,
+        cv::Vec3d weights = cv::Vec3d(), cv::Vec2d resize = cv::Vec2d(),
+        cv::Rect2i crop = cv::Rect2i());
 
     std::size_t size() const override;
     ImageCache getCache(
@@ -54,6 +56,7 @@ private:
     ReadMode mMode;
     cv::Vec3d mWeights;
     cv::Vec2d mResize;
+    cv::Rect2i mCrop;
 };
 } // namespace ht
 

@@ -8,10 +8,12 @@ namespace fs = std::filesystem;
 
 namespace ht
 {
-Images::Images(const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize)
+Images::Images(
+    const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize, cv::Rect2i crop)
     : mMode(mode)
     , mWeights(weights)
     , mResize(resize)
+    , mCrop(crop)
 {
     if (!fs::exists(path))
     {
@@ -27,6 +29,8 @@ Images::Images(const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d
 
     if (mode == ReadMode::SpecialGray && cv::countNonZero(weights) == 0)
         throw std::invalid_argument("Readmode SpecialGray cannot be used with all-zero-weights");
+    if (mResize(0) * mResize(1) > 0 && mCrop.area() > 0)
+        throw std::invalid_argument("Resize cannot be used with crop");
 
     if (fs::is_directory(path))
         fillImageFilesFromFolder(path);
@@ -41,12 +45,13 @@ Images::Images(const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d
     setImgSize();
 }
 
-Images::Images(
-    const std::vector<fs::path>& paths, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize)
+Images::Images(const std::vector<fs::path>& paths, ReadMode mode, cv::Vec3d weights,
+    cv::Vec2d resize, cv::Rect2i crop)
     : mImageFiles(paths)
     , mMode(mode)
     , mWeights(weights)
     , mResize(resize)
+    , mCrop(crop)
 {
     for (auto p : paths)
     {
@@ -59,6 +64,8 @@ Images::Images(
 
     if (mode == ReadMode::SpecialGray && cv::countNonZero(weights) == 0)
         throw std::invalid_argument("Readmode SpecialGray cannot be used with all-zero-weights");
+    if (mResize(0) * mResize(1) > 0 && mCrop.area() > 0)
+        throw std::invalid_argument("Resize cannot be used with crop");
 
     setImgSize();
 }
@@ -70,11 +77,13 @@ void Images::setImgSize()
 
     auto firstImg = at(0);
     mImgSize = firstImg.size();
-    if (mResize[0] > 0 && mResize[1] > 0)
+    if (mResize(0) * mResize(1) > 0)
     {
         mImgSize = cv::Size(
-            std::round(mResize[0] * mImgSize.width), std::round(mResize[1] * mImgSize.height));
+            std::round(mResize(0) * mImgSize.width), std::round(mResize(1) * mImgSize.height));
     }
+    if (mCrop.area() > 0)
+        mImgSize = cv::Size(mCrop.width, mCrop.height);
 }
 
 void Images::fillImageFilesFromFolder(const fs::path& path)
@@ -164,13 +173,15 @@ cv::Mat Images::at(std::size_t idx) const
         mat = cv::Mat();
     }
 
-    if (mResize(0) > 0 && mResize(1) > 0)
+    if (mResize(0) * mResize(1) > 0)
     {
         cv::Mat resized;
         cv::resize(
             mat, resized, cv::Size(), mResize(0), mResize(1), cv::InterpolationFlags::INTER_CUBIC);
         return resized;
     }
+    if (mCrop.area())
+        return cv::Mat(mat, mCrop);
     return mat;
 }
 
@@ -201,9 +212,8 @@ PairwiseImageCache Images::getPairwiseCache(
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs) const
 {
     assert(std::all_of(std::begin(pairs), std::end(pairs),
-               [this](std::pair<std::size_t, std::size_t> pair) {
-                   return (pair.first < this->size() && pair.second < this->size());
-               })
+               [this](std::pair<std::size_t, std::size_t> pair)
+               { return (pair.first < this->size() && pair.second < this->size()); })
         && "Passed id pair list is not a subset of available Images in "
            "getPairwiseCache()");
 
