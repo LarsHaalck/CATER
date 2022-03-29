@@ -1,11 +1,11 @@
 #include "mainWindow.h"
-#include "ui_mainWindow.h"
 #include "labelEditor.h"
 #include "labeler.h"
 #include "preferencesDialog.h"
 #include "qtOpencvCore.h"
 #include "scopedBlocker.h"
 #include "ui_exportDialog.h"
+#include "ui_mainWindow.h"
 
 #include <habitrack/image-processing/util.h>
 
@@ -28,8 +28,9 @@
 using namespace ht;
 namespace fs = std::filesystem;
 
-constexpr int statusDelay = 2000;
-constexpr int nextInterval = 50;
+constexpr int status_delay = 2000;
+constexpr int debounce_frame = 50;
+constexpr int frame_offset = 1;
 
 namespace gui
 {
@@ -55,7 +56,7 @@ MainWindow::MainWindow(QWidget* parent)
     ui->graphicsView->setFocusPolicy(Qt::NoFocus);
     mUnaryScene = ui->unaryView->getUnaryScene();
 
-    statusBar()->showMessage("", statusDelay);
+    statusBar()->showMessage("", status_delay);
     setupProgressBar();
 
     qRegisterMetaType<stdVecDouble>("stdVecDouble");
@@ -152,7 +153,7 @@ void MainWindow::on_saveResults(bool force)
     {
         mHabiTrack.saveResultsFile();
         mSaved = true;
-        statusBar()->showMessage("Saved results.", statusDelay);
+        statusBar()->showMessage("Saved results.", status_delay);
     }
 
     if (!mLabelsSaved || force)
@@ -160,7 +161,7 @@ void MainWindow::on_saveResults(bool force)
         saveLabelGroupConfigs(mHabiTrack.getOutputPath() / "label_config.json", mLabelConfigs);
         mLabeler.save(mHabiTrack.getOutputPath() / "labels.json");
         mLabelsSaved = true;
-        statusBar()->showMessage("Saved labels.", statusDelay);
+        statusBar()->showMessage("Saved labels.", status_delay);
     }
 }
 
@@ -243,19 +244,19 @@ void MainWindow::on_spinCurrentFrame_valueChanged(int value) { showFrame(value -
 
 void MainWindow::on_buttonPrevFrame_clicked()
 {
-    if (mCurrentFrameNumber > 0)
-        showFrame(mCurrentFrameNumber - 1);
+    if (mCurrentFrameNumber >= frame_offset)
+        showFrame(mCurrentFrameNumber - frame_offset);
 }
 
 void MainWindow::on_buttonNextFrame_clicked()
 {
-    if (mCurrentFrameNumber < mHabiTrack.images().size() - 1)
-        showFrame(mCurrentFrameNumber + 1);
+    if (mCurrentFrameNumber < mHabiTrack.images().size() - frame_offset)
+        showFrame(mCurrentFrameNumber + frame_offset);
 }
 
 void MainWindow::on_actionPrev_Frame_triggered()
 {
-    if (mFrameTimer.elapsed() < nextInterval)
+    if (mFrameTimer.elapsed() < debounce_frame)
         return;
     mFrameTimer.start();
 
@@ -265,7 +266,7 @@ void MainWindow::on_actionPrev_Frame_triggered()
 
 void MainWindow::on_actionNext_Frame_triggered()
 {
-    if (mFrameTimer.elapsed() < nextInterval)
+    if (mFrameTimer.elapsed() < debounce_frame)
         return;
     mFrameTimer.start();
 
@@ -289,6 +290,31 @@ void MainWindow::updateSlider()
     ui->sliderFrame->setValue(mCurrentFrameNumber + 1);
     ui->spinCurrentFrame->setValue(mCurrentFrameNumber + 1);
 }
+
+/* void MainWindow::showIntermediateFrames(std::size_t frame) */
+/* { */
+/*     using namespace std::chrono_literals; */
+/*     if (frame > mCurrentFrameNumber) */
+/*     { */
+/*         for (std::size_t i = mCurrentFrameNumber; i <= frame; i++) */
+/*         { */
+/*             showFrame(i); */
+/*             QCoreApplication::processEvents(QEventLoop::AllEvents); */
+/*             QThread::msleep(20); */
+/*         } */
+/*     } */
+/*     else */
+/*     { */
+/*         // mCurrentFrameNumber is set in showFrame */
+/*         int target = mCurrentFrameNumber; */
+/*         for (int i = target; i >= static_cast<int>(frame); i--) */
+/*         { */
+/*             showFrame(i); */
+/*             QCoreApplication::processEvents(QEventLoop::AllEvents); */
+/*             QThread::msleep(20); */
+/*         } */
+/*     } */
+/* } */
 
 void MainWindow::showFrame(std::size_t frame)
 {
@@ -726,7 +752,7 @@ void MainWindow::on_detectionsAvailable(int chunkId)
     QSoundEffect effect;
     effect.setSource(QUrl("qrc:///sounds/notification.wav"));
     effect.play();
-    statusBar()->showMessage("New detections available", statusDelay);
+    statusBar()->showMessage("New detections available", status_delay);
     emit toggleChunk(chunkId, false);
     spdlog::debug("GUI: detections avaiable for chunk {}", chunkId);
     mDetectionsWatchers.erase(chunkId);
@@ -792,7 +818,7 @@ void MainWindow::on_positionChanged(QPointF position)
     mHabiTrack.addManualUnary(mCurrentFrameNumber, QtOpencvCore::qpoint2point(position));
     enqueueOptimization();
     ui->unaryView->getUnaryScene()->setUnaryQuality(mCurrentFrameNumber, UnaryQuality::Excellent);
-    statusBar()->showMessage("Manually added unary", statusDelay);
+    statusBar()->showMessage("Manually added unary", status_delay);
     mSaved = false;
     on_buttonNextFrame_clicked();
 }
@@ -823,7 +849,7 @@ void MainWindow::on_positionCleared()
     mHabiTrack.removeManualUnary(mCurrentFrameNumber);
     enqueueOptimization();
     ui->unaryView->getUnaryScene()->resetUnaryQuality(mCurrentFrameNumber);
-    statusBar()->showMessage("Manual unary cleared", statusDelay);
+    statusBar()->showMessage("Manual unary cleared", status_delay);
     mSaved = false;
     showFrame(mCurrentFrameNumber);
 }

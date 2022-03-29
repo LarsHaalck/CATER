@@ -48,6 +48,7 @@ private:
     void openImagesHelper();
     void showFrame(std::size_t frame);
     void showFrame(const cv::Mat& img);
+    void showIntermediateFrames(std::size_t frame);
 
     void updateLabels();
     void updateSlider();
