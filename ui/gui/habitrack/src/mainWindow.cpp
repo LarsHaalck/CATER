@@ -30,7 +30,7 @@ namespace fs = std::filesystem;
 
 constexpr int status_delay = 2000;
 constexpr int debounce_frame = 50;
-constexpr int frame_offset = 1;
+constexpr int frame_offset = 10;
 
 namespace gui
 {
@@ -245,13 +245,13 @@ void MainWindow::on_spinCurrentFrame_valueChanged(int value) { showFrame(value -
 void MainWindow::on_buttonPrevFrame_clicked()
 {
     if (mCurrentFrameNumber >= frame_offset)
-        showFrame(mCurrentFrameNumber - frame_offset);
+        showIntermediateFrames(mCurrentFrameNumber - frame_offset);
 }
 
 void MainWindow::on_buttonNextFrame_clicked()
 {
     if (mCurrentFrameNumber < mHabiTrack.images().size() - frame_offset)
-        showFrame(mCurrentFrameNumber + frame_offset);
+        showIntermediateFrames(mCurrentFrameNumber + frame_offset);
 }
 
 void MainWindow::on_actionPrev_Frame_triggered()
@@ -291,30 +291,30 @@ void MainWindow::updateSlider()
     ui->spinCurrentFrame->setValue(mCurrentFrameNumber + 1);
 }
 
-/* void MainWindow::showIntermediateFrames(std::size_t frame) */
-/* { */
-/*     using namespace std::chrono_literals; */
-/*     if (frame > mCurrentFrameNumber) */
-/*     { */
-/*         for (std::size_t i = mCurrentFrameNumber; i <= frame; i++) */
-/*         { */
-/*             showFrame(i); */
-/*             QCoreApplication::processEvents(QEventLoop::AllEvents); */
-/*             QThread::msleep(20); */
-/*         } */
-/*     } */
-/*     else */
-/*     { */
-/*         // mCurrentFrameNumber is set in showFrame */
-/*         int target = mCurrentFrameNumber; */
-/*         for (int i = target; i >= static_cast<int>(frame); i--) */
-/*         { */
-/*             showFrame(i); */
-/*             QCoreApplication::processEvents(QEventLoop::AllEvents); */
-/*             QThread::msleep(20); */
-/*         } */
-/*     } */
-/* } */
+void MainWindow::showIntermediateFrames(std::size_t frame)
+{
+    using namespace std::chrono_literals;
+    if (frame > mCurrentFrameNumber)
+    {
+        for (std::size_t i = mCurrentFrameNumber; i <= frame; i++)
+        {
+            showFrame(i);
+            QCoreApplication::processEvents(QEventLoop::AllEvents);
+            QThread::msleep(20);
+        }
+    }
+    else
+    {
+        // mCurrentFrameNumber is set in showFrame
+        int target = mCurrentFrameNumber;
+        for (int i = target; i >= static_cast<int>(frame); i--)
+        {
+            showFrame(i);
+            QCoreApplication::processEvents(QEventLoop::AllEvents);
+            QThread::msleep(20);
+        }
+    }
+}
 
 void MainWindow::showFrame(std::size_t frame)
 {

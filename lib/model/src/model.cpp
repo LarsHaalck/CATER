@@ -1,9 +1,9 @@
 #include <habitrack/model/model.h>
 
-#include <habitrack/model/imageViewer.h>
-#include <habitrack/model/resultsIO.h>
 #include <habitrack/image-processing/util.h>
 #include <habitrack/io/io.h>
+#include <habitrack/model/imageViewer.h>
+#include <habitrack/model/resultsIO.h>
 #include <habitrack/progressbar/progressBar.h>
 #include <habitrack/tracker/tracker.h>
 #include <habitrack/util/log.h>
@@ -70,7 +70,9 @@ void Model::unload(bool deleteMatches)
 void Model::loadImageFolder(const fs::path& imgFolder)
 {
     mImgFolder = fs::absolute(imgFolder);
-    mImages = Images(mImgFolder);
+    // TODO: remoe this!!
+    mImages = Images(mImgFolder, Images::ReadMode::Unchanged, cv::Vec3d(), cv::Vec2d(),
+        cv::Rect2i(448, 28, 1024, 1024));
     if (!mImages.size())
         return;
 
@@ -89,7 +91,8 @@ void Model::loadResultsFile(const fs::path& resultFile)
     mStartFrameNumber = start;
     mEndFrameNumber = end;
 
-    mImages = Images(mImgFolder);
+    mImages = Images(mImgFolder, Images::ReadMode::Unchanged, cv::Vec3d(), cv::Vec2d(),
+        cv::Rect2i(448, 28, 1024, 1024));
     openImagesHelper(parentPath);
 
     if (featureComputed() || !mPrefs.removeCamMotion)
