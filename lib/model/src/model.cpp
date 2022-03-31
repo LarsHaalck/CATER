@@ -92,23 +92,24 @@ void Model::loadResultsFile(const fs::path& resultFile)
     mImages = Images(mImgFolder);
     openImagesHelper(parentPath);
 
-    if (featureComputed())
+    if (featureComputed() || !mPrefs.removeCamMotion)
     {
-        extractFeatures();
-        if (matchesComputed())
+        if (mPrefs.removeCamMotion)
+            extractFeatures();
+        if (matchesComputed() || !mPrefs.removeCamMotion)
         {
-            extractTrafos();
+            if (mPrefs.removeCamMotion)
+                extractTrafos();
             if (unariesComputed())
             {
                 extractUnaries();
                 if (detectionsComputed())
-                {
                     mDetections = Detections::fromDir(mDetectionsFile);
-                }
             }
         }
     }
 
+    /* debug plots */
     /* auto trafs = trafos(); */
     /* for (int i = 0; i < 150; i++) */
     /* { */
@@ -269,7 +270,7 @@ void Model::extractUnaries()
 {
     spdlog::debug("Model: Extract Unaries");
 
-    if (!matchesComputed())
+    if (!matchesComputed() && mPrefs.removeCamMotion)
         throw ModelException("Trafos need to be computed before Unaries.");
 
     auto start = mStartFrameNumber;
@@ -328,19 +329,23 @@ bool Model::hasUsableTrafos() const
 
 PairwiseMatches Model::matches() const
 {
-    return matches::getMatches(mMatchFolder, GeometricType::Homography);
+    if (matchesComputed())
+        return matches::getMatches(mMatchFolder, GeometricType::Homography);
+    return PairwiseMatches();
 }
 
 PairwiseTrafos Model::trafos() const
 {
-    return matches::getTrafos(mMatchFolder, GeometricType::Homography);
+    if (matchesComputed())
+        return matches::getTrafos(mMatchFolder, GeometricType::Homography);
+    return PairwiseTrafos();
 }
 
 void Model::optimizeUnaries(int chunk)
 {
     spdlog::debug("Model: Optimize Unaries (chunk {})", chunk);
 
-    if (mTrafos.empty())
+    if (mTrafos.empty() && mPrefs.removeCamMotion)
         mTrafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography);
 
     if (!unariesComputed())

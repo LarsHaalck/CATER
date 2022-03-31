@@ -624,7 +624,7 @@ void MainWindow::on_buttonExtractUnaries_clicked()
 
 void MainWindow::extractUnaries()
 {
-    if (!mHabiTrack.matchesComputed())
+    if (!mHabiTrack.matchesComputed() && mHabiTrack.getPreferences().removeCamMotion)
     {
         emit warn("Transformations need to be computed first");
         return;

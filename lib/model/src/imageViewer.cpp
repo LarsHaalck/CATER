@@ -24,9 +24,7 @@ ImageViewer::ImageViewer(const Model& habiTrack, bool disableCaching)
 {
     if (!disableCaching)
         mThread = std::thread(&ImageViewer::rebuildCache, this);
-
-    if (mModel.matchesComputed())
-        mTrafos = mModel.trafos();
+    mTrafos = mModel.trafos();
 }
 
 ImageViewer::~ImageViewer()
