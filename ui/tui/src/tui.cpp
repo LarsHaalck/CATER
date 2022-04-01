@@ -119,6 +119,12 @@ void Tui::prefs(const std::string& args)
                 currPrefs.featureType = ht::FeatureType::SIFT;
             else if (words[i + 1] == "SuperPoint")
                 currPrefs.featureType = ht::FeatureType::SuperPoint;
+            else
+            {
+                std::cerr << "Unknown feature type: " << words[i + 1] << std::endl;
+                std::exit(-1);
+            }
+
         }
         else if (words[i] == "numFeatures")
             currPrefs.numFeatures = std::stoi(words[i + 1]);
@@ -301,7 +307,7 @@ void Tui::panoramaPrefs(const std::string& args)
                 mPanoSettings.featureType = ht::FeatureType::SuperPoint;
             else
             {
-                std::cerr << "Unknown feature type: " << words[i] << std::endl;
+                std::cerr << "Unknown feature type: " << words[i + 1] << std::endl;
                 std::exit(-1);
             }
         }
@@ -321,7 +327,7 @@ void Tui::panoramaPrefs(const std::string& args)
                 mPanoSettings.stage = ht::PanoramaStage::Refinement;
             else
             {
-                std::cerr << "Unknown stage: " << words[i] << std::endl;
+                std::cerr << "Unknown stage: " << words[i + 1] << std::endl;
                 std::exit(-1);
             }
         }
@@ -337,7 +343,7 @@ void Tui::panoramaPrefs(const std::string& args)
             mPanoSettings.writeReadable = std::stoi(words[i + 1]);
         else
         {
-            std::cerr << "Unknown option: " << words[i] << std::endl;
+            std::cerr << "Unknown option: " << words[i + 1] << std::endl;
             std::exit(-1);
         }
     }
