@@ -124,7 +124,6 @@ void Tui::prefs(const std::string& args)
                 std::cerr << "Unknown feature type: " << words[i + 1] << std::endl;
                 std::exit(-1);
             }
-
         }
         else if (words[i] == "numFeatures")
             currPrefs.numFeatures = std::stoi(words[i + 1]);
@@ -184,7 +183,10 @@ void Tui::addPanorama(const std::string& args)
     if (std::find(std::begin(mPanoFiles), std::end(mPanoFiles), panoFile) != std::end(mPanoFiles))
         return;
 
-    if (!fs::is_regular_file(panoFile) || (!gpsFile.empty() && !fs::is_regular_file(gpsFile)))
+    if (!fs::is_regular_file(panoFile)
+        || (!gpsFile.empty()
+            && ((fs::path(gpsFile).is_absolute() && !fs::is_regular_file(gpsFile))
+                || !fs::is_regular_file(fs::path(panoFile).parent_path() / gpsFile))))
     {
         std::cout << "Passed argument is not a file" << std::endl;
         return;
@@ -199,7 +201,13 @@ void Tui::listPanorama()
 {
     std::cout << "Added results files: \n";
     for (const auto& f : mPanoFiles)
-        std::cout << f << std::endl;
+    {
+        std::cout << f;
+        if (mPanoGPSFiles.count(f) > 0)
+            std::cout << mPanoGPSFiles[f];
+        std::cout << std::endl;
+
+    }
 }
 
 void Tui::generatePanorama()
