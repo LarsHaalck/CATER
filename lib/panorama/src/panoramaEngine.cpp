@@ -35,6 +35,8 @@ namespace PanoramaEngine
 
         GPSSettings gps;
         gps.file = static_cast<fs::path>(fs["file"]);
+        if (!gps.file.is_absolute())
+            gps.file = gpsFile.parent_path() / gps.file;
         gps.offset = fs["offset"];
         gps.sampling_rate = fs["sampling_rate"];
         gps.frame_sampling_rate = fs["frame_sampling_rate"];
@@ -168,7 +170,6 @@ namespace PanoramaEngine
         /* detail::overlay(std::get<0>(panoTuple), overlayPts, std::get<1>(panoTuple), */
         /*     basePath / "pano0_init_dense", settings, images.getCenter(), {chunkSize}, {}); */
 
-
         if (settings.stage < PanoramaStage::Optimization)
             return;
 
@@ -177,14 +178,26 @@ namespace PanoramaEngine
             stitcher.loadTrafos(basePath / "kfs/opt_trafos.bin");
         else
         {
-            GPSMap gps;
-            if (gps_interp.has_prior())
-                gps = gps_interp.interpolate(keyFrames);
             stitcher.globalOptimizeKeyFrames(
-                featuresDense, matches::getMatches(kfInterPath, trafoType), 0, gps, mBar);
+                featuresDense, matches::getMatches(kfInterPath, trafoType), 0, {}, mBar);
             stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "kfs/opt_trafos.yml", WriteType::Readable);
+        }
+
+        if (gps_interp.has_prior())
+        {
+            if (fs::exists(basePath / "kfs/opt_trafos.gps.bin") && !settings.force)
+                stitcher.loadTrafos(basePath / "kfs/opt_trafos.gps.bin");
+            else
+            {
+                GPSMap gps = gps_interp.interpolate(keyFrames);
+                stitcher.globalOptimizeKeyFrames(
+                    featuresDense, matches::getMatches(kfInterPath, trafoType), 0, gps, mBar);
+                stitcher.writeTrafos(basePath / "kfs/opt_trafos.gps.bin");
+                if (settings.writeReadable)
+                    stitcher.writeTrafos(basePath / "kfs/opt_trafos.gps.yml", WriteType::Readable);
+            }
         }
         /* panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar); */
         /* cv::imwrite((basePath / "pano1_opt_sparse.png").string(), std::get<0>(panoTuple)); */
