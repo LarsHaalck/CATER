@@ -532,7 +532,8 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     problem.SetParameterBlockConstant(distParams.data());
 
     ceres::Solver::Summary summary;
-    spdlog::info("Running Ceres optimizer with {} threads", options.num_threads);
+    if (multiThread)
+        spdlog::info("Running Ceres optimizer with {} threads", options.num_threads);
     ceres::Solve(options, &problem, &summary);
     spdlog::debug("Ceres report {}", summary.FullReport());
 
