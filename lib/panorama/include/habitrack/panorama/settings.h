@@ -39,8 +39,8 @@ struct GPSSettings
 {
     std::filesystem::path file;
     double offset;
-    int sampling_rate;
-    int frame_sampling_rate;
+    double sampling_rate;
+    double frame_sampling_rate;
 
     bool has_prior() const { return !file.empty(); }
 };
