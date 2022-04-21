@@ -1,5 +1,4 @@
-# TODO add 2.x tag when #669 is released
-find_package(Ceres 2.0 CONFIG QUIET)
+find_package(Ceres 2.1.0 CONFIG QUIET)
 
 if(TARGET ceres)
     get_property(loc TARGET ceres PROPERTY LOCATION)
@@ -12,6 +11,7 @@ else()
         ceres_external
         DEPENDS eigen3_external
         GIT_REPOSITORY https://github.com/ceres-solver/ceres-solver/
+        GIT_TAG 2.1.0
         GIT_SHALLOW TRUE
         CMAKE_ARGS
           -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
@@ -22,6 +22,7 @@ else()
           -DLIB_SUFFIX="" # needed to remove cases where Ceres_DIR should be in lib64
           -DCMAKE_INSTALL_LIBDIR=lib
           -DEIGENSPARSE=ON
+          -DMINIGLOG=ON
           -DBUILD_SHARED_LIBS=ON
           -DBUILD_TESTING=OFF
           -DBUILD_EXAMPLES=OFF
