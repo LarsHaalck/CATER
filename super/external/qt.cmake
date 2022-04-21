@@ -25,6 +25,7 @@ else()
             <SOURCE_DIR>/configure
             -prefix ${STAGED_INSTALL_PREFIX}
             -cmake-generator ${CMAKE_GENERATOR}
+            -no-opengl
             -opensource
             -confirm-license
             -nomake examples
