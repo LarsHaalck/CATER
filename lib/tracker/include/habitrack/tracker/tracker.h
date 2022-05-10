@@ -66,5 +66,7 @@ private:
     static double calcWeightedCircularMean(
         const std::vector<double>& weightsWindow, const std::vector<double>& anglesWindow);
 };
+
+std::ostream& operator<<(std::ostream& stream, const ht::Tracker::Settings& settings);
 } // namespace ht
 #endif // TRACKER_TRACKER_H

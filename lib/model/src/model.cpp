@@ -12,6 +12,7 @@
 #include <chrono>
 #include <fstream>
 #include <opencv2/videoio.hpp>
+#include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
 
 namespace fs = std::filesystem;
@@ -352,6 +353,7 @@ void Model::optimizeUnaries(int chunk)
         throw ModelException("Unaries need to be computed before optimization.");
 
     Detections detections;
+    spdlog::info("{}", mTrackerSettings);
     if (chunk == -1)
         detections = Tracker::track(mUnaries, mManualUnaries, mTrackerSettings, mTrafos);
     else

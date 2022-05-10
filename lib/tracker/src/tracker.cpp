@@ -7,17 +7,31 @@
 #include <habitrack/tracker/unaries.h>
 #include <habitrack/util/algorithm.h>
 
-#include <spdlog/spdlog.h>
 #include <chrono>
 #include <future>
 #include <iostream>
 #include <opencv2/imgproc.hpp>
+#include <spdlog/spdlog.h>
 
 namespace ht
 {
 /* using namespace matches; */
 using namespace transformation;
 namespace fs = std::filesystem;
+
+std::ostream& operator<<(std::ostream& stream, const Tracker::Settings& settings)
+{
+    stream << "subsample: " << settings.subsample << "\n";
+    stream << "pairwiseSize: " << settings.pairwiseSize << "\n";
+    stream << "pairwiseSigma: " << settings.pairwiseSigma << "\n";
+    stream << "manualMultiplier: " << settings.manualMultiplier << "\n";
+    stream << "smoothBearing: " << settings.smoothBearing << "\n";
+    stream << "windowSize: " << settings.windowSize << "\n";
+    stream << "outlierTolerance: " << settings.outlierTolerance << "\n";
+    stream << "chunkSize: " << settings.chunkSize << "\n";
+
+    return stream;
+}
 
 cv::Mat Tracker::getPairwiseKernel(int size, double sigma)
 {
