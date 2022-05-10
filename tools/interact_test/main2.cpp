@@ -41,31 +41,23 @@ std::vector<double> random_choice_even(const std::vector<double>& vec, std::size
     return subset;
 }
 
-int main(int argc, char** argv)
+int main()
 {
     spdlog::set_level(spdlog::level::info);
 
-    if (argc != 4)
-        return -1;
-
-    std::string a1 {argv[1]};
-    std::string a2 {argv[2]};
-    std::string a3 {argv[3]};
-    spdlog::info("Called {}-{}-{}", a1, a2, a3);
-
     /* auto imgs = ht::Images(img_folder); */
     /* auto detections = ht::Detections::fromDir(detectFile); */
-    /* auto manual_uns = ht::ManualUnaries(0.8, imgs.getImgSize()); */
+    /* auto manual_uns = ht::ManualUnaries(0.8, 9, imgs.getImgSize()); */
     /* for (auto detect : detections.cdata()) */
     /*     manual_uns.insert(detect.first, detect.second.position); */
     /* manual_uns.save(un_folder); */
+    /* return 0; */
 
     auto imgs = ht::Images(img_folder);
     auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
     auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
     auto manual_uns_all = ht::ManualUnaries::fromDir(un_folder, 0.8, 9, imgs.getImgSize());
-    auto settings = ht::InterpTracker::Settings {0.8, 25, 250, 4, false, 5, 3, chunk};
-    std::string end = a1 + "-" + a2 + "-" + a3 + "_";
+    auto settings = ht::InterpTracker::Settings {0.8, 25, 6, 4, false, 5, 3, chunk};
 
     std::vector<double> frames_all;
     frames_all.reserve(manual_uns_all.size());
@@ -74,11 +66,16 @@ int main(int argc, char** argv)
     std::sort(std::begin(frames_all), std::end(frames_all));
 
     std::size_t step = 100;
-    std::size_t n = 5251 + step; // so the first loop will implicitly handle mikes number
+    /* std::size_t n = 5234 + step; // so the first loop will implicitly handle mikes number */
+    std::size_t n = 5234 + step; // so the first loop will implicitly handle mikes number
 
-    while (n > step)
+    while (n > 2)
     {
-        std::size_t k = n - step;
+        std::size_t k;
+        if (n >= step + 2)
+            k = n - step;
+        else
+            k = 2;
 
         auto manual_uns = manual_uns_all;
         auto frames_subset = random_choice_even(frames_all, k);
@@ -90,10 +87,10 @@ int main(int argc, char** argv)
             manual_uns_subset.insert(f, manual_uns.unaryPointAt(f));
         manual_uns = std::move(manual_uns_subset);
 
-        spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
+        spdlog::info("Running InterpTracker with {} manual unaries", manual_uns.size());
         auto detections = ht::InterpTracker::track(uns, manual_uns, settings, trafos);
         detections.save(
-            base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml"));
+            base_path / ("detections_int_" + std::to_string(manual_uns.size()) + ".yaml"));
 
         n = k;
     }

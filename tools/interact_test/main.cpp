@@ -17,7 +17,7 @@
 #include <spdlog/spdlog.h>
 
 using path = std::filesystem::path;
-path base_path = "/data/Dropbox/Selected Ontogeny Data/Videos/Ant13/Ant13R1";
+path base_path = "/data";
 path img_folder = base_path / "imgs";
 path match_folder = base_path / "imgs_output" / "now" / "matches";
 path un_folder = base_path / "imgs_output" / "now" / "unaries";
@@ -75,11 +75,10 @@ int main(int argc, char** argv)
     auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
     auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
     auto manual_uns = ht::ManualUnaries::fromDir(un_folder, 0.8, 9, imgs.getImgSize());
-    auto settings = ht::Tracker::Settings {0.8, 25, 250, 4, false, 5, 3, chunk};
+    auto settings = ht::Tracker::Settings {0.8, 25, 6, 4, true, 5, 3, chunk};
     /* auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos); */
     std::string end = a1 + "-" + a2 + "-" + a3 + "_";
-    /* detections.save( */
-    /*     base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml")); */
+    /* detections.save(base_path / ("detections_gt.yaml")); */
 
     std::vector<double> frames;
     frames.reserve(manual_uns.size());
@@ -93,12 +92,17 @@ int main(int argc, char** argv)
     if (a2 == "b")
         kde.fit(frames);
 
-    std::size_t step = 50;
-    std::size_t n = 1300 + step; // so the first loop will implicitly handle mikes number
+    std::size_t step = 100;
+    std::size_t n = 5234 + step; // so the first loop will implicitly handle mikes number
 
-    while (n > step)
+    while (n > 0)
     {
-        std::size_t k = n - step;
+        std::size_t k = 0;
+        if (n >= step)
+            k = n - step;
+        else
+            k = 0;
+
         if (a2 == "a")
         {
             if (a1 == "s")
