@@ -58,7 +58,7 @@ auto std_dev(InputIt first, InputIt last) -> typename InputIt::value_type
 
     T vec_mean = mean(first, last);
     std::vector<T> diff(size);
-    std::transform(first, last, std::begin(diff), std::bind2nd(std::minus<T>(), vec_mean));
+    std::transform(first, last, std::begin(diff), [vec_mean](auto val) { return vec_mean - val; });
 
     T sq_sum
         = std::inner_product(std::begin(diff), std::end(diff), std::begin(diff), static_cast<T>(0));
