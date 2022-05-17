@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget* parent)
     , mSaved(true)
     , mLabelsSaved(true)
     , mHabiTrack()
-    , mViewer(mHabiTrack)
+    , mViewer(mHabiTrack, ImageViewer::Cache::Enable)
     , mBlocked(false)
 {
     ui->setupUi(this);

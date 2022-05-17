@@ -142,7 +142,7 @@ void Model::generateVideo(const fs::path& videoFilename) const
     settings.trajectory = true;
     settings.trajectoryLength = fps;
     settings.showManual = false;
-    ImageViewer viewer(*this, true);
+    ImageViewer viewer(*this, ImageViewer::Cache::Disable);
 
     mBar->status("Exporting Video");
     mBar->setTotal(mEndFrameNumber - mStartFrameNumber);

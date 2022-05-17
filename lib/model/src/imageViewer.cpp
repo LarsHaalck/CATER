@@ -14,15 +14,14 @@ using namespace ht;
 
 namespace ht
 {
-ImageViewer::ImageViewer(const Model& habiTrack, bool disableCaching)
+ImageViewer::ImageViewer(const Model& habiTrack, Cache cache)
     : mModel(habiTrack)
     , mTrafos()
-    , mCachedUnaries(false)
     , mCurrent(-1)
     , mCache()
     , mQuit(false)
 {
-    if (!disableCaching)
+    if (cache == Cache::Enable)
         mThread = std::thread(&ImageViewer::rebuildCache, this);
     mTrafos = mModel.trafos();
 }

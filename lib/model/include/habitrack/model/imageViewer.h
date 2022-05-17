@@ -32,6 +32,12 @@ public:
         int radius = 20;
     };
 
+    enum class Cache
+    {
+        Enable,
+        Disable
+    };
+
 private:
     struct CacheItem
     {
@@ -40,7 +46,7 @@ private:
     };
 
 public:
-    ImageViewer(const ht::Model& habiTrack, bool disableCaching = false);
+    ImageViewer(const ht::Model& habiTrack, Cache cache);
     ~ImageViewer();
 
     cv::Mat getFrame(int frameNum, const VisSettings& settings);
@@ -58,8 +64,6 @@ private:
 private:
     const ht::Model& mModel;
     PairwiseTrafos mTrafos;
-
-    bool mCachedUnaries;
 
     std::atomic<int> mCurrent;
     std::unordered_map<std::size_t, CacheItem> mCache;
