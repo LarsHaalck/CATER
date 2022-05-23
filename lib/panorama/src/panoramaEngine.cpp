@@ -25,8 +25,8 @@ namespace ht
 {
 namespace PanoramaEngine
 {
-    auto ORB = ht::FeatureType::ORB;
-    auto SIM = ht::GeometricType::Similarity;
+    auto ftType = ht::FeatureType::ORB;
+    auto trafoType = ht::GeometricType::Similarity;
 
     GPSSettings loadGPSSettings(const fs::path& gpsFile)
     {
@@ -53,11 +53,11 @@ namespace PanoramaEngine
         // calc features for all frames
         auto ftPath = basePath / "fts";
         auto features = Features();
-        if (Features::isComputed(images, ftPath, ORB) && !settings.force)
-            features = Features::fromDir(images, ftPath, ORB);
+        if (Features::isComputed(images, ftPath, ftType) && !settings.force)
+            features = Features::fromDir(images, ftPath, ftType);
         else
-            features = Features::compute(
-                images, ftPath, ORB, settings.numFeatures, settings.cacheSize, size_t_vec(), mBar);
+            features = Features::compute(images, ftPath, ftType, settings.numFeatures,
+                settings.cacheSize, size_t_vec(), mBar);
 
         // select key frames
         auto kfPath = basePath / "key_frames.yml";
@@ -66,14 +66,14 @@ namespace PanoramaEngine
             keyFrames = KeyFrames::fromDir(kfPath);
         else
             keyFrames = KeyFrames::compute(
-                features, SIM, kfPath, 0.3, 0.5, KeyFrames::Strategy::Borda, mBar);
+                features, trafoType, kfPath, 0.3, 0.5, KeyFrames::Strategy::Borda, mBar);
 
         // calculate matches between keyframes and intermediate frames via KeyFrameRecommender
         auto kfIntraPath = basePath / "kfs/maches_intra";
         auto kfRecommender = std::make_unique<KeyFrameRecommender>(keyFrames);
-        if (!matches::isComputed(kfIntraPath, SIM) || settings.force)
+        if (!matches::isComputed(kfIntraPath, trafoType) || settings.force)
         {
-            matches::compute(kfIntraPath, SIM, features, matches::MatchType::Strategy, 0, 0.0,
+            matches::compute(kfIntraPath, trafoType, features, matches::MatchType::Strategy, 0, 0.0,
                 std::move(kfRecommender), settings.cacheSize, size_t_vec(), mBar);
         }
 
@@ -82,11 +82,11 @@ namespace PanoramaEngine
         auto featuresDensePath = basePath / "kfs/fts";
 
         auto featuresDense = Features();
-        if (Features::isComputed(images, featuresDensePath, ORB, keyFrames) && !settings.force)
-            featuresDense = Features::fromDir(images, featuresDensePath, ORB, keyFrames);
+        if (Features::isComputed(images, featuresDensePath, ftType, keyFrames) && !settings.force)
+            featuresDense = Features::fromDir(images, featuresDensePath, ftType, keyFrames);
         else
         {
-            featuresDense = Features::compute(images, featuresDensePath, ORB,
+            featuresDense = Features::compute(images, featuresDensePath, ftType,
                 4 * settings.numFeatures, settings.cacheSize, keyFrames, mBar);
         }
 
@@ -104,7 +104,7 @@ namespace PanoramaEngine
             {
                 featuresDense
                     = matches::SuperGlue("/data/arbeit/sg/indoor", 800)
-                          .compute(images, featuresDensePath, kfInterPath, SIM,
+                          .compute(images, featuresDensePath, kfInterPath, trafoType,
                               matches::MatchType::Strategy, 4, 0.0, std::move(mildRecommender),
                               settings.cacheSize, keyFrames, mBar);
             }
@@ -123,33 +123,35 @@ namespace PanoramaEngine
                 featuresSift = Features::compute(images, featuresDensePath, settings.featureType,
                     4 * settings.numFeatures, settings.cacheSize, keyFrames, mBar);
 
-                if (!matches::isComputed(kfInterPath, SIM) || settings.force)
+                if (!matches::isComputed(kfInterPath, trafoType) || settings.force)
                 {
-                    matches::compute(kfInterPath, SIM, featuresSift, matches::MatchType::Strategy,
-                        4, 0.0, std::move(mildRecommender), settings.cacheSize, keyFrames, mBar);
+                    matches::compute(kfInterPath, trafoType, featuresSift,
+                        matches::MatchType::Strategy, 4, 0.0, std::move(mildRecommender),
+                        settings.cacheSize, keyFrames, mBar);
                 }
             }
             featuresDense = std::move(featuresSift);
         }
         else
         {
-            if (!matches::isComputed(kfInterPath, SIM) || settings.force)
+            if (!matches::isComputed(kfInterPath, trafoType) || settings.force)
             {
-                matches::compute(kfInterPath, SIM, featuresDense, matches::MatchType::Strategy, 4,
-                    0.0, std::move(mildRecommender), settings.cacheSize, keyFrames, mBar);
+                matches::compute(kfInterPath, trafoType, featuresDense,
+                    matches::MatchType::Strategy, 4, 0.0, std::move(mildRecommender),
+                    settings.cacheSize, keyFrames, mBar);
             }
         }
 
         // panoramas can only be calculated from theses Types
-        GeometricType useableTypes = matches::getConnectedTypes(kfInterPath, SIM, keyFrames);
+        GeometricType useableTypes = matches::getConnectedTypes(kfInterPath, trafoType, keyFrames);
         auto typeList = typeToTypeList(useableTypes);
         for (auto type : typeList)
             spdlog::info("Usable type for PanoramaSticher: {}", type);
 
-        auto stitcher = PanoramaStitcher(images, keyFrames, SIM);
+        auto stitcher = PanoramaStitcher(images, keyFrames, trafoType);
 
         // init trafos of keyframes by concatenating them
-        stitcher.initTrafos(matches::getTrafos(kfInterPath, SIM));
+        stitcher.initTrafos(matches::getTrafos(kfInterPath, trafoType));
         auto panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite((basePath / "pano0_init.png").string(), std::get<0>(panoTuple));
 
@@ -165,7 +167,7 @@ namespace PanoramaEngine
             if (gps_interp.has_prior())
                 gps = gps_interp.interpolate(keyFrames);
             stitcher.globalOptimizeKeyFrames(
-                featuresDense, matches::getMatches(kfInterPath, SIM), 0, gps, mBar);
+                featuresDense, matches::getMatches(kfInterPath, trafoType), 0, gps, mBar);
             stitcher.writeTrafos(basePath / "kfs/opt_trafos.bin");
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "kfs/opt_trafos.yml", WriteType::Readable);
@@ -187,7 +189,8 @@ namespace PanoramaEngine
             stitcher.loadTrafos(basePath / "opt_trafos.bin");
         else
         {
-            stitcher.refineNonKeyFrames(features, matches::getMatches(kfIntraPath, SIM), 50, mBar);
+            stitcher.refineNonKeyFrames(
+                features, matches::getMatches(kfIntraPath, trafoType), 50, mBar);
             stitcher.writeTrafos(basePath / "opt_trafos.bin");
             if (settings.writeReadable)
                 stitcher.writeTrafos(basePath / "opt_trafos.yml", WriteType::Readable);
@@ -225,20 +228,20 @@ namespace PanoramaEngine
         {
             auto path = dataFolders[i];
             const auto& images = imgContainers[i];
-            auto currFtsOrbSparse = Features::fromDir(images, path / "fts", ORB);
-            auto currFtsOrbDense = Features::fromDir(images, path / "kfs/fts", ORB);
+            auto currFtsOrbSparse = Features::fromDir(images, path / "fts", ftType);
+            auto currFtsOrbDense = Features::fromDir(images, path / "kfs/fts", ftType);
 
-            if (settings.featureType != ORB)
+            if (settings.featureType != ftType)
                 ftsDense.push_back(
                     Features::fromDir(images, path / "kfs/fts", settings.featureType));
 
             auto keyFrames = KeyFrames::fromDir(path / "key_frames.yml");
             keyFrameList.push_back(keyFrames);
 
-            auto matchesIntra = matches::getMatches(path / "kfs/maches_intra", SIM);
+            auto matchesIntra = matches::getMatches(path / "kfs/maches_intra", trafoType);
             matchesIntraList.push_back(std::move(matchesIntra));
 
-            auto matchesInter = matches::getMatches(path / "kfs/maches_inter", SIM);
+            auto matchesInter = matches::getMatches(path / "kfs/maches_inter", trafoType);
             matchesInterList.push_back(std::move(matchesInter));
 
             ftsOrbSparse.push_back(std::move(currFtsOrbSparse));
@@ -266,32 +269,32 @@ namespace PanoramaEngine
         // match inter video
         auto ivlcMatchPath = basePath / "ivlc/matches";
         auto mildRecommender = std::make_unique<MildRecommender>(combinedDenseOrbFtContainer);
-        if (!matches::isComputed(ivlcMatchPath, SIM) || settings.force)
+        if (!matches::isComputed(ivlcMatchPath, trafoType) || settings.force)
         {
-            if (settings.featureType != ORB)
+            if (settings.featureType != ftType)
             {
-                matches::compute(ivlcMatchPath, SIM, combinedDenseFtContainer,
+                matches::compute(ivlcMatchPath, trafoType, combinedDenseFtContainer,
                     matches::MatchType::Strategy, 10, 0.0, std::move(mildRecommender),
                     settings.cacheSize, globalKeyFrames);
             }
             else
             {
-                matches::compute(ivlcMatchPath, SIM, combinedDenseOrbFtContainer,
+                matches::compute(ivlcMatchPath, trafoType, combinedDenseOrbFtContainer,
                     matches::MatchType::Strategy, 10, 0.0, std::move(mildRecommender),
                     settings.cacheSize, globalKeyFrames);
             }
         }
 
         // combined local dense matches and inter video sparse matches
-        auto interVidMatches = matches::getMatches(ivlcMatchPath, SIM);
+        auto interVidMatches = matches::getMatches(ivlcMatchPath, trafoType);
         auto optimalTransitions = getMostProminantTransition(interVidMatches, sizes);
 
         auto globalInterMatches = translator.localToGlobal(matchesInterList);
         globalInterMatches.insert(std::begin(interVidMatches), std::end(interVidMatches));
 
-        auto stitcher = PanoramaStitcher(combinedImgContainer, globalKeyFrames, SIM);
-        stitcher.initTrafosFromMultipleVideos(
-            matches::getTrafos(ivlcMatchPath, SIM), sizes, localOptimalTrafos, optimalTransitions);
+        auto stitcher = PanoramaStitcher(combinedImgContainer, globalKeyFrames, trafoType);
+        stitcher.initTrafosFromMultipleVideos(matches::getTrafos(ivlcMatchPath, trafoType), sizes,
+            localOptimalTrafos, optimalTransitions);
 
         auto panoTuple = stitcher.stitchPano(cv::Size(settings.cols, settings.rows), false, mBar);
         cv::imwrite(basePath / "combined0_init.png", std::get<0>(panoTuple));
@@ -304,7 +307,7 @@ namespace PanoramaEngine
         else
         {
             auto globalGPSMap = translator.localToGlobal(gpsMaps);
-            if (settings.featureType != ORB)
+            if (settings.featureType != ftType)
                 stitcher.globalOptimizeKeyFrames(
                     combinedDenseFtContainer, globalInterMatches, 0, globalGPSMap, mBar);
             else
@@ -355,8 +358,8 @@ namespace PanoramaEngine
         {
             if (settings.overlayCenters)
             {
-                auto transPts
-                    = util::round(transformation::zipTransform<double>({imgCenter}, trafos, SIM));
+                auto transPts = util::round(
+                    transformation::zipTransform<double>({imgCenter}, trafos, trafoType));
                 if (settings.smooth)
                     transPts = smooth(transPts, chunkSizes, sizes);
 
@@ -366,7 +369,7 @@ namespace PanoramaEngine
             }
             if (settings.overlayPoints && !pts.empty())
             {
-                auto transPts = util::round(transformation::zipTransform(pts, trafos, SIM));
+                auto transPts = util::round(transformation::zipTransform(pts, trafos, trafoType));
                 if (settings.smooth)
                     transPts = smooth(transPts, chunkSizes, sizes);
 
