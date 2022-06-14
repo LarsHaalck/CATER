@@ -92,16 +92,17 @@ int main(int argc, char** argv)
     if (a2 == "b")
         kde.fit(frames);
 
-    std::size_t step = 100;
-    std::size_t n = 5234 + step; // so the first loop will implicitly handle mikes number
+    std::size_t step = 131;
+    /* std::size_t n = 5234 + step; // so the first loop will implicitly handle mikes number */
+    std::size_t n = 4912 + step;
 
-    while (n > 0)
+    while (n > 2)
     {
         std::size_t k = 0;
-        if (n >= step)
+        if (n >= step + 2)
             k = n - step;
         else
-            k = 0;
+            k = 2;
 
         if (a2 == "a")
         {
@@ -117,30 +118,38 @@ int main(int argc, char** argv)
         auto frames_subset0 = std::vector<double>();
         auto frames_subset1 = std::vector<double>();
 
-        if (a3 == "h")
+        std::size_t sum = 0;
+        while (sum != k)
         {
-            auto [subset, ids] = random_choice(frames, k / 2, frames_prob);
-            frames_subset0 = subset;
-            for (auto id : ids)
-                frames_prob_inv[id] = 0.0;
-            frames_subset1 = std::get<0>(random_choice(frames, k / 2, frames_prob_inv));
+            if (a3 == "h")
+            {
+                auto [subset, ids] = random_choice(frames, k / 2, frames_prob);
+                frames_subset0 = subset;
+                auto frames_prob_inv_changed = frames_prob_inv;
+                for (auto id : ids)
+                    frames_prob_inv_changed[id] = 0.0;
+                frames_subset1 = std::get<0>(random_choice(frames, k / 2, frames_prob_inv_changed));
+            }
+
+            if (a3 == "d")
+                frames_subset0 = std::get<0>(random_choice(frames, k, frames_prob));
+            if (a3 == "i")
+                frames_subset1 = std::get<0>(random_choice(frames, k, frames_prob_inv));
+
+            spdlog::warn("S0 {}, S1 {}, S0 + S1 {}", frames_subset0.size(), frames_subset1.size(),
+                frames_subset0.size() + frames_subset1.size());
+
+            frames_subset0.insert(std::end(frames_subset0),
+                std::make_move_iterator(std::begin(frames_subset1)),
+                std::make_move_iterator(std::end(frames_subset1)));
+
+            auto uniqs
+                = std::set<std::size_t>(std::begin(frames_subset0), std::end(frames_subset0));
+            spdlog::warn("Uniq {}", uniqs.size());
+            sum = uniqs.size();
         }
-        if (a3 == "d")
-            frames_subset0 = std::get<0>(random_choice(frames, k, frames_prob));
-        if (a3 == "i")
-            frames_subset1 = std::get<0>(random_choice(frames, k, frames_prob_inv));
-
-        spdlog::warn("S0 {}, S1 {}, S0 + S1 {}", frames_subset0.size(), frames_subset1.size(),
-            frames_subset0.size() + frames_subset1.size());
-
-        frames_subset0.insert(std::end(frames_subset0),
-            std::make_move_iterator(std::begin(frames_subset1)),
-            std::make_move_iterator(std::end(frames_subset1)));
 
         frames = std::move(frames_subset0);
-
-        auto uniqs = std::set<std::size_t>(std::begin(frames), std::end(frames));
-        spdlog::warn("Uniq {}", uniqs.size());
 
         auto manual_uns_subset = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
         for (auto f : frames)
