@@ -28,6 +28,9 @@ struct Preferences
     double unaryMultiplier = 4.0;
     int manualUnarySize = 9;
 
+    // only set as a debug option by TUI
+    bool ignoreManualUnaries = false;
+
     // pairwise, tracking recompute needed
     int pairwiseSize = 25;
     double pairwiseSigma = 6.0;

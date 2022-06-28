@@ -50,6 +50,8 @@ int Tui::parse(const std::string& response)
         setEnd(args);
     else if (cmd == "save")
         save();
+    else if (cmd == "saveDetections")
+        saveDetections(args);
     else if (cmd == "prefs")
         prefs(args);
     else if (cmd == "extractFeatures" || cmd == "ef")
@@ -139,6 +141,8 @@ void Tui::prefs(const std::string& args)
             currPrefs.unaryMultiplier = std::stod(words[i + 1]);
         else if (words[i] == "manualUnarySize")
             currPrefs.manualUnarySize = std::stoi(words[i + 1]);
+        else if (words[i] == "ignoreManualUnaries")
+            currPrefs.ignoreManualUnaries = std::stoi(words[i + 1]);
         else if (words[i] == "pairwiseSize")
             currPrefs.pairwiseSize = std::stoi(words[i + 1]);
         else if (words[i] == "pairwiseSigma")
@@ -206,7 +210,6 @@ void Tui::listPanorama()
         if (mPanoGPSFiles.count(f) > 0)
             std::cout << mPanoGPSFiles[f];
         std::cout << std::endl;
-
     }
 }
 
