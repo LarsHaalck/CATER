@@ -25,6 +25,7 @@ private:
     void setStart(const std::string& args) { mModel.setStartFrame(std::stoul(args)); }
     void setEnd(const std::string& args) { mModel.setEndFrame(std::stoul(args)); }
     void save() { mModel.saveResultsFile(); }
+    void saveDetections(const std::string& args) { mModel.saveDetections(args); }
     void extractFeatures() { mModel.extractFeatures(); }
     void extractTrafos() { mModel.extractTrafos(); }
     void extractUnaries() { mModel.extractUnaries(); }

@@ -1,9 +1,9 @@
 #include <habitrack/model/model.h>
 
-#include <habitrack/model/imageViewer.h>
-#include <habitrack/model/resultsIO.h>
 #include <habitrack/image-processing/util.h>
 #include <habitrack/io/io.h>
+#include <habitrack/model/imageViewer.h>
+#include <habitrack/model/resultsIO.h>
 #include <habitrack/progressbar/progressBar.h>
 #include <habitrack/tracker/tracker.h>
 #include <habitrack/util/log.h>
@@ -158,12 +158,20 @@ void Model::generateVideo(const fs::path& videoFilename) const
 void Model::saveResultsFile()
 {
     saveResults(mResultsFile, mPrefs, mImgFolder, mStartFrameNumber, mEndFrameNumber);
+    saveManualUnaries();
+    saveDetections();
+}
 
+void Model::saveDetections(std::optional<fs::path> detectionsFile)
+{
+    if (mDetections.size())
+        mDetections.save(detectionsFile.value_or(mDetectionsFile));
+}
+
+void Model::saveManualUnaries()
+{
     if (mManualUnaries.size())
         mManualUnaries.save(mUnFolder);
-
-    if (mDetections.size())
-        mDetections.save(mDetectionsFile);
 }
 
 void Model::setPreferences(const Preferences& prefs)
@@ -291,9 +299,18 @@ void Model::extractUnaries()
             mPrefs.unarySubsample, mPrefs.unarySigma, trafos, mPrefs.cacheSize, mBar);
     }
 
-    // zero init if existent
-    mManualUnaries = ManualUnaries::fromDir(
-        mUnFolder, mPrefs.unarySubsample, mPrefs.manualUnarySize, mImages.getImgSize());
+    if (mPrefs.ignoreManualUnaries)
+    {
+        spdlog::warn("Ignoring manual unaries per request");
+        mManualUnaries
+            = ManualUnaries(mPrefs.unarySubsample, mPrefs.manualUnarySize, mImages.getImgSize());
+    }
+    else
+    {
+        // zero init if existent
+        mManualUnaries = ManualUnaries::fromDir(
+            mUnFolder, mPrefs.unarySubsample, mPrefs.manualUnarySize, mImages.getImgSize());
+    }
 }
 
 std::vector<double> Model::getUnaryQualities()

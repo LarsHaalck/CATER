@@ -20,6 +20,8 @@ std::ostream& operator<<(std::ostream& stream, const Preferences& prefs)
     stream << "Manual Multiplier: " << prefs.unaryMultiplier << "\n";
     stream << "Manual unary size: " << prefs.manualUnarySize << "\n";
     stream << "--------------------\n";
+    stream << "Ignore Manual Unaries: " << prefs.ignoreManualUnaries << "\n";
+    stream << "--------------------\n";
     stream << "Pairwise Settings: \n";
     stream << "Size: " << prefs.pairwiseSize << "\n";
     stream << "Sigma: " << prefs.pairwiseSigma << "\n";

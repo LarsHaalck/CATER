@@ -13,6 +13,7 @@
 #include <habitrack/util/threadPool.h>
 #include <deque>
 #include <filesystem>
+#include <optional>
 #include <unordered_set>
 
 namespace ht
@@ -51,6 +52,8 @@ public:
     void loadImageFolder(const std::filesystem::path& imgFolder);
     void loadResultsFile(const std::filesystem::path& resultFile);
     void saveResultsFile();
+    void saveDetections(std::optional<std::filesystem::path> detectionsFile = {});
+    void saveManualUnaries();
 
     void setPreferences(const Preferences& prefs);
     Preferences getPreferences() const;
