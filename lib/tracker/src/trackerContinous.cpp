@@ -160,7 +160,7 @@ namespace
             if (workingDir.empty())
                 phi = phis[v];
             else
-                phi = Tracker::loadPhi(v, workingDir);
+                phi = Tracker::loadPhi(ids[v], workingDir);
             maxStates.at<int>(v, 0) = phi.at<int>(r, c, 0);
             maxStates.at<int>(v, 1) = phi.at<int>(r, c, 1);
         }

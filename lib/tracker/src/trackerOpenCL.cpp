@@ -245,7 +245,7 @@ namespace
         {
             auto r = maxStates.at<int>(v + 1, 0);
             auto c = maxStates.at<int>(v + 1, 1);
-            auto phi = Tracker::loadPhi(v, workingDir);
+            auto phi = Tracker::loadPhi(ids[v], workingDir);
             maxStates.at<int>(v, 0) = phi.at<int>(r, c, 0);
             maxStates.at<int>(v, 1) = phi.at<int>(r, c, 1);
         }
