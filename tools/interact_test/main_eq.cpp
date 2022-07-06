@@ -29,19 +29,27 @@ enum class TrackerType
 
 };
 
-std::string get_suffix(const TrackerType& type)
+std::string get_filename(const TrackerType& type, double ratio, const path& folder)
 {
+    std::stringstream filename;
+    filename << "detections_eq_" << folder.string() << "_";
     switch (type)
     {
     case TrackerType::Interpolate:
-        return "int";
+        filename << "int";
+        break;
     case TrackerType::Chunked:
-        return "ch" + std::to_string(chunk);
+        filename << "ch-" + std::to_string(chunk);
+        break;
     case TrackerType::Continous:
-        return "con";
+        filename << "con";
+        break;
     default:
-        return "";
+        break;
     };
+
+    filename << "_" << std::fixed << std::setprecision(2) << ratio << ".yaml";
+    return filename.str();
 }
 
 int main(int argc, char** argv)
@@ -116,9 +124,8 @@ int main(int argc, char** argv)
         else
             detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
 
-        detections.save(out_dir
-            / ("detections_eq_" + get_suffix(trackerType) + "_" + std::to_string(manual_uns.size())
-                + ".yaml"));
+        auto ratio = static_cast<double>(manual_uns.size()) / gt.size();
+        detections.save(out_dir / get_filename(trackerType, ratio, base_path.stem()));
         progress.inc();
     }
     progress.done();
