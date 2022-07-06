@@ -2,6 +2,7 @@
 #include <habitrack/image-processing/images.h>
 #include <habitrack/image-processing/matches.h>
 #include <habitrack/tracker/manualUnaries.h>
+#include <habitrack/util/algorithm.h>
 #include <habitrack/tracker/tracker.h>
 #include <habitrack/tracker/unaries.h>
 
@@ -12,34 +13,6 @@
 
 #include <spdlog/cfg/env.h>
 #include <spdlog/spdlog.h>
-
-// https://stackoverflow.com/a/27030598
-template <typename T>
-std::vector<double> linspace(T start_in, T end_in, int num_in)
-{
-    std::vector<double> linspaced;
-
-    double start = static_cast<double>(start_in);
-    double end = static_cast<double>(end_in);
-    double num = static_cast<double>(num_in);
-
-    if (num == 0)
-        return linspaced;
-    if (num == 1)
-    {
-        linspaced.push_back(start);
-        return linspaced;
-    }
-
-    double delta = (end - start) / (num - 1);
-    for (int i = 0; i < num - 1; ++i)
-        linspaced.push_back(start + delta * i);
-
-    // I want to ensure that start and end
-    // are exactly the same as the input
-    linspaced.push_back(end);
-    return linspaced;
-}
 
 void write_csv(const ht::Detections& dets, double perc)
 {
@@ -100,7 +73,7 @@ int main()
         if (num == 0)
             num = 2;
 
-        auto ids_d = linspace(start_frame, end_frame - 1, num);
+        auto ids_d = ht::linspace(start_frame, end_frame - 1, num);
         std::vector<int> ids;
         ids.reserve(ids_d.size());
         std::transform(std::begin(ids_d), std::end(ids_d), std::back_inserter(ids),

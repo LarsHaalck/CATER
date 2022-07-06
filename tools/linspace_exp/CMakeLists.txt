@@ -7,6 +7,7 @@ target_link_libraries(linspace_exp
     PUBLIC
     image-processing
     tracker
+    util
     cxxopts::cxxopts
     spdlog::spdlog
 )

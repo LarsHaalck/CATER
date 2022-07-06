@@ -1,25 +1,20 @@
-add_executable(interact_test main.cpp kde.cpp)
-target_include_directories(interact_test
-    PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-target_link_libraries(interact_test
-    PUBLIC
-    image-processing
-    tracker
-    cxxopts::cxxopts
-    spdlog::spdlog
-)
+add_executable(interact_test_reverse main_reverse.cpp kde.cpp)
+add_executable(interact_test_interp main_interp.cpp)
+add_executable(interact_test_max main_max.cpp)
 
-add_executable(interact_test2 main2.cpp kde.cpp)
-target_include_directories(interact_test2
-    PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-target_link_libraries(interact_test2
-    PUBLIC
-    image-processing
-    tracker
-    cxxopts::cxxopts
-    spdlog::spdlog
-)
+set(prg_names interact_test_reverse interact_test_interp interact_test_max)
+foreach(prg IN LISTS prg_names)
+    target_include_directories(${prg}
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    target_link_libraries(${prg}
+        PUBLIC
+        image-processing
+        tracker
+        model
+        cxxopts::cxxopts
+        spdlog::spdlog
+    )
+endforeach()
+
