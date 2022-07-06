@@ -1,10 +1,15 @@
 #include <habitrack/image-processing/features.h>
 #include <habitrack/image-processing/images.h>
 #include <habitrack/image-processing/matches.h>
+#include <habitrack/image-processing/util.h>
+#include <habitrack/model/resultsIO.h>
+#include <habitrack/progressbar/progressBar.h>
+#include <habitrack/tracker/interpTracker.h>
 #include <habitrack/tracker/manualUnaries.h>
-#include <habitrack/tracker/tracker.h>
 #include <habitrack/tracker/unaries.h>
+#include <habitrack/util/algorithm.h>
 
+#include <cxxopts.hpp>
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -15,69 +20,185 @@
 #include <spdlog/spdlog.h>
 
 using path = std::filesystem::path;
-path base_path = "/data";
-path img_folder = base_path / "imgs";
-path match_folder = base_path / "imgs_output" / "now" / "matches";
-path un_folder = base_path / "imgs_output" / "now" / "unaries";
-
-std::size_t start_frame = 619;
-std::size_t end_frame = 13724;
 std::size_t chunk = 100;
 
-std::random_device rd;
-std::mt19937 gen(rd());
+enum class TrackerType
+{
+    Interpolate = 1,
+    Chunked = 2,
+    Continous = 3,
+
+};
+
+std::string get_suffix(const TrackerType& type)
+{
+    switch (type)
+    {
+    case TrackerType::Interpolate:
+        return "int";
+    case TrackerType::Chunked:
+        return "ch" + std::to_string(chunk);
+    case TrackerType::Continous:
+        return "con";
+    default:
+        return "";
+    };
+}
+
+// sort by max deviation from gt
+std::vector<int> get_sorted_ids(
+    const ht::Detections& detections, const ht::Detections& gt, std::size_t start_frame)
+{
+    // sort by max deviation from gt
+    auto ids = std::vector<int>(detections.size());
+    std::iota(std::begin(ids), std::end(ids), start_frame);
+    std::sort(std::begin(ids), std::end(ids),
+        [detections, gt](auto a, auto b)
+        {
+            auto dist1 = ht::util::euclidianDist(detections.at(a).position, gt.at(a).position);
+            auto dist2 = ht::util::euclidianDist(detections.at(b).position, gt.at(b).position);
+            return dist1 > dist2;
+        });
+
+    return ids;
+}
 
 int main(int argc, char** argv)
 {
     spdlog::set_level(spdlog::level::info);
 
-    if (argc != 4)
-        return -1;
+    path res_file, out_dir;
+    double step_perc = 1;
+    auto trackerType_int = 1;
+    bool incremental = false;
 
-    std::string a1 {argv[1]};
-    std::string a2 {argv[2]};
-    std::string a3 {argv[3]};
-    spdlog::info("Called {}-{}-{}", a1, a2, a3);
+    cxxopts::Options options("Interact-Test [Equidistant]", "");
+    options.add_options()("r,res_file", "The results file to process", cxxopts::value(res_file))(
+        "s,step", "The step size in percent (default 1)", cxxopts::value(step_perc))("t,tracker",
+        "The tracker type to be used, 1: interpolate, 2: chunked, 3: continous (default 1)",
+        cxxopts::value(trackerType_int))("o,out",
+        "The out dir relative to parent of images (default parent path of images)",
+        cxxopts::value(out_dir))("i,incremental",
+        "Whether to optimize after every max or in groups (default false)",
+        cxxopts::value(incremental));
+
+    auto result = options.parse(argc, argv);
+    if (result.count("res_file") != 1)
+    {
+        std::cout << options.help() << std::endl;
+        return -1;
+    }
+
+    auto trackerType = static_cast<TrackerType>(trackerType_int);
+    if (trackerType != TrackerType::Chunked)
+        chunk = 0;
+
+    std::cout << "You called: " << std::endl;
+    std::cout << "r: " << res_file.string() << std::endl;
+    std::cout << "s: " << step_perc << std::endl;
+    std::cout << "o: " << out_dir << std::endl;
+
+    auto results_tuple = ht::loadResults(res_file);
+    auto img_folder = std::get<1>(results_tuple);
+    auto base_path = img_folder.parent_path();
+
+    auto start_frame = std::get<2>(results_tuple);
+    auto end_frame = std::get<3>(results_tuple);
+
+    auto match_folder = base_path / "imgs_output" / "now" / "matches";
+    auto un_folder = base_path / "imgs_output" / "now" / "unaries";
+    auto detectFile = base_path / "imgs_output" / "now" / "detections.yml";
 
     auto imgs = ht::Images(img_folder);
+    auto gt = ht::Detections::fromDir(detectFile);
     auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
     auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
-    auto manual_uns = ht::ManualUnaries::fromDir(un_folder, 0.8, 9, imgs.getImgSize());
-    auto settings = ht::Tracker::Settings {0.8, 25, 6, 4, true, 5, 3, chunk};
-    /* auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos); */
-    std::string end = a1 + "-" + a2 + "-" + a3 + "_";
-    /* detections.save(base_path / ("detections_gt.yaml")); */
+    auto settings = ht::Tracker::Settings {0.8, 25, 6, 4, false, 5, 3, chunk};
 
-    std::vector<double> frames;
-    frames.reserve(manual_uns.size());
-    for (const auto& pointPair : manual_uns)
-        frames.push_back(pointPair.first);
-    std::sort(std::begin(frames), std::end(frames));
+    out_dir = base_path / out_dir;
+    std::filesystem::create_directories(out_dir);
 
+    // max is 10% of all frames
+    auto upper_bound = static_cast<std::size_t>(std::ceil(gt.size() / 10.0));
+    std::size_t step = std::round(step_perc / 100 * gt.size());
 
-    std::size_t step = 100;
-    std::size_t n = 5234 + step; // so the first loop will implicitly handle mikes number
-
-    while (n > 0)
+    auto progress = ht::ProgressBar();
+    progress.setTotal(upper_bound / step);
+    auto manual_uns = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
+    for (std::size_t i = 0; i < upper_bound; i += step)
     {
-        std::size_t k = 0;
-        if (n >= step)
-            k = n - step;
-        else
-            k = 0;
-
-        auto manual_uns_subset = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
-        for (auto f : frames)
-            manual_uns_subset.insert(f, manual_uns.unaryPointAt(f));
-        manual_uns = std::move(manual_uns_subset);
-
         spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
-        auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
-        detections.save(
-            base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml"));
+        auto detections = ht::Detections();
+        if (trackerType == TrackerType::Interpolate)
+            detections = ht::InterpTracker::track(uns, manual_uns, settings, trafos);
+        else
+            detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
 
-        n = k;
+        detections.save(out_dir
+            / ("detections_max_" + get_suffix(trackerType) + "_" + std::to_string(manual_uns.size())
+                + ".yaml"));
+
+        std::vector<int> ids;
+
+        // sort by highest, add max to manual unary, run tracker and repeat until step reached
+        if (incremental)
+        {
+            auto manual_uns_copy = manual_uns;
+            auto detections_copy = detections;
+            ids.reserve(step);
+            for (int k = 0; k < static_cast<int>(step); k++)
+            {
+                // sort by max deviation from gt
+                auto max_ids = get_sorted_ids(detections_copy, gt, start_frame);
+                manual_uns_copy.insert(max_ids[0], gt.at(max_ids[0]).position);
+                ids.push_back(max_ids[0]);
+
+                if (trackerType == TrackerType::Interpolate)
+                    detections_copy
+                        = ht::InterpTracker::track(uns, manual_uns_copy, settings, trafos);
+                else
+                    detections_copy = ht::Tracker::track(uns, manual_uns_copy, settings, trafos);
+            }
+        }
+        else // sort by highest, and find step many points heuristically without running inbetween
+        {
+            auto max_ids = get_sorted_ids(detections, gt, start_frame);
+
+            int curr = 0;
+            int min_dist = 50;
+            while (curr < static_cast<int>(max_ids.size()) && ids.size() < step && min_dist > 0)
+            {
+                // find next element that is atleast 50 from previous elements
+                auto new_id = max_ids[curr];
+                bool ok = true;
+                for (const auto& s : ids)
+                {
+                    if (std::abs(new_id - s) < min_dist)
+                    {
+                        ok = false;
+                        break;
+                    }
+                }
+
+                if (!ok)
+                    curr++;
+                else
+                    ids.push_back(new_id);
+
+                if (curr == static_cast<int>(max_ids.size() - 1))
+                {
+                    curr = 0;
+                    min_dist -= 10;
+                }
+            }
+        }
+
+        for (auto id : ids)
+            manual_uns.insert(id, gt.at(id).position);
+
+        progress.inc();
     }
+    progress.done();
 
     return 0;
 }
