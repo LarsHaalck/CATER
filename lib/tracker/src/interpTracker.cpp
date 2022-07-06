@@ -20,13 +20,13 @@ using namespace matches;
 using namespace transformation;
 
 Detections InterpTracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-    const Settings& settings, std::size_t, const PairwiseTrafos& trafos)
+    const Tracker::Settings& settings, std::size_t, const PairwiseTrafos& trafos)
 {
     return InterpTracker::track(unaries, manualUnaries, settings, trafos);
 }
 
 Detections InterpTracker::track(const Unaries& unaries, const ManualUnaries& manualUnaries,
-    const Settings& settings, const PairwiseTrafos&)
+    const Tracker::Settings& settings, const PairwiseTrafos&)
 {
     spdlog::warn("Interpolation Tracker running");
     auto ids = unaries.getIDs();
@@ -77,22 +77,5 @@ Detections InterpTracker::track(const Unaries& unaries, const ManualUnaries& man
         detections.insert(i, {center, 0, 0});
 
     return detections;
-}
-
-std::size_t InterpTracker::getNumChunks(std::size_t numUnaries, std::size_t chunkSize)
-{
-    if (chunkSize == 0)
-        chunkSize = numUnaries;
-
-    auto numChunks = std::max(numUnaries / chunkSize, static_cast<std::size_t>(1));
-    return numChunks;
-}
-
-std::size_t InterpTracker::getChunkEnd(
-    std::size_t chunk, std::size_t numChunks, std::size_t chunkSize, std::size_t numUnaries)
-{
-    if (chunk == numChunks - 1)
-        return numUnaries;
-    return std::min(numUnaries, (chunk + 1) * chunkSize);
 }
 } // namespace ht
