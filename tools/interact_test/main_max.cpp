@@ -137,7 +137,7 @@ int main(int argc, char** argv)
     auto detections = ht::Detections();
     for (std::size_t i = 0; i <= steps; i++)
     {
-        auto num_unaries = std::round(i * step_perc * gt.size());
+        auto num_unaries = std::round(i * step_perc * gt.size()) - manual_uns.size();
         std::vector<int> ids;
 
         // sort by highest, add max to manual unary, run tracker and repeat until step reached
@@ -169,6 +169,7 @@ int main(int argc, char** argv)
             while (
                 curr < static_cast<int>(max_ids.size()) && ids.size() < num_unaries && min_dist > 0)
             {
+                spdlog::debug("Min dist: {}", min_dist);
                 // find next element that is atleast 50 from previous elements
                 auto new_id = max_ids[curr];
                 bool ok = true;
@@ -176,6 +177,16 @@ int main(int argc, char** argv)
                 {
                     if (std::abs(new_id - s) < min_dist)
                     {
+                        spdlog::debug("{} too close to other id {}", new_id, s);
+                        ok = false;
+                        break;
+                    }
+                }
+                for (const auto& s : manual_uns)
+                {
+                    if (std::abs(new_id - static_cast<int>(s.first)) < min_dist)
+                    {
+                        spdlog::debug("{} too close to manual unary {}", new_id, s.first);
                         ok = false;
                         break;
                     }
