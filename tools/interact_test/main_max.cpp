@@ -134,19 +134,10 @@ int main(int argc, char** argv)
     auto progress = ht::ProgressBar();
     progress.setTotal(steps);
     auto manual_uns = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
+    auto detections = ht::Detections();
     for (std::size_t i = 0; i <= steps; i++)
     {
         auto num_unaries = std::round(i * step_perc * gt.size());
-        spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
-        auto detections = ht::Detections();
-        if (trackerType == TrackerType::Interpolate)
-            detections = ht::InterpTracker::track(uns, manual_uns, settings, trafos);
-        else
-            detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
-
-        auto ratio = static_cast<double>(manual_uns.size()) / gt.size();
-        detections.save(out_dir / get_filename(trackerType, ratio, base_path.stem()));
-
         std::vector<int> ids;
 
         // sort by highest, add max to manual unary, run tracker and repeat until step reached
@@ -205,6 +196,15 @@ int main(int argc, char** argv)
 
         for (auto id : ids)
             manual_uns.insert(id, gt.at(id).position);
+
+        spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
+        if (trackerType == TrackerType::Interpolate)
+            detections = ht::InterpTracker::track(uns, manual_uns, settings, trafos);
+        else
+            detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
+
+        auto ratio = static_cast<double>(manual_uns.size()) / gt.size();
+        detections.save(out_dir / get_filename(trackerType, ratio, base_path.stem()));
 
         progress.inc();
     }
