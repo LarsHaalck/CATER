@@ -105,15 +105,19 @@ int main(int argc, char** argv)
 
     // max is 10% of all frames
     auto upper_bound = static_cast<std::size_t>(std::ceil(gt.size() / 10.0));
-    std::size_t step = std::round(step_perc / 100 * gt.size());
+    step_perc /= 100;
+    std::size_t steps = std::round(upper_bound / (step_perc * gt.size()));
 
     auto progress = ht::ProgressBar();
-    progress.setTotal(upper_bound / step);
-    for (std::size_t i = 0; i < upper_bound; i += step)
+    progress.setTotal(steps);
+    for (std::size_t i = 0; i <= steps; i++)
     {
         auto manual_uns = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
-        auto ids = ht::linspace<std::size_t>(start_frame, end_frame - 1, (i == 0) ? 2 : i);
+        auto num_unaries = std::round(i * step_perc * gt.size());
+        if (num_unaries == 0)
+            num_unaries = 2;
 
+        auto ids = ht::linspace<std::size_t>(start_frame, end_frame - 1, num_unaries);
         for (auto id : ids)
             manual_uns.insert(id, gt.at(id).position);
 

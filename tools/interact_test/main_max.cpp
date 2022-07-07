@@ -128,13 +128,15 @@ int main(int argc, char** argv)
 
     // max is 10% of all frames
     auto upper_bound = static_cast<std::size_t>(std::ceil(gt.size() / 10.0));
-    std::size_t step = std::round(step_perc / 100 * gt.size());
+    step_perc /= 100;
+    std::size_t steps = std::round(upper_bound / (step_perc * gt.size()));
 
     auto progress = ht::ProgressBar();
-    progress.setTotal(upper_bound / step);
+    progress.setTotal(steps);
     auto manual_uns = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
-    for (std::size_t i = 0; i < upper_bound; i += step)
+    for (std::size_t i = 0; i <= steps; i++)
     {
+        auto num_unaries = std::round(i * step_perc * gt.size());
         spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
         auto detections = ht::Detections();
         if (trackerType == TrackerType::Interpolate)
@@ -152,8 +154,8 @@ int main(int argc, char** argv)
         {
             auto manual_uns_copy = manual_uns;
             auto detections_copy = detections;
-            ids.reserve(step);
-            for (int k = 0; k < static_cast<int>(step); k++)
+            ids.reserve(num_unaries);
+            for (int k = 0; k < static_cast<int>(num_unaries); k++)
             {
                 // sort by max deviation from gt
                 auto max_ids = get_sorted_ids(detections_copy, gt, start_frame);
@@ -173,7 +175,8 @@ int main(int argc, char** argv)
 
             int curr = 0;
             int min_dist = 50;
-            while (curr < static_cast<int>(max_ids.size()) && ids.size() < step && min_dist > 0)
+            while (
+                curr < static_cast<int>(max_ids.size()) && ids.size() < num_unaries && min_dist > 0)
             {
                 // find next element that is atleast 50 from previous elements
                 auto new_id = max_ids[curr];
