@@ -139,13 +139,13 @@ int main(int argc, char** argv)
     {
         auto num_unaries = std::round(i * step_perc * gt.size()) - manual_uns.size();
         std::vector<int> ids;
+        ids.reserve(num_unaries);
 
         // sort by highest, add max to manual unary, run tracker and repeat until step reached
         if (incremental)
         {
             auto manual_uns_copy = manual_uns;
             auto detections_copy = detections;
-            ids.reserve(num_unaries);
             for (int k = 0; k < static_cast<int>(num_unaries); k++)
             {
                 // sort by max deviation from gt
@@ -165,14 +165,16 @@ int main(int argc, char** argv)
             auto max_ids = get_sorted_ids(detections, gt, start_frame);
 
             int curr = 0;
-            int min_dist = 50;
+            float min_dist = 50;
             while (
-                curr < static_cast<int>(max_ids.size()) && ids.size() < num_unaries && min_dist > 0)
+                curr < static_cast<int>(max_ids.size()) && ids.size() < num_unaries && min_dist >= 1)
             {
                 spdlog::debug("Min dist: {}", min_dist);
                 // find next element that is atleast 50 from previous elements
                 auto new_id = max_ids[curr];
                 bool ok = true;
+
+                // check for collisions in current ids
                 for (const auto& s : ids)
                 {
                     if (std::abs(new_id - s) < min_dist)
@@ -182,6 +184,8 @@ int main(int argc, char** argv)
                         break;
                     }
                 }
+
+                // check for collisions in other manual unaries
                 for (const auto& s : manual_uns)
                 {
                     if (std::abs(new_id - static_cast<int>(s.first)) < min_dist)
@@ -192,16 +196,18 @@ int main(int argc, char** argv)
                     }
                 }
 
-                if (!ok)
-                    curr++;
-                else
+                // if no collisions push id
+                if (ok)
                     ids.push_back(new_id);
 
+                // if at the end, reset to start, and half the window
                 if (curr == static_cast<int>(max_ids.size() - 1))
                 {
                     curr = 0;
-                    min_dist -= 10;
+                    min_dist /= 2;
                 }
+                else // or just increase by one
+                    curr++;
             }
         }
 
