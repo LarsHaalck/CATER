@@ -183,7 +183,7 @@ namespace
             cv::Mat phi(3, phiSize, CV_32S);
             // set message to node by maximizing over log f and message to factor
             openclTracker(messageToFactor, pairwiseKernel, messageToNode, phi);
-            Tracker::savePhi(i, phi, workingDir);
+            Tracker::savePhi(idx, phi, workingDir);
 
             cv::UMat currentUnary;
             if (manualUnaries.exists(idx))
