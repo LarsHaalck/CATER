@@ -12,7 +12,7 @@ else()
         cereal_external
         DEPENDS eigen3_external
         GIT_REPOSITORY https://github.com/USCiLab/cereal
-        GIT_TAG v1.3.0
+        GIT_TAG v1.3.2
         GIT_SHALLOW TRUE
         CMAKE_ARGS
           -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
@@ -29,5 +29,5 @@ else()
         LOG_BUILD ON
         LOG_INSTALL ON
     )
-    set(cereal_DIR ${STAGED_INSTALL_PREFIX}/share/cmake/cereal)
+    set(cereal_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/cereal)
 endif()

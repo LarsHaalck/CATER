@@ -1,4 +1,4 @@
-find_package(Ceres 2.1.0 CONFIG QUIET)
+find_package(Ceres 2.1 CONFIG QUIET)
 
 if(TARGET ceres)
     get_property(loc TARGET ceres PROPERTY LOCATION)

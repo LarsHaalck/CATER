@@ -1,7 +1,7 @@
 ###########################################################################
 #                              DEPENDENCIES                               #
 ###########################################################################
-find_package(cereal REQUIRED)
+find_package(cereal 1.3 REQUIRED)
 
 find_package(OpenCL QUIET)
 if(${OpenCL_FOUND})
