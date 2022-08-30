@@ -743,6 +743,9 @@ void MainWindow::optimizeUnaries()
     mDetectionsWatchers[chunk] = std::move(watcher);
     emit toggleChunk(chunk, true);
 
+    mBar->status("Tracking");
+    mBar->setTotal(0);
+
     if (!mDetectionsQueue.empty())
         optimizeUnaries();
 }
@@ -758,6 +761,13 @@ void MainWindow::on_detectionsAvailable(int chunkId)
     mDetectionsWatchers.erase(chunkId);
     ui->labelNumTrackedPos->setText(QString::number(mHabiTrack.detections().size()));
     mSaved = false;
+
+
+    if (mDetectionsQueue.empty())
+    {
+        mBar->setTotal(1);
+        mBar->done();
+    }
 }
 
 void MainWindow::on_totalChanged(int total)
