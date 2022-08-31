@@ -240,3 +240,6 @@ lib/3rdparty/*/
 # Singularity
 *.sif
 
+squashfs-root/
+*.AppImage
+

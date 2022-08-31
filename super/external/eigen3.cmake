@@ -1,4 +1,4 @@
-find_package(Eigen3 3.4 CONFIG QUIET)
+find_package(Eigen3 3 CONFIG QUIET)
 
 if(TARGET Eigen3::Eigen)
     get_property(loc TARGET Eigen3::Eigen PROPERTY INTERFACE_INCLUDE_DIRECTORIES)

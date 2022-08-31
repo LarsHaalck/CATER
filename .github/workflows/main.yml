@@ -1,0 +1,26 @@
+name: appimage
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Build Appimage Image
+        uses: docker/build-push-action@v3
+        with:
+          tags: larshaalck/habitrack_appimage:${{ github.ref_name }}
+          file: helper/docker/Dockerfile.appimage
+          push: false
+      - uses: shrink/actions-docker-extract@v1
+        id: extract
+        with:
+          image: larshaalck/habitrack_appimage:${{ github.ref_name }}
+          path: /app/.
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ steps.extract.outputs.destination }}/*.AppImage

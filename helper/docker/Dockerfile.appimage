@@ -1,0 +1,137 @@
+FROM ubuntu:20.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+# https://doc.qt.io/qt-6/linux-requirements.html
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends software-properties-common \
+    && add-apt-repository ppa:ubuntu-toolchain-r/ppa \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ninja-build \
+        cmake \
+        wget \
+        git \
+        gfortran \
+        ca-certificates \
+        libgl1-mesa-dev \
+        libfontconfig1-dev \
+        libfreetype6-dev \
+        libx11-dev \
+        libx11-xcb-dev \
+        libxext-dev \
+        libxfixes-dev \
+        libxi-dev \
+        libxrender-dev \
+        libxcb1-dev \
+        libxcb-glx0-dev \
+        libxcb-keysyms1-dev \
+        libxcb-image0-dev \
+        libxcb-shm0-dev \
+        libxcb-icccm4-dev \
+        libxcb-sync-dev \
+        libxcb-xfixes0-dev \
+        libxcb-shape0-dev \
+        libxcb-randr0-dev \
+        libxcb-render-util0-dev \
+        libxcb-util-dev \
+        libxcb-xinerama0-dev \
+        libxcb-xkb-dev \
+        libxkbcommon-dev \
+        libxkbcommon-x11-dev \
+        libspdlog-dev \
+        libeigen3-dev \
+        file \
+        gcc-10 \
+        g++-10 \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG DEPS=/deps
+ARG OPENCV_VERSION=4.6.0
+
+COPY . $DEPS
+
+# install opencv
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libjpeg-dev libpng-dev libtiff-dev \
+    && apt-get install -y --no-install-recommends libavcodec-dev libavformat-dev libswscale-dev libv4l-dev \
+    && apt-get install -y --no-install-recommends libxvidcore-dev libx264-dev \
+    && apt-get install -y --no-install-recommends libatlas-base-dev gfortran libbtbb-dev liblapack-dev liblapacke-dev libopenblas-dev \
+    && wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz -O opencv.tar.gz \
+    && tar -xf opencv.tar.gz \
+    && rm opencv.tar.gz \
+    && cd opencv-${OPENCV_VERSION} \
+    && mkdir build \
+    && cd build \
+    && cmake \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DWITH_OPENCL=ON \
+        -DWITH_OPENGL=ON \
+        -DWITH_TBB=ON \
+        -DWITH_VULKAN=ON \
+        -DWITH_QT=OFF \
+        -DBUILD_WITH_DEBUG_INFO=OFF \
+        -DBUILD_TESTS=OFF \
+        -DBUILD_PERF_TESTS=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DBUILD_PROTOBUF=OFF \
+        -DPROTOBUF_UPDATE_FILES=ON \
+        -DINSTALL_C_EXAMPLES=OFF \
+        -DINSTALL_PYTHON_EXAMPLES=OFF \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCPU_BASELINE_DISABLE=SSE3 \
+        -DCPU_BASELINE_REQUIRE=SSE2 \
+        -DOPENCV_SKIP_PYTHON_LOADER=ON \
+        -DOPENCV_GENERATE_PKGCONFIG=ON \
+        -DOPENCV_ENABLE_NONFREE=ON \
+        -DOPENCV_JNI_INSTALL_PATH=lib \
+        -DOPENCV_GENERATE_SETUPVARS=OFF \
+        -DEIGEN_INCLUDE_PATH="/usr/include/eigen3" \
+        ../ \
+    && make -j 4 \
+    && make install \
+    && rm -rf opencv-${OPENCV_VERSION}
+
+RUN mkdir $DEPS/build \
+    && cd $DEPS/build \
+    && cmake -GNinja \
+        -DBUILD_DEPS_ONLY=OFF \
+        -DCMAKE_INSTALL_PREFIX=AppDir \
+        -DBUILD_TOOLS=OFF \
+        -WITH_SUPERGLUE=OFF \
+        ../super \
+    && ninja -j 4 \
+    && cd external/Build/habitrack \
+    && cmake --install .
+
+
+# TODO: replace smarttowel with linuxdeploy once this is merged
+# https://github.com/linuxdeploy/linuxdeploy-plugin-qt/pull/115
+RUN wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage \
+    && wget https://github.com/smarttowel/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage \
+    && chmod +x linuxdeploy-*.AppImage \
+    && ./linuxdeploy-x86_64.AppImage --appimage-extract \
+    && ./linuxdeploy-plugin-qt-x86_64.AppImage --appimage-extract \
+    && rm -rf linuxdeploy-*
+
+ARG QMAKE=$DEPS/build/stage/bin/qmake
+RUN cd $DEPS/build \
+    && cp -r AppDir habitrack-appdir \
+    && /squashfs-root/usr/bin/linuxdeploy \
+        --appdir habitrack-appdir \
+        -d "AppDir/share/applications/habitrack-gui.desktop" \
+        -i "AppDir/share/icons/hicolor/128x128/apps/habitrack-gui.png" \
+        -e "AppDir/bin/habitrack-gui" \
+        --output appimage \
+        --plugin qt \
+    && cp -r AppDir panowizard-appdir \
+    && /squashfs-root/usr/bin/linuxdeploy \
+        --appdir panowizard-appdir \
+        -d "panowizard-appdir/share/applications/panowizard.desktop" \
+        -i "panowizard-appdir/share/icons/hicolor/128x128/apps/panowizard.png" \
+        -e "panowizard-appdir/bin/panowizard" \
+        --output appimage \
+        --plugin qt \
+    && mkdir /app && mv *.AppImage /app
+

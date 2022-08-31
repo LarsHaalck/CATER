@@ -86,5 +86,6 @@ else()
         LOG_INSTALL ON
     )
     set(Qt6Multimedia_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt6Multimedia)
+    set(Qt6DBusTools_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Qt6DBusTools)
     set(CMAKE_INSTALL_RPATH ${STAGED_INSTALL_PREFIX}/lib)
 endif()

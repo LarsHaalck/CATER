@@ -8,14 +8,16 @@
 #include <habitrack/util/algorithm.h>
 #include <habitrack/util/stopWatch.h>
 
+#include "affinityGlobalOptimizer.h"
+#include "homographyGlobalOptimizer.h"
 #include "isometryGlobalOptimizer.h"
 #include "similarityGPSOptimizer.h"
 #include "similarityGlobalOptimizer.h"
-#include "affinityGlobalOptimizer.h"
-#include "homographyGlobalOptimizer.h"
 
 #include <Eigen/Dense>
 #include <ceres/ceres.h>
+#include <chrono>
+#include <thread>
 #include <filesystem>
 #include <fstream>
 #include <opencv2/calib3d.hpp>
@@ -26,8 +28,6 @@
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
 #include <unsupported/Eigen/MatrixFunctions>
-
-#include <chrono>
 
 namespace fs = std::filesystem;
 using Gt = ht::GeometricType;

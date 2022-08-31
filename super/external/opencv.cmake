@@ -1,4 +1,4 @@
-find_package(OpenCV 4.6 CONFIG QUIET)
+find_package(OpenCV 4 CONFIG QUIET)
 
 if(TARGET opencv_core)
     get_property(loc TARGET opencv_core PROPERTY INTERFACE_INCLUDE_DIRECTORIES)

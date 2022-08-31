@@ -1,7 +1,7 @@
 ###########################################################################
 #                              DEPENDENCIES                               #
 ###########################################################################
-find_package(Eigen3 3.4 REQUIRED)
+find_package(Eigen3 3 REQUIRED)
 find_package(cereal REQUIRED)
 find_package(fitpackpp REQUIRED)
 find_package(mild REQUIRED)

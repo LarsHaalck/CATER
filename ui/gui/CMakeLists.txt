@@ -6,5 +6,5 @@ find_package(Qt6Concurrent 6 REQUIRED)
 find_package(Qt6Multimedia 6 REQUIRED)
 
 add_subdirectory(common)
-add_subdirectory(habitrack)
 add_subdirectory(panowizard)
+add_subdirectory(habitrack)

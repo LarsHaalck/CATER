@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(habitrack-superbuild)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
@@ -19,6 +19,7 @@ include(external/opencv)
 include(external/qt)
 
 option(BUILD_DEPS_ONLY "Build only dependencies and nothing else (used for development)" FALSE)
+option(INSTALL_HABITRACK "Install Habitrack (only possible when BUILD_DEPS_ONLY=FALSE)" FALSE)
 
 set(habitrack_dependencies
     eigen3_external
@@ -33,6 +34,11 @@ set(habitrack_dependencies
     qt6multimedia_external
 )
 
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "install" CACHE PATH "..." FORCE)
+endif()
+
 if (${BUILD_DEPS_ONLY})
     add_library(dummy INTERFACE)
     add_dependencies(dummy ${habitrack_dependencies})
@@ -45,9 +51,12 @@ else ()
         SOURCE_DIR
             ${PROJECT_SOURCE_DIR}/..
         CMAKE_ARGS
-            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DCMAKE_BUILD_TYPE=$<IF:$<BOOL:${CMAKE_BUILD_TYPE}>,${CMAKE_BUILD_TYPE},Release>
+            -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DBUILD_TOOLS=$<IF:$<BOOL:${BUILD_TOOLS}>,${BUILD_TOOLS},OFF>
+            -DWITH_SUPERGLUE=$<IF:$<BOOL:${WITH_SUPERGLUE}>,${BUILD_TOOLS},OFF>
             -DEigen3_DIR=${Eigen3_DIR}
             -Dspdlog_DIR=${spdlog_DIR}
             -Dmild_DIR=${mild_DIR}
@@ -62,6 +71,7 @@ else ()
             -DQt6WidgetsTools_DIR=${Qt6WidgetsTools_DIR}
             -DQt6GuiTools_DIR=${Qt6GuiTools_DIR}
             -DQt6Multimedia_DIR=${Qt6Multimedia_DIR}
+            -DQt6DBusTools_DIR=${Qt6DBusTools_DIR}
             -DCMAKE_INSTALL_RPATH=${CMAKE_INSTALL_RPATH}
         BUILD_ALWAYS ON
         INSTALL_COMMAND ""

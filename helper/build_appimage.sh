@@ -31,7 +31,7 @@ fi
 # build habitrack appimage
 cp -r AppDir habitrack-appdir
 linuxdeploy-x86_64.AppImage \
-    --appdir habitrack-appdir \
+    --appdir AppDir \
     -d "AppDir/share/applications/habitrack-gui.desktop" \
     -i "AppDir/share/icons/hicolor/128x128/apps/habitrack-gui.png" \
     -e "AppDir/bin/habitrack-gui" \

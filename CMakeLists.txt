@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(habitrack VERSION 0.1)
 
 ###########################################################################
@@ -21,8 +21,8 @@ option(WITH_SUPERGLUE "With SuperGlue/SuperPoint support" FALSE)
 ###########################################################################
 #                       PACKAGES / SUBDIRS                                #
 ###########################################################################
-find_package(OpenCV 4.6 REQUIRED)
-find_package(spdlog 1.10 REQUIRED)
+find_package(OpenCV 4 REQUIRED)
+find_package(spdlog 1 REQUIRED)
 find_package(OpenMP QUIET)
 
 if(NOT ${OpenMP_CXX_FOUND})

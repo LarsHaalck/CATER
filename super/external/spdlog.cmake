@@ -1,4 +1,4 @@
-find_package(spdlog 1.10 CONFIG QUIET)
+find_package(spdlog 1 CONFIG QUIET)
 
 if(TARGET spdlog::spdlog)
     get_property(loc TARGET spdlog::spdlog PROPERTY LOCATION)

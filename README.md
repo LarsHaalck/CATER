@@ -70,20 +70,20 @@ This project has a CMake superbuild structure, where the "root"-CMakeLists.txt l
 
 ### Requirements:
 ```
-g++ >= 10.0
+g++ >= 10
+cmake >= 3.8
 ```
 
 ### Optional but strongly encouraged:
 Although they are both supplied via the superbuild, it is strongly encouraged to use the package manager of your Linux distro to install these packages.
-This is especially true for OpenCV, which can also be installed using `helper/build_opencv.sh` for Ubuntu 18.
+This is especially true for OpenCV due to many possible optimizations, which can also be installed using `helper/build_opencv.sh` for Ubuntu 20.04 LTS.
 
 ```
-OpenCV >= 4.4
-Qt >= 5.10
+OpenCV >= 4
+Qt >= 6
 ```
 
-Ubuntu 20.10 supplies Qt in a version that is recent enough.
-OpenCV has to be built from source.
+**Ubuntu 22.04 supplies Qt (`qt6-base-dev` & `qt6-multimedia-dev`) and OpenCV (`libopencv-dev`) in a version that is recent enough.**
 
 ### Building
 To build the full project from the superbuild simply run the following commands:
