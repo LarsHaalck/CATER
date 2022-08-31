@@ -1,13 +1,14 @@
 # /usr/bin/env sh
 set -euxo pipefail
 
-VERSION=4.5.1
+VERSION=4.6.0
 
-sudo apt install -y build-essential cmake unzip pkg-config
-sudo apt install -y libjpeg-dev libpng-dev libtiff-dev
-sudo apt install -y libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
-sudo apt install -y libxvidcore-dev libx264-dev
-sudo apt install -y libatlas-base-dev gfortran libbtbb-dev
+apt update
+apt install -y build-essential cmake unzip wget ninja-build
+apt install -y libjpeg-dev libpng-dev libtiff-dev
+apt install -y libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
+apt install -y libxvidcore-dev libx264-dev
+apt install -y libatlas-base-dev gfortran libbtbb-dev
 
 wget https://github.com/opencv/opencv/archive/${VERSION}.tar.gz -O opencv.tar.gz
 
@@ -18,8 +19,8 @@ cd opencv-${VERSION}
 mkdir build
 cd build
 cmake \
+    -GNinja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=../ \
     -DWITH_TBB=ON \
     -DBUILD_WITH_DEBUG_INFO=OFF \
     -DBUILD_TESTS=OFF \
@@ -30,5 +31,6 @@ cmake \
     -DOPENCV_ENABLE_NONFREE=OFF \
     -DOPENCV_GENERATE_SETUPVARS=OFF \
     ../
-make -j && make install
+ninja -j 8 && ninja install
+rm -rf opencv-${VERSION}
 

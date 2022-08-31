@@ -29,6 +29,8 @@ else()
             -opensource
             -confirm-license
             -nomake examples
+        BUILD_COMMAND cmake --build .
+        INSTALL_COMMAND cmake --install .
         LOG_DOWNLOAD ON
         LOG_UPDATE ON
         LOG_PATCH ON
