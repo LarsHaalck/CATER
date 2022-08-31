@@ -44,7 +44,7 @@ target_link_libraries(${LIB_NAME}
     PUBLIC
     image-processing
     PUBLIC
-    cereal
+    cereal::cereal
     io
     progressbar
     spdlog::spdlog

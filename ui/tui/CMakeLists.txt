@@ -25,7 +25,7 @@ target_link_libraries(${EXE_NAME}
     spdlog::spdlog
     progressbar
     model
-    cereal
+    cereal::cereal
     util
     io
     panorama

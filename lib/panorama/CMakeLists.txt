@@ -47,7 +47,7 @@ target_link_libraries(${LIB_NAME}
     image-processing
     Eigen3::Eigen
     PUBLIC
-    cereal
+    cereal::cereal
     ceres
     io
     opencv_stitching

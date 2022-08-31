@@ -81,7 +81,7 @@ target_link_libraries(${LIB_NAME}
     opencv_flann
     spdlog::spdlog
     mild::mild
-    cereal
+    cereal::cereal
     io
     fitpackpp::fitpackpp
 )

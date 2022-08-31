@@ -63,7 +63,6 @@ target_link_libraries(${EXE_NAME}
     spdlog::spdlog
     progressbar
     model
-    cereal
     util
     io
     common-gui
