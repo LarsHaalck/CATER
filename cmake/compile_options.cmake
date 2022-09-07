@@ -5,7 +5,7 @@ if (MSVC)
     add_compile_options(/W4)
 else()
     # lots of warnings and all warnings as errors
-    add_compile_options(-Wall -Wextra -pedantic)
+    add_compile_options(-Wall -Wextra -pedantic -Wno-unused-private-field)
 endif()
 
 #enable colors

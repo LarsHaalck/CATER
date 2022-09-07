@@ -70,8 +70,8 @@ Detections Tracker::extractFromStates(const cv::Mat& states, const std::vector<s
 {
     Detections detections;
 
-    std::size_t lastIdx;
-    cv::Point lastPos;
+    std::size_t lastIdx = 0;
+    auto lastPos = cv::Point();
     for (int row = 0; row < states.rows; ++row)
     {
         // get best x and y position
