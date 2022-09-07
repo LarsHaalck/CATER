@@ -116,6 +116,7 @@ void MainWindow::populateGuiDefaults()
     ui->overlayBearings->setChecked(mGuiPrefs.overlayBearing);
     ui->overlayTrajectory->setChecked(mGuiPrefs.overlayTrajectory);
     ui->trajectorySpin->setValue(mGuiPrefs.overlayTrajectoryWindow);
+    on_actionExpertMode_toggled(false);
 }
 
 //////////////////////////////////////////////////////////////////////
