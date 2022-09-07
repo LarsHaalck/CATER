@@ -1,11 +1,11 @@
-#include <habitrack/tracker/tracker.h>
+#include <cater/tracker/tracker.h>
 
-#include <habitrack/image-processing/transformation.h>
-#include <habitrack/image-processing/util.h>
-#include <habitrack/io/matndIO.h>
-#include <habitrack/tracker/manualUnaries.h>
-#include <habitrack/tracker/unaries.h>
-#include <habitrack/util/algorithm.h>
+#include <cater/image-processing/transformation.h>
+#include <cater/image-processing/util.h>
+#include <cater/io/matndIO.h>
+#include <cater/tracker/manualUnaries.h>
+#include <cater/tracker/unaries.h>
+#include <cater/util/algorithm.h>
 
 #include <chrono>
 #include <future>
@@ -13,7 +13,7 @@
 #include <opencv2/imgproc.hpp>
 #include <spdlog/spdlog.h>
 
-namespace ht
+namespace ct
 {
 /* using namespace matches; */
 using namespace transformation;
@@ -247,4 +247,4 @@ double Tracker::calcWeightedCircularMean(
     double tmp = std::atan2(y, x);
     return radian2Degree(tmp);
 }
-} // namespace ht
+} // namespace ct

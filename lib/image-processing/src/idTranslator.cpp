@@ -1,8 +1,8 @@
-#include <habitrack/image-processing/idTranslator.h>
+#include <cater/image-processing/idTranslator.h>
 
 #include <numeric>
 
-namespace ht
+namespace ct
 {
 using namespace matches;
 
@@ -60,4 +60,4 @@ PairwiseMatches Translator::localToGlobal(const std::vector<PairwiseMatches>& ma
     }
     return globalMatches;
 }
-} // namespace ht
+} // namespace ct

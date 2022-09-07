@@ -1,9 +1,9 @@
-#include <habitrack/tracker/unaries.h>
+#include <cater/tracker/unaries.h>
 
-#include <habitrack/image-processing/images.h>
-#include <habitrack/image-processing/transformation.h>
-#include <habitrack/image-processing/util.h>
-#include <habitrack/progressbar/progressBar.h>
+#include <cater/image-processing/images.h>
+#include <cater/image-processing/transformation.h>
+#include <cater/image-processing/util.h>
+#include <cater/progressbar/progressBar.h>
 
 #include "unaryIO.h"
 
@@ -13,7 +13,7 @@
 #include <opencv2/imgproc.hpp>
 #include <spdlog/spdlog.h>
 
-namespace ht
+namespace ct
 {
 using namespace matches;
 using namespace transformation;
@@ -288,4 +288,4 @@ cv::Mat Unaries::getOOPO1(const cv::Mat& img)
     return ret_o1;
 }
 
-} // namespace ht
+} // namespace ct

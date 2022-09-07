@@ -1,7 +1,7 @@
 #include <cxxopts.hpp>
 
-#include <habitrack/image-processing/images.h>
-#include <habitrack/panorama/panoramaEngine.h>
+#include <cater/image-processing/images.h>
+#include <cater/panorama/panoramaEngine.h>
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -10,7 +10,7 @@
 #include <memory>
 #include <numeric>
 
-using namespace ht;
+using namespace ct;
 namespace fs = std::filesystem;
 
 int main(int argc, const char** argv)

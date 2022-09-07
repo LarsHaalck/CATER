@@ -1,6 +1,6 @@
-#include <habitrack/panorama/settings.h>
+#include <cater/panorama/settings.h>
 
-namespace ht
+namespace ct
 {
 std::ostream& operator<<(std::ostream& stream, const PanoramaStage& stage)
 {

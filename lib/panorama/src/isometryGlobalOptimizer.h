@@ -1,10 +1,10 @@
-#ifndef HABITRACK_ISOMETRY_GLOBAL_OPTIMIZER_H
-#define HABITRACK_ISOMETRY_GLOBAL_OPTIMIZER_H
+#ifndef CATER_ISOMETRY_GLOBAL_OPTIMIZER_H
+#define CATER_ISOMETRY_GLOBAL_OPTIMIZER_H
 
 #include "metrics.h"
 #include <Eigen/Dense>
 
-namespace ht
+namespace ct
 {
 class IsometryGlobalFunctor
 {
@@ -47,5 +47,5 @@ private:
     const Eigen::Vector2d mQ2;
     const double mWeight;
 };
-} // namespace ht
-#endif // HABITRACK_ISOMETRY_GLOBAL_OPTIMIZER_H
+} // namespace ct
+#endif // CATER_ISOMETRY_GLOBAL_OPTIMIZER_H

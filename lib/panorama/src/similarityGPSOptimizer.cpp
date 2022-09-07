@@ -1,9 +1,9 @@
 #include "similarityGPSOptimizer.h"
 
-namespace ht
+namespace ct
 {
 SimilarityGPSFunctor::SimilarityGPSFunctor(const Eigen::Vector2d& gps)
     : mGPS(gps)
 {
 }
-} // namespace ht
+} // namespace ct

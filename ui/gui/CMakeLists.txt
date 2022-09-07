@@ -7,4 +7,4 @@ find_package(Qt6Multimedia 6 REQUIRED)
 
 add_subdirectory(common)
 add_subdirectory(panowizard)
-add_subdirectory(habitrack)
+add_subdirectory(cater)

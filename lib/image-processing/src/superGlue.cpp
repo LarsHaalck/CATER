@@ -1,8 +1,8 @@
-#include <habitrack/image-processing/superGlue.h>
+#include <cater/image-processing/superGlue.h>
 
-#include <habitrack/image-processing/images.h>
-#include <habitrack/progressbar/progressBar.h>
-#include <habitrack/util/stopWatch.h>
+#include <cater/image-processing/images.h>
+#include <cater/progressbar/progressBar.h>
+#include <cater/util/stopWatch.h>
 
 #include <spdlog/spdlog.h>
 
@@ -17,7 +17,7 @@ namespace fs = std::filesystem;
 
 using KeyPoints = std::vector<cv::KeyPoint>;
 
-namespace ht::matches
+namespace ct::matches
 {
 
 namespace detail
@@ -252,4 +252,4 @@ namespace detail
             retKps0, retDescs0, retKps1, retDescs1, detail::tensor2Matches(matches, confidence)};
     }
 } // namespace detail
-} // namespace ht
+} // namespace ct

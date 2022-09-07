@@ -1,7 +1,7 @@
-#include <habitrack/image-processing/descriptorCache.h>
-#include <habitrack/image-processing/baseFeatureContainer.h>
+#include <cater/image-processing/descriptorCache.h>
+#include <cater/image-processing/baseFeatureContainer.h>
 
-namespace ht
+namespace ct
 {
 DescriptorCache::DescriptorCache(const BaseFeatureContainer& container, std::size_t numElems,
     std::size_t maxChunkSize, const std::vector<std::size_t>& ids)
@@ -40,4 +40,4 @@ std::unordered_map<std::size_t, cv::Mat> DescriptorCache::getChunkWithIdx(std::s
     return cacheBlock;
 }
 
-} // namespace ht
+} // namespace ct

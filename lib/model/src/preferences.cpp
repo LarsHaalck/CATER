@@ -1,6 +1,6 @@
-#include <habitrack/model/preferences.h>
+#include <cater/model/preferences.h>
 
-namespace ht
+namespace ct
 {
 std::ostream& operator<<(std::ostream& stream, const Preferences& prefs)
 {
@@ -40,4 +40,4 @@ std::ostream& operator<<(std::ostream& stream, const Preferences& prefs)
     stream << "====================\n";
     return stream;
 }
-} // namespace ht
+} // namespace ct

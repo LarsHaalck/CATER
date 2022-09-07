@@ -1,10 +1,10 @@
-#include <habitrack/tracker/tracker.h>
+#include <cater/tracker/tracker.h>
 
-#include <habitrack/image-processing/transformation.h>
-#include <habitrack/image-processing/util.h>
-#include <habitrack/tracker/manualUnaries.h>
-#include <habitrack/tracker/unaries.h>
-#include <habitrack/util/algorithm.h>
+#include <cater/image-processing/transformation.h>
+#include <cater/image-processing/util.h>
+#include <cater/tracker/manualUnaries.h>
+#include <cater/tracker/unaries.h>
+#include <cater/util/algorithm.h>
 
 #include <spdlog/spdlog.h>
 #include <chrono>
@@ -12,7 +12,7 @@
 #include <limits>
 #include <opencv2/imgproc.hpp>
 
-namespace ht
+namespace ct
 {
 namespace fs = std::filesystem;
 
@@ -223,4 +223,4 @@ namespace
         }
     }
 } // unnamed namespace
-} // namespace ht
+} // namespace ct

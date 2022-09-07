@@ -40,7 +40,7 @@
 // the use of this software, even if advised of the possibility of such damage.
 //
 //M*/
-#include <habitrack/image-processing/ransac.h>
+#include <cater/image-processing/ransac.h>
 
 namespace cv
 {

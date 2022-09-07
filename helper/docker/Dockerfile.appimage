@@ -102,7 +102,7 @@ RUN mkdir $DEPS/build \
         -WITH_SUPERGLUE=OFF \
         ../super \
     && ninja -j 4 \
-    && cd external/Build/habitrack \
+    && cd external/Build/cater \
     && cmake --install .
 
 
@@ -117,12 +117,12 @@ RUN wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous
 
 ARG QMAKE=$DEPS/build/stage/bin/qmake
 RUN cd $DEPS/build \
-    && cp -r AppDir habitrack-appdir \
+    && cp -r AppDir cater-appdir \
     && /squashfs-root/usr/bin/linuxdeploy \
-        --appdir habitrack-appdir \
-        -d "AppDir/share/applications/habitrack-gui.desktop" \
-        -i "AppDir/share/icons/hicolor/128x128/apps/habitrack-gui.png" \
-        -e "AppDir/bin/habitrack-gui" \
+        --appdir cater-appdir \
+        -d "AppDir/share/applications/cater-gui.desktop" \
+        -i "AppDir/share/icons/hicolor/128x128/apps/cater-gui.png" \
+        -e "AppDir/bin/cater-gui" \
         --output appimage \
         --plugin qt \
     && cp -r AppDir panowizard-appdir \

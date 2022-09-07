@@ -1,11 +1,11 @@
-#ifndef HABITRACK_SIMILARITY_GPS_OPTIMIZER_H
-#define HABITRACK_SIMILARITY_GPS_OPTIMIZER_H
+#ifndef CATER_SIMILARITY_GPS_OPTIMIZER_H
+#define CATER_SIMILARITY_GPS_OPTIMIZER_H
 
 #include <Eigen/Dense>
 
 #include "metrics.h"
 
-namespace ht
+namespace ct
 {
 class SimilarityGPSFunctor
 {
@@ -31,5 +31,5 @@ public:
 private:
     const Eigen::Vector2d mGPS;
 };
-} // namespace ht
-#endif // HABITRACK_SIMILARITY_GPS_OPTIMIZER_H
+} // namespace ct
+#endif // CATER_SIMILARITY_GPS_OPTIMIZER_H

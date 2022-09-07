@@ -1,10 +1,10 @@
-#ifndef HT_FEATURE_IO_H
-#define HT_FEATURE_IO_H
+#ifndef CT_FEATURE_IO_H
+#define CT_FEATURE_IO_H
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/vector.hpp>
 
-#include <habitrack/io/io.h>
+#include <cater/io/io.h>
 #include <opencv2/features2d.hpp>
 
 namespace cereal
@@ -16,4 +16,4 @@ void serialize(Archive& archive, cv::KeyPoint& kp)
 }
 } // namespace cereal
 
-#endif // HT_FEATURE_IO_H
+#endif // CT_FEATURE_IO_H

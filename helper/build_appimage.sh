@@ -11,10 +11,10 @@ cmake -DBUILD_DEPS_ONLY=ON ../super
 make -j
 cd ../
 
-# build habitrack
+# build cater
 mkdir -p buildApp
 cd buildApp
-../buildDeps/cmake_habitrack \
+../buildDeps/cmake_cater \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_GUI=ON \
     -DBUILD_TOOLS=OFF \
@@ -28,13 +28,13 @@ if test -f ../buildDeps/stage/bin/qmake; then
     export QMAKE=../buildDeps/stage/bin/qmake
 fi
 
-# build habitrack appimage
-cp -r AppDir habitrack-appdir
+# build cater appimage
+cp -r AppDir cater-appdir
 linuxdeploy-x86_64.AppImage \
     --appdir AppDir \
-    -d "AppDir/share/applications/habitrack-gui.desktop" \
-    -i "AppDir/share/icons/hicolor/128x128/apps/habitrack-gui.png" \
-    -e "AppDir/bin/habitrack-gui" \
+    -d "AppDir/share/applications/cater-gui.desktop" \
+    -i "AppDir/share/icons/hicolor/128x128/apps/cater-gui.png" \
+    -e "AppDir/bin/cater-gui" \
     --output appimage \
     --plugin qt
 

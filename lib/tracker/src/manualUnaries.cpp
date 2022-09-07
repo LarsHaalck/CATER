@@ -1,11 +1,11 @@
-#include <habitrack/tracker/manualUnaries.h>
+#include <cater/tracker/manualUnaries.h>
 
-#include <habitrack/image-processing/util.h>
+#include <cater/image-processing/util.h>
 #include <opencv2/imgproc.hpp>
 
 #include "unaryIO.h"
 
-namespace ht
+namespace ct
 {
 namespace fs = std::filesystem;
 
@@ -116,4 +116,4 @@ cv::Mat ManualUnaries::getBluePrint()
     cv::resize(gaussian, gaussian, cv::Size(), mSubsample, mSubsample, cv::INTER_LINEAR);
     return gaussian;
 }
-} // namespace ht
+} // namespace ct

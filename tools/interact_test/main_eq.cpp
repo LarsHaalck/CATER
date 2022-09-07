@@ -1,12 +1,12 @@
-#include <habitrack/image-processing/features.h>
-#include <habitrack/image-processing/images.h>
-#include <habitrack/image-processing/matches.h>
-#include <habitrack/model/resultsIO.h>
-#include <habitrack/progressbar/progressBar.h>
-#include <habitrack/tracker/interpTracker.h>
-#include <habitrack/tracker/manualUnaries.h>
-#include <habitrack/tracker/unaries.h>
-#include <habitrack/util/algorithm.h>
+#include <cater/image-processing/features.h>
+#include <cater/image-processing/images.h>
+#include <cater/image-processing/matches.h>
+#include <cater/model/resultsIO.h>
+#include <cater/progressbar/progressBar.h>
+#include <cater/tracker/interpTracker.h>
+#include <cater/tracker/manualUnaries.h>
+#include <cater/tracker/unaries.h>
+#include <cater/util/algorithm.h>
 
 #include <cxxopts.hpp>
 #include <iostream>
@@ -83,7 +83,7 @@ int main(int argc, char** argv)
     std::cout << "s: " << step_perc << std::endl;
     std::cout << "o: " << out_dir << std::endl;
 
-    auto results_tuple = ht::loadResults(res_file);
+    auto results_tuple = ct::loadResults(res_file);
     auto img_folder = std::get<1>(results_tuple);
     auto base_path = img_folder.parent_path();
 
@@ -94,11 +94,11 @@ int main(int argc, char** argv)
     auto un_folder = base_path / "imgs_output" / "now" / "unaries";
     auto detectFile = base_path / "imgs_output" / "now" / "detections.yml";
 
-    auto imgs = ht::Images(img_folder);
-    auto gt = ht::Detections::fromDir(detectFile);
-    auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
-    auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
-    auto settings = ht::Tracker::Settings {0.8, 25, 6, 4, false, 5, 3, chunk};
+    auto imgs = ct::Images(img_folder);
+    auto gt = ct::Detections::fromDir(detectFile);
+    auto trafos = ct::matches::getTrafos(match_folder, ct::GeometricType::Homography);
+    auto uns = ct::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
+    auto settings = ct::Tracker::Settings {0.8, 25, 6, 4, false, 5, 3, chunk};
 
     out_dir = base_path / out_dir;
     std::filesystem::create_directories(out_dir);
@@ -108,25 +108,25 @@ int main(int argc, char** argv)
     step_perc /= 100;
     std::size_t steps = std::round(upper_bound / (step_perc * gt.size()));
 
-    auto progress = ht::ProgressBar();
+    auto progress = ct::ProgressBar();
     progress.setTotal(steps);
     for (std::size_t i = 0; i <= steps; i++)
     {
-        auto manual_uns = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
+        auto manual_uns = ct::ManualUnaries(0.8, 9, imgs.getImgSize());
         auto num_unaries = std::round(i * step_perc * gt.size());
         if (num_unaries == 0)
             num_unaries = 2;
 
-        auto ids = ht::linspace<std::size_t>(start_frame, end_frame - 1, num_unaries);
+        auto ids = ct::linspace<std::size_t>(start_frame, end_frame - 1, num_unaries);
         for (auto id : ids)
             manual_uns.insert(id, gt.at(id).position);
 
         spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
-        auto detections = ht::Detections();
+        auto detections = ct::Detections();
         if (trackerType == TrackerType::Interpolate)
-            detections = ht::InterpTracker::track(uns, manual_uns, settings, trafos);
+            detections = ct::InterpTracker::track(uns, manual_uns, settings, trafos);
         else
-            detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
+            detections = ct::Tracker::track(uns, manual_uns, settings, trafos);
 
         auto ratio = static_cast<double>(manual_uns.size()) / gt.size();
         detections.save(out_dir / get_filename(trackerType, ratio, base_path.stem()));

@@ -1,12 +1,12 @@
-#include <habitrack/panorama/panoramaStitcher.h>
+#include <cater/panorama/panoramaStitcher.h>
 
-#include <habitrack/image-processing/idTranslator.h>
-#include <habitrack/image-processing/isometry.h>
-#include <habitrack/io/io.h>
-#include <habitrack/io/matIO.h>
-#include <habitrack/progressbar/progressBar.h>
-#include <habitrack/util/algorithm.h>
-#include <habitrack/util/stopWatch.h>
+#include <cater/image-processing/idTranslator.h>
+#include <cater/image-processing/isometry.h>
+#include <cater/io/io.h>
+#include <cater/io/matIO.h>
+#include <cater/progressbar/progressBar.h>
+#include <cater/util/algorithm.h>
+#include <cater/util/stopWatch.h>
 
 #include "affinityGlobalOptimizer.h"
 #include "homographyGlobalOptimizer.h"
@@ -30,12 +30,12 @@
 #include <unsupported/Eigen/MatrixFunctions>
 
 namespace fs = std::filesystem;
-using Gt = ht::GeometricType;
-using namespace ht::matches;
-using namespace ht::transformation;
-using namespace ht::io;
+using Gt = ct::GeometricType;
+using namespace ct::matches;
+using namespace ct::transformation;
+using namespace ct::io;
 
-namespace ht
+namespace ct
 {
 PanoramaStitcher::PanoramaStitcher(const BaseImageContainer& images,
     const std::vector<size_t>& keyFrames, GeometricType type, const cv::Mat& camMat,
@@ -935,4 +935,4 @@ void PanoramaStitcher::writeTrafos(const fs::path& file, WriteType writeType)
     fs << "trafos" << trafos;
     fs.release();
 }
-} // namespace ht
+} // namespace ct

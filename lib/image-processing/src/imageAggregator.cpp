@@ -1,6 +1,6 @@
-#include <habitrack/image-processing/imageAggregator.h>
+#include <cater/image-processing/imageAggregator.h>
 
-namespace ht
+namespace ct
 {
 ImageAggregator::ImageAggregator(const std::vector<Images>& imgContainers)
     : mImgContainers(imgContainers)
@@ -58,4 +58,4 @@ PairwiseImageCache ImageAggregator::getPairwiseCache(
 {
     return PairwiseImageCache(*this, maxChunkSize, pairs);
 }
-} // namespace ht
+} // namespace ct

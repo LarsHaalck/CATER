@@ -1,6 +1,6 @@
 #include "unknownGeometricType.h"
 
-namespace ht
+namespace ct
 {
 UnknownGeometricType::UnknownGeometricType(const std::string& type)
     : std::exception()

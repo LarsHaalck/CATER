@@ -1,6 +1,6 @@
 #include "affinityGlobalOptimizer.h"
 
-namespace ht
+namespace ct
 {
 AffinityGlobalFunctor::AffinityGlobalFunctor(
     const Eigen::Vector2d& q1, const Eigen::Vector2d& q2, double weight)
@@ -9,4 +9,4 @@ AffinityGlobalFunctor::AffinityGlobalFunctor(
     , mWeight(weight)
 {
 }
-} // namespace ht
+} // namespace ct

@@ -14,7 +14,7 @@ set(SOURCES
 ###########################################################################
 #                               TARGETS                                   #
 ###########################################################################
-set(EXE_NAME habitrack-tui)
+set(EXE_NAME cater-tui)
 
 # headers need to be added for automoc
 add_executable(${EXE_NAME} ${SOURCES})

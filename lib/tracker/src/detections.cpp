@@ -1,11 +1,11 @@
-#include <habitrack/tracker/detections.h>
+#include <cater/tracker/detections.h>
 
-#include <habitrack/image-processing/transformation.h>
-#include <habitrack/image-processing/util.h>
+#include <cater/image-processing/transformation.h>
+#include <cater/image-processing/util.h>
 #include <opencv2/imgproc.hpp>
 #include <spdlog/spdlog.h>
 
-namespace ht
+namespace ct
 {
 using namespace transformation;
 
@@ -169,4 +169,4 @@ std::vector<cv::Point2d> Detections::projectFrom(
     return points2d;
 }
 
-} // namespace ht
+} // namespace ct

@@ -1,6 +1,6 @@
-#include <habitrack/image-processing/superGlue.h>
+#include <cater/image-processing/superGlue.h>
 
-namespace ht::matches
+namespace ct::matches
 {
 
 SuperGlue::SuperGlue(const std::filesystem::path&, int)
@@ -23,4 +23,4 @@ PairwiseMatches SuperGlue::putative(const Images&, const std::filesystem::path&,
     return PairwiseMatches();
 }
 
-} // namespace ht
+} // namespace ct

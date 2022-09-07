@@ -1,7 +1,7 @@
-#include <habitrack/image-processing/util.h>
+#include <cater/image-processing/util.h>
 
-#include <habitrack/image-processing/idTranslator.h>
-#include <habitrack/util/tinycolormap.h>
+#include <cater/image-processing/idTranslator.h>
+#include <cater/util/tinycolormap.h>
 
 #include "fitpackpp/BSplineCurve.h"
 
@@ -9,7 +9,7 @@
 
 constexpr double pi() { return std::atan(1) * 4; }
 
-namespace ht::util
+namespace ct::util
 {
 float gauss1DPDF(float mean, float sigma, float x)
 {
@@ -232,4 +232,4 @@ std::size_t getChunkEnd(
     return std::min(size, (chunk + 1) * chunkSize);
 }
 
-} // namespace ht
+} // namespace ct

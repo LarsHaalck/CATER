@@ -1,7 +1,7 @@
-#include <habitrack/model/imageViewer.h>
+#include <cater/model/imageViewer.h>
 
-#include <habitrack/model/model.h>
-#include <habitrack/image-processing/util.h>
+#include <cater/model/model.h>
+#include <cater/image-processing/util.h>
 
 #include <opencv2/imgproc.hpp>
 #include <spdlog/spdlog.h>
@@ -10,12 +10,12 @@ constexpr int left = 10;
 constexpr int k = 8;
 constexpr int right = k * left;
 
-using namespace ht;
+using namespace ct;
 
-namespace ht
+namespace ct
 {
-ImageViewer::ImageViewer(const Model& habiTrack, Cache cache)
-    : mModel(habiTrack)
+ImageViewer::ImageViewer(const Model& model, Cache cache)
+    : mModel(model)
     , mTrafos()
     , mCurrent(-1)
     , mCache()
@@ -265,4 +265,4 @@ cv::Mat ImageViewer::processItem(
     return frame;
 }
 
-} // namespace ht
+} // namespace ct

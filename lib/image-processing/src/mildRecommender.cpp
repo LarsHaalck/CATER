@@ -1,15 +1,15 @@
-#include <habitrack/image-processing/mildRecommender.h>
+#include <cater/image-processing/mildRecommender.h>
 
 #include <MILD/BayesianFilter.hpp>
 #include <MILD/loop_closure_detector.h>
-#include <habitrack/image-processing/featureAggregator.h>
-#include <habitrack/image-processing/features.h>
-#include <habitrack/image-processing/matches.h>
-#include <habitrack/util/stopWatch.h>
+#include <cater/image-processing/featureAggregator.h>
+#include <cater/image-processing/features.h>
+#include <cater/image-processing/matches.h>
+#include <cater/util/stopWatch.h>
 
 #include <spdlog/spdlog.h>
 
-namespace ht
+namespace ct
 {
 MildRecommender::MildRecommender(
     const BaseFeatureContainer& ftContainer, int dilation, bool addDiagonal)
@@ -186,4 +186,4 @@ void MildRecommender::filterPairList(
     /* } */
 }
 
-} // namespace ht
+} // namespace ct

@@ -1,6 +1,6 @@
 #include "mst.h"
 
-namespace ht
+namespace ct
 {
 Graph::Graph(int V, int E)
     : mV(V)
@@ -117,4 +117,4 @@ void DisjointSets::merge(int x, int y)
     if (mRnk[x] == mRnk[y])
         mRnk[y]++;
 }
-} // namespace ht
+} // namespace ct

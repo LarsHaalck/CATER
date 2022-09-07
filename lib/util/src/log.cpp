@@ -1,11 +1,11 @@
-#include <habitrack/util/log.h>
+#include <cater/util/log.h>
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <iostream>
 
-namespace ht
+namespace ct
 {
 void setLogFileTo(const std::filesystem::path& file)
 {
@@ -30,4 +30,4 @@ void setLogFileTo(const std::filesystem::path& file)
     }
 }
 
-} // namespace ht
+} // namespace ct

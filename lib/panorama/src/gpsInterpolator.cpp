@@ -1,9 +1,9 @@
-#include <habitrack/panorama/gpsInterpolator.h>
+#include <cater/panorama/gpsInterpolator.h>
 
-#include <habitrack/io/ptsIO.h>
-#include <habitrack/io/io.h>
+#include <cater/io/ptsIO.h>
+#include <cater/io/io.h>
 
-namespace ht
+namespace ct
 {
 GPSInterpolator::GPSInterpolator(const GPSSettings& settings, std::size_t start_frame)
     : mSettings(settings)

@@ -1,12 +1,12 @@
-#include <habitrack/model/resultsIO.h>
+#include <cater/model/resultsIO.h>
 
-#include <habitrack/version/version.h>
+#include <cater/version/version.h>
 
 #include <spdlog/spdlog.h>
 #include <opencv2/core/persistence.hpp>
 
 
-namespace ht
+namespace ct
 {
 namespace fs = std::filesystem;
 namespace detail
@@ -67,7 +67,7 @@ namespace detail
             prefs.pixelsPerMm = node["pixels_per_mm"];
 
         // features
-        prefs.featureType = static_cast<ht::FeatureType>(static_cast<int>(node["feature_type"]));
+        prefs.featureType = static_cast<ct::FeatureType>(static_cast<int>(node["feature_type"]));
         prefs.numFeatures = node["num_features"];
 
         // unaries, unary recompute needed
@@ -104,7 +104,7 @@ void saveResults(const fs::path& resultFile, const Preferences& prefs, const fs:
     spdlog::info("Save results file to: {}", resultFile.string());
     cv::FileStorage fs(resultFile.string(), cv::FileStorage::WRITE);
 
-    fs << "version" << HABITRACK_VER;
+    fs << "version" << CATER_VER;
     fs << "img_folder" << imgFolder.string();
     fs << "start_frame" << static_cast<int>(startFrame);
     fs << "end_frame" << static_cast<int>(endFrame);
@@ -132,4 +132,4 @@ std::tuple<Preferences, std::filesystem::path, std::size_t, std::size_t> loadRes
     return {prefs, imgFolder, startFrame, endFrame};
 }
 
-} // namespace ht
+} // namespace ct

@@ -1,12 +1,12 @@
-#include <habitrack/model/model.h>
+#include <cater/model/model.h>
 
-#include <habitrack/image-processing/util.h>
-#include <habitrack/io/io.h>
-#include <habitrack/model/imageViewer.h>
-#include <habitrack/model/resultsIO.h>
-#include <habitrack/progressbar/progressBar.h>
-#include <habitrack/tracker/tracker.h>
-#include <habitrack/util/log.h>
+#include <cater/image-processing/util.h>
+#include <cater/io/io.h>
+#include <cater/model/imageViewer.h>
+#include <cater/model/resultsIO.h>
+#include <cater/progressbar/progressBar.h>
+#include <cater/tracker/tracker.h>
+#include <cater/util/log.h>
 
 #include <algorithm>
 #include <chrono>
@@ -17,7 +17,7 @@
 
 namespace fs = std::filesystem;
 
-namespace ht
+namespace ct
 {
 Model::Model()
     : mBar(std::make_shared<ProgressBar>())
@@ -329,10 +329,10 @@ std::vector<double> Model::getUnaryQualities()
 
 bool Model::hasUsableTrafos() const
 {
-    auto types = ht::matches::getConnectedTypes(mMatchFolder, ht::GeometricType::Homography,
+    auto types = ct::matches::getConnectedTypes(mMatchFolder, ct::GeometricType::Homography,
         util::getContinuousIds(mStartFrameNumber, mEndFrameNumber + 1));
 
-    if (static_cast<unsigned int>(types & ht::GeometricType::Homography))
+    if (static_cast<unsigned int>(types & ct::GeometricType::Homography))
     {
         spdlog::info("Model: Transformations usable for unary extraction.");
         return true;
@@ -364,7 +364,7 @@ void Model::optimizeUnaries(int chunk)
     spdlog::debug("Model: Optimize Unaries (chunk {})", chunk);
 
     if (mTrafos.empty() && mPrefs.removeCamMotion)
-        mTrafos = ht::matches::getTrafos(mMatchFolder, GeometricType::Homography);
+        mTrafos = ct::matches::getTrafos(mMatchFolder, GeometricType::Homography);
 
     if (!unariesComputed())
         throw ModelException("Unaries need to be computed before optimization.");

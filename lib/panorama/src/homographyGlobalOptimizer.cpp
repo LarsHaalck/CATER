@@ -1,6 +1,6 @@
 #include "homographyGlobalOptimizer.h"
 
-namespace ht
+namespace ct
 {
 HomographyGlobalFunctor::HomographyGlobalFunctor(
     const Eigen::Vector2d& q1, const Eigen::Vector2d& q2, double weight)
@@ -9,4 +9,4 @@ HomographyGlobalFunctor::HomographyGlobalFunctor(
     , mWeight(weight)
 {
 }
-} // namespace ht
+} // namespace ct

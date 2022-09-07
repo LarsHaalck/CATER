@@ -1,6 +1,6 @@
-#include <habitrack/image-processing/baseFeatureContainer.h>
+#include <cater/image-processing/baseFeatureContainer.h>
 
-namespace ht
+namespace ct
 {
 std::ostream& operator<<(std::ostream& os, const FeatureType& type)
 {
@@ -17,4 +17,4 @@ std::ostream& operator<<(std::ostream& os, const FeatureType& type)
     }
     return os;
 }
-} // namespace ht
+} // namespace ct

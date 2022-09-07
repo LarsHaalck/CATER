@@ -1,10 +1,10 @@
-#ifndef HABITRACK_UNKNOWN_FEATURE_TYPE_EXCEPTION_H
-#define HABITRACK_UNKNOWN_FEATURE_TYPE_EXCEPTION_H
+#ifndef CATER_UNKNOWN_FEATURE_TYPE_EXCEPTION_H
+#define CATER_UNKNOWN_FEATURE_TYPE_EXCEPTION_H
 
 #include <exception>
 #include <string>
 
-namespace ht
+namespace ct
 {
 class UnknownFeatureType : public std::exception
 {
@@ -15,6 +15,6 @@ public:
 private:
     std::string mType;
 };
-} // namespace ht
+} // namespace ct
 
-#endif // HABITRACK_UNKNOWN_FEATURE_TYPE_EXCEPTION_H
+#endif // CATER_UNKNOWN_FEATURE_TYPE_EXCEPTION_H

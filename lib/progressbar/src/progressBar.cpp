@@ -1,8 +1,8 @@
-#include <habitrack/progressbar/progressBar.h>
+#include <cater/progressbar/progressBar.h>
 
 #include <iostream>
 
-namespace ht
+namespace ct
 {
 ProgressBar::ProgressBar()
     : mTotalTicks(100)
@@ -50,4 +50,4 @@ void ProgressBar::done()
         mIsFinished = true;
     }
 }
-} // namespace ht
+} // namespace ct

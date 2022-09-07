@@ -1,8 +1,8 @@
-#include <habitrack/image-processing//pairwiseImageCache.h>
+#include <cater/image-processing//pairwiseImageCache.h>
 
-#include <habitrack/image-processing//baseImageContainer.h>
+#include <cater/image-processing//baseImageContainer.h>
 
-namespace ht
+namespace ct
 {
 PairwiseImageCache::PairwiseImageCache(const BaseImageContainer& container,
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
@@ -30,4 +30,4 @@ std::unordered_map<std::size_t, cv::Mat> PairwiseImageCache::getChunk(std::size_
     return cacheBlock;
 }
 
-} // namespace ht
+} // namespace ct

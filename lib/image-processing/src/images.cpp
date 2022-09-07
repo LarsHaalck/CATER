@@ -1,4 +1,4 @@
-#include <habitrack/image-processing/images.h>
+#include <cater/image-processing/images.h>
 
 #include <fstream>
 #include <opencv2/imgproc.hpp>
@@ -6,7 +6,7 @@
 
 namespace fs = std::filesystem;
 
-namespace ht
+namespace ct
 {
 Images::Images(
     const fs::path& path, ReadMode mode, cv::Vec3d weights, cv::Vec2d resize, cv::Rect2i crop)
@@ -225,4 +225,4 @@ cv::Point2f Images::getCenter() const
 {
     return cv::Point2f(mImgSize.width / 2.0f, mImgSize.height / 2.0f);
 }
-} // namespace ht
+} // namespace ct

@@ -4,21 +4,21 @@
 
 #include <spdlog/spdlog.h>
 
-#include <habitrack/image-processing/features.h>
-#include <habitrack/image-processing/images.h>
-#include <habitrack/image-processing/matches.h>
-#include <habitrack/image-processing/mildRecommender.h>
-#include <habitrack/image-processing/superGlue.h>
-#include <habitrack/image-processing/util.h>
-#include <habitrack/panorama/keyFrameRecommender.h>
-#include <habitrack/panorama/keyFrames.h>
-#include <habitrack/panorama/panoramaStitcher.h>
+#include <cater/image-processing/features.h>
+#include <cater/image-processing/images.h>
+#include <cater/image-processing/matches.h>
+#include <cater/image-processing/mildRecommender.h>
+#include <cater/image-processing/superGlue.h>
+#include <cater/image-processing/util.h>
+#include <cater/panorama/keyFrameRecommender.h>
+#include <cater/panorama/keyFrames.h>
+#include <cater/panorama/panoramaStitcher.h>
 
 #include <cxxopts.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-using namespace ht;
+using namespace ct;
 namespace fs = std::filesystem;
 
 int main(int argc, const char** argv)
@@ -94,10 +94,10 @@ int main(int argc, const char** argv)
     auto matchPath = basePath / "matches";
     if (!matches::isComputed(matchPath, geomType) || force)
     {
-        if (matchType == ht::matches::MatchType::Strategy)
+        if (matchType == ct::matches::MatchType::Strategy)
         {
             std::unique_ptr<PairRecommender> recommender;
-            if (ftType == ht::FeatureType::ORB)
+            if (ftType == ct::FeatureType::ORB)
                 recommender = std::make_unique<MildRecommender>(features, 1, true);
             else
             {

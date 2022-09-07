@@ -1,6 +1,6 @@
-#include <habitrack/panorama/keyFrameRecommender.h>
+#include <cater/panorama/keyFrameRecommender.h>
 
-namespace ht
+namespace ct
 {
 KeyFrameRecommender::KeyFrameRecommender(const std::vector<std::size_t>& keyFrames)
     : mKeyFrames(keyFrames)

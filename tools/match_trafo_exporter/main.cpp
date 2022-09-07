@@ -1,13 +1,13 @@
 #include <fstream>
 #include <iostream>
 
-#include <habitrack/image-processing/features.h>
-#include <habitrack/image-processing/matches.h>
-#include <habitrack/panorama/keyFrames.h>
+#include <cater/image-processing/features.h>
+#include <cater/image-processing/matches.h>
+#include <cater/panorama/keyFrames.h>
 
 #include <cxxopts.hpp>
 
-using namespace ht;
+using namespace ct;
 namespace fs = std::filesystem;
 
 void exportMatches(fs::path file, const std::unordered_map<std::size_t, std::size_t>& kfs)

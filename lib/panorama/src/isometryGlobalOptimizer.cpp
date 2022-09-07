@@ -1,6 +1,6 @@
 #include "isometryGlobalOptimizer.h"
 
-namespace ht
+namespace ct
 {
 IsometryGlobalFunctor::IsometryGlobalFunctor(
     const Eigen::Vector2d& q1, const Eigen::Vector2d& q2, double weight)
@@ -9,4 +9,4 @@ IsometryGlobalFunctor::IsometryGlobalFunctor(
     , mWeight(weight)
 {
 }
-} // namespace ht
+} // namespace ct

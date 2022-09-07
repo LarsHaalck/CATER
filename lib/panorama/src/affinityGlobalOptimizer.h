@@ -1,10 +1,10 @@
-#ifndef HABITRACK_AFFINITY_GLOBAL_OPTIMIZER_H
-#define HABITRACK_AFFINITY_GLOBAL_OPTIMIZER_H
+#ifndef CATER_AFFINITY_GLOBAL_OPTIMIZER_H
+#define CATER_AFFINITY_GLOBAL_OPTIMIZER_H
 
 #include "metrics.h"
 #include <Eigen/Dense>
 
-namespace ht
+namespace ct
 {
 class AffinityGlobalFunctor
 {
@@ -45,5 +45,5 @@ private:
     const Eigen::Vector2d mQ2;
     const double mWeight;
 };
-} // namespace ht
-#endif // HABITRACK_AFFINITY_GLOBAL_OPTIMIZER_H
+} // namespace ct
+#endif // CATER_AFFINITY_GLOBAL_OPTIMIZER_H

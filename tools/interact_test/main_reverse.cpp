@@ -1,11 +1,11 @@
 #include "kde.h"
 
-#include <habitrack/image-processing/features.h>
-#include <habitrack/image-processing/images.h>
-#include <habitrack/image-processing/matches.h>
-#include <habitrack/tracker/manualUnaries.h>
-#include <habitrack/tracker/tracker.h>
-#include <habitrack/tracker/unaries.h>
+#include <cater/image-processing/features.h>
+#include <cater/image-processing/images.h>
+#include <cater/image-processing/matches.h>
+#include <cater/tracker/manualUnaries.h>
+#include <cater/tracker/tracker.h>
+#include <cater/tracker/unaries.h>
 
 #include <iostream>
 #include <opencv2/core.hpp>
@@ -71,12 +71,12 @@ int main(int argc, char** argv)
     std::string a3 {argv[3]};
     spdlog::info("Called {}-{}-{}", a1, a2, a3);
 
-    auto imgs = ht::Images(img_folder);
-    auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
-    auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
-    auto manual_uns = ht::ManualUnaries::fromDir(un_folder, 0.8, 9, imgs.getImgSize());
-    auto settings = ht::Tracker::Settings {0.8, 25, 6, 4, true, 5, 3, chunk};
-    /* auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos); */
+    auto imgs = ct::Images(img_folder);
+    auto trafos = ct::matches::getTrafos(match_folder, ct::GeometricType::Homography);
+    auto uns = ct::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
+    auto manual_uns = ct::ManualUnaries::fromDir(un_folder, 0.8, 9, imgs.getImgSize());
+    auto settings = ct::Tracker::Settings {0.8, 25, 6, 4, true, 5, 3, chunk};
+    /* auto detections = ct::Tracker::track(uns, manual_uns, settings, trafos); */
     std::string end = a1 + "-" + a2 + "-" + a3 + "_";
     /* detections.save(base_path / ("detections_gt.yaml")); */
 
@@ -151,13 +151,13 @@ int main(int argc, char** argv)
 
         frames = std::move(frames_subset0);
 
-        auto manual_uns_subset = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
+        auto manual_uns_subset = ct::ManualUnaries(0.8, 9, imgs.getImgSize());
         for (auto f : frames)
             manual_uns_subset.insert(f, manual_uns.unaryPointAt(f));
         manual_uns = std::move(manual_uns_subset);
 
         spdlog::info("Running Tracker with {} manual unaries", manual_uns.size());
-        auto detections = ht::Tracker::track(uns, manual_uns, settings, trafos);
+        auto detections = ct::Tracker::track(uns, manual_uns, settings, trafos);
         detections.save(
             base_path / ("detections_" + end + std::to_string(manual_uns.size()) + ".yaml"));
 

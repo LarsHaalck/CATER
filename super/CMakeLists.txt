@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(habitrack-superbuild)
+project(cater-superbuild)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set_property(DIRECTORY PROPERTY EP_BASE ${CMAKE_BINARY_DIR}/external)
@@ -19,9 +19,9 @@ include(external/opencv)
 include(external/qt)
 
 option(BUILD_DEPS_ONLY "Build only dependencies and nothing else (used for development)" FALSE)
-option(INSTALL_HABITRACK "Install Habitrack (only possible when BUILD_DEPS_ONLY=FALSE)" FALSE)
+option(INSTALL_CATER "Install Cater (only possible when BUILD_DEPS_ONLY=FALSE)" FALSE)
 
-set(habitrack_dependencies
+set(cater_dependencies
     eigen3_external
     spdlog_external
     mild_external
@@ -41,13 +41,13 @@ endif()
 
 if (${BUILD_DEPS_ONLY})
     add_library(dummy INTERFACE)
-    add_dependencies(dummy ${habitrack_dependencies})
-    configure_file(cmake_habitrack.in cmake_habitrack)
+    add_dependencies(dummy ${cater_dependencies})
+    configure_file(cmake_cater.in cmake_cater)
 else ()
     include(ExternalProject)
-    ExternalProject_Add(habitrack
+    ExternalProject_Add(cater
         DEPENDS
-            ${habitrack_dependencies}
+            ${cater_dependencies}
         SOURCE_DIR
             ${PROJECT_SOURCE_DIR}/..
         CMAKE_ARGS

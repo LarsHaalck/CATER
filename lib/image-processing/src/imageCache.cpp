@@ -1,7 +1,7 @@
-#include <habitrack/image-processing/imageCache.h>
-#include <habitrack/image-processing/baseImageContainer.h>
+#include <cater/image-processing/imageCache.h>
+#include <cater/image-processing/baseImageContainer.h>
 
-namespace ht
+namespace ct
 {
 ImageCache::ImageCache(const BaseImageContainer& container, std::size_t numElems,
     std::size_t maxChunkSize, const size_t_vec& ids)
@@ -40,4 +40,4 @@ std::unordered_map<std::size_t, cv::Mat> ImageCache::getChunkWithIdx(std::size_t
     return cacheBlock;
 }
 
-} // namespace ht
+} // namespace ct

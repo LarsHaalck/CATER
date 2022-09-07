@@ -1,8 +1,8 @@
-#include <habitrack/cache/baseCache.h>
+#include <cater/cache/baseCache.h>
 
 #include <algorithm>
 
-namespace ht
+namespace ct
 {
 constexpr std::size_t ceil(std::size_t n, std::size_t k)
 {
@@ -47,4 +47,4 @@ std::pair<std::size_t, std::size_t> BaseCache::getChunkBounds(std::size_t chunkI
     auto start = chunkIdx * getChunkSize(chunkIdx - 1);
     return {start, start + getChunkSize(chunkIdx)};
 }
-} // namespace ht
+} // namespace ct

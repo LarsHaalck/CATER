@@ -7,14 +7,14 @@
 #include <algorithm>
 #include <spdlog/spdlog.h>
 
-#include <habitrack/image-processing/images.h>
-#include <habitrack/model/resultsIO.h>
-#include <habitrack/panorama/panoramaEngine.h>
-#include <habitrack/tracker/detections.h>
+#include <cater/image-processing/images.h>
+#include <cater/model/resultsIO.h>
+#include <cater/panorama/panoramaEngine.h>
+#include <cater/tracker/detections.h>
 
 namespace fs = std::filesystem;
 
-using namespace ht;
+using namespace ct;
 
 namespace gui
 {

@@ -1,10 +1,10 @@
-#include <habitrack/image-processing/features.h>
-#include <habitrack/image-processing/images.h>
-#include <habitrack/image-processing/matches.h>
-#include <habitrack/tracker/manualUnaries.h>
-#include <habitrack/util/algorithm.h>
-#include <habitrack/tracker/tracker.h>
-#include <habitrack/tracker/unaries.h>
+#include <cater/image-processing/features.h>
+#include <cater/image-processing/images.h>
+#include <cater/image-processing/matches.h>
+#include <cater/tracker/manualUnaries.h>
+#include <cater/util/algorithm.h>
+#include <cater/tracker/tracker.h>
+#include <cater/tracker/unaries.h>
 
 #include <fstream>
 #include <iostream>
@@ -14,7 +14,7 @@
 #include <spdlog/cfg/env.h>
 #include <spdlog/spdlog.h>
 
-void write_csv(const ht::Detections& dets, double perc)
+void write_csv(const ct::Detections& dets, double perc)
 {
     std::string name = std::string("net_perc_") + std::to_string(perc) + "_fg.csv";
     std::ofstream csv(name, std::ofstream::out);
@@ -56,24 +56,24 @@ int main()
 {
     spdlog::set_level(spdlog::level::info);
 
-    auto imgs = ht::Images(img_folder, ht::Images::ReadMode::Unchanged, cv::Vec3d(), cv::Vec2d(),
+    auto imgs = ct::Images(img_folder, ct::Images::ReadMode::Unchanged, cv::Vec3d(), cv::Vec2d(),
         cv::Rect2i(448, 28, 1024, 1024));
-    auto trafos = ht::matches::getTrafos(match_folder, ht::GeometricType::Homography);
-    auto uns = ht::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
-    auto settings = ht::Tracker::Settings {0.8, 25, 6.0, 4.0, false, 5, 3, 0};
-    auto dets = ht::Detections::fromDir(dets_file);
+    auto trafos = ct::matches::getTrafos(match_folder, ct::GeometricType::Homography);
+    auto uns = ct::Unaries::fromDir(imgs, un_folder, start_frame, end_frame);
+    auto settings = ct::Tracker::Settings {0.8, 25, 6.0, 4.0, false, 5, 3, 0};
+    auto dets = ct::Detections::fromDir(dets_file);
 
     double perc = 0.15;
     int num_images = end_frame - start_frame;
     while (perc <= 1)
     {
-        auto manual_uns = ht::ManualUnaries(0.8, 9, imgs.getImgSize());
+        auto manual_uns = ct::ManualUnaries(0.8, 9, imgs.getImgSize());
         std::cout << "perc: " << perc << std::endl;
         int num = std::round(perc * num_images);
         if (num == 0)
             num = 2;
 
-        auto ids_d = ht::linspace(start_frame, end_frame - 1, num);
+        auto ids_d = ct::linspace(start_frame, end_frame - 1, num);
         std::vector<int> ids;
         ids.reserve(ids_d.size());
         std::transform(std::begin(ids_d), std::end(ids_d), std::back_inserter(ids),
@@ -82,7 +82,7 @@ int main()
         for (auto id : ids)
             manual_uns.insert(id, dets.at(id).position);
 
-        auto dets = ht::Tracker::track(uns, manual_uns, settings, trafos);
+        auto dets = ct::Tracker::track(uns, manual_uns, settings, trafos);
         write_csv(dets, perc);
         perc += 0.01;
     }

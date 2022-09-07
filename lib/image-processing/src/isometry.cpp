@@ -41,7 +41,7 @@
 // the use of this software, even if advised of the possibility of such damage.
 //
 //M*/
-#include <habitrack/image-processing/isometry.h>
+#include <cater/image-processing/isometry.h>
 
 #include <cmath>
 /* #include <iostream> */

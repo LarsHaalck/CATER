@@ -1,10 +1,10 @@
 #include "tui.h"
 
-#include <habitrack/panorama/gpsInterpolator.h>
+#include <cater/panorama/gpsInterpolator.h>
 #include <iostream>
 #include <spdlog/spdlog.h>
 
-constexpr char prompt[] = "HabiTrack >>> ";
+constexpr char prompt[] = "CATER >>> ";
 
 namespace fs = std::filesystem;
 
@@ -116,11 +116,11 @@ void Tui::prefs(const std::string& args)
         else if (words[i] == "featureType")
         {
             if (words[i + 1] == "ORB")
-                currPrefs.featureType = ht::FeatureType::ORB;
+                currPrefs.featureType = ct::FeatureType::ORB;
             else if (words[i + 1] == "SIFT")
-                currPrefs.featureType = ht::FeatureType::SIFT;
+                currPrefs.featureType = ct::FeatureType::SIFT;
             else if (words[i + 1] == "SuperPoint")
-                currPrefs.featureType = ht::FeatureType::SuperPoint;
+                currPrefs.featureType = ct::FeatureType::SuperPoint;
             else
             {
                 std::cerr << "Unknown feature type: " << words[i + 1] << std::endl;
@@ -215,60 +215,60 @@ void Tui::listPanorama()
 
 void Tui::generatePanorama()
 {
-    std::vector<ht::Images> images;
+    std::vector<ct::Images> images;
     std::vector<fs::path> data;
 
     std::vector<cv::Point> pts;
     std::vector<std::size_t> chunkSizes;
-    std::vector<ht::GPSInterpolator> gpsInterpolators;
+    std::vector<ct::GPSInterpolator> gpsInterpolators;
     for (auto resFile : mPanoFiles)
     {
-        ht::Model habitrack;
-        habitrack.loadResultsFile(resFile);
-        ht::GPSSettings gps_settings;
+        ct::Model cater;
+        cater.loadResultsFile(resFile);
+        ct::GPSSettings gps_settings;
         if (mPanoGPSFiles.count(resFile) > 0)
         {
             if (mPanoGPSFiles[resFile].is_absolute())
-                gps_settings = ht::PanoramaEngine::loadGPSSettings(mPanoGPSFiles[resFile]);
+                gps_settings = ct::PanoramaEngine::loadGPSSettings(mPanoGPSFiles[resFile]);
             else
-                gps_settings = ht::PanoramaEngine::loadGPSSettings(
+                gps_settings = ct::PanoramaEngine::loadGPSSettings(
                     resFile.parent_path() / mPanoGPSFiles[resFile]);
         }
 
-        auto gpsInterpolator = ht::GPSInterpolator(gps_settings, habitrack.getStartFrame());
+        auto gpsInterpolator = ct::GPSInterpolator(gps_settings, cater.getStartFrame());
         gpsInterpolators.push_back(gpsInterpolator);
 
-        ht::Images currImages = habitrack.images();
-        currImages.clip(habitrack.getStartFrame(), habitrack.getEndFrame() + 1);
+        ct::Images currImages = cater.images();
+        currImages.clip(cater.getStartFrame(), cater.getEndFrame() + 1);
 
         std::vector<cv::Point> currPts;
         if (mPanoSettings.overlayPoints)
-            currPts = getDetections(habitrack);
+            currPts = getDetections(cater);
 
-        auto outPath = habitrack.getOutputPath() / "panorama";
+        auto outPath = cater.getOutputPath() / "panorama";
 
-        ht::setLogFileTo(outPath / "log.txt");
-        ht::PanoramaEngine::runSingle(currImages, outPath, mPanoSettings, currPts,
-            habitrack.getPreferences().chunkSize, gpsInterpolator);
+        ct::setLogFileTo(outPath / "log.txt");
+        ct::PanoramaEngine::runSingle(currImages, outPath, mPanoSettings, currPts,
+            cater.getPreferences().chunkSize, gpsInterpolator);
 
         images.push_back(currImages);
         data.push_back(outPath);
         pts.insert(std::end(pts), std::begin(currPts), std::end(currPts));
 
-        chunkSizes.push_back(habitrack.getPreferences().chunkSize);
+        chunkSizes.push_back(cater.getPreferences().chunkSize);
     }
 
     if (mPanoFiles.size() <= 1)
         return;
 
     auto outFolder = mPanoFiles[0].parent_path() / "panorama_combined";
-    ht::setLogFileTo(outFolder / "log.txt");
+    ct::setLogFileTo(outFolder / "log.txt");
     for (auto resFile : mPanoFiles)
         spdlog::info("Adding res file for combined panorama: {}", resFile);
 
     try
     {
-        ht::PanoramaEngine::runMulti(
+        ct::PanoramaEngine::runMulti(
             images, data, outFolder, mPanoSettings, pts, chunkSizes, gpsInterpolators);
     }
     catch (const std::runtime_error& e)
@@ -277,9 +277,9 @@ void Tui::generatePanorama()
     }
 }
 
-std::vector<cv::Point> Tui::getDetections(const ht::Model& habitrack) const
+std::vector<cv::Point> Tui::getDetections(const ct::Model& cater) const
 {
-    auto dets = habitrack.detections();
+    auto dets = cater.detections();
     auto data = dets.cdata();
     std::vector<cv::Point> vec(dets.size());
     std::transform(std::begin(data), std::end(data), std::begin(vec),
@@ -311,11 +311,11 @@ void Tui::panoramaPrefs(const std::string& args)
         else if (words[i] == "featureType")
         {
             if (words[i + 1] == "ORB")
-                mPanoSettings.featureType = ht::FeatureType::ORB;
+                mPanoSettings.featureType = ct::FeatureType::ORB;
             else if (words[i + 1] == "SIFT")
-                mPanoSettings.featureType = ht::FeatureType::SIFT;
+                mPanoSettings.featureType = ct::FeatureType::SIFT;
             else if (words[i + 1] == "SuperPoint")
-                mPanoSettings.featureType = ht::FeatureType::SuperPoint;
+                mPanoSettings.featureType = ct::FeatureType::SuperPoint;
             else
             {
                 std::cerr << "Unknown feature type: " << words[i + 1] << std::endl;
@@ -331,11 +331,11 @@ void Tui::panoramaPrefs(const std::string& args)
         else if (words[i] == "stage")
         {
             if (words[i + 1] == "Initialization")
-                mPanoSettings.stage = ht::PanoramaStage::Initialization;
+                mPanoSettings.stage = ct::PanoramaStage::Initialization;
             else if (words[i + 1] == "Optimization")
-                mPanoSettings.stage = ht::PanoramaStage::Optimization;
+                mPanoSettings.stage = ct::PanoramaStage::Optimization;
             else if (words[i + 1] == "Refinement")
-                mPanoSettings.stage = ht::PanoramaStage::Refinement;
+                mPanoSettings.stage = ct::PanoramaStage::Refinement;
             else
             {
                 std::cerr << "Unknown stage: " << words[i + 1] << std::endl;

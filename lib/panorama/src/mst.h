@@ -4,7 +4,7 @@
 // from https://www.geeksforgeeks.org/kruskals-minimum-spanning-tree-using-stl-in-c/
 #include <bits/stdc++.h>
 
-namespace ht
+namespace ct
 {
 
 // Creating shortcut for an integer pair
@@ -47,4 +47,4 @@ private:
     std::vector<int> mParent;
 };
 
-} // namespace ht
+} // namespace ct

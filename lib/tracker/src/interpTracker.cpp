@@ -1,11 +1,11 @@
-#include <habitrack/tracker/interpTracker.h>
+#include <cater/tracker/interpTracker.h>
 
-#include <habitrack/image-processing/transformation.h>
-#include <habitrack/image-processing/util.h>
-#include <habitrack/tracker/manualUnaries.h>
-#include <habitrack/tracker/unaries.h>
-#include <habitrack/util/algorithm.h>
-#include <habitrack/util/threadPool.h>
+#include <cater/image-processing/transformation.h>
+#include <cater/image-processing/util.h>
+#include <cater/tracker/manualUnaries.h>
+#include <cater/tracker/unaries.h>
+#include <cater/util/algorithm.h>
+#include <cater/util/threadPool.h>
 
 #include <spdlog/spdlog.h>
 #include <chrono>
@@ -14,7 +14,7 @@
 #include <limits>
 #include <opencv2/imgproc.hpp>
 
-namespace ht
+namespace ct
 {
 using namespace matches;
 using namespace transformation;
@@ -78,4 +78,4 @@ Detections InterpTracker::track(const Unaries& unaries, const ManualUnaries& man
 
     return detections;
 }
-} // namespace ht
+} // namespace ct

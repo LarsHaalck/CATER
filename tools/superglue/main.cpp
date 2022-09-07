@@ -4,17 +4,17 @@
 
 #include <spdlog/spdlog.h>
 
-#include <habitrack/image-processing/features.h>
-#include <habitrack/image-processing/images.h>
-#include <habitrack/image-processing/matches.h>
-#include <habitrack/image-processing/mildRecommender.h>
-#include <habitrack/image-processing/superGlue.h>
+#include <cater/image-processing/features.h>
+#include <cater/image-processing/images.h>
+#include <cater/image-processing/matches.h>
+#include <cater/image-processing/mildRecommender.h>
+#include <cater/image-processing/superGlue.h>
 
 #include <cxxopts.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-using namespace ht;
+using namespace ct;
 namespace fs = std::filesystem;
 
 int main(int argc, const char** argv)

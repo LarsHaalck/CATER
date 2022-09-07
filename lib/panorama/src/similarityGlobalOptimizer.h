@@ -1,11 +1,11 @@
-#ifndef HABITRACK_SIMILARITY_GLOBAL_OPTIMIZER_H
-#define HABITRACK_SIMILARITY_GLOBAL_OPTIMIZER_H
+#ifndef CATER_SIMILARITY_GLOBAL_OPTIMIZER_H
+#define CATER_SIMILARITY_GLOBAL_OPTIMIZER_H
 
 #include <Eigen/Dense>
 
 #include "metrics.h"
 
-namespace ht
+namespace ct
 {
 class SimilarityGlobalFunctor
 {
@@ -46,5 +46,5 @@ private:
     const Eigen::Vector2d mQ2;
     const double mWeight;
 };
-} // namespace ht
-#endif // HABITRACK_SIMILARITY_GLOBAL_OPTIMIZER_H
+} // namespace ct
+#endif // CATER_SIMILARITY_GLOBAL_OPTIMIZER_H

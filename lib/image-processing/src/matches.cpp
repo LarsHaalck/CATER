@@ -1,9 +1,9 @@
-#include <habitrack/image-processing/matches.h>
+#include <cater/image-processing/matches.h>
 
-#include <habitrack/image-processing/isometry.h>
-#include <habitrack/io/matIO.h>
-#include <habitrack/progressbar/progressBar.h>
-#include <habitrack/util/stopWatch.h>
+#include <cater/image-processing/isometry.h>
+#include <cater/io/matIO.h>
+#include <cater/progressbar/progressBar.h>
+#include <cater/util/stopWatch.h>
 
 #include "matchesIO.h"
 #include "unknownFeatureType.h"
@@ -17,7 +17,7 @@
 
 namespace fs = std::filesystem;
 
-namespace ht::matches
+namespace ct::matches
 {
 using Gt = GeometricType;
 auto Put = Gt::Putative;
@@ -657,4 +657,4 @@ namespace detail
     }
 } // namespace detail
 
-} // namespace ht
+} // namespace ct

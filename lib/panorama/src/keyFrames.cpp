@@ -1,8 +1,8 @@
-#include <habitrack/panorama/keyFrames.h>
+#include <cater/panorama/keyFrames.h>
 
-#include <habitrack/image-processing/util.h>
-#include <habitrack/util/algorithm.h>
-#include <habitrack/util/stopWatch.h>
+#include <cater/image-processing/util.h>
+#include <cater/util/algorithm.h>
+#include <cater/util/stopWatch.h>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
@@ -17,7 +17,7 @@
 #endif // _OPENMP
 
 namespace fs = std::filesystem;
-namespace ht::KeyFrames
+namespace ct::KeyFrames
 {
 bool isComputed(const std::filesystem::path& file) { return fs::is_regular_file(file); }
 
@@ -319,4 +319,4 @@ namespace detail
         return keyFrames;
     }
 } // namespace detail
-} // namespace ht
+} // namespace ct

@@ -1,11 +1,11 @@
-#include <habitrack/panorama/interExhaustiveRecommender.h>
+#include <cater/panorama/interExhaustiveRecommender.h>
 
-#include <habitrack/image-processing/featureAggregator.h>
-#include <habitrack/image-processing/idTranslator.h>
+#include <cater/image-processing/featureAggregator.h>
+#include <cater/image-processing/idTranslator.h>
 
 #include <spdlog/spdlog.h>
 
-namespace ht
+namespace ct
 {
 InterExhaustiveRecommender::InterExhaustiveRecommender(const FeatureAggregator& ftContainers)
     : mFtContainers(ftContainers)
@@ -32,4 +32,4 @@ std::vector<std::pair<std::size_t, std::size_t>> InterExhaustiveRecommender::get
     }
     return pairs;
 }
-} // namespace ht
+} // namespace ct

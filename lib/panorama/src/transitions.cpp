@@ -1,11 +1,11 @@
-#include <habitrack/panorama/transitions.h>
+#include <cater/panorama/transitions.h>
 
-#include <habitrack/image-processing/idTranslator.h>
+#include <cater/image-processing/idTranslator.h>
 #include "mst.h"
 
 #include <spdlog/spdlog.h>
 
-namespace ht
+namespace ct
 {
 using MatchTransitions = std::unordered_map<std::pair<std::size_t, std::size_t>,
     std::tuple<std::size_t, std::size_t, std::size_t>, hash>;
@@ -14,7 +14,7 @@ Transitions getMostProminantTransition(
     const PairwiseMatches& matches, const std::vector<std::size_t>& sizes)
 {
     auto keys = matches::getKeyList(matches);
-    ht::Translator translator(sizes);
+    ct::Translator translator(sizes);
 
     MatchTransitions transitions;
     for (auto& pair : keys)
@@ -42,7 +42,7 @@ Transitions getMostProminantTransition(
         }
     }
 
-    ht::Graph graph(sizes.size(), transitions.size());
+    ct::Graph graph(sizes.size(), transitions.size());
     for (auto elem : transitions)
     {
         auto [blockI, blockJ] = elem.first;
@@ -75,4 +75,4 @@ Transitions getMostProminantTransition(
 
     return optimalTransitions;
 }
-} // namespace ht
+} // namespace ct

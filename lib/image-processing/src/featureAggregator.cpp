@@ -1,6 +1,6 @@
-#include <habitrack/image-processing/featureAggregator.h>
+#include <cater/image-processing/featureAggregator.h>
 
-namespace ht
+namespace ct
 {
 FeatureAggregator::FeatureAggregator(const std::vector<Features>& ftContainers)
     : mFtContainers(ftContainers)
@@ -112,4 +112,4 @@ std::vector<std::size_t> FeatureAggregator::getBlockList() const
     return blockList;
 }
 
-} // namespace ht
+} // namespace ct

@@ -58,12 +58,12 @@ Mike Super Button "saves" too, meaning clicking it again checks if files exists 
 Default chunk size is 100 but can be changed in preferences.
 
 # FAQ:
-## HabiTrack crashed due to memory limits:
+## CATER crashed due to memory limits:
 If memory is full in one of the early stages, try reducing the cache size from 200 to 100 in Tools > Preferences.
 
 # Download
 ## Using AppImage:
-Download the most recent AppImage from https://github.com/LarsHaalck/habitrack/releases listet under "Assets". You have to "allow executing file as program".  Right click on AppImage, then select Permissions tabe then select the Execute option. 
+Download the most recent AppImage from https://github.com/LarsHaalck/cater/releases listet under "Assets". You have to "allow executing file as program".  Right click on AppImage, then select Permissions tabe then select the Execute option. 
 
 ## Building from Source:
 This project has a CMake superbuild structure, where the "root"-CMakeLists.txt lies in the folder `super`.
@@ -94,4 +94,4 @@ cd build
 cmake -DCMAKE_BUILD_TYPE=Release ../super
 make
 ```
-the binary of the HabiTrack-Gui should be compiled in `build/ui/gui/habitrack-gui`.
+the binary of the CATER-Gui should be compiled in `build/ui/gui/cater-gui`.

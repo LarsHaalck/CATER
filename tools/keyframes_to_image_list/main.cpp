@@ -2,10 +2,10 @@
 #include <iostream>
 
 #include <cxxopts.hpp>
-#include <habitrack/image-processing/images.h>
-#include <habitrack/panorama/keyFrames.h>
+#include <cater/image-processing/images.h>
+#include <cater/panorama/keyFrames.h>
 
-using namespace ht;
+using namespace ct;
 namespace fs = std::filesystem;
 
 int main(int argc, const char** argv)

@@ -1,9 +1,9 @@
-#include <habitrack/image-processing/features.h>
-#include <habitrack/image-processing/images.h>
-#include <habitrack/image-processing/matches.h>
-#include <habitrack/tracker/unaries.h>
-#include <habitrack/tracker/manualUnaries.h>
-#include <habitrack/tracker/tracker.h>
+#include <cater/image-processing/features.h>
+#include <cater/image-processing/images.h>
+#include <cater/image-processing/matches.h>
+#include <cater/tracker/unaries.h>
+#include <cater/tracker/manualUnaries.h>
+#include <cater/tracker/tracker.h>
 
 
 #include <iostream>
@@ -19,37 +19,37 @@ path img_folder = base_path / "imgs";
 path ft_folder = base_path / "fts";
 path match_folder = base_path / "matches";
 path un_folder = base_path / "unaries";
-constexpr ht::GeometricType geom_type = ht::GeometricType::Homography;
+constexpr ct::GeometricType geom_type = ct::GeometricType::Homography;
 constexpr std::size_t cache_size = 2000;
 
 int main()
 {
     spdlog::set_level(spdlog::level::debug);
 
-    ht::Images imgs {img_folder};
+    ct::Images imgs {img_folder};
 
-    ht::Features fts;
-    if (ht::Features::isComputed(imgs, ft_folder, ht::FeatureType::ORB))
+    ct::Features fts;
+    if (ct::Features::isComputed(imgs, ft_folder, ct::FeatureType::ORB))
     {
         spdlog::info("Skipping Feature computation");
-        fts = ht::Features::fromDir(imgs, ft_folder, ht::FeatureType::ORB);
+        fts = ct::Features::fromDir(imgs, ft_folder, ct::FeatureType::ORB);
     }
     else
-        fts = ht::Features::compute(imgs, ft_folder, ht::FeatureType::ORB, 2000, cache_size);
+        fts = ct::Features::compute(imgs, ft_folder, ct::FeatureType::ORB, 2000, cache_size);
 
-    if (ht::matches::isComputed(match_folder, geom_type))
+    if (ct::matches::isComputed(match_folder, geom_type))
     {
         spdlog::info("Skipping Matches computation");
     }
     else
     {
-        ht::matches::compute(match_folder, geom_type, fts, ht::matches::MatchType::Windowed, 2, 0.0,
+        ct::matches::compute(match_folder, geom_type, fts, ct::matches::MatchType::Windowed, 2, 0.0,
             nullptr, cache_size);
     }
 
     auto types
-        = ht::matches::getConnectedTypes(match_folder, ht::GeometricType::Homography, imgs.size());
-    if (static_cast<unsigned int>(types & ht::GeometricType::Homography))
+        = ct::matches::getConnectedTypes(match_folder, ct::GeometricType::Homography, imgs.size());
+    if (static_cast<unsigned int>(types & ct::GeometricType::Homography))
         spdlog::info("usable for homography");
     else
     {
@@ -57,20 +57,20 @@ int main()
         return 0;
     }
 
-    imgs = ht::Images {img_folder, ht::Images::ReadMode::Unchanged};
-    auto trafos = ht::matches::getTrafos(match_folder, geom_type);
-    ht::Unaries uns;
+    imgs = ct::Images {img_folder, ct::Images::ReadMode::Unchanged};
+    auto trafos = ct::matches::getTrafos(match_folder, geom_type);
+    ct::Unaries uns;
 
-    if (ht::Unaries::isComputed(imgs, un_folder))
+    if (ct::Unaries::isComputed(imgs, un_folder))
     {
         spdlog::info("Skipping Unary computation");
-        uns = ht::Unaries::fromDir(imgs, un_folder);
+        uns = ct::Unaries::fromDir(imgs, un_folder);
     }
     else
-        uns = ht::Unaries::compute(imgs, un_folder, 0, -1, true, 0.8, 200.0, trafos, cache_size);
+        uns = ct::Unaries::compute(imgs, un_folder, 0, -1, true, 0.8, 200.0, trafos, cache_size);
 
-    auto settings = ht::Tracker::Settings {0.8, 25, 250, 4, false, 5, 3, 0};
-    auto manual = ht::ManualUnaries();
-    auto detections = ht::Tracker::track(uns, manual, settings, trafos);
+    auto settings = ct::Tracker::Settings {0.8, 25, 250, 4, false, 5, 3, 0};
+    auto manual = ct::ManualUnaries();
+    auto detections = ct::Tracker::track(uns, manual, settings, trafos);
     return 0;
 }

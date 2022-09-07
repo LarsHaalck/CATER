@@ -22,9 +22,9 @@ freely, subject to the following restrictions:
 
 Modfied by Lars Haalck
 **************************************************************************************/
-#include <habitrack/util/threadPool.h>
+#include <cater/util/threadPool.h>
 
-namespace ht
+namespace ct
 {
 ThreadPool::ThreadPool(std::size_t threads)
     : stop(false)
@@ -70,4 +70,4 @@ ThreadPool::~ThreadPool()
     if (!stop)
         join();
 }
-} // namespace ht
+} // namespace ct

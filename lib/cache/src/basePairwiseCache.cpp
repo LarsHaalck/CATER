@@ -1,6 +1,6 @@
-#include <habitrack/cache/basePairwiseCache.h>
+#include <cater/cache/basePairwiseCache.h>
 
-namespace ht
+namespace ct
 {
 BasePairwiseCache::BasePairwiseCache(
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
@@ -13,4 +13,4 @@ std::pair<std::size_t, std::size_t> BasePairwiseCache::getPair(std::size_t idx)
 {
     return mPairs[idx];
 }
-} // namespace ht
+} // namespace ct

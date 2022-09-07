@@ -1,19 +1,19 @@
-#include <habitrack/panorama/panoramaEngine.h>
+#include <cater/panorama/panoramaEngine.h>
 
-#include <habitrack/image-processing/featureAggregator.h>
-#include <habitrack/image-processing/features.h>
-#include <habitrack/image-processing/idTranslator.h>
-#include <habitrack/image-processing/imageAggregator.h>
-#include <habitrack/image-processing/images.h>
-#include <habitrack/image-processing/matches.h>
-#include <habitrack/image-processing/mildRecommender.h>
-#include <habitrack/image-processing/superGlue.h>
-#include <habitrack/image-processing/util.h>
-#include <habitrack/io/ptsIO.h>
-#include <habitrack/panorama/keyFrameRecommender.h>
-#include <habitrack/panorama/keyFrames.h>
-#include <habitrack/panorama/panoramaStitcher.h>
-#include <habitrack/panorama/transitions.h>
+#include <cater/image-processing/featureAggregator.h>
+#include <cater/image-processing/features.h>
+#include <cater/image-processing/idTranslator.h>
+#include <cater/image-processing/imageAggregator.h>
+#include <cater/image-processing/images.h>
+#include <cater/image-processing/matches.h>
+#include <cater/image-processing/mildRecommender.h>
+#include <cater/image-processing/superGlue.h>
+#include <cater/image-processing/util.h>
+#include <cater/io/ptsIO.h>
+#include <cater/panorama/keyFrameRecommender.h>
+#include <cater/panorama/keyFrames.h>
+#include <cater/panorama/panoramaStitcher.h>
+#include <cater/panorama/transitions.h>
 
 #include <opencv2/core/persistence.hpp>
 #include <spdlog/fmt/ostr.h>
@@ -21,12 +21,12 @@
 
 namespace fs = std::filesystem;
 
-namespace ht
+namespace ct
 {
 namespace PanoramaEngine
 {
-    auto ftType = ht::FeatureType::ORB;
-    auto trafoType = ht::GeometricType::Similarity;
+    auto ftType = ct::FeatureType::ORB;
+    auto trafoType = ct::GeometricType::Similarity;
 
     GPSSettings loadGPSSettings(const fs::path& gpsFile)
     {
@@ -405,4 +405,4 @@ namespace PanoramaEngine
 
 } // namespace PanoramaEngine
 
-} // namespace ht
+} // namespace ct

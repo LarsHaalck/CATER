@@ -1,6 +1,6 @@
 #include "similarityGlobalOptimizer.h"
 
-namespace ht
+namespace ct
 {
 SimilarityGlobalFunctor::SimilarityGlobalFunctor(
     const Eigen::Vector2d& q1, const Eigen::Vector2d& q2, double weight)
@@ -9,4 +9,4 @@ SimilarityGlobalFunctor::SimilarityGlobalFunctor(
     , mWeight(weight)
 {
 }
-} // namespace ht
+} // namespace ct

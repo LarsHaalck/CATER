@@ -1,7 +1,7 @@
-#include <habitrack/image-processing/pairwiseDescriptorCache.h>
-#include <habitrack/image-processing/baseFeatureContainer.h>
+#include <cater/image-processing/pairwiseDescriptorCache.h>
+#include <cater/image-processing/baseFeatureContainer.h>
 
-namespace ht
+namespace ct
 {
 PairwiseDescriptorCache::PairwiseDescriptorCache(const BaseFeatureContainer& container,
     std::size_t maxChunkSize, const std::vector<std::pair<std::size_t, std::size_t>>& pairs)
@@ -29,4 +29,4 @@ std::unordered_map<std::size_t, cv::Mat> PairwiseDescriptorCache::getChunk(std::
     return cacheBlock;
 }
 
-} // namespace ht
+} // namespace ct

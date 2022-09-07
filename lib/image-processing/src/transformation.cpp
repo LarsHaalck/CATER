@@ -1,6 +1,6 @@
-#include <habitrack/image-processing/transformation.h>
+#include <cater/image-processing/transformation.h>
 
-namespace ht::transformation
+namespace ct::transformation
 {
 
 bool isFull(const cv::Mat& matrix)
@@ -158,4 +158,4 @@ cv::Point2d transformPoint(const cv::Point2d& refPosition, const cv::Mat& H, Geo
 {
     return transformPoints({refPosition}, H, type)[0];
 }
-} // namespace ht
+} // namespace ct

@@ -1,10 +1,10 @@
-#ifndef HABITRACK_HOMOGRAPHY_GLOBAL_OPTIMIZER_H
-#define HABITRACK_HOMOGRAPHY_GLOBAL_OPTIMIZER_H
+#ifndef CATER_HOMOGRAPHY_GLOBAL_OPTIMIZER_H
+#define CATER_HOMOGRAPHY_GLOBAL_OPTIMIZER_H
 
 #include "metrics.h"
 #include <Eigen/Dense>
 
-namespace ht
+namespace ct
 {
 class HomographyGlobalFunctor
 {
@@ -41,4 +41,4 @@ private:
     const double mWeight;
 };
 }
-#endif // HABITRACK_HOMOGRAPHY_GLOBAL_OPTIMIZER_H
+#endif // CATER_HOMOGRAPHY_GLOBAL_OPTIMIZER_H

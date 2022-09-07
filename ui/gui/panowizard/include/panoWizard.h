@@ -7,7 +7,7 @@
 
 #include "gui/progressStatusBar.h"
 
-#include <habitrack/panorama/panoramaEngine.h>
+#include <cater/panorama/panoramaEngine.h>
 
 namespace Ui
 {
@@ -26,7 +26,7 @@ public:
 
 private:
     void process();
-    ht::PanoramaSettings getSettings() const;
+    ct::PanoramaSettings getSettings() const;
     void processSingle(const std::filesystem::path& resFile);
     std::vector<cv::Point> getDetections(const std::filesystem::path& resFile);
     void processMultiple();

@@ -4,9 +4,9 @@
 #include <filesystem>
 #include <string>
 
-#include <habitrack/model/model.h>
-#include <habitrack/panorama/panoramaEngine.h>
-#include <habitrack/util/log.h>
+#include <cater/model/model.h>
+#include <cater/panorama/panoramaEngine.h>
+#include <cater/util/log.h>
 
 namespace tui
 {
@@ -33,7 +33,7 @@ private:
     void track() { mModel.runFullPipeline(); }
     void video(const std::filesystem::path& videoFile) { mModel.generateVideo(videoFile); }
 
-    std::vector<cv::Point> getDetections(const ht::Model& habitrack) const;
+    std::vector<cv::Point> getDetections(const ct::Model& cater) const;
 
     void addPanorama(const std::string& args);
     void listPanorama();
@@ -55,10 +55,10 @@ private:
     }
 
 private:
-    ht::Model mModel;
+    ct::Model mModel;
     std::vector<std::filesystem::path> mPanoFiles;
     std::unordered_map<std::string, std::filesystem::path> mPanoGPSFiles;
-    ht::PanoramaSettings mPanoSettings;
+    ct::PanoramaSettings mPanoSettings;
 };
 
 } // namespace tui

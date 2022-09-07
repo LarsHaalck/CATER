@@ -1,6 +1,6 @@
-#include <habitrack/image-processing/geometricType.h>
+#include <cater/image-processing/geometricType.h>
 
-namespace ht
+namespace ct
 {
 std::vector<GeometricType> typeToTypeList(GeometricType t)
 {
@@ -45,4 +45,4 @@ std::ostream& operator<<(std::ostream& os, const GeometricType& type)
     }
     return os;
 }
-} // namespace ht
+} // namespace ct

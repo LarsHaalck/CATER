@@ -1,6 +1,6 @@
 #include "unknownFeatureType.h"
 
-namespace ht
+namespace ct
 {
 UnknownFeatureType::UnknownFeatureType(const std::string& type)
     : std::exception()
