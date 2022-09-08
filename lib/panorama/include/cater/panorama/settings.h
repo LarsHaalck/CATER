@@ -17,8 +17,8 @@ std::ostream& operator<<(std::ostream& stream, const PanoramaStage& stage);
 
 struct PanoramaSettings
 {
-    int rows = 2000;
-    int cols = 2000;
+    int rows = 4000;
+    int cols = 4000;
     int cacheSize = 200;
 
     FeatureType featureType = FeatureType::ORB;

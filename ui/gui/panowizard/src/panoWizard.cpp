@@ -2,8 +2,8 @@
 #include "ui_panoWizard.h"
 
 #include <QFileDialog>
-#include <QtConcurrent>
 #include <QMessageBox>
+#include <QtConcurrent>
 #include <algorithm>
 #include <spdlog/spdlog.h>
 
@@ -11,10 +11,9 @@
 #include <cater/model/resultsIO.h>
 #include <cater/panorama/panoramaEngine.h>
 #include <cater/tracker/detections.h>
+#include <cater/util/log.h>
 
 namespace fs = std::filesystem;
-
-using namespace ct;
 
 namespace gui
 {
@@ -97,22 +96,69 @@ void PanoWizard::on_processEvent(int id)
 
 void PanoWizard::process()
 {
+    std::vector<ct::Images> images;
+    std::vector<fs::path> data;
+
+    std::vector<cv::Point> pts;
+    std::vector<std::size_t> chunkSizes;
+    ct::PanoramaSettings settings = getSettings();
+    std::vector<ct::GPSInterpolator> gpsInterpolators;
     for (std::size_t i = 0; i < mResFiles.size(); i++)
     {
+        auto resFile = mResFiles[i];
+
+        ct::Model cater;
+        cater.loadResultsFile(resFile);
+        ct::GPSSettings gps_settings;
+        auto gpsInterpolator = ct::GPSInterpolator(gps_settings, cater.getStartFrame());
+        gpsInterpolators.push_back(gpsInterpolator);
+
+        ct::Images currImages = cater.images();
+        currImages.clip(cater.getStartFrame(), cater.getEndFrame() + 1);
+
+        std::vector<cv::Point> currPts;
+        if (settings.overlayPoints)
+            currPts = getDetections(cater);
+
+        auto outPath = cater.getOutputPath() / "panorama";
+
+        ct::setLogFileTo(outPath / "log.txt");
+        ct::PanoramaEngine::runSingle(currImages, outPath, settings, currPts,
+            cater.getPreferences().chunkSize, {}, mBar);
+
+        images.push_back(currImages);
+        data.push_back(outPath);
+        pts.insert(std::end(pts), std::begin(currPts), std::end(currPts));
+
+        chunkSizes.push_back(cater.getPreferences().chunkSize);
+
         emit processEvent(i);
-        processSingle(mResFiles[i]);
     }
 
-    if (mResFiles.size() > 1)
+    if (mResFiles.size() <= 1)
+        return;
+
+    emit processEvent(-1);
+
+    auto outFolder = mResFiles[0].parent_path() / "panorama_combined";
+    ct::setLogFileTo(outFolder / "log.txt");
+    for (auto resFile : mResFiles)
+        spdlog::info("Adding res file for combined panorama: {}", resFile);
+
+    try
     {
-        emit processEvent(-1);
-        processMultiple();
+        ct::PanoramaEngine::runMulti(
+            images, data, outFolder, settings, pts, chunkSizes, gpsInterpolators, mBar);
+    }
+    catch (const std::runtime_error& e)
+    {
+        QMessageBox::critical(this, "Error", e.what());
     }
 }
 
 void PanoWizard::populateDefaults()
 {
-    PanoramaSettings settings;
+    ct::PanoramaSettings settings;
     ui->spinHeight->setValue(settings.rows);
     ui->spinWidth->setValue(settings.cols);
     ui->spinCache->setValue(settings.cacheSize);
@@ -127,13 +173,13 @@ void PanoWizard::populateDefaults()
     ui->checkSmooth->setChecked(settings.smooth);
 }
 
-PanoramaSettings PanoWizard::getSettings() const
+ct::PanoramaSettings PanoWizard::getSettings() const
 {
     int rows = ui->spinHeight->value();
     int cols = ui->spinWidth->value();
     int cacheSize = ui->spinCache->value();
 
-    auto ftType = static_cast<FeatureType>(ui->comboFt->currentIndex());
+    auto ftType = static_cast<ct::FeatureType>(ui->comboFt->currentIndex());
     int numFts = ui->spinNumFts->value();
     double coverage = ui->spinCoverage->value();
     auto force = ui->checkForce->isChecked();
@@ -144,7 +190,7 @@ PanoramaSettings PanoWizard::getSettings() const
     auto overlayPoints = (overlay.find("Detections") != std::string::npos);
     auto smooth = ui->checkSmooth->isChecked();
 
-    PanoramaSettings settings;
+    ct::PanoramaSettings settings;
     settings.rows = rows;
     settings.cols = cols;
     settings.cacheSize = cacheSize;
@@ -153,7 +199,7 @@ PanoramaSettings PanoWizard::getSettings() const
     settings.numFeatures = numFts;
     settings.minCoverage = coverage;
     settings.force = force;
-    settings.stage = static_cast<PanoramaStage>(stage);
+    settings.stage = static_cast<ct::PanoramaStage>(stage);
 
     settings.overlayCenters = overlayCenters;
     settings.overlayPoints = overlayPoints;
@@ -162,66 +208,6 @@ PanoramaSettings PanoWizard::getSettings() const
     return settings;
 }
 
-void PanoWizard::processSingle(const fs::path& resFile)
-{
-    PanoramaSettings settings = getSettings();
-    auto resTuple = loadResults(resFile);
-    auto imgFolder = std::get<1>(resTuple);
-
-    auto start = std::get<2>(resTuple);
-    auto end = std::get<3>(resTuple);
-
-    Images images(imgFolder);
-    images.clip(start, end + 1);
-
-    std::vector<cv::Point> pts;
-    if (settings.overlayPoints)
-        pts = getDetections(resFile);
-
-    PanoramaEngine::runSingle(images, resFile.parent_path() / "panorama", settings, pts,
-        std::get<0>(resTuple).chunkSize, {}, mBar);
-}
-
-void PanoWizard::processMultiple()
-{
-    PanoramaSettings settings = getSettings();
-    std::vector<Images> images;
-    std::vector<fs::path> data;
-
-    std::vector<cv::Point> pts;
-    std::vector<std::size_t> chunkSizes;
-    for (const auto& resFile : mResFiles)
-    {
-        auto resTuple = loadResults(resFile);
-        auto imgFolder = std::get<1>(resTuple);
-
-        auto start = std::get<2>(resTuple);
-        auto end = std::get<3>(resTuple);
-        Images currImgs(imgFolder);
-        currImgs.clip(start, end + 1);
-
-        images.push_back(currImgs);
-        data.push_back(resFile.parent_path() / "panorama");
-
-        if (settings.overlayPoints)
-        {
-            auto currPts = getDetections(resFile);
-            pts.insert(std::end(pts), std::begin(currPts), std::end(currPts));
-        }
-
-        chunkSizes.push_back(std::get<0>(resTuple).chunkSize);
-    }
-
-    auto outFolder = mResFiles[0].parent_path() / "panorama_combined";
-    try
-    {
-        PanoramaEngine::runMulti(images, data, outFolder, settings, pts, chunkSizes, {}, mBar);
-    }
-    catch(const std::runtime_error& e)
-    {
-        QMessageBox::critical(this, "Error", e.what());
-    }
-}
 
 void PanoWizard::on_totalChanged(int total)
 {
@@ -244,19 +230,15 @@ void PanoWizard::on_isDone()
 
 void PanoWizard::on_statusChanged(const QString& state) { ui->labelProgress->setText(state); }
 
-std::vector<cv::Point> PanoWizard::getDetections(const fs::path& resFile)
+std::vector<cv::Point> PanoWizard::getDetections(const ct::Model& cater) const
 {
-    auto detectionsFile = resFile.parent_path() / "detections.yml";
-    if (fs::is_regular_file(detectionsFile))
-    {
-        auto dets = Detections::fromDir(detectionsFile);
-        auto data = dets.data();
-        std::vector<cv::Point> vec(dets.size());
-        std::transform(std::begin(data), std::end(data), std::begin(vec),
-            [](auto pair) { return pair.second.position; });
-        return vec;
-    }
-    else
-        return {};
+    auto dets = cater.detections();
+    auto data = dets.cdata();
+    std::vector<cv::Point> vec(dets.size());
+    std::transform(std::begin(data), std::end(data), std::begin(vec),
+        [](auto pair) { return pair.second.position; });
+    // repeat last element to have as many detections as trafos
+    vec.push_back(*vec.rbegin());
+    return vec;
 }
 } // namespace gui

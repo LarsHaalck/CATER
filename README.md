@@ -1,5 +1,3 @@
-# Demo
-
 # GUI Explanation:
 
 ## Keymaps
