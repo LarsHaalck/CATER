@@ -76,7 +76,8 @@ Detections Tracker::trackChunked(const Unaries& unaries, const ManualUnaries& ma
     std::vector<cv::Mat> states;
     std::vector<std::future<cv::Mat>> futureStates;
 
-    ThreadPool pool;
+    /* auto pool = ThreadPool(4); */
+    auto pool = ThreadPool(8);
     auto start = std::chrono::system_clock::now();
     for (std::size_t i = 0; i < numChunks; i++)
     {
