@@ -77,13 +77,6 @@ void Images::setImgSize()
 
     auto firstImg = at(0);
     mImgSize = firstImg.size();
-    if (mResize(0) * mResize(1) > 0)
-    {
-        mImgSize = cv::Size(
-            std::round(mResize(0) * mImgSize.width), std::round(mResize(1) * mImgSize.height));
-    }
-    if (mCrop.area() > 0)
-        mImgSize = cv::Size(mCrop.width, mCrop.height);
 }
 
 void Images::fillImageFilesFromFolder(const fs::path& path)
