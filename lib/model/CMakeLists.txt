@@ -12,32 +12,36 @@ set(SOURCES
 #                               TARGETS                                   #
 ###########################################################################
 set(LIB_NAME "model")
-add_library(${LIB_NAME} ${SOURCES})
+foreach(TYPE IN LISTS LIBS)
+    set(CURR_LIB "${LIB_NAME}_${TYPE}")
+    add_library(${CURR_LIB} ${TYPE} ${SOURCES})
 
-target_include_directories(${LIB_NAME}
-    PUBLIC
-        $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-target_link_libraries(${LIB_NAME}
-    PUBLIC
-    image-processing
-    tracker
-    util
-    PUBLIC
-    spdlog::spdlog
-    version
-    io
-)
-
-if(${OpenMP_CXX_FOUND})
-    target_link_libraries(${LIB_NAME}
+    target_include_directories(${CURR_LIB}
         PUBLIC
-        OpenMP::OpenMP_CXX
+            $<INSTALL_INTERFACE:include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
-endif()
 
-install_lib(${LIB_NAME} ON)
+    target_link_libraries(${CURR_LIB}
+        PUBLIC
+        image-processing_${TYPE}
+        tracker_${TYPE}
+        util_${TYPE}
+        PRIVATE
+        spdlog::spdlog
+        version
+        io
+        opencv_videoio
+    )
+
+    if(${OpenMP_CXX_FOUND})
+        target_link_libraries(${CURR_LIB}
+            PUBLIC
+            OpenMP::OpenMP_CXX
+        )
+    endif()
+
+    install_lib(${CURR_LIB} ON)
+endforeach()

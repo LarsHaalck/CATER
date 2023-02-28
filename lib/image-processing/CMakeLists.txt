@@ -55,45 +55,49 @@ endif()
 #                               TARGETS                                   #
 ###########################################################################
 set(LIB_NAME "image-processing")
-add_library(${LIB_NAME} ${SOURCES})
+foreach(TYPE IN LISTS LIBS)
+    set(CURR_LIB "${LIB_NAME}_${TYPE}")
+    add_library(${CURR_LIB} ${TYPE} ${SOURCES})
 
-target_include_directories(${LIB_NAME}
-    PUBLIC
-        $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-target_link_libraries(${LIB_NAME}
-    PUBLIC
-    cache
-    progressbar
-    opencv_core
-    opencv_imgcodecs
-    opencv_features2d
-    opencv_calib3d
-    util
-    PUBLIC
-    opencv_imgproc
-    opencv_highgui
-    opencv_flann
-    spdlog::spdlog
-    mild::mild
-    cereal::cereal
-    io
-)
-
-if(${WITH_SUPERGLUE})
-    target_link_libraries(${LIB_NAME} PUBLIC torch)
-endif()
-
-if(${OpenMP_CXX_FOUND})
-    target_link_libraries(${LIB_NAME}
+    target_include_directories(${CURR_LIB}
         PUBLIC
-        OpenMP::OpenMP_CXX
+            $<INSTALL_INTERFACE:include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
-endif()
 
-install_lib(${LIB_NAME} ON)
+    target_link_libraries(${CURR_LIB}
+        PUBLIC
+        cache_${TYPE}
+        progressbar_${TYPE}
+        util_${TYPE}
+        opencv_core
+        opencv_imgcodecs
+        opencv_features2d
+        opencv_calib3d
+        PRIVATE
+        opencv_imgproc
+        opencv_highgui
+        opencv_flann
+        spdlog::spdlog
+        mild::mild
+        cereal::cereal
+        io
+    )
+
+    if(${WITH_SUPERGLUE})
+        target_link_libraries(${CURR_LIB} PUBLIC torch)
+    endif()
+
+    if(${OpenMP_CXX_FOUND})
+        target_link_libraries(${CURR_LIB}
+            PUBLIC
+            OpenMP::OpenMP_CXX
+        )
+    endif()
+
+    install_lib(${CURR_LIB} ON)
+endforeach()
+
 install_config(${LIB_NAME})

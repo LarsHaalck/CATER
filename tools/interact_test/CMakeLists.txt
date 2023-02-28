@@ -10,9 +10,9 @@ foreach(prg IN LISTS prg_names)
     )
     target_link_libraries(${prg}
         PUBLIC
-        image-processing
-        tracker
-        model
+        image-processing_STATIC
+        tracker_STATIC
+        model_STATIC
         cxxopts::cxxopts
         spdlog::spdlog
     )

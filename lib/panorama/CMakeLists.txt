@@ -32,36 +32,39 @@ set(SOURCES
 #                               TARGETS                                   #
 ###########################################################################
 set(LIB_NAME "panorama")
-add_library(${LIB_NAME} ${SOURCES})
+foreach(TYPE IN LISTS LIBS)
+    set(CURR_LIB "${LIB_NAME}_${TYPE}")
+    add_library(${CURR_LIB} ${TYPE} ${SOURCES})
 
-target_include_directories(${LIB_NAME}
-    PUBLIC
-        $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-target_link_libraries(${LIB_NAME}
-    PUBLIC
-    image-processing
-    Eigen3::Eigen
-    PUBLIC
-    cereal::cereal
-    ceres
-    io
-    opencv_stitching
-    progressbar
-    spdlog::spdlog
-    util
-)
-
-if(${OpenMP_CXX_FOUND})
-    target_link_libraries(${LIB_NAME}
+    target_include_directories(${CURR_LIB}
         PUBLIC
-        OpenMP::OpenMP_CXX
+            $<INSTALL_INTERFACE:include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
-endif()
 
-install_lib(${LIB_NAME} ON)
+    target_link_libraries(${CURR_LIB}
+        PUBLIC
+        image-processing_${TYPE}
+        Ceres::ceres
+        Eigen3::Eigen
+        PRIVATE
+        util_${TYPE}
+        progressbar_${TYPE}
+        io
+        cereal::cereal
+        opencv_stitching
+        spdlog::spdlog
+    )
+
+    if(${OpenMP_CXX_FOUND})
+        target_link_libraries(${CURR_LIB}
+            PUBLIC
+            OpenMP::OpenMP_CXX
+        )
+    endif()
+
+    install_lib(${CURR_LIB} ON)
+endforeach()
 install_config(${LIB_NAME})

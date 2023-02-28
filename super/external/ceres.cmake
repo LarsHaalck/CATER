@@ -35,4 +35,5 @@ else()
         LOG_INSTALL ON
     )
     set(Ceres_DIR ${STAGED_INSTALL_PREFIX}/lib/cmake/Ceres)
+    set(CMAKE_INSTALL_RPATH ${STAGED_INSTALL_PREFIX}/lib)
 endif()

@@ -57,15 +57,15 @@ set_target_properties(${EXE_NAME} PROPERTIES AUTORCC ON)
 target_include_directories(${EXE_NAME} PUBLIC include)
 target_link_libraries(${EXE_NAME}
     PRIVATE
+    progressbar_STATIC
+    model_STATIC
+    util_STATIC
+    io
+    common-gui
     Qt6::Widgets
     Qt6::Concurrent
     Qt6::Multimedia
     spdlog::spdlog
-    progressbar
-    model
-    util
-    io
-    common-gui
 )
 
 if(${OpenMP_CXX_FOUND})

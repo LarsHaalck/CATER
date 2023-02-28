@@ -5,9 +5,9 @@ target_include_directories(linspace_exp
 )
 target_link_libraries(linspace_exp
     PUBLIC
-    image-processing
-    tracker
-    util
+    image-processing_STATIC
+    tracker_STATIC
+    util_STATIC
     cxxopts::cxxopts
     spdlog::spdlog
 )

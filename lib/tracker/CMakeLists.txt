@@ -30,41 +30,44 @@ endif()
 #                               TARGETS                                   #
 ###########################################################################
 set(LIB_NAME "tracker")
-add_library(${LIB_NAME} ${SOURCES})
+foreach(TYPE IN LISTS LIBS)
+    set(CURR_LIB "${LIB_NAME}_${TYPE}")
+    add_library(${CURR_LIB} ${TYPE} ${SOURCES})
 
-target_include_directories(${LIB_NAME}
-    PUBLIC
-        $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-target_link_libraries(${LIB_NAME}
-    PUBLIC
-    image-processing
-    PUBLIC
-    cereal::cereal
-    io
-    progressbar
-    spdlog::spdlog
-    util
-)
-
-if(${OpenMP_CXX_FOUND})
-    target_link_libraries(${LIB_NAME}
+    target_include_directories(${CURR_LIB}
         PUBLIC
-        OpenMP::OpenMP_CXX
+            $<INSTALL_INTERFACE:include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
-endif()
 
-if(${OpenCL_FOUND})
-    target_compile_definitions(${LIB_NAME} PRIVATE HAS_OPENCL)
-    target_link_libraries(${LIB_NAME}
+    target_link_libraries(${CURR_LIB}
         PUBLIC
-        OpenCL::OpenCL
+        image-processing_${TYPE}
+        PRIVATE
+        progressbar_${TYPE}
+        util_${TYPE}
+        cereal::cereal
+        io
+        spdlog::spdlog
     )
-endif()
 
-install_lib(${LIB_NAME} ON)
+    if(${OpenMP_CXX_FOUND})
+        target_link_libraries(${CURR_LIB}
+            PUBLIC
+            OpenMP::OpenMP_CXX
+        )
+    endif()
+
+    if(${OpenCL_FOUND})
+        target_compile_definitions(${CURR_LIB} PRIVATE HAS_OPENCL)
+        target_link_libraries(${CURR_LIB}
+            PUBLIC
+            OpenCL::OpenCL
+        )
+    endif()
+    install_lib(${CURR_LIB} ON)
+endforeach()
+
 install_config(${LIB_NAME})

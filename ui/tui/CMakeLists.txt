@@ -22,13 +22,13 @@ add_executable(${EXE_NAME} ${SOURCES})
 target_include_directories(${EXE_NAME} PUBLIC include)
 target_link_libraries(${EXE_NAME}
     PRIVATE
-    spdlog::spdlog
-    progressbar
-    model
-    cereal::cereal
-    util
+    progressbar_STATIC
+    model_STATIC
+    util_STATIC
+    panorama_STATIC
     io
-    panorama
+    spdlog::spdlog
+    cereal::cereal
 )
 
 if(${OpenMP_CXX_FOUND})

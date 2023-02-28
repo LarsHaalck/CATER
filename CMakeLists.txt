@@ -16,6 +16,7 @@ include(cater)
 ###########################################################################
 option(BUILD_GUI "Build the graphical user interface" TRUE)
 option(BUILD_TOOLS "Build tools" TRUE)
+option(BUILD_SHARED "Build shared lib" FALSE)
 option(WITH_SUPERGLUE "With SuperGlue/SuperPoint support" FALSE)
 
 ###########################################################################
@@ -33,6 +34,11 @@ if(OpenCV_VERSION VERSION_LESS "3.0")
     message(FATAL_ERROR "OpenCV version should be >= 3.0")
 endif()
 
+
+set(LIBS "STATIC")
+if(${BUILD_SHARED})
+    list(APPEND LIBS "SHARED")
+endif()
 
 add_subdirectory(lib)
 add_subdirectory(ui)
