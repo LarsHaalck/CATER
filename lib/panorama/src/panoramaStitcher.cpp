@@ -520,14 +520,15 @@ bool PanoramaStitcher::globalOptimize(const BaseFeatureContainer& fts,
     if (framesMode == FramesMode::KeyFramesOnly && !gps.empty())
         addGPSRegularizer(problem, gps);
 
+    // TODO: control this via argument
     // fix first transformation to identity
-    /* if (framesMode == FramesMode::KeyFramesOnly) */
-    /* { */
-    /*     if (mType == GeometricType::Isometry) */
-    /*         problem.SetParameterBlockConstant(mOptimizedParams[mKeyFrames[0]].data()); */
-    /*     else */
-    /*         problem.SetParameterBlockConstant(mOptimizedTrafos[mKeyFrames[0]].ptr<double>(0)); */
-    /* } */
+    if (framesMode == FramesMode::KeyFramesOnly)
+    {
+        if (mType == GeometricType::Isometry)
+            problem.SetParameterBlockConstant(mOptimizedParams[mKeyFrames[0]].data());
+        else
+            problem.SetParameterBlockConstant(mOptimizedTrafos[mKeyFrames[0]].ptr<double>(0));
+    }
 
     // TODO: control this via argument
     // and should always be constant for AllFrames Mode for parallel processing
