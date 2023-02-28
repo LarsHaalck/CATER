@@ -233,8 +233,9 @@ std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(
         auto preTrafo = scaleMat * transMat * mCamMat;
         auto currTrafo = preTrafo * mOptimizedTrafos[currId] * mCamMatInv;
         cv::Mat warpedMask, warped;
-        cv::warpPerspective(undistMask, warpedMask, currTrafo, newSize);
-        cv::warpPerspective(undistImg, warped, currTrafo, newSize);
+        cv::warpPerspective(undistMask, warpedMask, currTrafo, newSize, cv::INTER_CUBIC);
+        /* cv::rectangle(undistImg, cv::Rect(cv::Point(0, 0), undistImg.size()), cv::Scalar(0, 0, 255), 5); */
+        cv::warpPerspective(undistImg, warped, currTrafo, newSize, cv::INTER_CUBIC);
 
         if (mReintegrated && i > 0)
         {
@@ -253,6 +254,8 @@ std::tuple<cv::Mat, std::vector<cv::Mat>> PanoramaStitcher::stitchPano(
             if (i == 0)
                 img0 = warped;
             warped.copyTo(img0, warpedMask);
+            /* cv::imshow("img0", img0); */
+            /* cv::waitKey(0); */
         }
         cb->inc();
     }
