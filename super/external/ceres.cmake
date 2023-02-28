@@ -1,7 +1,7 @@
 find_package(Ceres 2.1 CONFIG QUIET)
 
-if(TARGET ceres)
-    get_property(loc TARGET ceres PROPERTY LOCATION)
+if(TARGET Ceres::ceres)
+    get_property(loc TARGET Ceres::ceres PROPERTY LOCATION)
     message(STATUS "Found Ceres version ${PACKAGE_VERSION} at ${loc}")
     add_library(ceres_external INTERFACE) # dummy
 else()
