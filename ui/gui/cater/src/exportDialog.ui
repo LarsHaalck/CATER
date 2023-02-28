@@ -35,13 +35,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="checkBoxSmooth">
-     <property name="text">
-      <string>Smooth Boundaries between Chunks</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <spacer name="verticalSpacer_2">
      <property name="orientation">
       <enum>Qt::Vertical</enum>

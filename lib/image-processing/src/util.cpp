@@ -3,8 +3,6 @@
 #include <cater/image-processing/idTranslator.h>
 #include <cater/util/tinycolormap.h>
 
-#include "fitpackpp/BSplineCurve.h"
-
 #include <opencv2/imgproc.hpp>
 
 constexpr double pi() { return std::atan(1) * 4; }
@@ -168,52 +166,6 @@ namespace detail
         return weights;
     }
 } // namespace detail
-
-std::vector<cv::Point> smoothBoundaries(const std::vector<cv::Point>& pts, std::size_t boundarySize)
-{
-    std::size_t w = 10;
-
-    using namespace fitpackpp;
-    std::vector<double> x;
-    std::vector<double> y;
-    x.reserve(pts.size());
-    y.reserve(pts.size());
-
-    for (const auto& pt : pts)
-    {
-        x.push_back(pt.x);
-        y.push_back(pt.y);
-    }
-
-    auto ptsSmoothed = pts;
-    auto cs = boundarySize;
-    auto numUns = pts.size();
-    auto numChunks = getNumChunks(numUns, cs);
-    for (std::size_t i = 1; i < numChunks; i++)
-    {
-        auto prevEnd = getChunkEnd(i - 1, numChunks, cs, numUns);
-
-        auto ids = std::vector<double>(2 * w);
-        std::iota(std::begin(ids), std::end(ids), prevEnd - w);
-
-        /* auto weights = getSimpleWeights(w); */
-        auto weights = detail::getCauchyWeights(w);
-
-        auto splX = BSplineCurve::splrep(ids,
-            Vec(std::begin(x) + ids.front(), std::begin(x) + ids.back() + 1), weights, {}, {}, 1);
-        auto splY = BSplineCurve::splrep(ids,
-            Vec(std::begin(y) + ids.front(), std::begin(y) + ids.back() + 1), weights, {}, {}, 1);
-
-        auto xSmoothed = splX(ids);
-        auto ySmoothed = splY(ids);
-
-        std::transform(std::begin(xSmoothed), std::end(xSmoothed), std::begin(ySmoothed),
-            std::begin(ptsSmoothed) + ids.front(),
-            [](double x, double y) { return cv::Point(std::round(x), std::round(y)); });
-    }
-
-    return ptsSmoothed;
-}
 
 std::size_t getNumChunks(std::size_t size, std::size_t chunkSize)
 {

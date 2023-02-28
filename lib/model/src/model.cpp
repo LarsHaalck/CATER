@@ -394,7 +394,7 @@ void Model::runFullPipeline()
     optimizeUnaries();
 }
 
-void Model::exportDetections(const std::filesystem::path& csvFile, bool smooth) const
+void Model::exportDetections(const std::filesystem::path& csvFile) const
 {
     std::vector<std::size_t> ids;
     std::vector<cv::Point> pts;
@@ -403,9 +403,6 @@ void Model::exportDetections(const std::filesystem::path& csvFile, bool smooth) 
         ids.push_back(elem.first);
         pts.push_back(elem.second.position);
     }
-
-    if (smooth)
-        pts = util::smoothBoundaries(pts, mPrefs.chunkSize);
 
     std::ofstream stream(csvFile.string(), std::ios::out);
     io::checkStream(stream, csvFile);

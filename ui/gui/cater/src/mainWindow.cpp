@@ -216,8 +216,7 @@ void MainWindow::on_actionExport_triggered()
         });
     dialog.exec();
 
-    mModel.exportDetections(
-        uiDialog.labelFile->text().toStdString(), uiDialog.checkBoxSmooth->isChecked());
+    mModel.exportDetections(uiDialog.labelFile->text().toStdString());
 }
 
 void MainWindow::on_actionExport_Video_triggered()

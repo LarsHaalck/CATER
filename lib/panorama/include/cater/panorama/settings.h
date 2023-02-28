@@ -29,7 +29,6 @@ struct PanoramaSettings
 
     bool overlayCenters = false;
     bool overlayPoints = false;
-    bool smooth = false;
 
     bool writeReadable = false;
 };

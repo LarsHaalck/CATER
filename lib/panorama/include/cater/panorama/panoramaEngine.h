@@ -29,9 +29,6 @@ namespace PanoramaEngine
             const PanoramaSettings& settings, cv::Point2d imgCenter,
             const std::vector<std::size_t>& chunkSizes, const std::vector<std::size_t>& sizes);
 
-        std::vector<cv::Point> smooth(const std::vector<cv::Point>& pts,
-            const std::vector<std::size_t>& chunkSizes, const std::vector<std::size_t>& sizes);
-
     } // namespace detail
 } // namespace PanoramaEngine
 } // namespace ct

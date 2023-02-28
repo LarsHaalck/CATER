@@ -90,7 +90,7 @@ public:
 
     std::filesystem::path getOutputPath() const { return mOutputPath; }
 
-    void exportDetections(const std::filesystem::path& csvFile, bool smooth) const;
+    void exportDetections(const std::filesystem::path& csvFile) const;
 
 private:
     void populatePaths();

@@ -14,7 +14,6 @@ include(external/mild)
 include(external/ceres)
 include(external/cereal)
 include(external/cxxopts)
-include(external/fitpackpp)
 include(external/opencv)
 include(external/qt)
 
@@ -28,7 +27,6 @@ set(cater_dependencies
     ceres_external
     cereal_external
     cxxopts_external
-    fitpackpp_external
     opencv_external
     qt6base_external
     qt6multimedia_external
@@ -63,7 +61,6 @@ else ()
             -DCeres_DIR=${Ceres_DIR}
             -Dcereal_DIR=${cereal_DIR}
             -Dcxxopts_DIR=${cxxopts_DIR}
-            -Dfitpackpp_DIR=${fitpackpp_DIR}
             -DOpenCV_DIR=${OpenCV_DIR}
             -DQt6CoreTools_DIR=${Qt6CoreTools_DIR}
             -DQt6Concurrent_DIR=${Qt6Concurrent_DIR}

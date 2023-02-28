@@ -1,11 +1,9 @@
 set(Eigen3_DIR @Eigen3_DIR@)
 set(cereal_DIR @cereal_DIR@)
-set(fitpackpp_DIR @fitpackpp_DIR@)
 set(mild_DIR @mild_DIR@)
 
 find_dependency(Eigen3 3.4)
 find_dependency(cereal)
-find_dependency(fitpackpp)
 find_dependency(mild)
 if (@WITH_SUPERGLUE@)
     find_package(Torch REQUIRED)

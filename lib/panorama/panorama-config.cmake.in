@@ -1,7 +1,6 @@
 set(Ceres_DIR @Ceres_DIR@)
 set(Eigen3_DIR @Eigen3_DIR@)
 set(cereal_DIR @cereal_DIR@)
-set(fitpackpp_DIR @fitpackpp_DIR@)
 set(mild_DIR @mild_DIR@)
 
 find_dependency(Ceres 2.0)

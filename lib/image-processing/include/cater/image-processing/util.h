@@ -43,9 +43,6 @@ T euclidianDist(const cv::Point_<T>& pt0, const cv::Point_<T>& pt1)
 cv::Mat overlayPoints(const cv::Mat& img, const std::vector<cv::Point>& pts,
     const std::vector<std::size_t>& sizes = {});
 
-std::vector<cv::Point> smoothBoundaries(
-    const std::vector<cv::Point>& pts, std::size_t boundarySize);
-
 template <typename T>
 std::vector<cv::Point> round(const std::vector<cv::Point_<T>>& pts)
 {

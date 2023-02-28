@@ -3,7 +3,6 @@
 ###########################################################################
 find_package(Eigen3 3 REQUIRED)
 find_package(cereal REQUIRED)
-find_package(fitpackpp REQUIRED)
 find_package(mild REQUIRED)
 
 if(${WITH_SUPERGLUE})
@@ -83,7 +82,6 @@ target_link_libraries(${LIB_NAME}
     mild::mild
     cereal::cereal
     io
-    fitpackpp::fitpackpp
 )
 
 if(${WITH_SUPERGLUE})

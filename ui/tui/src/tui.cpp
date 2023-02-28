@@ -347,9 +347,6 @@ void Tui::panoramaPrefs(const std::string& args)
             mPanoSettings.overlayCenters = std::stoi(words[i + 1]);
         else if (words[i] == "overlayPoints")
             mPanoSettings.overlayPoints = std::stoi(words[i + 1]);
-        else if (words[i] == "smooth")
-            mPanoSettings.smooth = std::stoi(words[i + 1]);
-
         else if (words[i] == "writeReadable")
             mPanoSettings.writeReadable = std::stoi(words[i + 1]);
         else

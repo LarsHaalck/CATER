@@ -360,8 +360,6 @@ namespace PanoramaEngine
             {
                 auto transPts = util::round(
                     transformation::zipTransform<double>({imgCenter}, trafos, trafoType));
-                if (settings.smooth)
-                    transPts = smooth(transPts, chunkSizes, sizes);
 
                 auto pano = util::overlayPoints(img, transPts, sizes);
                 cv::imwrite(filename.string() + "_centers.png", pano);
@@ -370,36 +368,10 @@ namespace PanoramaEngine
             if (settings.overlayPoints && !pts.empty())
             {
                 auto transPts = util::round(transformation::zipTransform(pts, trafos, trafoType));
-                if (settings.smooth)
-                    transPts = smooth(transPts, chunkSizes, sizes);
-
                 auto pano = util::overlayPoints(img, transPts, sizes);
                 cv::imwrite(filename.string() + "_detections.png", pano);
                 io::savePoints(filename.string() + "_detections.csv", transPts);
             }
-        }
-
-        std::vector<cv::Point> smooth(const std::vector<cv::Point>& pts,
-            const std::vector<std::size_t>& chunkSizes, const std::vector<std::size_t>& sizes)
-        {
-            auto ptsSmoothed = pts;
-            if (chunkSizes.size() == 1)
-                ptsSmoothed = util::smoothBoundaries(ptsSmoothed, chunkSizes[0]);
-            else
-            {
-                Translator translator(sizes);
-                for (std::size_t i = 0; i < sizes.size(); i++)
-                {
-                    auto global = translator.localToGlobal({i, 0});
-                    auto currPts = std::vector<cv::Point>(std::begin(ptsSmoothed) + global,
-                        std::begin(ptsSmoothed) + global + sizes[i]);
-                    util::smoothBoundaries(currPts, chunkSizes[i]);
-
-                    std::copy(
-                        std::begin(currPts), std::end(currPts), std::begin(ptsSmoothed) + global);
-                }
-            }
-            return ptsSmoothed;
         }
     } // namespace detail
 

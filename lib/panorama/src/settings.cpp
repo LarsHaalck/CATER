@@ -38,7 +38,6 @@ std::ostream& operator<<(std::ostream& stream, const PanoramaSettings& settings)
     stream << "--------------------\n";
     stream << "overlayCenters: " << settings.overlayCenters << "\n";
     stream << "overlayPoints: " << settings.overlayPoints << "\n";
-    stream << "smooth: " << settings.smooth << "\n";
     stream << "--------------------\n";
     stream << "writeReadable: " << settings.writeReadable << "\n";
     stream << "====================\n";

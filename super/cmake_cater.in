@@ -5,7 +5,6 @@ cmake \
     -DCeres_DIR=${Ceres_DIR} \
     -Dcereal_DIR=${cereal_DIR} \
     -Dcxxopts_DIR=${cxxopts_DIR} \
-    -Dfitpackpp_DIR=${fitpackpp_DIR} \
     -DOpenCV_DIR=${OpenCV_DIR} \
     -DQt6CoreTools_DIR=${Qt6CoreTools_DIR} \
     -DQt6Concurrent_DIR=${Qt6Concurrent_DIR} \

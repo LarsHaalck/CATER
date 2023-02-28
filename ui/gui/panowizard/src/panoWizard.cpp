@@ -170,7 +170,6 @@ void PanoWizard::populateDefaults()
     ui->comboStage->setCurrentIndex(static_cast<int>(settings.stage));
 
     ui->comboOverlay->setCurrentIndex((settings.overlayCenters << 1) | settings.overlayPoints);
-    ui->checkSmooth->setChecked(settings.smooth);
 }
 
 ct::PanoramaSettings PanoWizard::getSettings() const
@@ -188,7 +187,6 @@ ct::PanoramaSettings PanoWizard::getSettings() const
     auto overlay = ui->comboOverlay->currentText().toStdString();
     auto overlayCenters = (overlay.find("Centers") != std::string::npos);
     auto overlayPoints = (overlay.find("Detections") != std::string::npos);
-    auto smooth = ui->checkSmooth->isChecked();
 
     ct::PanoramaSettings settings;
     settings.rows = rows;
@@ -203,7 +201,6 @@ ct::PanoramaSettings PanoWizard::getSettings() const
 
     settings.overlayCenters = overlayCenters;
     settings.overlayPoints = overlayPoints;
-    settings.smooth = smooth;
 
     return settings;
 }
