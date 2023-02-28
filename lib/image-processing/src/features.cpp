@@ -220,6 +220,8 @@ cv::Ptr<cv::Feature2D> Features::getFtPtr(FeatureType type, std::size_t numFeatu
         return cv::ORB::create(numFeatures);
     case FeatureType::SIFT:
         return cv::SIFT::create(numFeatures);
+        // for more features
+        /* return cv::SIFT::create(numFeatures, 3, 0.01); */
     default:
         throw UnknownFeatureType();
     }
