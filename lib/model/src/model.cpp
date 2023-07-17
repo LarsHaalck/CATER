@@ -12,8 +12,8 @@
 #include <chrono>
 #include <fstream>
 #include <opencv2/videoio.hpp>
-#include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
+#include <cater/tracker/fmt.h>
 
 namespace fs = std::filesystem;
 

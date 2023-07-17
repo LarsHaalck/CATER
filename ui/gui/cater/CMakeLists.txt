@@ -66,6 +66,7 @@ target_link_libraries(${EXE_NAME}
     Qt6::Concurrent
     Qt6::Multimedia
     spdlog::spdlog
+    cereal::cereal
 )
 
 if(${OpenMP_CXX_FOUND})

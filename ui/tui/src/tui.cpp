@@ -1,6 +1,7 @@
 #include "tui.h"
 
 #include <cater/panorama/gpsInterpolator.h>
+#include <cater/util/fmt.h>
 #include <iostream>
 #include <spdlog/spdlog.h>
 

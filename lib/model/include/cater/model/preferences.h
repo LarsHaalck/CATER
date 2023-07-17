@@ -2,7 +2,6 @@
 #define MODEL_PREFERENCES_H
 
 #include <cater/image-processing/baseFeatureContainer.h>
-#include <spdlog/fmt/ostr.h>
 #include <ostream>
 
 namespace ct

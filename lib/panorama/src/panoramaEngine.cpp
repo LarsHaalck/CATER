@@ -16,8 +16,9 @@
 #include <cater/panorama/transitions.h>
 
 #include <opencv2/core/persistence.hpp>
-#include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
+#include <cater/panorama/fmt.h>
+#include <cater/image-processing/fmt.h>
 
 namespace fs = std::filesystem;
 

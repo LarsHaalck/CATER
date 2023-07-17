@@ -1,5 +1,6 @@
 #include <cater/panorama/panoramaStitcher.h>
 
+#include <cater/image-processing/fmt.h>
 #include <cater/image-processing/idTranslator.h>
 #include <cater/image-processing/isometry.h>
 #include <cater/io/io.h>
@@ -17,7 +18,6 @@
 #include <Eigen/Dense>
 #include <ceres/ceres.h>
 #include <chrono>
-#include <thread>
 #include <filesystem>
 #include <fstream>
 #include <opencv2/calib3d.hpp>
@@ -25,8 +25,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/stitching.hpp>
 #include <queue>
-#include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
+#include <thread>
 #include <unsupported/Eigen/MatrixFunctions>
 
 namespace fs = std::filesystem;

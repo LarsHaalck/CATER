@@ -8,6 +8,7 @@
 #include "ui_mainWindow.h"
 
 #include <cater/image-processing/util.h>
+#include <cater/model/fmt.h>
 
 #include <QDate>
 #include <QFileDialog>
@@ -762,7 +763,6 @@ void MainWindow::on_detectionsAvailable(int chunkId)
     ui->labelNumTrackedPos->setText(QString::number(mModel.detections().size()));
     mSaved = false;
 
-
     if (mDetectionsQueue.empty())
     {
         mBar->setTotal(1);
@@ -813,8 +813,7 @@ void MainWindow::on_positionChanged(QPointF position)
 {
     auto start = mModel.getStartFrame();
     auto end = mModel.getEndFrame();
-    if (!mModel.unaries().size() || mCurrentFrameNumber < start
-        || mCurrentFrameNumber > end - 1)
+    if (!mModel.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
         return;
 
     if (auto size = mModel.images().getImgSize(); position.x() < 0 || position.y() < 0
@@ -837,8 +836,7 @@ void MainWindow::on_bearingChanged(QPointF position)
 {
     auto start = mModel.getStartFrame();
     auto end = mModel.getEndFrame();
-    if (!mModel.detections().size() || mCurrentFrameNumber < start
-        || mCurrentFrameNumber > end - 1)
+    if (!mModel.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
         return;
     spdlog::debug("GUI: manual bearing changed to ({}, {}) on frame {}", position.x(), position.y(),
         mCurrentFrameNumber);
@@ -851,8 +849,7 @@ void MainWindow::on_positionCleared()
 {
     auto start = mModel.getStartFrame();
     auto end = mModel.getEndFrame();
-    if (!mModel.unaries().size() || mCurrentFrameNumber < start
-        || mCurrentFrameNumber > end - 1)
+    if (!mModel.unaries().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
         return;
 
     spdlog::debug("GUI: manual position cleared on frame {}", mCurrentFrameNumber);
@@ -868,8 +865,7 @@ void MainWindow::on_bearingCleared()
 {
     auto start = mModel.getStartFrame();
     auto end = mModel.getEndFrame();
-    if (!mModel.detections().size() || mCurrentFrameNumber < start
-        || mCurrentFrameNumber > end - 1)
+    if (!mModel.detections().size() || mCurrentFrameNumber < start || mCurrentFrameNumber > end - 1)
         return;
     spdlog::debug("GUI: manual bearing cleared on frame {}", mCurrentFrameNumber);
     mModel.removeManualBearing(mCurrentFrameNumber);

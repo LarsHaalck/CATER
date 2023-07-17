@@ -12,6 +12,7 @@
 #include <cater/panorama/panoramaEngine.h>
 #include <cater/tracker/detections.h>
 #include <cater/util/log.h>
+#include <cater/util/fmt.h>
 
 namespace fs = std::filesystem;
 
