@@ -15,7 +15,7 @@ else()
         opencv_external
         DEPENDS eigen3_external
         GIT_REPOSITORY https://github.com/opencv/opencv
-        GIT_TAG 4.6.0
+        GIT_TAG 4.8.0
         GIT_SHALLOW TRUE
         CMAKE_ARGS
             -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}

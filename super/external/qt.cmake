@@ -19,8 +19,8 @@ else()
     include(ExternalProject)
     ExternalProject_Add(
         qt6base_external
-        URL https://download.qt.io/official_releases/qt/6.3/6.3.1/submodules/qtbase-everywhere-src-6.3.1.tar.xz
-        URL_MD5 470bce74df4895f4c45ca335b06eaa0a
+        URL https://download.qt.io/official_releases/qt/6.5/6.5.2/submodules/qtbase-everywhere-src-6.5.2.tar.xz
+        URL_MD5 0c184f5a9bdf166c3811cd2d51feda45
         CONFIGURE_COMMAND
             <SOURCE_DIR>/configure
             -prefix ${STAGED_INSTALL_PREFIX}
@@ -49,8 +49,8 @@ else()
     ExternalProject_Add(
         qt6shadertools_external
         DEPENDS qt6base_external
-        URL https://download.qt.io/official_releases/qt/6.3/6.3.1/submodules/qtshadertools-everywhere-src-6.3.1.tar.xz
-        URL_MD5 bbc8a6003407f82fd9dd887899393913
+        URL https://download.qt.io/official_releases/qt/6.5/6.5.2/submodules/qtshadertools-everywhere-src-6.5.2.tar.xz
+        URL_MD5 991195eb4e889c36822a3a4c2ba0cfac
         CMAKE_ARGS
             -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
             -DCMAKE_BUILD_TYPE=Release
@@ -69,8 +69,8 @@ else()
     ExternalProject_Add(
         qt6multimedia_external
         DEPENDS qt6base_external qt6shadertools_external
-        URL https://download.qt.io/official_releases/qt/6.3/6.3.1/submodules/qtmultimedia-everywhere-src-6.3.1.tar.xz
-        URL_MD5 1981c400b0790849106e2e98ef76562e
+        URL https://download.qt.io/official_releases/qt/6.5/6.5.2/submodules/qtmultimedia-everywhere-src-6.5.2.tar.xz
+        URL_MD5 745fb38348f6551712f1d0e9774aeb60
         CMAKE_ARGS
             -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
             -DCMAKE_BUILD_TYPE=Release
