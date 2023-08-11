@@ -3,7 +3,7 @@
 
 #include <cater/panorama/panoramaEngine.h>
 #include <cater/util/fmt.h>
-#include <fmt/ostream.h>
+#include <spdlog/fmt/ostr.h>
 
 template <>
 struct fmt::formatter<ct::PanoramaStage> : fmt::ostream_formatter

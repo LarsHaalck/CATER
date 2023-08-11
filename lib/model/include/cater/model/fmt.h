@@ -1,7 +1,7 @@
 #ifndef CATER_MODEL_FMT_H
 #define CATER_MODEL_FMT_H
 
-#include <fmt/ostream.h>
+#include <spdlog/fmt/ostr.h>
 #include <cater/model/preferences.h>
 
 template <>

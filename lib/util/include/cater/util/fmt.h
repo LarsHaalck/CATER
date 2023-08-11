@@ -2,7 +2,7 @@
 #define CATER_UTIL_FMT_H
 
 #include <filesystem>
-#include <fmt/ostream.h>
+#include <spdlog/fmt/ostr.h>
 #include <opencv2/core.hpp>
 
 template <>

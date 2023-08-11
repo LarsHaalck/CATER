@@ -3,7 +3,7 @@
 
 #include <cater/util/fmt.h>
 #include <cater/tracker/tracker.h>
-#include <fmt/ostream.h>
+#include <spdlog/fmt/ostr.h>
 
 template <>
 struct fmt::formatter<ct::Tracker::Settings> : fmt::ostream_formatter
