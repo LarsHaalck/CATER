@@ -1,7 +1,7 @@
 *
 !cmake
 !CMakeLists.txt
-!habitrack-config.cmake.in
+!cater-config.cmake.in
 !super
 !lib
 !tools
