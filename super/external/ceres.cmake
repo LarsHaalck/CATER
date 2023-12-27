@@ -21,6 +21,7 @@ else()
           -DEigen3_DIR=${Eigen3_DIR}
           -DLIB_SUFFIX="" # needed to remove cases where Ceres_DIR should be in lib64
           -DCMAKE_INSTALL_LIBDIR=lib
+          -DCXSPARSE=OFF
           -DEIGENSPARSE=ON
           -DMINIGLOG=ON
           -DBUILD_SHARED_LIBS=ON

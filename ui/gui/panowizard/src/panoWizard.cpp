@@ -167,6 +167,7 @@ void PanoWizard::populateDefaults()
     ui->comboFt->setCurrentIndex(static_cast<int>(settings.featureType));
     ui->spinNumFts->setValue(settings.numFeatures);
     ui->spinCoverage->setValue(settings.minCoverage);
+    ui->writeDebug->setChecked(settings.writeReadable);
     ui->checkForce->setChecked(settings.force);
     ui->comboStage->setCurrentIndex(static_cast<int>(settings.stage));
 
@@ -182,6 +183,7 @@ ct::PanoramaSettings PanoWizard::getSettings() const
     auto ftType = static_cast<ct::FeatureType>(ui->comboFt->currentIndex());
     int numFts = ui->spinNumFts->value();
     double coverage = ui->spinCoverage->value();
+    auto writeReadable = ui->writeDebug->isChecked();
     auto force = ui->checkForce->isChecked();
     auto stage = ui->comboStage->currentIndex();
 
@@ -197,6 +199,7 @@ ct::PanoramaSettings PanoWizard::getSettings() const
     settings.featureType = ftType;
     settings.numFeatures = numFts;
     settings.minCoverage = coverage;
+    settings.writeReadable = writeReadable;
     settings.force = force;
     settings.stage = static_cast<ct::PanoramaStage>(stage);
 
