@@ -101,10 +101,8 @@ RUN mkdir $DEPS/build \
     && cmake --install .
 
 
-# TODO: replace smarttowel with linuxdeploy once this is merged
-# https://github.com/linuxdeploy/linuxdeploy-plugin-qt/pull/115
 RUN wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage \
-    && wget https://github.com/smarttowel/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage \
+    && wget https://github.com/linuxeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage \
     && chmod +x linuxdeploy-*.AppImage \
     && ./linuxdeploy-x86_64.AppImage --appimage-extract \
     && ./linuxdeploy-plugin-qt-x86_64.AppImage --appimage-extract \
