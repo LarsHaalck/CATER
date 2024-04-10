@@ -55,7 +55,7 @@ else ()
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DBUILD_GUI=$<IF:$<BOOL:${BUILD_GUI}>,${BUILD_GUI},OFF>
             -DBUILD_TOOLS=$<IF:$<BOOL:${BUILD_TOOLS}>,${BUILD_TOOLS},OFF>
-            -DWITH_SUPERGLUE=$<IF:$<BOOL:${WITH_SUPERGLUE}>,${BUILD_TOOLS},OFF>
+            -DWITH_SUPERGLUE=$<IF:$<BOOL:${WITH_SUPERGLUE}>,${WITH_SUPERGLUE},OFF>
             -DEigen3_DIR=${Eigen3_DIR}
             -Dspdlog_DIR=${spdlog_DIR}
             -Dmild_DIR=${mild_DIR}
