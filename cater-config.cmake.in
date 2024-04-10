@@ -14,7 +14,7 @@ set(OpenCV_DIR @OpenCV_DIR@)
 set(spdlog_DIR @spdlog_DIR@)
 
 find_dependency(OpenCV 4.5)
-find_dependency(spdlog 1.9)
+find_dependency(spdlog 1.12)
 if (@OpenMP_CXX_FOUND@)
     find_package(OpenMP REQUIRED)
 endif()
