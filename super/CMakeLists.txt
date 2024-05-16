@@ -9,12 +9,12 @@ set(STAGED_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/stage)
 message(STATUS "${PROJECT_NAME} staged install: ${STAGED_INSTALL_PREFIX}")
 
 include(external/eigen3)
+include(external/opencv)
 include(external/spdlog)
 include(external/mild)
 include(external/ceres)
 include(external/cereal)
 include(external/cxxopts)
-include(external/opencv)
 include(external/qt)
 
 option(BUILD_DEPS_ONLY "Build only dependencies and nothing else (used for development)" FALSE)
