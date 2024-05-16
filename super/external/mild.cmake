@@ -11,6 +11,7 @@ else()
         mild_external
         DEPENDS
             eigen3_external
+            opencv_external
         GIT_REPOSITORY https://github.com/LarsHaalck/MILD/
         GIT_SHALLOW ON
         CMAKE_ARGS
@@ -19,6 +20,7 @@ else()
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
           -DEigen3_DIR=${Eigen3_DIR}
+          -DOpenCV_DIR=${OpenCV_DIR}
           -DBUILD_EXAMPLE=OFF
         LOG_DOWNLOAD ON
         LOG_UPDATE ON
