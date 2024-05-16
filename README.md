@@ -92,4 +92,4 @@ cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_GUI=ON ../super
 make
 ```
-the binary of the CATER-Gui should be compiled in `build/ui/gui/cater-gui`.
+the binary of the CATER-Gui should be compiled in `external/Build/cater/ui/gui/cater/cater-gui`.
