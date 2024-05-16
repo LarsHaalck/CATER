@@ -89,7 +89,7 @@ To build the full project from the superbuild simply run the following commands:
 ```bash
 mkdir build
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release ../super
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_GUI=ON ../super
 make
 ```
 the binary of the CATER-Gui should be compiled in `build/ui/gui/cater-gui`.
